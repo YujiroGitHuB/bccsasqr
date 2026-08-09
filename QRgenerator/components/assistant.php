@@ -1,7 +1,11 @@
     <!-- Chat Toggle Button -->
     <button class="chat-toggle-btn" id="chatToggleBtn">
+        <!-- Logo ng Lexon. Lokal na file, hindi na galing sa CDN ng
+             flaticon — mas mabilis, at hindi masisira kapag inalis nila
+             ang GIF. Naka-128px ito para malinaw sa retina kahit 50px
+             lang ang ipinapakita. -->
         <img width="50" height="50" style="border-radius: 50px;"
-            src="https://cdn-icons-gif.flaticon.com/15579/15579168.gif" alt="">
+            src="../assets/images/lexon-lx.png" alt="Lexon">
         <span class="notification-badge">1</span>
     </button>
 
