@@ -1669,6 +1669,53 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   color: #d0d0d1;
 }
 
+/* ── Naka-collapse na sidebar: mga icon lang ang submenu ──────
+   Ang teksto ng submenu ay HUBAD na text node sa sidebar.php:
+
+       <a class="nav-link submenu-item">
+           <i class="bi bi-list-check"></i> Attendance List
+       </a>
+
+   Hindi ito naka-<span>, kaya hindi ito naaabot ng panago sa
+   itaas na `.sidebar.collapsed .nav-link span { display: none }`.
+   Ang resulta ay napuputol lang ito ng `overflow: hidden` ng
+   sidebar at nagiging "Att... Lis...".
+
+   Ang `font-size: 0` ang tanging paraan sa CSS para itago ang
+   hubad na text node. Ibinabalik natin ang sukat sa <i> para
+   manatiling nakikita AT nabubuksan pa rin ang mga pahina —
+   kung basta natin itatago ang buong submenu, hindi na maaabot
+   ang Attendance List habang naka-collapse. */
+.sidebar.collapsed .nav-item.dropdown .collapse {
+  margin-left: 0;
+}
+
+/* Alisin ang patayong linya at ang tuldok — kumakain sila ng
+   espasyo na wala naman sa 80px na rail. */
+.sidebar.collapsed .nav-item.dropdown .collapse::before,
+.sidebar.collapsed .submenu-item::before {
+  display: none;
+}
+
+.sidebar.collapsed .submenu-item {
+  font-size: 0;
+  padding-left: 0 !important;
+  padding-right: 0;
+  text-align: center;
+}
+
+.sidebar.collapsed .submenu-item i {
+  font-size: 1rem;
+  margin-right: 0;
+  width: 100%;
+  text-align: center;
+}
+
+/* Ang caret ay dagdag na kalat sa makipot na rail. */
+.sidebar.collapsed .dropdown-toggle::after {
+  display: none;
+}
+
 /* Dropdown toggle active when any submenu is active */
 .dropdown-toggle.active {
   background: rgba(13, 110, 253, 0.1);
