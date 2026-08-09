@@ -19,7 +19,6 @@
             overflow: hidden;
             position: relative;
         }
-
         /* Animated background particles */
         body::before {
             content: '';
