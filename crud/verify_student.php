@@ -19,10 +19,13 @@ if (empty($student_no)) {
 
 try {
     // ── 1. Check if student exists ────────────────────────────────────────────
+    // NOTE: walang TRIM() sa column — pumipigil iyon sa paggamit ng
+    // uniq_student_no index (full scan sa buong students_tbl). Na-trim na
+    // ang input sa taas, at nilinis na ng migration ang stored values.
     $stmt = $conn->prepare("
-        SELECT student_no, fullname, course, section 
-        FROM students_tbl 
-        WHERE TRIM(student_no) = ?
+        SELECT student_no, fullname, course, section
+        FROM students_tbl
+        WHERE student_no = ?
     ");
     $stmt->bind_param("s", $student_no);
     $stmt->execute();
@@ -43,11 +46,14 @@ try {
 
     // ── 2. Check if student is enrolled in this subject ───────────────────────
     if (!empty($subject_code)) {
+        // utf8mb4_general_ci ang collation kaya case-insensitive na ang
+        // paghahambing — redundant ang UPPER(), at tulad ng TRIM() ay
+        // pinapatay nito ang idx_student_no.
         $enroll = $conn->prepare("
-            SELECT section 
+            SELECT section
             FROM student_subjects_tbl
-            WHERE TRIM(student_no) = ?
-              AND UPPER(TRIM(subject_code)) = UPPER(TRIM(?))
+            WHERE student_no   = ?
+              AND subject_code = ?
             LIMIT 1
         ");
         $enroll->bind_param("ss", $student_no, $subject_code);
