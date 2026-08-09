@@ -178,17 +178,79 @@ $(document).ready(function () {
     // STUDENT TABLE (#stud_tbl)
     // ================================================================
     if ($('#stud_tbl').length) {
-        $('#tableLoader').hide();
-        $('#stud_tbl').show();
+        // Ang mga row ay dumarating na bilang JSON mula sa
+        // get_students_ajax.php — mas magaan nang ~74% kaysa sa HTML,
+        // at ang DOM lang ng kasalukuyang page ang ginagawa ng DataTables.
+        var escText = $.fn.dataTable.render.text();
+
+        // Para sa markup na binubuo natin mismo (checkbox at buton),
+        // kailangang i-escape ang halaga bago ipasok sa attribute.
+        var attr = function (v) {
+            return String(v === null || v === undefined ? '' : v)
+                .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        };
 
         $('#stud_tbl').DataTable({
+            ajax: {
+                url: 'get_students_ajax.php',
+                dataSrc: function (res) {
+                    $('#tableLoader').hide();
+                    $('#stud_tbl').show();
+                    if (!res.success) {
+                        Swal.fire({
+                            icon: 'error', title: 'Error!',
+                            background: '#0f172a', color: '#e0e0e0',
+                            text: res.message || 'Could not load the student list.'
+                        });
+                        return [];
+                    }
+                    return res.data;
+                }
+            },
+            columns: [
+                {
+                    data: 'id',
+                    render: function (id) {
+                        return '<input type="checkbox" class="form-check-input row-checkbox" value="' + attr(id) + '">';
+                    }
+                },
+                { data: null, defaultContent: '' },      // running No., punan ng drawCallback
+                { data: 'student_no', render: escText },
+                { data: 'fullname',   render: escText },
+                { data: 'course',     render: escText },
+                { data: 'section',    render: escText },
+                { data: 'added_by',   render: escText },
+                {
+                    data: null,
+                    render: function (row) {
+                        // data-* attributes sa halip na inline onclick: hindi
+                        // nasisira ng kudlit sa pangalan, at hindi umaasa sa
+                        // pag-escape ng PHP sa loob ng JS string.
+                        return '<button class="btn btn-sm btn-success me-2 btn-edit-student"' +
+                               ' data-id="'      + attr(row.id) + '"' +
+                               ' data-no="'      + attr(row.student_no) + '"' +
+                               ' data-fullname="' + attr(row.fullname) + '"' +
+                               ' data-course="'  + attr(row.course) + '"' +
+                               ' data-section="' + attr(row.section) + '">' +
+                               '<i class="bi bi-pencil-square"></i></button>' +
+                               '<button class="btn btn-sm btn-danger btn-deletes" data-id="' + attr(row.id) + '">' +
+                               '<i class="bi bi-trash"></i></button>';
+                    }
+                }
+            ],
+            createdRow: function (tr, data) {
+                // Umaasa ang delete at deleteSelected sa id na ito.
+                tr.id = 'row-' + data.id;
+            },
             processing: true,
             language: {
                 processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>'
             },
             columnDefs: [
                 { targets: 0, searchable: false, orderable: false, className: 'text-center' }, // checkbox
-                { targets: 1, searchable: false, orderable: false }                            // No.
+                { targets: 1, searchable: false, orderable: false },                           // No.
+                { targets: 7, searchable: false, orderable: false }                            // Action
             ],
             drawCallback: function (settings) {
                 var api = this.api();

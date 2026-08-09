@@ -68,15 +68,9 @@ include __DIR__ . "/../includes/auth.php";
                         </div>
 
                         <?php
-                        include __DIR__ . "/../includes/db_connect.php";
-                        $user_id = $_SESSION['user_id'];
-
-                        $sql = "SELECT s.id, s.student_no, s.fullname, s.course, s.section, 
-                                u.name as added_by_name
-                                FROM students_tbl s
-                                LEFT JOIN users u ON s.user_id = u.id";
-
-                        $result = $conn->query($sql);
+                        // Kinukuha na ng get_students_ajax.php ang mga row.
+                        // Dating ini-render dito ang lahat ng estudyante bilang
+                        // HTML — 253 KB sa 474 na estudyante, 3.5 MB sa 1,762.
                         ?>
 
                         <!-- Table (hidden initially) -->
@@ -101,47 +95,7 @@ include __DIR__ . "/../includes/auth.php";
                                     <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <?php if ($result->num_rows > 0): ?>
-                                    <?php $counter = 1; ?>
-                                    <?php while ($row = $result->fetch_assoc()): ?>
-                                        <tr id="row-<?= $row['id']; ?>">
-                                            <!-- ✅ Per-row Checkbox -->
-                                            <td>
-                                                <input 
-                                                    type="checkbox" 
-                                                    class="form-check-input row-checkbox" 
-                                                    value="<?= $row['id']; ?>"
-                                                >
-                                            </td>
-                                            <td><?= $counter++; ?></td>
-                                            <td><?= htmlspecialchars($row['student_no']); ?></td>
-                                            <td><?= htmlspecialchars($row['fullname']); ?></td>
-                                            <td><?= htmlspecialchars($row['course']); ?></td>
-                                            <td><?= htmlspecialchars($row['section']); ?></td>
-                                            <td><?= htmlspecialchars($row['added_by_name'] ?? 'N/A'); ?></td>
-                                            <td>
-                                                <button
-                                                    class="btn btn-sm btn-success me-2"
-                                                    onclick="editStudent(
-                              '<?= $row['id']; ?>',
-                              '<?= htmlspecialchars($row['student_no']); ?>',
-                              '<?= htmlspecialchars($row['fullname']); ?>',
-                              '<?= htmlspecialchars($row['course']); ?>',
-                              '<?= htmlspecialchars($row['section']); ?>'
-                            )">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-danger btn-deletes" data-id="<?= $row['id']; ?>">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    <?php endwhile; ?>
-                                <?php else: ?>
-
-                                <?php endif; ?>
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>

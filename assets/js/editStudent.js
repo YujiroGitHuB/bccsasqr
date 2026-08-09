@@ -9,6 +9,23 @@ function editStudent(id, student_no, fullname, course, section) {
     modal.show();
 }
 
+// Ginagawa na ng DataTables ang mga row mula sa JSON, kaya data-*
+// attributes na ang gamit sa halip na inline onclick — hindi ito
+// nasisira ng kudlit sa pangalan (hal. O'BRIEN), na siyang mangyayari
+// sa inline onclick sa PHP 7.2 kung saan hindi nag-e-escape ng single
+// quote ang htmlspecialchars() bilang default.
+document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.btn-edit-student');
+    if (!btn) return;
+    editStudent(
+        btn.dataset.id,
+        btn.dataset.no,
+        btn.dataset.fullname,
+        btn.dataset.course,
+        btn.dataset.section
+    );
+});
+
 document.getElementById('updateStudentForm').addEventListener('submit', function (e) {
     e.preventDefault();
     const formData = new FormData(this);

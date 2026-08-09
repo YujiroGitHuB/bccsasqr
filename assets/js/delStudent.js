@@ -1,6 +1,10 @@
-document.querySelectorAll('.btn-deletes').forEach(button => {
-    button.addEventListener('click', function () {
-        const studentId = this.getAttribute('data-id');
+// Delegated: ginagawa na ng DataTables ang mga row mula sa JSON, kaya
+// wala pang buton sa DOM kapag na-load ang script na ito — at nagbabago
+// ang mga row tuwing lumilipat ng page o naghahanap.
+document.addEventListener('click', function (e) {
+    const button = e.target.closest('.btn-deletes');
+    if (button) {
+        const studentId = button.getAttribute('data-id');
 
         // Dark theme base options
         const swalOptions = {
@@ -43,11 +47,20 @@ document.querySelectorAll('.btn-deletes').forEach(button => {
                                 showConfirmButton: false
                             });
 
-                            // Smoothly remove the row from table
+                            // Smoothly remove the row from table.
+                            // Kailangang dumaan sa DataTables API — kung ang <tr>
+                            // lang ang tatanggalin, nasa internal data pa rin ito
+                            // at muling lilitaw pagkalipat ng page o paghahanap.
                             const row = document.getElementById('row-' + studentId);
                             if (row) {
                                 row.classList.add('animate__animated', 'animate__fadeOut');
-                                setTimeout(() => row.remove(), 500);
+                                setTimeout(() => {
+                                    if (window.jQuery && $.fn.DataTable.isDataTable('#stud_tbl')) {
+                                        $('#stud_tbl').DataTable().row(row).remove().draw(false);
+                                    } else {
+                                        row.remove();
+                                    }
+                                }, 500);
                             }
                         } else {
                             Swal.fire({
@@ -69,5 +82,5 @@ document.querySelectorAll('.btn-deletes').forEach(button => {
                     });
             }
         });
-    });
+    }
 });

@@ -92,24 +92,46 @@ $can_switch_view = ($has_subjects && $has_sections) || ($role === 'admin' && $ha
 if ($view_mode === 'sections') {
     if ($role === 'admin') {
         $totalStudent          = $conn->query("SELECT COUNT(DISTINCT student_no) AS total FROM students_tbl WHERE user_id = '$user_id'")->fetch_assoc()['total'];
-        $totalStudents         = $conn->query("SELECT COUNT(DISTINCT student_no) AS total FROM attendance_tbl WHERE user_id = '$user_id'")->fetch_assoc()['total'];
-        $presentOnSelectedDate = $conn->query("SELECT COUNT(DISTINCT student_no) AS present FROM attendance_tbl WHERE user_id = '$user_id' AND DATE(date) = '$selected_date'")->fetch_assoc()['present'];
+        // Isang scan na lang ng attendance_tbl para sa dalawang bilang —
+        // magkapareho ang WHERE, ang petsa lang ang idinaragdag.
+        $m = $conn->query("
+            SELECT COUNT(DISTINCT student_no) AS total,
+                   COUNT(DISTINCT CASE WHEN DATE(date) = '$selected_date' THEN student_no END) AS present
+            FROM attendance_tbl
+            WHERE user_id = '$user_id'
+        ")->fetch_assoc();
+        $totalStudents         = $m['total'];
+        $presentOnSelectedDate = $m['present'];
     } elseif ($has_sections) {
         // ✅ FIXED: use full_section in IN clause
         $sections_in           = "'" . implode("','", array_map(fn($s) => $conn->real_escape_string($s), $user_sections)) . "'";
         $totalStudent          = $conn->query("SELECT COUNT(DISTINCT student_no) as total FROM students_tbl WHERE CONCAT(course,'-',section) IN ($sections_in)")->fetch_assoc()['total'];
         // ✅ FIXED: attendance_tbl.section stores raw "1A" — use CONCAT to match "BSIT-1A"
-        $totalStudents         = $conn->query("SELECT COUNT(DISTINCT student_no) as total FROM attendance_tbl WHERE CONCAT(course,'-',section) IN ($sections_in) AND user_id = '$user_id'")->fetch_assoc()['total'];
-        $presentOnSelectedDate = $conn->query("SELECT COUNT(DISTINCT student_no) as present FROM attendance_tbl WHERE CONCAT(course,'-',section) IN ($sections_in) AND user_id = '$user_id' AND DATE(date) = '$selected_date'")->fetch_assoc()['present'];
+        // Pinagsama sa isang scan — magkapareho ang WHERE, petsa lang ang dagdag.
+        $m = $conn->query("
+            SELECT COUNT(DISTINCT student_no) AS total,
+                   COUNT(DISTINCT CASE WHEN DATE(date) = '$selected_date' THEN student_no END) AS present
+            FROM attendance_tbl
+            WHERE CONCAT(course,'-',section) IN ($sections_in) AND user_id = '$user_id'
+        ")->fetch_assoc();
+        $totalStudents         = $m['total'];
+        $presentOnSelectedDate = $m['present'];
     } else {
         $totalStudent = $totalStudents = $presentOnSelectedDate = 0;
     }
 } else {
     if ($has_subjects) {
         $subjects_in           = "'" . implode("','", array_map(fn($s) => $conn->real_escape_string($s), $subject_names)) . "'";
-        $totalStudent          = $conn->query("SELECT COUNT(DISTINCT student_no) as total FROM attendance_tbl WHERE subject IN ($subjects_in) AND user_id = '$user_id'")->fetch_assoc()['total'];
+        // Pinagsama sa isang scan — magkapareho ang WHERE, petsa lang ang dagdag.
+        $m = $conn->query("
+            SELECT COUNT(DISTINCT student_no) AS total,
+                   COUNT(DISTINCT CASE WHEN DATE(date) = '$selected_date' THEN student_no END) AS present
+            FROM attendance_tbl
+            WHERE subject IN ($subjects_in) AND user_id = '$user_id'
+        ")->fetch_assoc();
+        $totalStudent          = $m['total'];
         $totalStudents         = $totalStudent;
-        $presentOnSelectedDate = $conn->query("SELECT COUNT(DISTINCT student_no) as present FROM attendance_tbl WHERE subject IN ($subjects_in) AND user_id = '$user_id' AND DATE(date) = '$selected_date'")->fetch_assoc()['present'];
+        $presentOnSelectedDate = $m['present'];
     } else {
         $totalStudent = $totalStudents = $presentOnSelectedDate = 0;
     }
