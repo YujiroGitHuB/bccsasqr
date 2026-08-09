@@ -1,0 +1,224 @@
+/* ============================================================
+   MOBILE / TABLET LAYOUT
+   Ikinakarga pagkatapos ng main.css, kaya ito ang mananaig.
+
+   Ang problema: ang .sidebar ay `position: fixed; width: 250px`
+   nang walang anumang media query, at ang .content ay may
+   `margin-left: 250px`. Sa 390px na telepono ay 140px na lang ang
+   natitira sa content — hindi na magamit. Kahit "collapsed" (80px)
+   ay 310px pa rin.
+
+   Ang lunas: sa mobile ay ganap na inilalabas ng screen ang
+   sidebar, at buong lapad ang content. Ang hamburger ay
+   nagpapasok nito bilang overlay na may backdrop.
+   ============================================================ */
+
+/* Walang page na dapat mag-scroll nang pahalang. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 992px) {
+
+  /* ── Sidebar: off-canvas ─────────────────────────────────── */
+  .sidebar {
+    width: 260px;
+    max-width: 82vw;
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    z-index: 1045;               /* higit sa backdrop, mas mababa sa modal */
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Sa mobile, ang toggle ay bukas/sara — hindi pampaliit. Kaya
+     kinakansela natin ang narrow-mode ng .collapsed at ibinabalik
+     ang mga label; kung hindi, mga icon lang ang lalabas. */
+  .sidebar.collapsed {
+    width: 260px;
+    max-width: 82vw;
+  }
+
+  .sidebar.collapsed .nav-link span,
+  .sidebar.collapsed .logo-text {
+    display: inline;
+  }
+
+  .sidebar.collapsed .nav-link i {
+    margin-right: 15px;
+    width: auto;
+    text-align: left;
+  }
+
+  .sidebar.collapsed .logo-img {
+    width: 70px;
+    height: 70px;
+  }
+
+  /* Walang hover tooltip sa touch — nakaharang lang ito. */
+  .sidebar.collapsed .nav-link:hover::after {
+    content: none;
+  }
+
+  /* ── Content: buong lapad ────────────────────────────────── */
+  .content,
+  .content.full {
+    margin-left: 0;
+    padding: 14px 12px;
+    font-size: 0.95rem;
+  }
+
+  /* ── Backdrop kapag bukas ang sidebar ────────────────────── */
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1040;
+    border: 0;
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+
+  .sidebar-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Huwag payagang mag-scroll ang page sa likod ng bukas na sidebar. */
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
+  /* ── Topbar ──────────────────────────────────────────────── */
+  .topbar {
+    padding: 10px 4px;
+    margin-bottom: 14px;
+  }
+
+  /* Sapat na laki para sa daliri (≥44px ayon sa touch guidelines). */
+  .toggle-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* ── Mga talahanayan ─────────────────────────────────────── */
+  /* Ang DataTables ay ~1113px ang lapad. Dapat ito mag-scroll sa
+     loob ng sariling kahon, hindi itulak ang buong page. */
+  .table-responsive,
+  .dataTables_wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .card {
+    /* Sa main.css ay `scroll` ito, kaya laging may scrollbar kahit
+       hindi kailangan. `auto` ang tama. */
+    overflow-x: auto;
+  }
+
+  /* Huwag pilitin ang mga cell na sumiksik hanggang mabasag. */
+  table.dataTable td,
+  table.dataTable th {
+    white-space: nowrap;
+  }
+
+  /* Ang search box at length menu ng DataTables ay magkapatong sa
+     makipot na screen — patungin sila nang pahaba. */
+  .dataTables_wrapper .dataTables_filter,
+  .dataTables_wrapper .dataTables_length {
+    float: none;
+    text-align: left;
+    margin-bottom: 8px;
+  }
+
+  .dataTables_wrapper .dataTables_filter input {
+    width: 100%;
+    margin-left: 0;
+    display: block;
+  }
+
+  /* Mga export button: hayaang mag-wrap kaysa lumabas ng screen. */
+  .dt-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    float: none;
+    margin-bottom: 10px;
+  }
+
+  /* ── Mga form at filter ──────────────────────────────────── */
+  /* Ang <16px na font sa input ay nagdudulot ng auto-zoom sa iOS. */
+  input,
+  select,
+  textarea,
+  .form-control,
+  .form-select {
+    font-size: 16px;
+  }
+
+  /* Ang mga filter row ay mag-stack sa halip na magsiksikan. */
+  .content form.d-flex,
+  .content .d-flex.align-items-end {
+    gap: 10px !important;
+  }
+
+  /* ── Modal ───────────────────────────────────────────────── */
+  .modal-dialog {
+    margin: 10px;
+  }
+}
+
+/* Pinakamaliliit na telepono */
+@media (max-width: 480px) {
+  .content,
+  .content.full {
+    padding: 10px 8px;
+  }
+
+  .btn-icon {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+
+  h5 .d-flex,
+  .card-header .d-flex {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+  }
+}
+
+/* ============================================================
+   MGA DEVICE NA WALANG HOVER (touch)
+
+   Sa main.css ay `max-width: 0; opacity: 0` ang .btn-icon .btn-text,
+   at lumalabas lang sa :hover. Walang hover sa touch screen, kaya
+   HINDING-HINDI lumalabas ang mga label na iyon sa telepono.
+
+   Sa attendance ay magkatabi ang "Delete Selected" at "Delete All",
+   pareho silang pulang trash icon — walang label, magkamukha sila,
+   at parehong mapanira. Palaging ipakita ang label kapag walang hover.
+
+   Ginagamit ang (hover: none) sa halip na sukat ng screen dahil ang
+   tanong ay "kaya bang mag-hover", hindi "gaano kalapad".
+   ============================================================ */
+@media (hover: none) {
+  .btn-icon .btn-text {
+    max-width: 200px;
+    opacity: 1;
+    margin-left: 0.5rem;
+  }
+}

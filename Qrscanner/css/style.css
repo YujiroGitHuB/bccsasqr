@@ -1176,3 +1176,46 @@ tr:hover td {
     color: #10b981;
     margin-top: 4px;
 }
+/* ============================================================
+   MOBILE
+   Ang #leftPanel at #attendance ay may min-width: 340px at
+   padding: 20px kada gilid, at walang box-sizing: border-box sa
+   file na ito — kaya 380px+ ang tunay na lapad at umaapaw sa
+   390px na telepono.
+
+   May sariling header ang page na ito (headerQrScanner.php), kaya
+   hindi nito nakukuha ang assets/css/mobile.css. Dito na natin
+   ilalagay ang lunas.
+   ============================================================ */
+@media (max-width: 576px) {
+
+    #leftPanel,
+    #attendance {
+        box-sizing: border-box;
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+        padding: 14px;
+    }
+
+    /* Hayaang mag-scroll ang talaan sa loob ng kahon nito. Kailangan
+       ito bago pa mag-init ang DataTables — hubad pa ang <table> sa
+       puntong iyon at wala pang .dataTables_wrapper na bumabalot. */
+    #attendance {
+        overflow-x: auto;
+    }
+
+    header,
+    main {
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    /* Mas malapad ang talahanayan kaysa sa screen — dapat mag-scroll
+       sa loob ng sariling kahon, hindi itulak ang buong page. */
+    .dataTables_wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
