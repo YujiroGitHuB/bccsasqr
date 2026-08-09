@@ -16,17 +16,10 @@ $(document).ready(function () {
             }
         });
     }
-    $('#filterDate').on('change', function () {
-        const date = $(this).val(); // YYYY-MM-DD or ""
-        if (!date) {
-            // clear date filter only (leave other column filters intact)
-            table.column(2).search('', true, false).draw();
-            return;
-        }
-        // Use regex to match the date anywhere in the cell (disable smart search)
-        const regex = date.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'); // escape special chars just in case
-        table.column(2).search(regex, true, false).draw();
-    });
+    // Ang pag-filter ayon sa petsa ay nasa From/To na form ng attendance.php.
+    // Server-side na iyon ngayon — hindi na lang itinatago ang rows, hindi na
+    // talaga kinukuha sa database. Itakda ang From = To para sa isang araw.
+
     // Filter by Section (exact match)
     $('#filterSection').on('change', function () {
         const section = $(this).val();
@@ -40,8 +33,9 @@ $(document).ready(function () {
         table.column(6).search(regex, true, false).draw();
     });
     // Optional reset button (add a #resetFilters button in your HTML)
+    // Nililinis lang nito ang mga filter sa loob ng naka-load na window.
+    // Para baguhin ang window mismo, gamitin ang From/To o ang "Last 30 days".
     $('#resetFilters').on('click', function () {
-        $('#filterDate').val('');
         $('#filterSection').val('');
         table.search('').columns().search('').draw();
     });

@@ -11,6 +11,29 @@ $user_id = (int)$_SESSION['user_id'];
 function cleanSection($section) {
     return preg_replace('/^[A-Z]+-/', '', $section);
 }
+
+// ── Date window ───────────────────────────────────────────────
+// Dati ay ini-render ang BUONG attendance_tbl sa isang page. Sa
+// isang semestre ay libo-libong row iyon na HTML kada page load,
+// kaya lalong bumabagal habang dumadami ang pumapasok.
+// Huling 30 araw ang default; puwedeng palawakin sa From/To.
+$DEFAULT_WINDOW_DAYS = 30;
+
+// Tanggapin lang ang tunay na YYYY-MM-DD para hindi makalusot ang basura.
+$validDate = function ($v) {
+    if (!is_string($v)) return null;
+    $v = trim($v);
+    $d = DateTime::createFromFormat('Y-m-d', $v);
+    return ($d && $d->format('Y-m-d') === $v) ? $v : null;
+};
+
+$from = $validDate($_GET['from'] ?? null) ?? date('Y-m-d', strtotime("-{$DEFAULT_WINDOW_DAYS} days"));
+$to   = $validDate($_GET['to']   ?? null) ?? date('Y-m-d');
+
+// Kapag baligtad ang pagkakasunod, pagpalitin — mas mabuti kaysa walang lalabas.
+if ($from > $to) {
+    [$from, $to] = [$to, $from];
+}
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
@@ -73,31 +96,58 @@ function cleanSection($section) {
                         </div>
 
                         <?php
+                        // Nakakulong na sa $from..$to — tingnan ang date window sa itaas.
                         if (isAdmin()) {
-                            $result = $conn->query("
+                            $stmt = $conn->prepare("
                                 SELECT id, date, student_no, name, course, section, time_in, subject
                                 FROM attendance_tbl
+                                WHERE date BETWEEN ? AND ?
                                 ORDER BY date DESC
                             ");
+                            $stmt->bind_param("ss", $from, $to);
                         } else {
                             $stmt = $conn->prepare("
                                 SELECT id, date, student_no, name, course, section, time_in, subject
                                 FROM attendance_tbl
                                 WHERE user_id = ?
+                                  AND date BETWEEN ? AND ?
                                 ORDER BY date DESC
                             ");
-                            $stmt->bind_param("i", $user_id);
-                            $stmt->execute();
-                            $result = $stmt->get_result();
+                            $stmt->bind_param("iss", $user_id, $from, $to);
                         }
+                        $stmt->execute();
+                        $result   = $stmt->get_result();
+                        $rowCount = $result->num_rows;
                         ?>
 
                         <div id="tableContainer" style="display:none;">
-                            <div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
+                            <!-- Date window: nagre-reload ng page, kaya rows lang sa
+                                 loob ng range ang kinukuha mula sa database. -->
+                            <form method="get" class="d-flex align-items-end gap-3 mb-3 flex-wrap">
                                 <div>
-                                    <label for="filterDate" class="form-label mb-1">Filter by Date:</label>
-                                    <input type="date" id="filterDate" class="form-control form-control-sm">
+                                    <label for="fromDate" class="form-label mb-1">From:</label>
+                                    <input type="date" id="fromDate" name="from"
+                                           value="<?= htmlspecialchars($from) ?>"
+                                           class="form-control form-control-sm">
                                 </div>
+                                <div>
+                                    <label for="toDate" class="form-label mb-1">To:</label>
+                                    <input type="date" id="toDate" name="to"
+                                           value="<?= htmlspecialchars($to) ?>"
+                                           class="form-control form-control-sm">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-search"></i> Show
+                                </button>
+                                <a href="attendance.php" class="btn btn-outline-secondary btn-sm">
+                                    Last 30 days
+                                </a>
+                                <span class="text-muted small ms-1">
+                                    <?= number_format($rowCount) ?> record<?= $rowCount === 1 ? '' : 's' ?> loaded
+                                </span>
+                            </form>
+
+                            <div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
                                 <div>
                                     <label for="filterSection" class="form-label mb-1">Filter by Section:</label>
                                     <select id="filterSection" class="form-select form-select-sm">
@@ -183,155 +233,65 @@ function cleanSection($section) {
                     <h5 class="mb-3">Attendance Summary</h5>
 
                     <?php
-                    $summaryData = [];
-
-                    if (isAdmin()) {
-                        $sqlSummary = "
-                            SELECT s.student_no, s.fullname, s.course, s.section,
-                                   a.subject,
-                                   COUNT(a.id) AS total_attendance
-                            FROM students_tbl s
-                            LEFT JOIN attendance_tbl a ON s.student_no = a.student_no
-                            GROUP BY s.student_no, s.fullname, s.course, s.section, a.subject
-                            ORDER BY s.fullname ASC, a.subject ASC
-                        ";
-                        $summaryResult = $conn->query($sqlSummary);
-                        if ($summaryResult) {
-                            while ($row = $summaryResult->fetch_assoc()) {
-                                $summaryData[] = $row;
-                            }
-                        }
-                    } else {
-                        $secStmt = $conn->prepare("
-                            SELECT course, section
-                            FROM instructor_section_tbl
-                            WHERE instructor_id = ?
-                        ");
-                        $secStmt->bind_param("i", $user_id);
-                        $secStmt->execute();
-                        $secResult = $secStmt->get_result();
-
-                        $assigned = [];
-                        while ($row = $secResult->fetch_assoc()) {
-                            $assigned[] = $row;
-                        }
-
-                        if (!empty($assigned)) {
-                            $conditions = implode(' OR ', array_map(
-                                fn($s) => "(s.course = '" . $conn->real_escape_string($s['course']) . "'"
-                                        . " AND s.section = '" . $conn->real_escape_string($s['section']) . "')",
-                                $assigned
-                            ));
-
-                            $sqlSummary = "
-                                SELECT s.student_no, s.fullname, s.course, s.section,
-                                       a.subject,
-                                       COUNT(a.id) AS total_attendance
-                                FROM students_tbl s
-                                LEFT JOIN attendance_tbl a
-                                    ON s.student_no = a.student_no
-                                    AND a.user_id = $user_id
-                                WHERE $conditions
-                                GROUP BY s.student_no, s.fullname, s.course, s.section, a.subject
-                                ORDER BY s.fullname ASC, a.subject ASC
-                            ";
-                            $summaryResult = $conn->query($sqlSummary);
-                            if ($summaryResult) {
-                                while ($row = $summaryResult->fetch_assoc()) {
-                                    $summaryData[] = $row;
-                                }
-                            }
-                        }
-                    }
-
-                    // Build filter options
-                    $courses        = [];
-                    $sectionsFilter = [];
-                    $subjects       = [];
-                    foreach ($summaryData as $row) {
-                        $cleanSec = cleanSection($row['section']);
-                        $full_sec = $cleanSec;
-                        if (!in_array($row['course'], $courses))   $courses[]        = $row['course'];
-                        if (!in_array($full_sec, $sectionsFilter)) $sectionsFilter[] = $full_sec;
-                        if ($row['subject'] && !in_array($row['subject'], $subjects)) $subjects[] = $row['subject'];
-                    }
+                    // Ang summary ay kinukuha na ng get_summary_ajax.php kapag
+                    // binuksan ang tab. Dati ay tumatakbo ang GROUP BY dito sa
+                    // bawat page load kahit sarado ang tab, at ini-render ang
+                    // lahat ng row sa HTML.
                     ?>
 
-                    <?php if (!empty($summaryData)): ?>
-                        <div id="summaryTableLoader" class="text-center py-5">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                    <div id="summaryTableLoader" class="text-center py-5" style="display:none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Please wait, loading summary...</p>
+                    </div>
+
+                    <p id="summaryTableEmpty" class="text-muted" style="display:none;">
+                        No attendance data available for your assigned section(s).
+                    </p>
+
+                    <div id="summaryTableContainer" style="display:none;">
+                        <div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
+                            <div>
+                                <label for="filterSummaryCourse" class="form-label mb-1">Filter by Course:</label>
+                                <select id="filterSummaryCourse" class="form-select form-select-sm">
+                                    <option value="">All Courses</option>
+                                </select>
                             </div>
-                            <p class="mt-2 text-muted">Please wait, loading summary...</p>
+                            <div>
+                                <label for="filterSummarySection" class="form-label mb-1">Filter by Section:</label>
+                                <select id="filterSummarySection" class="form-select form-select-sm">
+                                    <option value="">All Sections</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="filterSummarySubject" class="form-label mb-1">Filter by Subject:</label>
+                                <select id="filterSummarySubject" class="form-select form-select-sm">
+                                    <option value="">All Subjects</option>
+                                </select>
+                            </div>
+                            <button id="resetSummaryFilters" class="btn btn-secondary btn-sm">
+                                <i class="bi bi-recycle"></i> Reset Filters
+                            </button>
                         </div>
 
-                        <div id="summaryTableContainer" style="display:none;">
-                            <div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
-                                <div>
-                                    <label for="filterSummaryCourse" class="form-label mb-1">Filter by Course:</label>
-                                    <select id="filterSummaryCourse" class="form-select form-select-sm">
-                                        <option value="">All Courses</option>
-                                        <?php foreach ($courses as $c): ?>
-                                            <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="filterSummarySection" class="form-label mb-1">Filter by Section:</label>
-                                    <select id="filterSummarySection" class="form-select form-select-sm">
-                                        <option value="">All Sections</option>
-                                        <?php foreach ($sectionsFilter as $s): ?>
-                                            <option value="<?= htmlspecialchars($s) ?>"><?= htmlspecialchars($s) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="filterSummarySubject" class="form-label mb-1">Filter by Subject:</label>
-                                    <select id="filterSummarySubject" class="form-select form-select-sm">
-                                        <option value="">All Subjects</option>
-                                        <?php foreach ($subjects as $sub): ?>
-                                            <option value="<?= htmlspecialchars($sub) ?>"><?= htmlspecialchars($sub) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <button id="resetSummaryFilters" class="btn btn-secondary btn-sm">
-                                    <i class="bi bi-recycle"></i> Reset Filters
-                                </button>
-                            </div>
-
-                            <div class="table-responsive">
-                                <table id="summaryTable" class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>No.</th>
-                                            <th>Student Number</th>
-                                            <th>Full Name</th>
-                                            <th>Course</th>
-                                            <th>Section</th>
-                                            <th>Subject</th>
-                                            <th>Total Attendance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php $counter = 1; foreach ($summaryData as $row): ?>
-                                            <?php $cleanSec = cleanSection($row['section']); ?>
-                                            <tr>
-                                                <td><?= $counter++ ?></td>
-                                                <td><?= htmlspecialchars($row['student_no']) ?></td>
-                                                <td><?= htmlspecialchars($row['fullname']) ?></td>
-                                                <td><?= htmlspecialchars($row['course']) ?></td>
-                                                <td><?= htmlspecialchars($cleanSec) ?></td>
-                                                <td><?= htmlspecialchars($row['subject'] ?? 'N/A') ?></td>
-                                                <td><?= htmlspecialchars($row['total_attendance']) ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="table-responsive">
+                            <table id="summaryTable" class="table table-striped" style="width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th>No.</th>
+                                        <th>Student Number</th>
+                                        <th>Full Name</th>
+                                        <th>Course</th>
+                                        <th>Section</th>
+                                        <th>Subject</th>
+                                        <th>Total Attendance</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
-                    <?php else: ?>
-                        <p class="text-muted">No attendance data available for your assigned section(s).</p>
-                    <?php endif; ?>
+                    </div>
                 </div>
             </div>
 
