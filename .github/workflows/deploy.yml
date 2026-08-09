@@ -1,0 +1,37 @@
+name: Deploy to InfinityFree
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    name: FTP Deploy
+    runs-on: ubuntu-latest
+    environment: Server   
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: FTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          server-dir: /lexon.free.nf/htdocs/bccsasqr/
+          # Every line below is a glob, not YAML — a "#" here would be treated
+          # as a pattern, so keep explanations outside the block.
+          #
+          # uploads/** matters: user uploads live on the server and never in
+          # the repo, so without it the deploy sees every banner, avatar, and
+          # response attachment as an orphan and deletes it. An uploaded
+          # banner only survived until the next push. Excluded paths are
+          # skipped entirely — not uploaded, not deleted.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/README.md
+            uploads/**

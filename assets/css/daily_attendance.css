@@ -1,0 +1,688 @@
+body {
+    background-color: #0f172a;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.attendance-card {
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    border-radius: 20px;
+    box-shadow:
+        0 0 20px rgba(0, 240, 255, 0.3),
+        0 0 40px rgba(0, 240, 255, 0.2),
+        inset 0 0 50px rgba(0, 0, 0, 0.5);
+    max-width: 500px;
+    width: 100%;
+    border: 2px solid rgba(0, 240, 255, 0.5);
+    overflow: hidden;
+    position: relative;
+}
+
+.attendance-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.1), transparent);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    100% {
+        left: 100%;
+    }
+}
+
+.card-header {
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    color: white;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 30px;
+    text-align: center;
+    border-bottom: 2px solid #00f0ff;
+    box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+}
+
+.card-body {
+    color: #e0e0e0;
+}
+
+.student-info {
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    border-radius: 20px;
+    box-shadow:
+        0 0 20px rgba(0, 240, 255, 0.3),
+        0 0 40px rgba(0, 240, 255, 0.2),
+        inset 0 0 50px rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    display: none;
+    border: 1px solid #444;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #444;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #999;
+}
+
+.info-value {
+    color: #f0f0f0;
+    font-weight: 500;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    border: none;
+    padding: 15px;
+    font-weight: 600;
+    font-size: 18px;
+    color: white;
+    transition: 0.2s;
+}
+
+.btn-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.alert {
+    border-radius: 10px;
+}
+
+.form-label {
+    color: #e0e0e0;
+}
+
+.text-muted {
+    color: #888 !important;
+}
+
+.alert-success {
+    background: rgba(0, 255, 65, 0.05);
+    border: 2px solid #00ff41;
+    color: #00ff41;
+    box-shadow:
+        inset 0 0 20px rgba(0, 255, 65, 0.1),
+        0 0 20px rgba(0, 255, 65, 0.2);
+}
+
+.alert-danger {
+    background: rgba(255, 0, 100, 0.05);
+    border: 2px solid #ff0064;
+    color: #ff0064;
+    box-shadow:
+        inset 0 0 20px rgba(255, 0, 100, 0.1),
+        0 0 20px rgba(255, 0, 100, 0.2);
+}
+
+.alert-warning {
+    background: rgba(255, 215, 0, 0.05);
+    border: 2px solid #ffd700;
+    color: #ffd700;
+    box-shadow:
+        inset 0 0 20px rgba(255, 215, 0, 0.1),
+        0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+h5 {
+    color: #f0f0f0;
+}
+
+#loadingSpinner {
+    display: none;
+}
+
+/* Holographic Input Styles */
+.input-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+    margin-bottom: 30px;
+}
+
+.input-field-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.holo-input {
+    width: 100%;
+    height: 60px;
+    background: rgba(0, 12, 36, 0.7);
+    border: none;
+    outline: none;
+    padding: 0 60px 0 20px;
+    color: rgba(0, 195, 255, 0.9);
+    font-family: "Orbitron", sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border-radius: 4px;
+    box-shadow:
+        0 0 15px rgba(0, 140, 255, 0.3),
+        inset 0 0 10px rgba(0, 0, 0, 0.8);
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px rgba(0, 160, 255, 0.7);
+    z-index: 1;
+}
+
+.holo-input::placeholder {
+    color: rgba(0, 110, 200, 0.4);
+    transition: all 0.3s ease;
+}
+
+.input-border {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    border: 1px solid rgba(0, 150, 255, 0.4);
+    border-radius: 4px;
+    z-index: 2;
+}
+
+.input-border::before,
+.input-border::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(0, 150, 255, 0.7);
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.input-border::before {
+    top: -1px;
+    left: -1px;
+    border-right: none;
+    border-bottom: none;
+}
+
+.input-border::after {
+    bottom: -1px;
+    right: -1px;
+    border-left: none;
+    border-top: none;
+}
+
+.holo-scan-line {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(0, 150, 255, 0.5) 20%,
+            rgba(255, 255, 255, 0.8) 50%,
+            rgba(0, 150, 255, 0.5) 80%,
+            rgba(0, 0, 0, 0) 100%);
+    top: 0;
+    left: 0;
+    opacity: 0;
+    filter: blur(1px);
+    z-index: 3;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.input-glow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: radial-gradient(ellipse at center,
+            rgba(0, 150, 255, 0.1) 0%,
+            rgba(0, 0, 0, 0) 70%);
+    opacity: 0;
+    border-radius: 4px;
+    z-index: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.input-active-indicator {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: rgba(0, 150, 255, 0.7);
+    border-radius: 50%;
+    right: 20px;
+    top: 25px;
+    opacity: 0.3;
+    box-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+/* Verifying indicator */
+.input-active-indicator.verifying {
+    opacity: 1;
+    background: rgba(255, 165, 0, 1);
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.7);
+}
+
+.input-active-indicator.verifying::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 165, 0, 0.5);
+    animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+
+    75%,
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+.input-label {
+    position: absolute;
+    top: -30px;
+    left: 0;
+    color: rgba(0, 150, 255, 0.7);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    text-shadow: 0 0 5px rgba(0, 150, 255, 0.5);
+}
+
+.input-data-visualization {
+    position: absolute;
+    width: calc(100% - 40px);
+    height: 3px;
+    bottom: 12px;
+    left: 20px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.data-segment {
+    width: 4%;
+    height: 100%;
+    background: rgba(0, 150, 255, 0.3);
+    transition: all 0.5s ease;
+}
+
+.data-segment:nth-child(even) {
+    height: 5px;
+    transform: translateY(-1px);
+}
+
+.input-particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 3;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.input-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(0, 150, 255, 0.7);
+    border-radius: 50%;
+    opacity: 0;
+    filter: blur(1px);
+    transition: all 0.3s ease;
+    box-shadow: 0 0 5px rgba(0, 150, 255, 0.7);
+}
+
+.input-holo-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-image: linear-gradient(90deg,
+            rgba(0, 150, 255, 0.05) 25%,
+            rgba(0, 150, 255, 0.02) 50%,
+            rgba(0, 150, 255, 0.05) 75%);
+    background-size: 8px 100%;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 4;
+    mix-blend-mode: overlay;
+}
+
+.interface-lines {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.interface-line {
+    position: absolute;
+    background: rgba(0, 150, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.interface-line:nth-child(1) {
+    width: 20px;
+    height: 1px;
+    top: 15px;
+    right: 15px;
+}
+
+.interface-line:nth-child(2) {
+    width: 1px;
+    height: 20px;
+    top: 15px;
+    right: 15px;
+}
+
+.interface-line:nth-child(3) {
+    width: 1px;
+    height: 20px;
+    bottom: 15px;
+    left: 15px;
+}
+
+.interface-line:nth-child(4) {
+    width: 20px;
+    height: 1px;
+    bottom: 15px;
+    left: 15px;
+}
+
+.input-status {
+    position: absolute;
+    bottom: -25px;
+    right: 0;
+    font-size: 12px;
+    color: rgba(0, 150, 255, 0.5);
+    letter-spacing: 1px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    text-transform: uppercase;
+}
+
+@keyframes scan-animation {
+    0% {
+        top: 0;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        top: 100%;
+        opacity: 0;
+    }
+}
+
+@keyframes data-pulse {
+    0% {
+        transform: scaleY(1);
+    }
+
+    50% {
+        transform: scaleY(1.8);
+    }
+
+    100% {
+        transform: scaleY(1);
+    }
+}
+
+@keyframes particle-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.holo-input:focus {
+    background: rgba(0, 22, 46, 0.8);
+    box-shadow:
+        0 0 20px rgba(0, 150, 255, 0.4),
+        inset 0 0 15px rgba(0, 0, 0, 0.9);
+    color: rgba(0, 210, 255, 1);
+}
+
+.holo-input:focus::placeholder {
+    color: rgba(0, 150, 255, 0.3);
+    transform: translateX(10px);
+}
+
+.holo-input:focus~.input-border {
+    border-color: rgba(0, 180, 255, 0.7);
+}
+
+.holo-input:focus~.input-border::before,
+.holo-input:focus~.input-border::after {
+    border-color: rgba(0, 180, 255, 1);
+    width: 30px;
+    height: 30px;
+}
+
+.holo-input:focus~.holo-scan-line {
+    opacity: 1;
+    animation: scan-animation 2s infinite ease-in-out;
+}
+
+.holo-input:focus~.input-glow {
+    opacity: 1;
+}
+
+.holo-input:focus~.input-active-indicator {
+    opacity: 1;
+    background: rgba(0, 200, 255, 1);
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
+    transform: scale(1.2);
+}
+
+.holo-input:focus~.input-label {
+    color: rgba(0, 200, 255, 1);
+    text-shadow: 0 0 10px rgba(0, 200, 255, 0.7);
+    transform: translateY(-5px);
+}
+
+.holo-input:focus~.input-data-visualization {
+    opacity: 1;
+}
+
+.holo-input:focus~.input-data-visualization .data-segment {
+    animation: data-pulse 2s infinite;
+    animation-delay: calc(var(--index) * 0.1s);
+}
+
+.holo-input:focus~.input-status {
+    opacity: 1;
+}
+
+.holo-input:focus~.interface-lines .interface-line {
+    background: rgba(0, 200, 255, 0.6);
+}
+
+.holo-input:focus~.input-particles .input-particle {
+    opacity: 1;
+    animation: particle-float 3s infinite ease-in-out;
+    animation-delay: calc(var(--index) * 0.2s);
+}
+
+.holo-input:hover {
+    background: rgba(0, 15, 40, 0.75);
+}
+
+.holo-input:hover~.input-active-indicator {
+    opacity: 0.6;
+}
+
+.power-indicator {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg,
+            rgba(0, 180, 255, 0.7) 0%,
+            rgba(0, 180, 255, 0.3) 100%);
+    bottom: 0;
+    left: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+    z-index: 3;
+}
+
+.holo-input:focus~.power-indicator {
+    transform: scaleX(1);
+}
+
+/* ── Search bar ── */
+.search-wrap {
+    position: relative;
+}
+
+.search-wrap .bi-search {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+}
+
+#searchInput {
+    padding-left: 40px;
+    border-radius: 10px;
+}
+
+/* ── Cards ── */
+.link-card {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    background: rgba(255, 255, 255, .04);
+    transition: transform .2s, box-shadow .2s;
+}
+
+.link-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+}
+
+.link-card.my-subject {
+    border-left: 4px solid #198754;
+}
+
+/* ── Short code pill ── */
+.short-code-pill {
+    font-family: 'Courier New', monospace;
+    font-size: .75rem;
+    letter-spacing: 2px;
+    background: rgba(13, 110, 253, .15);
+    color: #6ea8fe;
+    border: 1px solid rgba(13, 110, 253, .3);
+    border-radius: 6px;
+    padding: 2px 10px;
+}
+
+/* ── Link display ── */
+.link-display {
+    font-family: monospace;
+    font-size: .8rem;
+    background: rgba(0, 0, 0, .3);
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 8px;
+    padding: 10px 14px;
+    word-break: break-all;
+    color: #adb5bd;
+}
+
+/* ── Instructor badge ── */
+.instructor-badge {
+    background: rgba(255, 255, 255, .07);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: .8rem;
+}
+
+/* ── Empty state ── */
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* ── Counter badge ── */
+.count-badge {
+    background: rgba(13, 110, 253, .2);
+    color: #6ea8fe;
+    border-radius: 20px;
+    padding: 2px 14px;
+    font-size: .85rem;
+}
+
+/* ── No results ── */
+#noResults {
+    display: none;
+}
