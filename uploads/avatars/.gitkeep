@@ -1,0 +1,4 @@
+# Dito naka-imbak ang profile picture ng mga user account
+# (user_<id>.jpg|png|webp). Ginagawa rin ito ng crud/updateProfile.php
+# kung wala pa, pero mas maaasahan kung nauna nang naka-deploy ang
+# folder — hindi lahat ng hosting ay may write permission sa uploads/.

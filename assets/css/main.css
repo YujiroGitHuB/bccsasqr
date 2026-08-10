@@ -572,6 +572,15 @@ h4 {
   font-size: 1.1rem;
   border: 3px solid rgba(102, 126, 234, 0.2);
   transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+/* May larawan nang na-upload — pumapalit ito sa initials. */
+.avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 @media (min-width: 768px) {
@@ -828,50 +837,471 @@ h4 {
   background: rgba(102, 126, 234, 0.7);
 }
 
-/* Only for profile page */
-#profilePage .profile-container {
-  max-width: 550px;
-  margin: 30px auto;
-  background: #1a1a1a;
-  padding: 25px;
-  border-radius: 16px;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
-  transition: 0.3s ease;
+/* ============================================================
+   PROFILE PAGE  (#profilePage)
+
+   Dalawang hanay: buod ng account (avatar, role, huling login) sa
+   kaliwa, mga field sa kanan. Sa ilalim ng 992px ay nagsasalansan
+   ito — iisang hanay sa telepono.
+   ============================================================ */
+#profilePage {
+  max-width: 1080px;
+  margin: 0 auto;
 }
 
-#profilePage .profile-container:hover {
-  box-shadow: 0 0 35px rgba(0, 123, 255, 0.3);
-  transform: translateY(-3px);
+#profilePage .profile-head {
+  margin: 4px 0 22px;
+}
+
+#profilePage .profile-head h2 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+#profilePage .profile-head h2 i {
+  color: #667eea;
+}
+
+#profilePage .profile-head p {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+#profilePage .profile-shell {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+#profilePage .profile-card {
+  position: relative;
+  background: #16161a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+/* ── Kaliwang card ─────────────────────────────────────────── */
+#profilePage .profile-side {
+  padding: 0 22px 22px;
+  text-align: center;
+}
+
+/* Banda ng kulay sa likod ng avatar — nagbibigay ng lalim sa
+   card nang hindi kailangan ng larawan. */
+#profilePage .profile-cover {
+  height: 92px;
+  margin: 0 -22px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+#profilePage .profile-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 120%, rgba(255, 255, 255, 0.25), transparent 60%);
+}
+
+#profilePage .avatar-block {
+  position: relative;
+  width: 124px;
+  margin: -62px auto 14px;
+}
+
+#profilePage .avatar-ring {
+  width: 124px;
+  height: 124px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+#profilePage .avatar-photo,
+#profilePage .avatar-initials {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid #16161a;
+  background: #101014;
+}
+
+#profilePage .avatar-photo {
+  display: none;
+  object-fit: cover;
+}
+
+#profilePage .avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+/* Larawan ang ipinapakita kapag may na-upload; kung wala, initials. */
+#profilePage .avatar-block.has-photo .avatar-photo {
+  display: block;
+}
+
+#profilePage .avatar-block.has-photo .avatar-initials {
+  display: none;
+}
+
+#profilePage .avatar-edit {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid #16161a;
+  background: #0d6efd;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+#profilePage .avatar-edit:hover {
+  background: #3b82f6;
+  transform: scale(1.08);
+}
+
+#profilePage .profile-name-lg {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #f1f5f9;
+  word-break: break-word;
+}
+
+#profilePage .profile-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #c7d2fe;
+  background: rgba(102, 126, 234, 0.15);
+  border: 1px solid rgba(102, 126, 234, 0.35);
+}
+
+#profilePage .avatar-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 18px 0 8px;
+  flex-wrap: wrap;
+}
+
+#profilePage .avatar-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+#profilePage .profile-meta {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  text-align: left;
+}
+
+#profilePage .profile-meta li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 2px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+#profilePage .profile-meta li:last-child {
+  border-bottom: 0;
+}
+
+#profilePage .profile-meta span {
+  color: #94a3b8;
+}
+
+#profilePage .profile-meta b {
+  color: #e2e8f0;
+  font-weight: 600;
+  text-align: right;
+}
+
+#profilePage .status-pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+#profilePage .status-pill.on {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.14);
+}
+
+#profilePage .status-pill.off {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.14);
+}
+
+/* ── Kanang card ───────────────────────────────────────────── */
+#profilePage .profile-main {
+  padding: 26px 26px 22px;
+}
+
+#profilePage .profile-section-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+#profilePage .profile-section-title>i {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  color: #a5b4fc;
+  background: rgba(102, 126, 234, 0.14);
+  border: 1px solid rgba(102, 126, 234, 0.28);
+}
+
+#profilePage .profile-section-title h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 2px 0 2px;
+  color: #f1f5f9;
+}
+
+#profilePage .profile-section-title small {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+#profilePage .profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#profilePage .field label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 7px;
+}
+
+#profilePage .input-icon {
+  position: relative;
+}
+
+#profilePage .input-icon>i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+  transition: color 0.2s ease;
 }
 
 #profilePage .profile-input {
   display: block;
   width: 100%;
-  background: #111;
-  border: 1px solid #333;
-  color: white;
-  padding: 12px;
-  border-radius: 10px;
+  background: #0f0f13;
+  border: 1px solid #2a2a33;
+  color: #f1f5f9;
+  padding: 12px 14px 12px 42px;
+  border-radius: 11px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-#profilePage .profile-btn-save {
+#profilePage .profile-input::placeholder {
+  color: #4b5563;
+}
+
+#profilePage .profile-input:focus {
+  outline: none;
+  background: #101018;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18);
+}
+
+#profilePage .input-icon:focus-within>i {
+  color: #a5b4fc;
+}
+
+#profilePage .profile-input.is-invalid {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Ang password field ay may butones sa kanan — bigyan ng lugar. */
+#profilePage .input-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+#profilePage .input-eye:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#profilePage #passwordField {
+  padding-right: 46px;
+}
+
+#profilePage .field-error {
+  display: none;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #f87171;
+}
+
+#profilePage .field-error.show {
   display: block;
-  width: 100%;
+}
+
+#profilePage .profile-divider {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin: 24px 0 20px;
+}
+
+#profilePage .profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* ── Mga butones ───────────────────────────────────────────── */
+#profilePage .profile-btn-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 170px;
   background: linear-gradient(135deg, #0d6efd, #007bff);
   color: white;
   border: none;
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 10px;
-  transition: 0.3s;
+  padding: 12px 22px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 11px;
+  transition: 0.25s ease;
   cursor: pointer;
-  margin-top: 10px;
 }
 
-#profilePage .profile-btn-save:hover {
+#profilePage .profile-btn-save:hover:not(:disabled) {
   background: linear-gradient(135deg, #0b5ed7, #0056b3);
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(13, 110, 253, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(13, 110, 253, 0.35);
+}
+
+#profilePage .profile-btn-save:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+#profilePage .profile-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+#profilePage .profile-btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+#profilePage .profile-btn-ghost.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+#profilePage .profile-btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 992px) {
+  #profilePage .profile-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  #profilePage .profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #profilePage .profile-main {
+    padding: 20px 16px 18px;
+  }
+
+  #profilePage .profile-side {
+    padding: 0 16px 18px;
+  }
+
+  #profilePage .profile-cover {
+    margin: 0 -16px;
+  }
+
+  /* Buong lapad ang mga butones para madaling matapik sa telepono. */
+  #profilePage .profile-actions {
+    flex-direction: column-reverse;
+  }
+
+  #profilePage .profile-actions .profile-btn-save,
+  #profilePage .profile-actions .profile-btn-ghost {
+    width: 100%;
+  }
 }
 
 /* Header Styling */
