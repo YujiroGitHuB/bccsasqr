@@ -11,7 +11,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
     <!-- MAIN -->
     <small class="sidebar-label">MAIN</small>
-    <a href="../pages/dashboard.php" class="nav-link <?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?>" title="Dashboard">
+    <a href="../pages/dashboard.php" class="nav-link <?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?>" data-tip="Dashboard">
         <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
     </a>
 
@@ -19,7 +19,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <!-- STUDENTS -->
         <small class="sidebar-label">STUDENTS</small>
         <div class="nav-item dropdown">
-            <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['students.php', 'student_photo_profile.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#studentMenu">
+            <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['students.php', 'student_photo_profile.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#studentMenu" data-tip="Students">
                 <i class="bi bi-people-fill"></i> <span>Students</span>
             </a>
             <div class="collapse ps-3" id="studentMenu">
@@ -37,7 +37,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <?php } elseif (isStaff()) { ?>
         <!-- STUDENTS (instructor: view-only photos of their sections) -->
         <small class="sidebar-label">STUDENTS</small>
-        <a href="../pages/student_photo_profile.php" class="nav-link <?php echo ($current_page == 'student_photo_profile.php') ? 'active' : ''; ?>" title="Student Photos">
+        <a href="../pages/student_photo_profile.php" class="nav-link <?php echo ($current_page == 'student_photo_profile.php') ? 'active' : ''; ?>" data-tip="Student Photos">
             <i class="bi bi-person-badge"></i> <span>Student Photos</span>
         </a>
     <?php } ?>
@@ -45,7 +45,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- ATTENDANCE -->
     <small class="sidebar-label">ATTENDANCE</small>
     <div class="nav-item dropdown">
-        <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['attendance.php', 'generate_attendance_link.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#attendanceMenu">
+        <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['attendance.php', 'generate_attendance_link.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#attendanceMenu" data-tip="Attendance">
             <i class="bi bi-journal-text"></i> <span>Attendance</span>
         </a>
         <div class="collapse ps-3" id="attendanceMenu">
@@ -61,7 +61,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- ACADEMICS -->
     <small class="sidebar-label">ACADEMICS</small>
     <div class="nav-item dropdown">
-        <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['manage_subject.php', 'manage_instructor_section.php', 'manage_instructor_subject.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#acadMenu">
+        <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['manage_subject.php', 'manage_instructor_section.php', 'manage_instructor_subject.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#acadMenu" data-tip="Academic Settings">
             <i class="bi bi-gear-fill"></i> <span>Academic Settings</span>
         </a>
         <div class="collapse ps-3" id="acadMenu">
@@ -86,7 +86,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <!-- ADMINISTRATION -->
         <small class="sidebar-label">ADMINISTRATION</small>
         <div class="nav-item dropdown">
-            <a href="#" class="nav-link dropdown-toggle <?php echo ($current_page == 'manage_users.php') ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#userMenu">
+            <a href="#" class="nav-link dropdown-toggle <?php echo ($current_page == 'manage_users.php') ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#userMenu" data-tip="Manage Users">
                 <i class="bi bi-gear-fill"></i> <span>Manage Users</span>
             </a>
             <div class="collapse ps-3" id="userMenu">
@@ -100,7 +100,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- QR TOOLS -->
     <small class="sidebar-label">QR TOOLS</small>
     <div class="nav-item dropdown">
-        <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['QRcode.php', 'view.php', 'qrscanner.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#qrMenu">
+        <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['QRcode.php', 'view.php', 'qrscanner.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#qrMenu" data-tip="QR Tools">
             <i class="bi bi-qr-code"></i><span>QR Tools</span>
         </a>
         <div class="collapse ps-3" id="qrMenu">
@@ -119,40 +119,23 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <?php if (isAdmin()) { ?>
         <!-- SYSTEM -->
         <small class="sidebar-label">SYSTEM</small>
-        <a href="../pages/backup.php" class="nav-link <?php echo ($current_page == 'backup.php') ? 'active' : ''; ?>" title="Database Backup">
+        <a href="../pages/backup.php" class="nav-link <?php echo ($current_page == 'backup.php') ? 'active' : ''; ?>" data-tip="Database Backup">
             <i class="bi bi-database"></i><span>Database Backup</span>
         </a>
     <?php } ?>
 
     <!-- ACCOUNT -->
     <small class="sidebar-label">ACCOUNT</small>
-    <a href="#" class="nav-link" title="Logout" onclick="confirmLogout()">
+    <a href="#" class="nav-link" data-tip="Logout" onclick="confirmLogout()">
         <i class="bi bi-box-arrow-in-right"></i> <span>Logout</span>
     </a>
 
     <?php include __DIR__ . "/../components/footer.php"; ?>
 </div>
 
-<style>
-    .sidebar-label {
-        display: block;
-        font-size: 0.65rem;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-        color: #6c757d;
-        padding: 0.85rem 1rem 0.2rem 1rem;
-        text-transform: uppercase;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-
-    /* When sidebar is collapsed — hide text, show thin line instead */
-    .sidebar.collapsed .sidebar-label {
-        font-size: 0;
-        padding: 0.4rem 1rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-</style>
+<!-- Ang mga estilo ng sidebar ay nasa assets/css/sidebar.css na
+     (naka-link sa includes/header.php) — hindi na nakakalat sa
+     inline na <style> dito at sa dalawang bloke sa main.css. -->
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -180,20 +163,78 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
         dropdowns.forEach(function(menu) {
             const collapseEl = document.getElementById(menu.toggle.substring(1));
-            const hasActiveSubmenu = menu.pages.includes("<?php echo $current_page; ?>");
+            if (!collapseEl) return;
 
-            if (hasActiveSubmenu || localStorage.getItem(menu.toggle) === 'true') {
-                collapseEl.classList.add('show');
-            } else {
-                collapseEl.classList.remove('show');
-            }
+            const toggleEl = document.querySelector('[data-bs-target="' + menu.toggle + '"]');
+            const hasActiveSubmenu = menu.pages.includes("<?php echo $current_page; ?>");
+            const open = hasActiveSubmenu || localStorage.getItem(menu.toggle) === 'true';
+
+            collapseEl.classList.toggle('show', open);
+
+            // Ang paunang estado ay itinatakda nang diretso sa classList,
+            // kaya hindi nakikita ng Bootstrap ang pagbubukas at hindi
+            // nito naaayos ang sarili nitong `.collapsed`. Sarili nating
+            // klase ang ginagamit para sa direksyon ng caret.
+            const syncCaret = function(isOpen) {
+                if (!toggleEl) return;
+                toggleEl.classList.toggle('expanded', isOpen);
+                toggleEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            };
+            syncCaret(open);
 
             collapseEl.addEventListener('shown.bs.collapse', function() {
                 localStorage.setItem(menu.toggle, 'true');
+                syncCaret(true);
             });
             collapseEl.addEventListener('hidden.bs.collapse', function() {
                 localStorage.setItem(menu.toggle, 'false');
+                syncCaret(false);
             });
         });
+
+        // ── Tooltip para sa naka-collapse na rail ────────────────
+        // Ang `::after` na tooltip sa main.css ay hindi kailanman
+        // nakikita: `overflow-x: hidden` ang .sidebar, kaya naputol
+        // ito sa gilid ng 80px na rail. Ang naka-fixed na elemento sa
+        // <body> ay nakakalabas sa clip na iyon. Dito rin nakukuha ng
+        // mga submenu item ang pangalan nila — mga hubad na icon lang
+        // sila noon kapag naka-collapse.
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+
+        const tip = document.createElement('div');
+        tip.className = 'sidebar-tip';
+        document.body.appendChild(tip);
+
+        const hideTip = function() {
+            tip.classList.remove('show');
+        };
+
+        sidebar.addEventListener('mouseover', function(e) {
+            const link = e.target.closest('.nav-link');
+            // Sa telepono ay buo ang mga label (mobile.css), kaya
+            // dagdag na kalat lang ang tooltip doon.
+            if (!link || !sidebar.classList.contains('collapsed') || window.innerWidth <= 992) {
+                return hideTip();
+            }
+
+            // `data-tip` at hindi `title`: ang katutubong tooltip ng
+            // browser ay lalabas din sa ibabaw ng sarili natin.
+            // Ang mga submenu item ay walang data-tip — ang sarili
+            // nilang teksto ang gamit (naka-`font-size: 0` sila kapag
+            // collapsed, pero nasa DOM pa rin ang teksto).
+            const label = (link.getAttribute('data-tip') || link.textContent || '').trim();
+            if (!label) return hideTip();
+
+            const rect = link.getBoundingClientRect();
+            tip.textContent = label;
+            tip.style.left = (rect.right + 12) + 'px';
+            tip.style.top = (rect.top + rect.height / 2) + 'px';
+            tip.classList.add('show');
+        });
+
+        sidebar.addEventListener('mouseleave', hideTip);
+        sidebar.addEventListener('scroll', hideTip, { passive: true });
+        window.addEventListener('resize', hideTip);
     });
 </script>

@@ -1,0 +1,294 @@
+/* ============================================================
+   SIDEBAR
+
+   Ikinakarga PAGKATAPOS ng main.css at BAGO ang mobile.css, kaya
+   nananaig ito sa mga lumang panuntunan sa main.css habang buo pa
+   rin ang off-canvas na ayos sa telepono.
+
+   Ang inaayos dito:
+   · Puti/light-theme na labi sa madilim na rail — ang patayong
+     linya ng submenu ay #dee2e6 at ang tuldok ay may 2px na PUTING
+     singsing; ang track ng scrollbar ay #f1f1f1 (isang mapusyaw na
+     guhit sa gilid ng madilim na sidebar).
+   · Nagbabagong hugis kapag hi-nover: 10px ang radius ng .nav-link
+     pero 5px ang hover at active — kumikirot ang sulok kapag
+     dumaan ang mouse.
+   · `transform: translateX(5px)` sa hover — gumagalaw ang buong
+     hanay, at ang sidebar ay `overflow-x: hidden`.
+   · Mahina ang active state: patag na #384456, walang accent, kaya
+     mahirap agad makita kung nasaan ka sa anim na grupo.
+   · Ang footer ay sumusunod lang sa huling item sa halip na
+     nakadikit sa ilalim.
+   ============================================================ */
+
+.sidebar {
+    /* Kailangan ng flex column para maitulak ng footer ang sarili
+       sa ilalim gamit ang `margin-top: auto`. */
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #161a24 0%, #0d1017 100%);
+    border-right: 1px solid rgba(255, 255, 255, .06);
+    box-shadow: 2px 0 18px rgba(0, 0, 0, .35);
+}
+
+/* Madilim na scrollbar — hindi na ang #f1f1f1 na track na
+   nagmumukhang puting guhit sa gilid ng rail. */
+.sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .1);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, .2);
+}
+
+/* ─── Logo ────────────────────────────────────────────────── */
+.sidebar .logo {
+    padding: 22px 12px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    margin-bottom: 4px;
+}
+
+.logo-img {
+    width: 62px;
+    height: 62px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .18), 0 6px 18px rgba(0, 0, 0, .45);
+}
+
+.logo-text {
+    font-size: 1.05rem;
+    letter-spacing: 1.5px;
+    color: #f1f5f9;
+}
+
+/* ─── Pamagat ng grupo ────────────────────────────────────── */
+.sidebar-label {
+    display: block;
+    font-size: .63rem;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .3);
+    padding: 1rem 1.35rem .35rem;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Kapag naka-collapse, guhit na lang ang pamagat — walang lugar
+   para sa teksto sa 80px na rail. */
+.sidebar.collapsed .sidebar-label {
+    font-size: 0;
+    padding: .5rem .9rem;
+    border-top: 1px solid rgba(255, 255, 255, .07);
+}
+
+/* ─── Nav item ────────────────────────────────────────────── */
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 2px 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: .89rem;
+    font-weight: 500;
+    color: #94a3b8;
+    text-decoration: none;
+    /* Kulay at background lang ang nagbabago — walang paggalaw ng
+       posisyon, na nagdudulot ng pagkurap sa gilid ng sidebar. */
+    transition: background .18s ease, color .18s ease;
+}
+
+.nav-link i {
+    flex-shrink: 0;
+    width: 20px;
+    margin-right: 0;
+    font-size: 1.05rem;
+    text-align: center;
+    transition: color .18s ease;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, .05);
+    color: #e2e8f0;
+    border-radius: 10px;
+    /* Kinakansela ang translateX(5px) ng main.css. */
+    transform: none;
+}
+
+.nav-link:hover i {
+    color: #a5b4fc;
+}
+
+/* Ang aktibong pahina ay may accent bar sa kaliwa — ang laman ng
+   sidebar ay anim na grupo, kaya kailangang makita agad ang
+   kinaroroonan mo nang hindi binabasa lahat. */
+.nav-link.active,
+.dropdown-toggle.active {
+    background: linear-gradient(90deg, rgba(102, 126, 234, .22), rgba(102, 126, 234, .05));
+    box-shadow: inset 3px 0 0 #818cf8;
+    border-radius: 10px;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.nav-link.active i,
+.dropdown-toggle.active i {
+    color: #a5b4fc;
+}
+
+/* ─── Submenu ─────────────────────────────────────────────── */
+.nav-item.dropdown .collapse {
+    margin-left: 26px;
+}
+
+/* Dating #dee2e6 — mapusyaw na linya sa madilim na rail. */
+.nav-item.dropdown .collapse::before {
+    background: rgba(255, 255, 255, .09);
+    width: 1px;
+}
+
+.submenu-item {
+    padding: 8px 12px 8px 16px !important;
+    margin: 2px 10px 2px 4px;
+    font-size: .83rem;
+    border-radius: 8px;
+    color: #8b98ab;
+}
+
+/* Ang tuldok na may PUTING singsing ay pinalitan ng maikling
+   segment sa mismong linya: patay ito kapag hindi aktibo at
+   nagniningas kapag aktibo — hindi na dagdag na tuldok na ink. */
+.submenu-item::before {
+    left: -1px;
+    width: 2px;
+    height: 16px;
+    border-radius: 2px;
+    border: 0;
+    background: transparent;
+    transition: background .18s ease;
+}
+
+.submenu-item:hover {
+    background: rgba(255, 255, 255, .04);
+    color: #e2e8f0;
+}
+
+.submenu-item:hover::before {
+    background: rgba(129, 140, 248, .5);
+}
+
+.submenu-item.active {
+    background: rgba(102, 126, 234, .14);
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.submenu-item.active::before {
+    background: #818cf8;
+    width: 2px;
+}
+
+.submenu-item.active i,
+.submenu-item i {
+    color: inherit;
+    width: 18px;
+    font-size: .95rem;
+}
+
+/* ─── Caret ───────────────────────────────────────────────── */
+.dropdown-toggle::after {
+    margin-left: auto;
+    color: rgba(255, 255, 255, .3);
+    transition: transform .2s ease;
+}
+
+/* Ang klaseng `.expanded` ay itinatakda ng script sa sidebar.php
+   kapag binuksan ang isang grupo — hindi maaasahan ang sariling
+   `.collapsed` ng Bootstrap dito dahil ang unang estado ay
+   itinatakda nang diretso sa classList. */
+.dropdown-toggle.expanded::after {
+    transform: rotate(180deg);
+}
+
+/* ─── Naka-collapse na rail (80px) ────────────────────────── */
+.sidebar.collapsed .nav-link {
+    justify-content: center;
+    padding: 11px 0;
+    gap: 0;
+}
+
+.sidebar.collapsed .nav-link i {
+    width: 100%;
+    margin-right: 0;
+}
+
+.sidebar.collapsed .submenu-item {
+    margin: 2px 10px;
+    padding: 8px 0 !important;
+}
+
+/* Ang tooltip na `::after` ng main.css ay HINDI kailanman
+   nakikita: ang .sidebar ay `overflow-x: hidden`, kaya naputol
+   ito sa gilid ng 80px na rail. Isang naka-fixed na elemento sa
+   <body> ang kapalit (tingnan ang sidebar.php) — nakakalabas iyon
+   sa clip. Pinapatay natin ang lumang bersyon para walang dobleng
+   tooltip kapag umepekto ito sa ibang browser. */
+.sidebar.collapsed .nav-link:hover::after {
+    content: none;
+}
+
+.sidebar-tip {
+    position: fixed;
+    z-index: 1100;
+    padding: 6px 11px;
+    border-radius: 8px;
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, .1);
+    color: #f1f5f9;
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-50%);
+    transition: opacity .12s ease;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .5);
+}
+
+.sidebar-tip.show {
+    opacity: 1;
+}
+
+/* ─── Footer ──────────────────────────────────────────────── */
+/* `!important` dahil may sariling inline na `margin-top: 30px` ang
+   components/footer.php — hindi puwedeng baguhin doon dahil anim
+   pang ibang page ang gumagamit ng parehong file. */
+.sidebar footer {
+    margin-top: auto !important;
+    padding: 16px 14px !important;
+    border-top: 1px solid rgba(255, 255, 255, .07);
+    font-size: .72rem !important;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, .35) !important;
+}
+
+.sidebar.collapsed footer {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .sidebar,
+    .sidebar * {
+        transition: none !important;
+    }
+}

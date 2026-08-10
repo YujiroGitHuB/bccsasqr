@@ -18,5 +18,9 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="<?= asset('../assets/css/main.css') ?>">
+<!-- Sidebar — pagkatapos ng main.css (para manaig sa mga lumang
+     panuntunan doon) at bago ang mobile.css (na dapat manatiling
+     huli para sa off-canvas na ayos sa telepono). -->
+<link rel="stylesheet" href="<?= asset('../assets/css/sidebar.css') ?>">
 <!-- Mobile/tablet layout — dapat MANATILING huli para manaig sa main.css -->
 <link rel="stylesheet" href="<?= asset('../assets/css/mobile.css') ?>">
