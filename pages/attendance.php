@@ -41,14 +41,27 @@ if ($from > $to) {
 
 <head>
     <?php include __DIR__ . "/../includes/header.php" ?>
+    <link rel="stylesheet" href="<?= asset('../assets/css/attendance-page.css') ?>">
 </head>
 
 <body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
-    <div class="content" id="content">
+    <div class="content att-page" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <h2>Attendance</h2>
+        <div class="att-hero">
+            <div class="att-hero-icon"><i class="bi bi-journal-text"></i></div>
+            <div class="att-hero-text">
+                <h2>Attendance</h2>
+                <p>Every QR scan lands here. Filter by date and section, then export.</p>
+            </div>
+            <div class="att-chips">
+                <span class="att-chip">
+                    <i class="bi bi-calendar-range"></i>
+                    <?= date('M j', strtotime($from)) ?> – <?= date('M j, Y', strtotime($to)) ?>
+                </span>
+            </div>
+        </div>
 
         <ul class="nav nav-tabs" id="attendanceTabs" role="tablist">
             <li class="nav-item" role="presentation">
@@ -71,24 +84,26 @@ if ($from > $to) {
 
             <!-- ══ RECORDS TAB ══════════════════════════════════════ -->
             <div class="tab-pane fade show active" id="records" role="tabpanel">
-                <div class="card p-3">
-                    <h5 class="mb-3 d-flex justify-content-between align-items-center">
-                        <span>Attendance Records</span>
-                        <div class="d-flex gap-2">
-                            <button id="deleteSelected" class="btn btn-danger btn-icon" disabled>
+                <div>
+                    <div class="att-toolbar">
+                        <div class="att-toolbar-title">
+                            <i class="bi bi-table"></i> Attendance Records
+                        </div>
+                        <div class="att-actions">
+                            <button id="deleteSelected" class="att-btn danger" disabled>
                                 <i class="bi bi-trash"></i>
                                 <span class="btn-text">Delete Selected</span>
                             </button>
                             <?php if (isAdmin()): ?>
-                                <button id="deleteAll" class="btn btn-danger btn-icon">
-                                    <i class="bi bi-trash"></i>
+                                <button id="deleteAll" class="att-btn danger">
+                                    <i class="bi bi-trash-fill"></i>
                                     <span class="btn-text">Delete All</span>
                                 </button>
                             <?php endif; ?>
                         </div>
-                    </h5>
+                    </div>
 
-                    <div class="card">
+                    <div class="att-card">
                         <div id="tableLoader" class="text-center py-5">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -124,33 +139,34 @@ if ($from > $to) {
                         <div id="tableContainer" style="display:none;">
                             <!-- Date window: nagre-reload ng page, kaya rows lang sa
                                  loob ng range ang kinukuha mula sa database. -->
-                            <form method="get" class="d-flex align-items-end gap-3 mb-3 flex-wrap">
-                                <div>
-                                    <label for="fromDate" class="form-label mb-1">From:</label>
-                                    <input type="date" id="fromDate" name="from"
-                                           value="<?= htmlspecialchars($from) ?>"
-                                           class="form-control form-control-sm">
-                                </div>
-                                <div>
-                                    <label for="toDate" class="form-label mb-1">To:</label>
-                                    <input type="date" id="toDate" name="to"
-                                           value="<?= htmlspecialchars($to) ?>"
-                                           class="form-control form-control-sm">
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-search"></i> Show
-                                </button>
-                                <a href="attendance.php" class="btn btn-outline-secondary btn-sm">
-                                    Last 30 days
-                                </a>
-                                <span class="text-muted small ms-1">
-                                    <?= number_format($rowCount) ?> record<?= $rowCount === 1 ? '' : 's' ?> loaded
-                                </span>
-                            </form>
+                            <!-- Isang hanay na ang date window (nagre-reload, dahil
+                                 ang range ang nagtatakda kung anong rows ang kukunin
+                                 sa database) at ang section filter (JS lang, sa loob
+                                 ng nakuha nang datos). -->
+                            <div class="att-filters">
+                                <form method="get" class="att-filter-form">
+                                    <div>
+                                        <label for="fromDate" class="form-label">From</label>
+                                        <input type="date" id="fromDate" name="from"
+                                               value="<?= htmlspecialchars($from) ?>"
+                                               class="form-control form-control-sm">
+                                    </div>
+                                    <div>
+                                        <label for="toDate" class="form-label">To</label>
+                                        <input type="date" id="toDate" name="to"
+                                               value="<?= htmlspecialchars($to) ?>"
+                                               class="form-control form-control-sm">
+                                    </div>
+                                    <button type="submit" class="att-btn primary">
+                                        <i class="bi bi-search"></i> Show
+                                    </button>
+                                    <a href="attendance.php" class="att-btn ghost">
+                                        Last 30 days
+                                    </a>
+                                </form>
 
-                            <div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
-                                <div>
-                                    <label for="filterSection" class="form-label mb-1">Filter by Section:</label>
+                                <div class="att-filter-group">
+                                    <label for="filterSection" class="form-label">Section</label>
                                     <select id="filterSection" class="form-select form-select-sm">
                                         <option value="">All Sections</option>
                                         <?php
@@ -179,9 +195,14 @@ if ($from > $to) {
                                         ?>
                                     </select>
                                 </div>
-                                <button id="resetFilters" class="btn btn-secondary btn-sm">
+
+                                <button id="resetFilters" class="att-btn ghost">
                                     <i class="bi bi-recycle"></i> Reset Filters
                                 </button>
+
+                                <span class="att-count">
+                                    <?= number_format($rowCount) ?> record<?= $rowCount === 1 ? '' : 's' ?> loaded
+                                </span>
                             </div>
 
                             <div class="table-responsive">
@@ -230,8 +251,13 @@ if ($from > $to) {
 
             <!-- ══ SUMMARY TAB ══════════════════════════════════════ -->
             <div class="tab-pane fade" id="summary" role="tabpanel">
-                <div class="card p-3">
-                    <h5 class="mb-3">Attendance Summary</h5>
+                <div>
+                    <div class="att-toolbar">
+                        <div class="att-toolbar-title">
+                            <i class="bi bi-bar-chart"></i> Attendance Summary
+                        </div>
+                    </div>
+                    <div class="att-card">
 
                     <?php
                     // Ang summary ay kinukuha na ng get_summary_ajax.php kapag
@@ -292,9 +318,10 @@ if ($from > $to) {
                                 <tbody></tbody>
                             </table>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </div><!-- /summaryTableContainer -->
+                </div><!-- /att-card -->
+                </div><!-- /summary wrapper -->
+            </div><!-- /tab-pane -->
 
         </div><!-- /tab-content -->
     </div><!-- /content -->

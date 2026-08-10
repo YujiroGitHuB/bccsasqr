@@ -1,0 +1,460 @@
+/* ============================================================
+   ATTENDANCE PAGE
+
+   Kulay: violet (#8b5cf6 → #7c3aed).
+
+   Ang sistema ng kulay ay sumusunod sa PANGKAT sa sidebar, hindi
+   sa bawat page:
+       MAIN / ACADEMICS ....... indigo  #667eea
+       STUDENTS ............... sky     #0ea5e9
+       ATTENDANCE ............. violet  #8b5cf6   ← ito
+       ADMINISTRATION ......... asul    #3b82f6
+
+   Bakit violet: hindi pa ito kinukuha ng ibang pangkat, at
+   malayo ito sa berde/amber/pula na may kahulugan nang
+   Present / babala / Absent. Ang page na ito mismo ang
+   pinakamadalas magpakita ng mga estadong iyon, kaya hindi
+   puwedeng isa sa kanila ang identidad nito.
+   ============================================================ */
+
+.att-page {
+    --att: #8b5cf6;
+    --att-deep: #7c3aed;
+    --att-soft: rgba(139, 92, 246, .14);
+    --att-line: rgba(139, 92, 246, .3);
+    --att-ink: #c4b5fd;
+    --att-surface: #16161a;
+    --att-border: rgba(255, 255, 255, .07);
+}
+
+/* ─── Hero ────────────────────────────────────────────────── */
+.att-page .att-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.25rem;
+    border-radius: 16px;
+    border: 1px solid var(--att-border);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(139, 92, 246, .16), transparent 55%),
+        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+    overflow: hidden;
+}
+
+.att-page .att-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--att), var(--att-deep));
+    box-shadow: 0 0 12px rgba(139, 92, 246, .6);
+}
+
+.att-page .att-hero-icon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--att), var(--att-deep));
+    box-shadow: 0 8px 20px rgba(139, 92, 246, .35);
+}
+
+.att-page .att-hero-text {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.att-page .att-hero-text h2 {
+    margin: 0 0 3px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: #fff;
+}
+
+.att-page .att-hero-text p {
+    margin: 0;
+    font-size: .85rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.att-page .att-chips {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.att-page .att-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .42rem .85rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--att-ink);
+    background: var(--att-soft);
+    border: 1px solid var(--att-line);
+    white-space: nowrap;
+}
+
+/* ─── Tabs ────────────────────────────────────────────────── */
+/* Dating hilaw na `nav-tabs` ng Bootstrap — may nakausling gilid
+   at hindi tugma sa madilim na card sa ilalim nito. */
+.att-page .nav-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--att-border);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, .28);
+}
+
+.att-page .nav-tabs .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem 1.1rem;
+    border: 0;
+    border-radius: 9px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #94a3b8;
+    background: transparent;
+    transition: background .18s ease, color .18s ease;
+}
+
+.att-page .nav-tabs .nav-link:hover {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, .05);
+}
+
+.att-page .nav-tabs .nav-link.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--att), var(--att-deep));
+    box-shadow: 0 4px 12px rgba(139, 92, 246, .3);
+}
+
+/* ─── Toolbar at card ─────────────────────────────────────── */
+.att-page .att-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: .9rem 1.15rem;
+    border-radius: 14px 14px 0 0;
+    border: 1px solid var(--att-border);
+    border-bottom: 0;
+    background: rgba(255, 255, 255, .02);
+}
+
+.att-page .att-toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    font-size: .95rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.att-page .att-toolbar-title i {
+    color: var(--att-ink);
+}
+
+.att-page .att-actions {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.att-page .att-card {
+    padding: 1.15rem;
+    border-radius: 0 0 14px 14px;
+    border: 1px solid var(--att-border);
+    background: var(--att-surface);
+}
+
+/* ─── Mga butones ─────────────────────────────────────────── */
+/* Palaging nakikita ang label — ang lumang `.btn-icon` ay itinatago
+   ito hanggang sa hi-nover, kaya dalawang magkamukhang pulang trash
+   icon ang magkatabi na walang paraan para pag-ibahin. */
+.att-page .att-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem .95rem;
+    border-radius: 10px;
+    font-size: .83rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    /* Ang "Last 30 days" ay isang <a> — may salungguhit ito kung
+       hindi tatanggalin, kaya hindi tugma sa katabing butones. */
+    text-decoration: none;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.att-page .att-btn .btn-text {
+    max-width: none;
+    opacity: 1;
+    margin-left: 0;
+}
+
+.att-page .att-btn.primary {
+    color: #fff;
+    border: none;
+    background: linear-gradient(135deg, var(--att), var(--att-deep));
+    box-shadow: 0 6px 16px rgba(139, 92, 246, .28);
+}
+
+.att-page .att-btn.primary:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+}
+
+.att-page .att-btn.ghost {
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .12);
+}
+
+.att-page .att-btn.ghost:hover {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+}
+
+.att-page .att-btn.danger {
+    color: #f87171;
+    background: rgba(239, 68, 68, .1);
+    border: 1px solid rgba(239, 68, 68, .22);
+}
+
+.att-page .att-btn.danger:hover:not(:disabled) {
+    background: rgba(239, 68, 68, .2);
+    color: #fca5a5;
+}
+
+/* Naka-disable hangga't walang napiling hanay — dapat halata iyon
+   nang hindi kailangang subukang pindutin. */
+.att-page .att-btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+/* ─── Filter bar ──────────────────────────────────────────── */
+.att-page .att-filters {
+    display: flex;
+    align-items: flex-end;
+    gap: .75rem;
+    flex-wrap: wrap;
+    padding: .9rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(255, 255, 255, .02);
+}
+
+/* Ang form ang humahawak sa date window (GET reload); hiwalay ang
+   section filter (JS lang). Magkaibang elemento sila pero iisang
+   hanay ang dapat nilang hitsura. */
+.att-page .att-filter-form,
+.att-page .att-filter-group {
+    display: flex;
+    align-items: flex-end;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.att-page .att-filters .form-label {
+    display: block;
+    margin-bottom: .3rem;
+    font-size: .74rem;
+    font-weight: 600;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .4);
+}
+
+.att-page .att-filters .form-control,
+.att-page .att-filters .form-select {
+    background: #0f0f13;
+    border: 1px solid #2a2a33;
+    border-radius: 9px;
+    color: #f1f5f9;
+    font-size: .85rem;
+    padding: .42rem .7rem;
+    color-scheme: dark;
+}
+
+.att-page .att-filters .form-control:focus,
+.att-page .att-filters .form-select:focus {
+    outline: none;
+    border-color: var(--att);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, .18);
+}
+
+.att-page .att-count {
+    font-size: .8rem;
+    color: rgba(255, 255, 255, .4);
+    padding-bottom: .45rem;
+}
+
+/* ─── Table ───────────────────────────────────────────────── */
+.att-page #example thead th,
+.att-page #summaryTable thead th {
+    background: rgba(139, 92, 246, .08);
+    border-bottom: 1px solid var(--att-line);
+    padding: .8rem .9rem;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--att-ink);
+}
+
+.att-page #example tbody td,
+.att-page #summaryTable tbody td {
+    padding: .7rem .9rem;
+    font-size: .85rem;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+}
+
+/* Ang `table-striped` ay naglalagay ng sariling background kada
+   isang hanay — guhit-guhit ang labas sa madilim na card. */
+.att-page #example.table-striped>tbody>tr:nth-of-type(odd)>* {
+    --bs-table-accent-bg: transparent;
+    background-color: transparent;
+    color: #e2e8f0;
+}
+
+.att-page #example tbody tr:hover td,
+.att-page #summaryTable tbody tr:hover td {
+    background: rgba(139, 92, 246, .07);
+}
+
+/* Ang pambura kada hanay ay solidong pulang bloke noon. Sa isang
+   talahanayang libo ang hanay, sila ang unang nakikita — hindi ang
+   pangalan o ang oras. */
+.att-page .btn-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 32px;
+    padding: 0 .55rem;
+    border-radius: 9px;
+    font-size: .82rem;
+    background: rgba(239, 68, 68, .12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, .25);
+}
+
+.att-page .btn-delete:hover {
+    background: rgba(239, 68, 68, .22);
+    color: #fca5a5;
+}
+
+.att-page .spinner-border {
+    color: var(--att-ink) !important;
+}
+
+/* ─── Mga kontrol ng DataTables ───────────────────────────── */
+.att-page .dataTables_wrapper .dataTables_filter input,
+.att-page .dataTables_wrapper .dataTables_length select {
+    background: #0f0f13;
+    border: 1px solid #2a2a33;
+    border-radius: 9px;
+    color: #f1f5f9;
+    padding: .4rem .7rem;
+    font-size: .85rem;
+}
+
+.att-page .dataTables_wrapper .dataTables_filter input:focus,
+.att-page .dataTables_wrapper .dataTables_length select:focus {
+    outline: none;
+    border-color: var(--att);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, .18);
+}
+
+.att-page .dataTables_wrapper .dataTables_info,
+.att-page .dataTables_wrapper .dataTables_length,
+.att-page .dataTables_wrapper .dataTables_filter {
+    font-size: .82rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.att-page .dataTables_wrapper .page-link {
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .08);
+    color: #cbd5e1;
+    border-radius: 8px;
+    margin: 0 2px;
+    font-size: .82rem;
+}
+
+.att-page .dataTables_wrapper .page-item.active .page-link {
+    background: linear-gradient(135deg, var(--att), var(--att-deep));
+    border-color: transparent;
+    color: #fff;
+}
+
+.att-page .dt-buttons .btn {
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: #cbd5e1;
+    border-radius: 9px;
+    font-size: .8rem;
+    padding: .4rem .8rem;
+    margin-right: .35rem;
+}
+
+.att-page .dt-buttons .btn:hover {
+    background: rgba(139, 92, 246, .18);
+    color: #fff;
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .att-page .att-hero {
+        padding: 1rem;
+    }
+
+    .att-page .att-hero-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .att-page .att-hero-text h2 {
+        font-size: 1.15rem;
+    }
+
+    .att-page .att-chips {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .att-page .nav-tabs,
+    .att-page .att-actions {
+        width: 100%;
+    }
+
+    .att-page .nav-tabs .nav-link,
+    .att-page .att-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
