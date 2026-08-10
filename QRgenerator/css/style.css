@@ -1108,13 +1108,33 @@ body.qr-page {
         max-width: 560px;
     }
 
-    .qr-chips {
-        margin-left: 0;
-        width: 100%;
+    /* Isang hanay na ang hero kapag makipot. Ginagawa itong tunay
+       na column sa halip na umasa sa pagbalot ng flex — sa gayon,
+       tiyak na nasa sariling hilera ang logo at hindi nakadepende
+       sa haba ng pamagat kung saan ito mapuputol. */
+    .qr-hero {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .85rem;
+    }
+
+    /* Nakasentro ang buong hero kapag makipot: logo, pamagat,
+       subtitle, at mga chip. Kapag ang logo lang ang nasa gitna at
+       nasa kaliwa ang lahat ng iba, mukhang aksidente — dapat
+       iisang hanay ang sinusundan nilang lahat. */
+    .qr-hero-icon {
+        align-self: center;
     }
 
     .qr-hero-text {
         flex-basis: auto;
+        text-align: center;
+    }
+
+    .qr-chips {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
     }
 }
 
