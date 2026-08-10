@@ -1,0 +1,889 @@
+/* ============================================================
+   DASHBOARD
+
+   Ang lumang disenyo ay mas maraming dekorasyon kaysa datos: sa
+   bawat section card ay may 90px na lumulutang na bilog at pulse
+   ring na walang sinasabing impormasyon, habang ang mga totoong
+   numero ay nakatago sa loob ng isang collapse. Sa 26 na section
+   ay 52 na walang-hanggang animation ang sabay-sabay tumatakbo —
+   mabigat iyon sa telepono.
+
+   Dito, ang numero ang laman ng card at ang kulay ay palatandaan
+   lang. Naka-scope lahat sa `.dash-page`; hindi ginagamit ng ibang
+   page ang mga pangalang may `dash-` na unlapi.
+   ============================================================ */
+
+.dash-page {
+    --dash-surface: #16161a;
+    --dash-line: rgba(255, 255, 255, .07);
+    --dash-muted: rgba(255, 255, 255, .45);
+    --dash-accent: #667eea;
+}
+
+/* ─── Hero ────────────────────────────────────────────────── */
+.dash-page .dash-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.25rem;
+    border-radius: 16px;
+    border: 1px solid var(--dash-line);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(102, 126, 234, .16), transparent 55%),
+        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+    overflow: hidden;
+}
+
+.dash-page .dash-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    box-shadow: 0 0 12px rgba(102, 126, 234, .6);
+}
+
+.dash-page .dash-hero-icon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, .35);
+}
+
+.dash-page .dash-hero-text {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.dash-page .dash-hero-text h2 {
+    margin: 0 0 3px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: #fff;
+}
+
+.dash-page .dash-hero-text p {
+    margin: 0;
+    font-size: .85rem;
+    color: var(--dash-muted);
+}
+
+.dash-page .dash-chips {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: .55rem;
+}
+
+.dash-page .dash-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .3rem .75rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 600;
+    color: #c7d2fe;
+    background: rgba(102, 126, 234, .14);
+    border: 1px solid rgba(102, 126, 234, .3);
+    white-space: nowrap;
+}
+
+.dash-page .dash-chip.green {
+    color: #6ee7b7;
+    background: rgba(16, 185, 129, .13);
+    border-color: rgba(16, 185, 129, .3);
+}
+
+/* ─── View switcher ───────────────────────────────────────── */
+.dash-page .dash-switch {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin-left: auto;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, .3);
+    border: 1px solid var(--dash-line);
+}
+
+.dash-page .dash-switch a {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem .95rem;
+    border-radius: 9px;
+    font-size: .83rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: background .2s, color .2s;
+}
+
+.dash-page .dash-switch a:hover {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, .05);
+}
+
+.dash-page .dash-switch a.active {
+    color: #fff;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, .3);
+}
+
+/* ─── Toolbar (pamagat ng view + petsa) ───────────────────── */
+/* Dating tatlong magkakapatong na kahon ang nagsasabi ng iisang
+   bagay: "Filter Overview" header, ang date panel, at ang
+   "Currently Viewing" card. Isang hanay na lang sila ngayon. */
+.dash-page .dash-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: .9rem 1.15rem;
+    margin-bottom: 1.25rem;
+    border-radius: 14px;
+    border: 1px solid var(--dash-line);
+    background: rgba(255, 255, 255, .02);
+}
+
+.dash-page .dash-toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-width: 0;
+}
+
+.dash-page .dash-toolbar-title>i {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+    color: #a5b4fc;
+    background: rgba(102, 126, 234, .14);
+    border: 1px solid rgba(102, 126, 234, .28);
+}
+
+.dash-page .dash-toolbar-title h5 {
+    margin: 0 0 1px;
+    font-size: .98rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.dash-page .dash-toolbar-title small {
+    font-size: .78rem;
+    color: var(--dash-muted);
+}
+
+.dash-page .dash-date-form {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.dash-page .dash-date {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .75rem;
+    border-radius: 10px;
+    background: #0f0f13;
+    border: 1px solid #2a2a33;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.dash-page .dash-date:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, .18);
+}
+
+.dash-page .dash-date i {
+    color: #818cf8;
+}
+
+.dash-page .dash-date input {
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: #f1f5f9;
+    font-size: .86rem;
+    color-scheme: dark;
+}
+
+.dash-page .dash-today {
+    padding: .5rem .9rem;
+    border-radius: 10px;
+    font-size: .82rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .12);
+    cursor: pointer;
+    transition: .2s;
+}
+
+.dash-page .dash-today:hover {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+}
+
+.dash-page .dash-live {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem .8rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 700;
+    color: #6ee7b7;
+    background: rgba(16, 185, 129, .13);
+    border: 1px solid rgba(16, 185, 129, .3);
+    white-space: nowrap;
+}
+
+.dash-page .dash-live.past {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, .13);
+    border-color: rgba(245, 158, 11, .3);
+}
+
+.dash-page .dash-live .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: dashPulse 2s ease-in-out infinite;
+}
+
+@keyframes dashPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .25;
+    }
+}
+
+/* ─── KPI cards ───────────────────────────────────────────── */
+.dash-page .dash-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.dash-page .dash-kpi {
+    position: relative;
+    padding: 1.25rem 1.35rem;
+    border-radius: 16px;
+    border: 1px solid var(--dash-line);
+    background: linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+    overflow: hidden;
+}
+
+.dash-page .dash-kpi::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: var(--kpi, #667eea);
+    box-shadow: 0 0 12px var(--kpi-glow, rgba(102, 126, 234, .6));
+}
+
+.dash-page .dash-kpi-top {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: .9rem;
+}
+
+.dash-page .dash-kpi-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.15rem;
+    color: #fff;
+    background: var(--kpi, #667eea);
+    flex-shrink: 0;
+}
+
+.dash-page .dash-kpi-label {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .4);
+    margin-bottom: .15rem;
+}
+
+.dash-page .dash-kpi-value {
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+}
+
+.dash-page .dash-kpi-foot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .5rem;
+    font-size: .76rem;
+    color: var(--dash-muted);
+    margin-bottom: .4rem;
+}
+
+.dash-page .dash-kpi-foot b {
+    color: #e2e8f0;
+    font-weight: 700;
+}
+
+.dash-page .dash-bar {
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .07);
+    overflow: hidden;
+}
+
+.dash-page .dash-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--kpi, #667eea);
+}
+
+/* ─── Section title ───────────────────────────────────────── */
+.dash-page .dash-section-title {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0 0 .9rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .35);
+}
+
+.dash-page .dash-section-title::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--dash-accent);
+}
+
+.dash-page .dash-section-title .count {
+    margin-left: auto;
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 600;
+    font-size: .76rem;
+    color: rgba(255, 255, 255, .3);
+}
+
+/* ─── Year header ─────────────────────────────────────────── */
+.dash-page .dash-year {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .7rem 1rem;
+    margin: 1.5rem 0 .25rem;
+    border-radius: 12px;
+    border: 1px solid var(--dash-line);
+    border-left: 3px solid var(--dash-accent);
+    background: linear-gradient(90deg, rgba(102, 126, 234, .1), transparent 70%);
+}
+
+.dash-page .dash-year h4 {
+    margin: 0;
+    font-size: .95rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.dash-page .dash-year span {
+    margin-left: auto;
+    font-size: .78rem;
+    color: var(--dash-muted);
+}
+
+/* ─── Section card ────────────────────────────────────────── */
+.dash-page .dash-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1.1rem;
+    border-radius: 16px;
+    border: 1px solid var(--dash-line);
+    background: var(--dash-surface);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+
+.dash-page .dash-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, .14);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, .45);
+}
+
+.dash-page .dash-card-head {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: .9rem;
+}
+
+/* Ang kulay ng section ay palatandaan lang para madaling makilala
+   ang card sa mahabang listahan — hindi na ito 90px na bilog. */
+/* Ang --tag* ay ibinibigay ng PHP bilang tunay na rgba() at hindi
+   sa pamamagitan ng color-mix(), na wala pa sa mga lumang browser. */
+.dash-page .dash-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .3rem .7rem;
+    border-radius: 8px;
+    font-size: .85rem;
+    font-weight: 700;
+    letter-spacing: .3px;
+    color: var(--tag, #a5b4fc);
+    background: var(--tag-soft, rgba(102, 126, 234, .14));
+    border: 1px solid var(--tag-line, rgba(102, 126, 234, .32));
+}
+
+.dash-page .dash-card-head small {
+    margin-left: auto;
+    font-size: .74rem;
+    color: rgba(255, 255, 255, .32);
+    white-space: nowrap;
+}
+
+.dash-page .dash-mini {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+    margin-bottom: .85rem;
+}
+
+.dash-page .dash-mini div {
+    padding: .55rem .4rem;
+    border-radius: 10px;
+    text-align: center;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid rgba(255, 255, 255, .05);
+}
+
+.dash-page .dash-mini b {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #f1f5f9;
+}
+
+.dash-page .dash-mini small {
+    font-size: .68rem;
+    letter-spacing: .3px;
+    color: rgba(255, 255, 255, .38);
+}
+
+.dash-page .dash-mini .ok b {
+    color: #34d399;
+}
+
+.dash-page .dash-mini .warn b {
+    color: #fbbf24;
+}
+
+/* Ang engagement ay ratio — mas mabilis basahin bilang bar
+   kaysa bilang numero lang. */
+.dash-page .dash-engage {
+    margin-bottom: .85rem;
+}
+
+.dash-page .dash-engage-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: .74rem;
+    color: var(--dash-muted);
+    margin-bottom: .35rem;
+}
+
+.dash-page .dash-engage-top b {
+    color: #67e8f9;
+    font-weight: 700;
+}
+
+.dash-page .dash-engage .dash-bar span {
+    background: linear-gradient(90deg, #06b6d4, #67e8f9);
+}
+
+/* ─── Mapipindot na risk pill ─────────────────────────────── */
+.dash-page .dash-risks {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .5rem;
+    margin-top: auto;
+}
+
+.dash-page .dash-risk {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem .65rem;
+    border-radius: 10px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, transform .15s;
+}
+
+.dash-page .dash-risk:hover {
+    transform: translateY(-1px);
+}
+
+.dash-page .dash-risk b {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.dash-page .dash-risk small {
+    font-size: .68rem;
+    line-height: 1.2;
+    opacity: .8;
+}
+
+.dash-page .dash-risk.warn {
+    background: rgba(239, 68, 68, .1);
+    border: 1px solid rgba(239, 68, 68, .22);
+    color: #f87171;
+}
+
+.dash-page .dash-risk.warn:hover {
+    background: rgba(239, 68, 68, .18);
+}
+
+.dash-page .dash-risk.crit {
+    background: rgba(220, 38, 38, .12);
+    border: 1px solid rgba(220, 38, 38, .3);
+    color: #fca5a5;
+}
+
+.dash-page .dash-risk.crit:hover {
+    background: rgba(220, 38, 38, .2);
+}
+
+.dash-page .dash-risk .n {
+    margin-left: auto;
+    text-align: right;
+}
+
+/* ─── Subject card ────────────────────────────────────────── */
+.dash-page .dash-subject-bar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .5rem .85rem;
+    margin: .75rem 0 .25rem;
+    border-radius: 10px;
+    border-left: 3px solid #10b981;
+    background: rgba(16, 185, 129, .08);
+    font-size: .86rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.dash-page .dash-subject-bar i {
+    color: #34d399;
+}
+
+.dash-page .dash-splits {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .5rem;
+    margin-bottom: .75rem;
+}
+
+.dash-page .dash-split {
+    display: block;
+    padding: .75rem .5rem;
+    border-radius: 12px;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s, transform .15s;
+}
+
+.dash-page .dash-split:hover {
+    transform: translateY(-2px);
+}
+
+.dash-page .dash-split b {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #fff;
+}
+
+.dash-page .dash-split small {
+    font-size: .72rem;
+    font-weight: 600;
+}
+
+.dash-page .dash-split.present {
+    background: rgba(16, 185, 129, .1);
+    border: 1px solid rgba(16, 185, 129, .25);
+}
+
+.dash-page .dash-split.present small,
+.dash-page .dash-split.present i {
+    color: #34d399;
+}
+
+.dash-page .dash-split.absent {
+    background: rgba(239, 68, 68, .1);
+    border: 1px solid rgba(239, 68, 68, .25);
+}
+
+.dash-page .dash-split.absent small,
+.dash-page .dash-split.absent i {
+    color: #f87171;
+}
+
+.dash-page .dash-exports {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .5rem;
+}
+
+.dash-page .dash-export {
+    width: 100%;
+    padding: .45rem .5rem;
+    border-radius: 9px;
+    font-size: .76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.dash-page .dash-export.present {
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .25);
+    color: #6ee7b7;
+}
+
+.dash-page .dash-export.present:hover {
+    background: rgba(16, 185, 129, .22);
+}
+
+.dash-page .dash-export.absent {
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .25);
+    color: #fca5a5;
+}
+
+.dash-page .dash-export.absent:hover {
+    background: rgba(239, 68, 68, .22);
+}
+
+/* ─── Recent activity ─────────────────────────────────────── */
+.dash-page .dash-activity {
+    border-radius: 16px;
+    border: 1px solid var(--dash-line);
+    background: var(--dash-surface);
+    overflow: hidden;
+}
+
+.dash-page .dash-act-row {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: .8rem 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+}
+
+.dash-page .dash-act-row:last-child {
+    border-bottom: 0;
+}
+
+.dash-page .dash-act-row:hover {
+    background: rgba(255, 255, 255, .02);
+}
+
+.dash-page .dash-act-avatar {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: .9rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.dash-page .dash-act-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.dash-page .dash-act-main strong {
+    display: block;
+    font-size: .9rem;
+    color: #f1f5f9;
+    margin-bottom: 2px;
+}
+
+.dash-page .dash-act-meta {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    flex-wrap: wrap;
+    font-size: .76rem;
+    color: rgba(255, 255, 255, .38);
+}
+
+.dash-page .dash-act-meta .subj {
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #6ee7b7;
+    background: rgba(16, 185, 129, .13);
+    border: 1px solid rgba(16, 185, 129, .25);
+}
+
+.dash-page .dash-act-time {
+    flex-shrink: 0;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #93c5fd;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, .12);
+    border: 1px solid rgba(59, 130, 246, .25);
+    white-space: nowrap;
+}
+
+/* ─── Empty / notice ──────────────────────────────────────── */
+.dash-page .dash-empty {
+    text-align: center;
+    padding: 2.75rem 1rem;
+    color: rgba(255, 255, 255, .3);
+}
+
+.dash-page .dash-empty i {
+    display: block;
+    font-size: 2.4rem;
+    margin-bottom: .7rem;
+    opacity: .35;
+}
+
+.dash-page .dash-empty strong {
+    display: block;
+    color: rgba(255, 255, 255, .6);
+    font-size: .98rem;
+    margin-bottom: .25rem;
+}
+
+.dash-page .dash-empty span {
+    font-size: .84rem;
+}
+
+.dash-page .dash-notice {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .85rem 1.1rem;
+    border-radius: 12px;
+    font-size: .87rem;
+    color: #c7d2fe;
+    background: rgba(102, 126, 234, .1);
+    border: 1px solid rgba(102, 126, 234, .25);
+}
+
+.dash-page .dash-notice.warn {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, .1);
+    border-color: rgba(245, 158, 11, .28);
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 992px) {
+    .dash-page .dash-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dash-page .dash-switch {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .dash-page .dash-switch a {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .dash-page .dash-kpis {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dash-page .dash-hero {
+        padding: 1rem;
+    }
+
+    .dash-page .dash-hero-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .dash-page .dash-hero-text h2 {
+        font-size: 1.15rem;
+    }
+
+    .dash-page .dash-date-form {
+        width: 100%;
+    }
+
+    .dash-page .dash-date {
+        flex: 1;
+    }
+}
+
+/* Ang paggalaw ay dekorasyon lang dito — kaya kayang isuko nang
+   buo para sa mga gumagamit na nasasakit ang ulo sa animation. */
+@media (prefers-reduced-motion: reduce) {
+
+    .dash-page *,
+    .dash-page *::before,
+    .dash-page *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}

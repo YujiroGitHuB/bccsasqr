@@ -152,6 +152,29 @@ function getYearLevel(string $full_section): string {
     return 'Other';
 }
 
+// ── Helper: matatag na kulay kada section ────────────────────
+// Palatandaan lang ito para mabilis makilala ang isang card sa
+// mahabang listahan. Ang lumang palette ay may mga pastel (hal.
+// #a8edea, #fed6e3) na halos hindi na mabasa ang puting teksto —
+// mga tinting na akma sa madilim na background na lang ang natira.
+function sectionAccent(string $section): array {
+    $palette = [
+        [102, 126, 234],  // indigo
+        [16, 185, 129],   // emerald
+        [6, 182, 212],    // cyan
+        [244, 114, 182],  // pink
+        [245, 158, 11],   // amber
+        [139, 92, 246],   // violet
+    ];
+    [$r, $g, $b] = $palette[crc32($section) % count($palette)];
+
+    return [
+        'solid' => "rgb($r,$g,$b)",
+        'soft'  => "rgba($r,$g,$b,.14)",
+        'line'  => "rgba($r,$g,$b,.34)",
+    ];
+}
+
 // ============================================================
 //  PRE-LOAD SECTION STATS
 // ============================================================
@@ -244,246 +267,144 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
 
 <head>
     <?php include __DIR__ . "/../includes/header.php" ?>
+    <link rel="stylesheet" href="<?= asset('../assets/css/dashboard.css') ?>">
 </head>
 
 <body>
     <?php include __DIR__ . "/../includes/alert.php"; ?>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
 
-    <div class="content" id="content">
+    <div class="content dash-page" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-            <div>
+        <div class="dash-hero">
+            <div class="dash-hero-icon"><i class="bi bi-speedometer2"></i></div>
+            <div class="dash-hero-text">
                 <h2>Dashboard</h2>
-                <p>Welcome back, <?= $_SESSION['user_name']; ?>!</p>
-                <div class="d-flex gap-2 flex-wrap">
-                    <?php if ($has_subjects): ?>
-                        <div class="info-badge">
-                            <i class="bi bi-book-fill text-success"></i>
-                            <span class="text-white-50">
-                                <strong class="text-white"><?= count($user_subjects) ?></strong>
-                                Subject<?= count($user_subjects) > 1 ? 's' : '' ?>
+                <p>Welcome back, <?= htmlspecialchars($_SESSION['user_name']) ?>!</p>
+                <?php if ($has_subjects || $has_sections): ?>
+                    <div class="dash-chips">
+                        <?php if ($has_subjects): ?>
+                            <span class="dash-chip green">
+                                <i class="bi bi-book-fill"></i>
+                                <?= count($user_subjects) ?> Subject<?= count($user_subjects) > 1 ? 's' : '' ?>
                             </span>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($has_sections): ?>
-                        <div class="info-badge">
-                            <i class="bi bi-grid-3x3 text-info"></i>
-                            <span class="text-white-50">
-                                <strong class="text-white"><?= count($user_sections) ?></strong>
-                                Section<?= count($user_sections) > 1 ? 's' : '' ?>
+                        <?php endif; ?>
+                        <?php if ($has_sections): ?>
+                            <span class="dash-chip">
+                                <i class="bi bi-grid-3x3"></i>
+                                <?= count($user_sections) ?> Section<?= count($user_sections) > 1 ? 's' : '' ?>
                             </span>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <?php if ($can_switch_view): ?>
-                <div class="view-switcher">
+                <div class="dash-switch">
                     <a href="?view=sections<?= isset($_GET['filter_date']) ? '&filter_date=' . urlencode($selected_date) : '' ?>"
-                        class="view-btn <?= $view_mode === 'sections' ? 'active' : '' ?>">
+                        class="<?= $view_mode === 'sections' ? 'active' : '' ?>">
                         <i class="bi bi-grid-3x3"></i><span>Section Overview</span>
                     </a>
                     <a href="?view=subjects<?= isset($_GET['filter_date']) ? '&filter_date=' . urlencode($selected_date) : '' ?>"
-                        class="view-btn <?= $view_mode === 'subjects' ? 'active' : '' ?>">
+                        class="<?= $view_mode === 'subjects' ? 'active' : '' ?>">
                         <i class="bi bi-book"></i><span>Subject Details</span>
                     </a>
                 </div>
             <?php endif; ?>
         </div>
 
-        <hr class="border-secondary">
+        <div class="container-fluid p-0">
 
-        <div class="container-fluid py-4">
-
-            <!-- TOP METRICS HEADER -->
-            <div class="section-header mb-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="header-icon-wrapper">
-                        <div class="icon-circle">
-                            <div class="icon-glow"></div>
+            <!-- ── KPI ────────────────────────────────────────────
+                 Ang ikalawa at ikatlong card ay ratio, kaya isinusulat
+                 na rin ang porsyento — ang bar lang dati ang nagsasabi
+                 niyon at kailangan pang tantiyahin ng mata. -->
+            <?php
+            $scanRate    = $totalStudent  > 0 ? round($totalStudents / $totalStudent * 100) : 0;
+            $presentRate = $totalStudents > 0 ? round($presentOnSelectedDate / $totalStudents * 100) : 0;
+            ?>
+            <div class="dash-kpis">
+                <div class="dash-kpi" style="--kpi:linear-gradient(135deg,#667eea,#764ba2);--kpi-glow:rgba(102,126,234,.6)">
+                    <div class="dash-kpi-top">
+                        <div class="dash-kpi-icon"><i class="bi bi-people-fill"></i></div>
+                        <div>
+                            <div class="dash-kpi-label"><?= $view_mode === 'subjects' ? 'Unique Students' : 'Total Students' ?></div>
+                            <div class="dash-kpi-value"><?= number_format($totalStudent) ?></div>
                         </div>
                     </div>
-                    <div class="metric-card">
-                        <h4 class="mb-1 fw-bold text-white">Top Metrics</h4>
-                        <p class="mb-0 text-white-50 small">
-                            <i class="bi bi-circle-fill text-success me-1" style="font-size:0.5rem;"></i>
-                            Live performance overview
-                        </p>
+                    <div class="dash-kpi-foot">
+                        <span><?= $view_mode === 'subjects' ? 'Sa mga subject mo' : 'Sa mga section mo' ?></span>
                     </div>
-                </div>
-                <div class="header-decoration"></div>
-            </div>
-
-            <div class="row g-4 mb-4">
-                <div class="col-md-4">
-                    <div class="card bg-dark text-white shadow-lg rounded-4 metric-card border-0 overflow-hidden">
-                        <div class="position-absolute top-0 end-0 opacity-25">
-                            <i class="bi bi-people-fill" style="font-size:8rem; color:rgba(102,126,234,0.2);"></i>
-                        </div>
-                        <div class="card-body p-4 position-relative">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="icon-box rounded-3 p-3 me-3"
-                                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                    <i class="bi bi-people-fill fs-3 text-white"></i>
-                                </div>
-                                <div>
-                                    <h6 class="text-muted mb-1 fw-normal">
-                                        <?= $view_mode === 'subjects' ? 'Unique Students' : 'Total Students' ?>
-                                    </h6>
-                                    <h2 class="mb-0 fw-bold"><?= number_format($totalStudent) ?></h2>
-                                </div>
-                            </div>
-                            <div class="progress" style="height:4px;">
-                                <div class="progress-bar" role="progressbar"
-                                    style="width:100%; background:linear-gradient(90deg,#667eea 0%,#764ba2 100%);"></div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="dash-bar"><span style="width:100%"></span></div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="card bg-dark text-white shadow-lg rounded-4 metric-card border-0 overflow-hidden">
-                        <div class="position-absolute top-0 end-0 opacity-25">
-                            <i class="bi bi-qr-code-scan" style="font-size:8rem; color:rgba(13,202,240,0.2);"></i>
-                        </div>
-                        <div class="card-body p-4 position-relative">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="icon-box rounded-3 p-3 me-3"
-                                    style="background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);">
-                                    <i class="bi bi-qr-code-scan fs-3 text-white"></i>
-                                </div>
-                                <div>
-                                    <h6 class="text-muted mb-1 fw-normal">Total Scanned</h6>
-                                    <h2 class="mb-0 fw-bold"><?= $totalStudents ?></h2>
-                                </div>
-                            </div>
-                            <div class="progress" style="height:4px;">
-                                <div class="progress-bar bg-info" role="progressbar"
-                                    style="width:<?= $totalStudent > 0 ? ($totalStudents / $totalStudent * 100) : 0 ?>%;"></div>
-                            </div>
+                <div class="dash-kpi" style="--kpi:linear-gradient(135deg,#0dcaf0,#0aa2c0);--kpi-glow:rgba(13,202,240,.6)">
+                    <div class="dash-kpi-top">
+                        <div class="dash-kpi-icon"><i class="bi bi-qr-code-scan"></i></div>
+                        <div>
+                            <div class="dash-kpi-label">Total Scanned</div>
+                            <div class="dash-kpi-value"><?= number_format($totalStudents) ?></div>
                         </div>
                     </div>
+                    <div class="dash-kpi-foot">
+                        <span>Nakapag-scan kahit minsan</span>
+                        <b><?= $scanRate ?>%</b>
+                    </div>
+                    <div class="dash-bar"><span style="width:<?= min(100, $scanRate) ?>%"></span></div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="card bg-dark text-white shadow-lg rounded-4 metric-card border-0 overflow-hidden">
-                        <div class="position-absolute top-0 end-0 opacity-25">
-                            <i class="bi bi-person-check-fill" style="font-size:8rem; color:rgba(25,135,84,0.2);"></i>
-                        </div>
-                        <div class="card-body p-4 position-relative">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="icon-box rounded-3 p-3 me-3"
-                                    style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
-                                    <i class="bi bi-person-check-fill fs-3 text-white"></i>
-                                </div>
-                                <div>
-                                    <h6 class="text-muted mb-1 fw-normal">
-                                        <?= $selected_date == $today ? 'Present Today' : 'Present on Date' ?>
-                                    </h6>
-                                    <h2 class="mb-0 fw-bold"><?= $presentOnSelectedDate ?></h2>
-                                    <?php if ($selected_date != $today): ?>
-                                        <small class="text-muted">
-                                            <i class="bi bi-calendar-check"></i>
-                                            <?= date('M d', strtotime($selected_date)) ?>
-                                        </small>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <div class="progress" style="height:4px;">
-                                <div class="progress-bar bg-success" role="progressbar"
-                                    style="width:<?= $totalStudents > 0 ? ($presentOnSelectedDate / $totalStudents * 100) : 0 ?>%;"></div>
-                            </div>
+                <div class="dash-kpi" style="--kpi:linear-gradient(135deg,#10b981,#059669);--kpi-glow:rgba(16,185,129,.6)">
+                    <div class="dash-kpi-top">
+                        <div class="dash-kpi-icon"><i class="bi bi-person-check-fill"></i></div>
+                        <div>
+                            <div class="dash-kpi-label"><?= $selected_date == $today ? 'Present Today' : 'Present on Date' ?></div>
+                            <div class="dash-kpi-value"><?= number_format($presentOnSelectedDate) ?></div>
                         </div>
                     </div>
+                    <div class="dash-kpi-foot">
+                        <span><?= date('M d, Y', strtotime($selected_date)) ?></span>
+                        <b><?= $presentRate ?>%</b>
+                    </div>
+                    <div class="dash-bar"><span style="width:<?= min(100, $presentRate) ?>%"></span></div>
                 </div>
             </div>
 
-            <!-- FILTER OVERVIEW HEADER -->
-            <div class="section-header mb-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="header-icon-wrapper">
-                        <div class="icon-circle"
-                            style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                            <div class="icon-glow" style="background: rgba(16,185,129,0.3);"></div>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <h4 class="mb-1 fw-bold text-white">Filter Overview</h4>
-                        <p class="mb-0 text-white-50 small">
-                            <i class="bi bi-calendar3 me-1"></i>Customize your view by date
-                        </p>
+            <!-- ── Toolbar: pamagat ng view + petsa ───────────────
+                 Dating tatlong kahon ito: "Filter Overview" header,
+                 ang date panel, at ang "Currently Viewing" card —
+                 pare-parehong sinasabi kung anong petsa ang tinitingnan. -->
+            <div class="dash-toolbar">
+                <div class="dash-toolbar-title">
+                    <i class="bi bi-clipboard-data"></i>
+                    <div>
+                        <h5><?= $view_mode === 'subjects' ? 'Subject Attendance Details' : 'Section Overview' ?></h5>
+                        <small><?= date('l, F d, Y', strtotime($selected_date)) ?></small>
                     </div>
                 </div>
-                <div class="header-decoration"
-                    style="background: linear-gradient(90deg, transparent, rgba(16,185,129,0.1));"></div>
-            </div>
 
-            <!-- Date Filter -->
-            <div class="filter-header mb-4">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <div class="header-title">
-                        <div class="d-flex align-items-center">
-                            <div class="icon-wrapper"><i class="bi bi-clipboard-data"></i></div>
-                            <div class="ms-3">
-                                <h5 class="text-white mb-0 fw-bold">
-                                    <?= $view_mode === 'subjects' ? 'Subject Attendance Details' : 'Section Overview' ?>
-                                </h5>
-                                <small class="text-white-50">
-                                    <?= $view_mode === 'subjects' ? 'Detailed records with export options' : 'Quick overview of all sections' ?>
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="filter-controls">
-                        <form method="GET" action="" class="d-flex align-items-center gap-2" id="dateFilterForm">
-                            <?php if (isset($_GET['view'])): ?>
-                                <input type="hidden" name="view" value="<?= htmlspecialchars($view_mode) ?>">
-                            <?php endif; ?>
-                            <div class="date-picker-wrapper">
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
-                                    <input type="date" class="form-control"
-                                        name="filter_date" id="filter_date"
-                                        value="<?= $selected_date ?>" max="<?= $today ?>"
-                                        onchange="document.getElementById('dateFilterForm').submit()">
-                                </div>
-                            </div>
-                            <?php if ($selected_date != $today): ?>
-                                <button type="button"
-                                    onclick="window.location.href='?<?= isset($_GET['view']) ? 'view=' . $view_mode : '' ?>'"
-                                    class="btn-today">
-                                    <i class="bi bi-arrow-clockwise me-1"></i><span>Today</span>
-                                </button>
-                            <?php endif; ?>
-                        </form>
-                    </div>
-                </div>
-            </div>
+                <form method="GET" action="" class="dash-date-form" id="dateFilterForm">
+                    <?php if (isset($_GET['view'])): ?>
+                        <input type="hidden" name="view" value="<?= htmlspecialchars($view_mode) ?>">
+                    <?php endif; ?>
 
-            <!-- Selected Date Display -->
-            <div class="date-display-card mb-4">
-                <div class="card-content">
-                    <div class="date-icon"><i class="bi bi-calendar-event"></i></div>
-                    <div class="date-info">
-                        <span class="label">Currently Viewing</span>
-                        <h6 class="date-text"><?= date('l, F d, Y', strtotime($selected_date)) ?></h6>
-                    </div>
-                    <div class="date-badge">
-                        <?php if ($selected_date == $today): ?>
-                            <div class="status-badge today">
-                                <span class="pulse"></span>
-                                <i class="bi bi-clock-fill me-1"></i><span>Live Today</span>
-                            </div>
-                        <?php else: ?>
-                            <div class="status-badge past">
-                                <i class="bi bi-archive me-1"></i><span>Historical</span>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <div class="card-decoration"></div>
+                    <label class="dash-date">
+                        <i class="bi bi-calendar3"></i>
+                        <input type="date" name="filter_date" id="filter_date"
+                            value="<?= $selected_date ?>" max="<?= $today ?>"
+                            onchange="document.getElementById('dateFilterForm').submit()">
+                    </label>
+
+                    <?php if ($selected_date != $today): ?>
+                        <button type="button" class="dash-today"
+                            onclick="window.location.href='?<?= isset($_GET['view']) ? 'view=' . $view_mode : '' ?>'">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Today
+                        </button>
+                        <span class="dash-live past"><i class="bi bi-archive"></i> Historical</span>
+                    <?php else: ?>
+                        <span class="dash-live"><span class="dot"></span> Live Today</span>
+                    <?php endif; ?>
+                </form>
             </div>
 
             <!-- CARDS -->
@@ -544,17 +465,13 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                         foreach ($sections_by_year as $year => $secs) {
                             if (empty($secs)) continue;
 
-                            echo '<div class="col-12 mt-4 mb-3 metric-card">
-                                <div class="year-level-header p-3 rounded-4"
-                                     style="background:linear-gradient(135deg,rgba(102,126,234,0.1) 0%,rgba(118,75,162,0.1) 100%);
-                                            border-left:4px solid #667eea;">
-                                  <div class="d-flex align-items-center gap-3"><div>
-                                    <h4 class="text-white fw-bold mb-1">' . $year . '</h4>
-                                    <p class="text-white-50 mb-0 small"><i class="bi bi-grid-3x3"></i> '
-                                . count($secs) . ' Section' . (count($secs) > 1 ? 's' : '') . '</p>
-                                  </div></div>
-                                </div>
-                              </div>';
+                            echo '<div class="col-12">
+                                    <div class="dash-year">
+                                      <i class="bi bi-mortarboard-fill" style="color:#818cf8"></i>
+                                      <h4>' . $year . '</h4>
+                                      <span>' . count($secs) . ' section' . (count($secs) > 1 ? 's' : '') . '</span>
+                                    </div>
+                                  </div>';
 
                             foreach ($secs as $sd):
                                 $section             = $sd['sec'];
@@ -566,206 +483,71 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                                 $students_3_absences = $sd['students_3_absences'];
                                 $students_5_absences = $sd['students_5_absences'];
 
-                                $colors = [
-                                    ['from' => '#667eea', 'to' => '#764ba2'],
-                                    ['from' => '#f093fb', 'to' => '#f5576c'],
-                                    ['from' => '#4facfe', 'to' => '#00f2fe'],
-                                    ['from' => '#43e97b', 'to' => '#38f9d7'],
-                                    ['from' => '#fa709a', 'to' => '#fee140'],
-                                    ['from' => '#30cfd0', 'to' => '#330867'],
-                                    ['from' => '#a8edea', 'to' => '#fed6e3'],
-                                    ['from' => '#ff9a9e', 'to' => '#fecfef'],
-                                ];
-                                $cs = $colors[crc32($section) % count($colors)];
+                                $cs = sectionAccent($section);
                 ?>
-                                <div class="col-lg-3 col-md-4 col-sm-6">
-                                    <div class="card bg-dark text-white shadow-lg rounded-4 metric-card border-0 overflow-hidden">
+                                <div class="col-xl-3 col-lg-4 col-md-6">
+                                    <div class="dash-card"
+                                        style="--tag:<?= $cs['solid'] ?>;--tag-soft:<?= $cs['soft'] ?>;--tag-line:<?= $cs['line'] ?>">
+
+                                        <div class="dash-card-head">
+                                            <span class="dash-tag">
+                                                <i class="bi bi-grid-3x3-gap-fill"></i>
+                                                <?= htmlspecialchars($section) ?>
+                                            </span>
+                                            <small><?= $total_classes ?> class<?= $total_classes == 1 ? '' : 'es' ?></small>
+                                        </div>
+
                                         <?php if (!$has_subjects): ?>
-                                            <div class="alert alert-warning rounded-3 mt-2 mb-0"
-                                                style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);">
-                                                <small class="text-warning">
-                                                    <i class="bi bi-info-circle-fill me-1"></i>
-                                                    <strong>Note:</strong> No subjects assigned yet.
-                                                </small>
+                                            <div class="dash-notice warn mb-3" style="font-size:.78rem;padding:.6rem .8rem">
+                                                <i class="bi bi-info-circle-fill"></i>
+                                                <span>Walang naka-assign na subject.</span>
                                             </div>
                                         <?php endif; ?>
 
-                                        <div class="card-body p-4 position-relative">
-                                            <div class="text-center mb-4 position-relative">
-                                                <div class="position-absolute top-50 start-50 translate-middle">
-                                                    <div class="pulse-ring"
-                                                        style="width:100px;height:100px;border:2px solid <?= $cs['from'] ?>;
-                                                            border-radius:50%;opacity:0.3;animation:pulse-ring 2s ease-out infinite;"></div>
-                                                </div>
-                                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-lg position-relative"
-                                                    style="background:linear-gradient(135deg,<?= $cs['from'] ?> 0%,<?= $cs['to'] ?> 100%);
-                                                        width:90px;height:90px;animation:float 3s ease-in-out infinite;">
-                                                    <i class="bi bi-grid-3x3-gap-fill fs-1 text-white"
-                                                        style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
-                                                </div>
-                                                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
-                                                    <span class="badge rounded-pill px-3 py-2 shadow"
-                                                        style="background:linear-gradient(135deg,<?= $cs['from'] ?> 0%,<?= $cs['to'] ?> 100%);
-                                                             font-size:1rem;letter-spacing:1px;">
-                                                        <?= htmlspecialchars($section) ?>
-                                                    </span>
-                                                </div>
-                                                <p class="text-white-50 mb-0 small">
-                                                    <i class="bi bi-bar-chart-fill me-1" style="color:<?= $cs['from'] ?>;"></i>
-                                                    Overview Statistics (<?= $total_classes ?> classes)
-                                                </p>
+                                        <!-- Ang tatlong bilang na ito ang laman ng card at hindi na
+                                             nakatago sa loob ng collapse — iyon ang unang tinitingnan. -->
+                                        <div class="dash-mini">
+                                            <div>
+                                                <b><?= number_format($total) ?></b>
+                                                <small>Enrolled</small>
                                             </div>
+                                            <div class="ok">
+                                                <b><?= number_format($active_students) ?></b>
+                                                <small>Active</small>
+                                            </div>
+                                            <div class="warn">
+                                                <b><?= number_format($never_attended) ?></b>
+                                                <small>Never</small>
+                                            </div>
+                                        </div>
 
-                                            <!-- Stats toggle -->
-                                            <div class="mb-3">
-                                                <button class="btn w-100 text-start p-3 rounded-3 border-0"
-                                                    style="background:linear-gradient(135deg,rgba(102,126,234,0.15) 0%,rgba(118,75,162,0.15) 100%);"
-                                                    type="button"
-                                                    data-bs-toggle="collapse"
-                                                    data-bs-target="#stats-<?= htmlspecialchars(str_replace(['-',' '], '_', $section)) ?>"
-                                                    aria-expanded="false">
-                                                    <div class="d-flex align-items-center justify-content-between">
-                                                        <div class="d-flex align-items-center gap-3">
-                                                            <div class="rounded-circle p-2"
-                                                                style="background:rgba(102,126,234,0.3);">
-                                                                <i class="bi bi-bar-chart-fill text-white fs-5"></i>
-                                                            </div>
-                                                            <div>
-                                                                <h6 class="text-white fw-bold mb-1">Section Statistics</h6>
-                                                                <div class="row g-2 text-white-50 small">
-                                                                    <div class="col-auto">
-                                                                        <i class="bi bi-people-fill me-1"></i>
-                                                                        <strong class="text-white"><?= number_format($total) ?></strong> Students
-                                                                    </div>
-                                                                    <div class="col-auto">
-                                                                        <i class="bi bi-person-check-fill text-success me-1"></i>
-                                                                        <strong class="text-success"><?= number_format($active_students) ?></strong> Active
-                                                                    </div>
-                                                                    <div class="col-auto">
-                                                                        <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
-                                                                        <strong class="text-warning"><?= number_format($never_attended) ?></strong> Inactive
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <i class="bi bi-chevron-down text-white fs-5"></i>
-                                                    </div>
-                                                </button>
+                                        <div class="dash-engage">
+                                            <div class="dash-engage-top">
+                                                <span>Engagement</span>
+                                                <b><?= $engagement_rate ?>%</b>
                                             </div>
+                                            <div class="dash-bar"><span style="width:<?= min(100, $engagement_rate) ?>%"></span></div>
+                                        </div>
 
-                                            <!-- Collapsible details -->
-                                            <div class="collapse" id="stats-<?= htmlspecialchars(str_replace(['-',' '], '_', $section)) ?>">
-                                                <div class="row g-3 mb-3">
-                                                    <div class="col-12">
-                                                        <div class="stat-box p-3 rounded-3"
-                                                            style="background:rgba(102,126,234,0.1);border-left:3px solid #667eea;">
-                                                            <div class="d-flex align-items-center justify-content-between">
-                                                                <div>
-                                                                    <small class="text-white-50 d-block mb-1">Total Enrolled</small>
-                                                                    <h3 class="text-white fw-bold mb-0"><?= number_format($total) ?></h3>
-                                                                </div>
-                                                                <div class="rounded-circle p-2" style="background:rgba(102,126,234,0.2);">
-                                                                    <i class="bi bi-people-fill text-primary fs-4"></i>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-12">
-                                                        <div class="stat-box p-3 rounded-3"
-                                                            style="background:rgba(16,185,129,0.1);border-left:3px solid #10b981;">
-                                                            <div class="d-flex align-items-center justify-content-between">
-                                                                <div>
-                                                                    <small class="text-white-50 d-block mb-1">Active Students</small>
-                                                                    <h3 class="text-success fw-bold mb-0"><?= number_format($active_students) ?></h3>
-                                                                    <small class="text-success opacity-75">Has attended at least once</small>
-                                                                </div>
-                                                                <div class="rounded-circle p-2" style="background:rgba(16,185,129,0.2);">
-                                                                    <i class="bi bi-person-check-fill text-success fs-4"></i>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-12">
-                                                        <div class="stat-box p-3 rounded-3"
-                                                            style="background:rgba(245,158,11,0.1);border-left:3px solid #f59e0b;">
-                                                            <div class="d-flex align-items-center justify-content-between">
-                                                                <div>
-                                                                    <small class="text-white-50 d-block mb-1">Never Attended</small>
-                                                                    <h3 class="text-warning fw-bold mb-0"><?= number_format($never_attended) ?></h3>
-                                                                    <small class="text-warning opacity-75">Needs follow-up</small>
-                                                                </div>
-                                                                <div class="rounded-circle p-2" style="background:rgba(245,158,11,0.2);">
-                                                                    <i class="bi bi-exclamation-triangle-fill text-warning fs-4"></i>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-12">
-                                                        <a href="#" class="text-decoration-none"
-                                                            onclick="viewAbsences('<?= htmlspecialchars($section) ?>',3); return false;">
-                                                            <div class="stat-box p-3 rounded-3"
-                                                                style="background:rgba(239,68,68,0.1);border-left:3px solid #ef4444;">
-                                                                <div class="d-flex align-items-center justify-content-between">
-                                                                    <div>
-                                                                        <small class="text-white-50 d-block mb-1">3+ Absences</small>
-                                                                        <h3 class="fw-bold mb-0" style="color:#ef4444;"><?= number_format($students_3_absences) ?></h3>
-                                                                        <small style="color:#ef4444;opacity:0.75;">Click to view &amp; export</small>
-                                                                    </div>
-                                                                    <div class="rounded-circle p-2" style="background:rgba(239,68,68,0.2);">
-                                                                        <i class="bi bi-exclamation-circle-fill fs-4" style="color:#ef4444;"></i>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </a>
-                                                    </div>
-                                                    <div class="col-12">
-                                                        <a href="#" class="text-decoration-none"
-                                                            onclick="viewAbsences('<?= htmlspecialchars($section) ?>',5); return false;">
-                                                            <div class="stat-box p-3 rounded-3"
-                                                                style="background:rgba(220,38,38,0.1);border-left:3px solid #dc2626;">
-                                                                <div class="d-flex align-items-center justify-content-between">
-                                                                    <div>
-                                                                        <small class="text-white-50 d-block mb-1">5+ Absences</small>
-                                                                        <h3 class="fw-bold mb-0" style="color:#dc2626;"><?= number_format($students_5_absences) ?></h3>
-                                                                        <small style="color:#dc2626;opacity:0.75;">Critical — Click to view &amp; export</small>
-                                                                    </div>
-                                                                    <div class="rounded-circle p-2" style="background:rgba(220,38,38,0.2);">
-                                                                        <i class="bi bi-x-octagon-fill fs-4" style="color:#dc2626;"></i>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </a>
-                                                    </div>
-                                                    <div class="col-12">
-                                                        <div class="stat-box p-3 rounded-3"
-                                                            style="background:rgba(13,202,240,0.1);border-left:3px solid #0dcaf0;">
-                                                            <div class="d-flex align-items-center justify-content-between">
-                                                                <div>
-                                                                    <small class="text-white-50 d-block mb-1">Engagement Rate</small>
-                                                                    <h3 class="text-info fw-bold mb-0"><?= $engagement_rate ?>%</h3>
-                                                                </div>
-                                                                <div class="rounded-circle p-2" style="background:rgba(13,202,240,0.2);">
-                                                                    <i class="bi bi-graph-up-arrow text-info fs-4"></i>
-                                                                </div>
-                                                            </div>
-                                                            <div class="progress mt-2" style="height:6px;background:rgba(255,255,255,0.1);">
-                                                                <div class="progress-bar bg-info" role="progressbar"
-                                                                    style="width:<?= $engagement_rate ?>%"
-                                                                    aria-valuenow="<?= $engagement_rate ?>"
-                                                                    aria-valuemin="0" aria-valuemax="100"></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="info-note p-2 rounded-3 text-center"
-                                                style="background:rgba(102,126,234,0.05);border:1px dashed rgba(102,126,234,0.3);">
-                                                <small class="text-white-50">
-                                                    <i class="bi bi-info-circle me-1"></i>
-                                                    Click absences stats to view details and export PDF
-                                                </small>
-                                            </div>
+                                        <div class="dash-risks">
+                                            <a href="#" class="dash-risk warn"
+                                                onclick="viewAbsences('<?= htmlspecialchars($section) ?>',3); return false;"
+                                                title="Tingnan at i-export ang listahan">
+                                                <i class="bi bi-exclamation-circle-fill"></i>
+                                                <span class="n">
+                                                    <b><?= number_format($students_3_absences) ?></b>
+                                                    <small>3+ absent</small>
+                                                </span>
+                                            </a>
+                                            <a href="#" class="dash-risk crit"
+                                                onclick="viewAbsences('<?= htmlspecialchars($section) ?>',5); return false;"
+                                                title="Kritikal — tingnan at i-export">
+                                                <i class="bi bi-x-octagon-fill"></i>
+                                                <span class="n">
+                                                    <b><?= number_format($students_5_absences) ?></b>
+                                                    <small>5+ absent</small>
+                                                </span>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -773,9 +555,10 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                             endforeach;
                         }
                     } else {
-                        echo '<div class="col-12"><div class="alert alert-info rounded-4 border-0">
-                              <i class="bi bi-info-circle me-2"></i> No sections assigned yet.
-                          </div></div>';
+                        echo '<div class="col-12"><div class="dash-notice">
+                                <i class="bi bi-info-circle-fill"></i>
+                                <span>Wala pang naka-assign na section.</span>
+                              </div></div>';
                     }
 
                 } elseif ($view_mode === 'subjects') {
@@ -830,94 +613,78 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
 
                                 if ($current_year !== $yr): $current_year = $yr;
                                     $current_subject = null; ?>
-                                    <div class="col-12 mt-4 mb-3">
-                                        <div class="p-3 rounded-4"
-                                            style="background:linear-gradient(135deg,rgba(102,126,234,0.1) 0%,rgba(118,75,162,0.1) 100%);
-                                                border-left:4px solid #667eea;">
-                                            <h4 class="text-white fw-bold mb-0">
-                                                <i class="bi bi-mortarboard-fill me-2" style="color:#667eea;"></i><?= $yr ?>
-                                            </h4>
+                                    <div class="col-12">
+                                        <div class="dash-year">
+                                            <i class="bi bi-mortarboard-fill" style="color:#818cf8"></i>
+                                            <h4><?= $yr ?></h4>
                                         </div>
                                     </div>
                                 <?php endif; ?>
 
                                 <?php if ($current_subject !== $subject): $current_subject = $subject; ?>
-                                    <div class="col-12 mb-2 ps-2">
-                                        <div class="p-2 px-3 rounded-3 d-flex align-items-center gap-2"
-                                            style="background:rgba(16,185,129,0.08);border-left:3px solid #10b981;">
-                                            <i class="bi bi-book-fill" style="color:#10b981;"></i>
-                                            <span class="text-white fw-semibold"><?= htmlspecialchars($subject) ?></span>
+                                    <div class="col-12">
+                                        <div class="dash-subject-bar">
+                                            <i class="bi bi-book-fill"></i>
+                                            <?= htmlspecialchars($subject) ?>
                                         </div>
                                     </div>
                                 <?php endif; ?>
 
-                                <div class="col-md-4">
-                                    <div class="card bg-dark text-white shadow-lg rounded-4 section-card p-3 border-0 h-100">
-                                        <div class="card-body">
-                                            <div class="mb-3 text-center">
-                                                <div class="d-inline-block p-3 rounded-circle"
-                                                    style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);">
-                                                    <i class="bi bi-book-fill fs-3 text-white"></i>
-                                                </div>
-                                            </div>
-                                            <h6 class="text-white fw-bold mb-1">
-                                                <?= htmlspecialchars($subject) ?> - <?= htmlspecialchars($section) ?>
-                                            </h6>
-                                            <p class="text-white-50 small mb-3">
-                                                <i class="bi bi-person-fill"></i> <?= $total_students ?> Students
-                                            </p>
+                                <?php $attRate = $total_students > 0 ? round($present_on_date / $total_students * 100) : 0; ?>
+                                <div class="col-xl-4 col-md-6">
+                                    <div class="dash-card">
+                                        <div class="dash-card-head">
+                                            <span class="dash-tag">
+                                                <i class="bi bi-grid-3x3-gap-fill"></i>
+                                                <?= htmlspecialchars($section) ?>
+                                            </span>
+                                            <small><?= number_format($total_students) ?> students</small>
+                                        </div>
 
-                                            <div class="row g-2 mb-3">
-                                                <div class="col-6">
-                                                    <a href="#" class="text-decoration-none"
-                                                        onclick="viewAttendance('<?= htmlspecialchars($subject) ?>','<?= htmlspecialchars($section) ?>','present','<?= $selected_date ?>'); return false;">
-                                                        <div class="card bg-success bg-opacity-10 border-0 rounded-3 p-2 hover-lift" style="cursor:pointer;">
-                                                            <div class="text-center">
-                                                                <i class="bi bi-check-circle-fill text-success fs-4"></i>
-                                                                <h4 class="fw-bold text-white mb-0 mt-2"><?= $present_on_date ?></h4>
-                                                                <small class="text-success fw-semibold">Present</small>
-                                                            </div>
-                                                        </div>
-                                                    </a>
-                                                </div>
-                                                <div class="col-6">
-                                                    <a href="#" class="text-decoration-none"
-                                                        onclick="viewAttendance('<?= htmlspecialchars($subject) ?>','<?= htmlspecialchars($section) ?>','absent','<?= $selected_date ?>'); return false;">
-                                                        <div class="card bg-danger bg-opacity-10 border-0 rounded-3 p-2 hover-lift" style="cursor:pointer;">
-                                                            <div class="text-center">
-                                                                <i class="bi bi-x-circle-fill text-danger fs-4"></i>
-                                                                <h4 class="fw-bold text-white mb-0 mt-2"><?= $absent_on_date ?></h4>
-                                                                <small class="text-danger fw-semibold">Absent</small>
-                                                            </div>
-                                                        </div>
-                                                    </a>
-                                                </div>
-                                            </div>
+                                        <!-- Mapipindot pa rin ang dalawang tile para sa listahan;
+                                             ang pang-PDF ay hiwalay na nasa ilalim. -->
+                                        <div class="dash-splits">
+                                            <a href="#" class="dash-split present"
+                                                onclick="viewAttendance('<?= htmlspecialchars($subject) ?>','<?= htmlspecialchars($section) ?>','present','<?= $selected_date ?>'); return false;">
+                                                <i class="bi bi-check-circle-fill"></i>
+                                                <b><?= number_format($present_on_date) ?></b>
+                                                <small>Present</small>
+                                            </a>
+                                            <a href="#" class="dash-split absent"
+                                                onclick="viewAttendance('<?= htmlspecialchars($subject) ?>','<?= htmlspecialchars($section) ?>','absent','<?= $selected_date ?>'); return false;">
+                                                <i class="bi bi-x-circle-fill"></i>
+                                                <b><?= number_format($absent_on_date) ?></b>
+                                                <small>Absent</small>
+                                            </a>
+                                        </div>
 
-                                            <div class="row g-2">
-                                                <div class="col-6">
-                                                    <form action="../exports/export_pdf.php" method="POST">
-                                                        <input type="hidden" name="subject" value="<?= htmlspecialchars($subject) ?>">
-                                                        <input type="hidden" name="section" value="<?= htmlspecialchars($section) ?>">
-                                                        <input type="hidden" name="status" value="present">
-                                                        <input type="hidden" name="date" value="<?= $selected_date ?>">
-                                                        <button type="submit" class="btn btn-success btn-sm w-100 rounded-pill">
-                                                            <i class="bi bi-file-earmark-pdf"></i> Present
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                                <div class="col-6">
-                                                    <form action="../exports/export_pdf.php" method="POST">
-                                                        <input type="hidden" name="subject" value="<?= htmlspecialchars($subject) ?>">
-                                                        <input type="hidden" name="section" value="<?= htmlspecialchars($section) ?>">
-                                                        <input type="hidden" name="status" value="absent">
-                                                        <input type="hidden" name="date" value="<?= $selected_date ?>">
-                                                        <button type="submit" class="btn btn-danger btn-sm w-100 rounded-pill">
-                                                            <i class="bi bi-file-earmark-pdf"></i> Absent
-                                                        </button>
-                                                    </form>
-                                                </div>
+                                        <div class="dash-engage">
+                                            <div class="dash-engage-top">
+                                                <span>Attendance rate</span>
+                                                <b><?= $attRate ?>%</b>
                                             </div>
+                                            <div class="dash-bar"><span style="width:<?= min(100, $attRate) ?>%"></span></div>
+                                        </div>
+
+                                        <div class="dash-exports">
+                                            <form action="../exports/export_pdf.php" method="POST">
+                                                <input type="hidden" name="subject" value="<?= htmlspecialchars($subject) ?>">
+                                                <input type="hidden" name="section" value="<?= htmlspecialchars($section) ?>">
+                                                <input type="hidden" name="status" value="present">
+                                                <input type="hidden" name="date" value="<?= $selected_date ?>">
+                                                <button type="submit" class="dash-export present">
+                                                    <i class="bi bi-file-earmark-pdf"></i> Present PDF
+                                                </button>
+                                            </form>
+                                            <form action="../exports/export_pdf.php" method="POST">
+                                                <input type="hidden" name="subject" value="<?= htmlspecialchars($subject) ?>">
+                                                <input type="hidden" name="section" value="<?= htmlspecialchars($section) ?>">
+                                                <input type="hidden" name="status" value="absent">
+                                                <input type="hidden" name="date" value="<?= $selected_date ?>">
+                                                <button type="submit" class="dash-export absent">
+                                                    <i class="bi bi-file-earmark-pdf"></i> Absent PDF
+                                                </button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
@@ -925,16 +692,17 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                             endwhile;
                         else: ?>
                             <div class="col-12">
-                                <div class="alert alert-info rounded-4 border-0">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    No attendance records found for your subjects yet.
+                                <div class="dash-notice">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <span>Wala pang attendance record ang mga subject mo.</span>
                                 </div>
                             </div>
                         <?php endif;
                     } else {
-                        echo '<div class="col-12"><div class="alert alert-info rounded-4 border-0">
-                              <i class="bi bi-info-circle me-2"></i> No subjects assigned yet.
-                          </div></div>';
+                        echo '<div class="col-12"><div class="dash-notice">
+                                <i class="bi bi-info-circle-fill"></i>
+                                <span>Wala pang naka-assign na subject.</span>
+                              </div></div>';
                     }
                 }
                 ?>
@@ -943,32 +711,15 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
             <?php include __DIR__ . "/../components/view_attendance_modal.php"; ?>
             <?php include __DIR__ . "/../components/view_absences_modal.php"; ?>
 
-            <hr class="border-secondary">
-
-            <!-- RECENT ACTIVITY -->
-            <div class="section-header mb-4">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 metric-card">
-                    <div class="d-flex align-items-center gap-3">
-                        <div>
-                            <h4 class="mb-1 fw-bold text-white">Recent Activity</h4>
-                            <p class="mb-0 text-white-50 small">
-                                <i class="bi bi-arrow-repeat me-1"></i>Latest attendance records
-                            </p>
-                        </div>
-                    </div>
-                    <span class="badge bg-success bg-opacity-25 text-success rounded-pill px-3 py-2">
-                        <i class="bi bi-circle-fill" style="font-size:0.5rem;animation:pulse-dot 2s ease-in-out infinite;"></i>
-                        Live Updates
-                    </span>
-                </div>
-                <div class="header-decoration"
-                    style="background:linear-gradient(90deg,transparent,rgba(13,202,240,0.1));"></div>
+            <div class="dash-section-title mt-5">
+                Recent Activity
+                <span class="count">Huling 5 scan ngayong araw</span>
             </div>
 
             <div class="row g-3">
                 <div class="col-12">
-                    <div class="card bg-dark text-white shadow-lg rounded-4 metric-card border-0 overflow-hidden">
-                        <div class="card-body p-4">
+                    <div class="dash-activity">
+                        <div>
                             <?php
                             if ($has_subjects) {
                                 $subjects_in = "'" . implode("','", array_map(fn($s) => $conn->real_escape_string($s), $subject_names)) . "'";
@@ -996,54 +747,37 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
 
                             if ($recentLogs && $recentLogs->num_rows > 0):
                                 while ($row = $recentLogs->fetch_assoc()): ?>
-                                    <div class="activity-item mb-3 p-3 rounded" style="background:#1e293b;">
-                                        <div class="row align-items-center">
-                                            <div class="col-auto">
-                                                <div class="rounded-circle p-2"
-                                                    style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
-                                                    <i class="bi bi-person-fill text-white"></i>
-                                                </div>
-                                            </div>
-                                            <div class="col">
-                                                <h6 class="mb-1 text-white"><?= htmlspecialchars($row['name']) ?></h6>
-                                                <small class="text-muted d-block">
-                                                    <?= htmlspecialchars($row['student_no']) ?> |
-                                                    <?= htmlspecialchars($row['section']) ?>
-                                                    <?php if ($row['subject']): ?>
-                                                        | <span class="badge"
-                                                            style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);">
-                                                            <?= htmlspecialchars($row['subject']) ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </small>
+                                    <div class="dash-act-row">
+                                        <div class="dash-act-avatar">
+                                            <?= htmlspecialchars(strtoupper(substr($row['name'], 0, 1))) ?>
+                                        </div>
+                                        <div class="dash-act-main">
+                                            <strong><?= htmlspecialchars($row['name']) ?></strong>
+                                            <div class="dash-act-meta">
+                                                <span><?= htmlspecialchars($row['student_no']) ?></span>
+                                                <span>·</span>
+                                                <span><?= htmlspecialchars($row['course'] . '-' . $row['section']) ?></span>
+                                                <?php if ($row['subject']): ?>
+                                                    <span class="subj"><?= htmlspecialchars($row['subject']) ?></span>
+                                                <?php endif; ?>
                                                 <?php if ($row['instructor_name']): ?>
-                                                    <small class="text-white-50 d-block mt-1">
-                                                        <i class="bi bi-person-badge text-info"></i>
-                                                        Scanned by: <span class="text-info fw-semibold">
-                                                            <?= htmlspecialchars($row['instructor_name']) ?>
-                                                        </span>
-                                                    </small>
+                                                    <span>·</span>
+                                                    <span><i class="bi bi-person-badge"></i>
+                                                        <?= htmlspecialchars($row['instructor_name']) ?></span>
                                                 <?php endif; ?>
                                             </div>
-                                            <div class="col-auto">
-                                                <span class="badge bg-success">
-                                                    <i class="bi bi-clock-fill me-1"></i>
-                                                    <?= date("g:i A", strtotime($row['time_in'])) ?>
-                                                </span>
-                                            </div>
                                         </div>
+                                        <span class="dash-act-time">
+                                            <i class="bi bi-clock"></i>
+                                            <?= date("g:i A", strtotime($row['time_in'])) ?>
+                                        </span>
                                     </div>
                                 <?php endwhile;
                             else: ?>
-                                <div class="empty-state text-center py-5">
-                                    <div class="empty-icon mb-3">
-                                        <i class="bi bi-inbox"></i>
-                                        <div class="empty-icon-circle"></div>
-                                    </div>
-                                    <h6 class="text-white mb-2">No Activity Yet</h6>
-                                    <p class="text-muted mb-0">
-                                        Activities will appear here when students scan their QR codes
-                                    </p>
+                                <div class="dash-empty">
+                                    <i class="bi bi-inbox"></i>
+                                    <strong>Wala pang aktibidad</strong>
+                                    <span>Lilitaw dito ang mga scan pagkatapos mag-attendance ng estudyante.</span>
                                 </div>
                             <?php endif; ?>
                         </div>
