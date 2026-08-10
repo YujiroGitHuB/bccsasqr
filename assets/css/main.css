@@ -145,27 +145,10 @@ body {
   transition: transform 0.3s ease;
 }
 
-/* Madilim (#1e293b) ang .card sa app na ito, kaya nawawala rin dito ang
-   logo — at dito pa mismo tinitingnan ng admin ang na-upload niya.
-   Puting plate para talagang makita kung ano ang na-upload. */
-/* `.card.` — kailangan ng dalawang klase: may sariling
-   `.card { background-color: #1e293b }` din ang settings.css at mas
-   huli itong na-load, kaya kinakain nito ang puting background kapag
-   `.logo-preview-plate` lang ang selector. */
-.card.logo-preview-plate {
-  width: 120px;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-}
-
-.logo-preview-plate img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
+/* Ang puting plate ng preview sa Settings ay `.cfg-plate` na ngayon,
+   nasa assets/css/settings-page.css kasama ng natitirang tagapili ng
+   logo. Hindi na `.card` ang balot niyon, kaya wala nang kailangang
+   labanan na `.card { background-color: #1e293b }` ng settings.css. */
 
 .logo-text {
   color: #fff;

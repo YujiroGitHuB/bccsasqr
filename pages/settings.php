@@ -123,6 +123,10 @@ $systemLogo = $system['logo'] ?? '';
 <head>
     <?php include __DIR__ . "/../includes/header.php"; ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">
+    <!-- Bago ang settings-page.css: doon nakasulat ang tagapili ng logo
+         (.cfg-*) at kailangan nitong manalo laban sa mga panuntunan ng
+         .app-modal kapag pantay ang specificity. -->
+    <link rel="stylesheet" href="<?= asset('../assets/css/modal-form.css') ?>">
     <link rel="stylesheet" href="<?= asset('../assets/css/settings-page.css') ?>">
 </head>
 

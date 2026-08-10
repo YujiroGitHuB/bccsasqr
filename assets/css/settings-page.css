@@ -297,3 +297,176 @@
         padding-left: 56px;
     }
 }
+
+/* ============================================================
+   SYSTEM CONFIGURATION MODAL — ang tagapili ng logo
+
+   Ang kahon mismo ng modal ay galing na sa .app-modal
+   (assets/css/modal-form.css); ito ang natitirang piraso na sa
+   iisang modal lang ginagamit.
+
+   Ang dating ayos ay isang lumulutang na preview sa gitna at,
+   sa ilalim niyon, ang hubad na `<input type="file">` — ang
+   "Choose File / No file chosen" ng browser. Tatlong problema:
+
+   · Nakahiwalay ang preview sa kontrol na nagpapalit nito, kaya
+     hindi malinaw na iisang patlang sila. Wala pa ngang label
+     ang preview.
+   · Ang katutubong file input ang nag-iisang kontrol sa buong
+     app na hindi sumusunod sa anyo nito — kulay-abo, kwadrado,
+     serif ang sulat, at hindi maistilo nang direkta.
+   · Kapag nakapili ka na ng file, wala nang paraang umatras
+     maliban sa pagsara ng buong modal.
+
+   Kapalit: isang hanay — plate sa kaliwa, aksyon sa kanan —
+   kaya isang bagay na ang tingin ng preview at ng butones.
+   ============================================================ */
+
+.cfg-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .9rem;
+    border-radius: 12px;
+    border: 1px solid var(--am-border);
+    background: rgba(255, 255, 255, .02);
+}
+
+.cfg-plate {
+    flex-shrink: 0;
+    width: 88px;
+    height: 88px;
+    padding: 8px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .18);
+    overflow: hidden;
+}
+
+.cfg-plate img {
+    max-width: 100%;
+    max-height: 100%;
+    /* `contain` at hindi `cover` — hindi pinuputol ang gilid ng logo. */
+    object-fit: contain;
+}
+
+/* Wala pang na-upload: hindi puting plate — walang ipinapakitang
+   larawan ang puting kahon, blangko lang ito. Guhit-tuldok para
+   malinaw na butas ito na dapat punan. */
+.cfg-plate.is-empty {
+    background: rgba(255, 255, 255, .03);
+    border: 1px dashed rgba(255, 255, 255, .18);
+    box-shadow: none;
+    color: rgba(255, 255, 255, .3);
+    font-size: 1.7rem;
+}
+
+.cfg-logo-side {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Nakatago pero hindi `display: none`: kailangang manatiling
+   naaabot ng Tab ang input, dahil ang `<label for>` lang ang
+   nakikitang butones at hindi ito nakukuha ng keyboard. */
+.cfg-file {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Nawala ang sariling focus ring ng input nang itago ito, kaya
+   ang label ang nagsusuot nito. */
+.cfg-file:focus-visible+.cfg-logo-actions .cfg-pick {
+    outline: 2px solid var(--am-ink);
+    outline-offset: 2px;
+}
+
+.cfg-logo-actions {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+/* `margin: 0` — may sariling `margin-bottom` ang <label> mula sa
+   Bootstrap, at pumipilipit iyon sa hanay ng mga butones. */
+.cfg-pick {
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Pag-atras lang ito, hindi pangunahing aksyon — kaya walang
+   hangganan at walang likod hangga't hindi hinahawakan. */
+.cfg-undo {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .35rem .6rem;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, .5);
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color .18s ease, background .18s ease;
+}
+
+.cfg-undo:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, .07);
+}
+
+.cfg-undo:focus-visible {
+    outline: 2px solid var(--am-ink);
+    outline-offset: 2px;
+}
+
+/* Mahaba ang mga pangalan ng file — putulin nang tapat sa halip
+   na palawakin ang modal. */
+.cfg-file-name {
+    display: block;
+    margin-top: .5rem;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Wala pang pinipiling bago — pahayag lang ito ng kalagayan, kaya
+   hindi ito dapat kasingtingkad ng tunay na pangalan ng file. */
+.cfg-file-name.is-idle {
+    font-weight: 500;
+    color: rgba(255, 255, 255, .38);
+}
+
+@media (max-width: 575.98px) {
+
+    /* Masyadong makipot ang natitira sa kanan ng plate sa telepono
+       para sa butones at sa pangalan ng file — isalansan. */
+    .cfg-logo {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .cfg-plate {
+        margin: 0 auto;
+    }
+
+    .cfg-logo-actions {
+        justify-content: center;
+    }
+}
