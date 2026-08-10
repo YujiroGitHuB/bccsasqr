@@ -49,9 +49,11 @@ if (count($subjects) === 0 && $role !== 'admin') {
     <html>
 
     <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <title>No Subjects Assigned</title>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <link rel="stylesheet" href="../assets/css/qr-scanner.css">
+        <link rel="stylesheet" href="css/style.css">
     </head>
 
     <body class="no-subjects-body">
@@ -75,7 +77,9 @@ if (count($subjects) === 0 && $role !== 'admin') {
 <head>
     <?php include __DIR__ . "/../includes/headerQrScanner.php"; ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../assets/css/qr-scanner.css">
+    <!-- Nasa Qrscanner/css/style.css na ang mga estilo ng page na ito
+         (tingnan ang "QR SCANNER PAGE" na seksyon doon). Wala talagang
+         assets/css/qr-scanner.css — 404 lang ito kada page load. -->
 </head>
 
 <body>

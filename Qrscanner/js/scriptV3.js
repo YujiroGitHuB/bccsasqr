@@ -557,6 +557,17 @@ window.onload = () => {
     })
     .then(res => res.json())
     .then(data => {
+        // Nag-e-expire ang session kapag matagal nakatiwangwang ang tab
+        // sa telepono. Object ang isinasauli ng API kapag ganoon
+        // ({error: "Not logged in"}), hindi array — kaya lumalabas noon
+        // ang malabong "data.forEach is not a function" sa screen.
+        if (!Array.isArray(data)) {
+            debugLog(data && data.error
+                ? `Cannot load attendance: ${data.error}. Please sign in again.`
+                : 'Cannot load attendance: unexpected response from server.', 'error');
+            return;
+        }
+
         debugLog(`Loaded ${data.length} attendance records`);
         const table = $('#attendanceTable').DataTable();
         data.forEach(r => {

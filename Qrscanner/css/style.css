@@ -199,7 +199,10 @@ tr:hover td {
 
     #video {
         border-width: 2px;
-        width: 90%;
+        /* Dating 90%: mas makitid ang video kaysa sa .overlay (inset: 0
+           ng container), kaya hindi tugma ang scanner frame sa tunay
+           na nakikita ng camera. */
+        width: 100%;
     }
 
     table {
@@ -217,6 +220,10 @@ tr:hover td {
     align-items: center;
     margin: 0 auto;
     width: 100%;
+    /* Kailangan ito: may `padding: 0 10px` ang container sa mobile.
+       Kung content-box, magiging 100% + 20px ang tunay na lapad kaya
+       lumalabas ito sa #leftPanel at nagkaka-horizontal scroll. */
+    box-sizing: border-box;
     max-width: 480px;
     border-radius: 25px;
     overflow: hidden;
@@ -526,7 +533,11 @@ tr:hover td {
     #scannerContainer {
         max-width: 100%;
         margin: 0 auto;
-        padding: 0 10px;
+        /* Walang padding: ang .overlay ay inset: 0 ng container, kaya
+           kapag may padding, lumalampas ang madilim na overlay sa
+           gilid ng video at hindi tugma ang frame. May sariling
+           padding na ang #leftPanel. */
+        padding: 0;
         border-radius: 20px;
     }
 
@@ -667,7 +678,7 @@ tr:hover td {
 /* Extra small devices */
 @media (max-width: 320px) {
     #scannerContainer {
-        padding: 0 5px;
+        padding: 0;
         border-radius: 15px;
     }
 
@@ -787,7 +798,11 @@ tr:hover td {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    padding: 16px;
+    box-sizing: border-box;
     margin: 0;
 }
 
@@ -797,6 +812,17 @@ tr:hover td {
     border-radius: 12px;
     text-align: center;
     border: 2px solid #38bdf8;
+    /* Walang hangganan ang lapad noon kaya umaapaw sa telepono */
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 420px;
+    margin: 16px;
+}
+
+@media (max-width: 480px) {
+    .message-box {
+        padding: 24px 18px;
+    }
 }
 
 .message-box h2 {
@@ -1217,5 +1243,164 @@ tr:hover td {
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ============================================================
+   MOBILE — karagdagang ayos
+   ============================================================ */
+
+/* Hindi ganap ang 100vh sa mobile: hindi kasama ang taas ng
+   address bar, kaya may nawawalang bahagi sa ibaba. */
+body {
+    min-height: 100dvh;
+}
+
+@media (max-width: 768px) {
+
+    /* Dating `position: fixed` ang header at `margin-top: 80px` ang
+       main. Pero 66px lang ang header sa telepono, kaya may butas.
+       Sa sticky, kasama na ang header sa daloy — hindi na kailangan
+       ng hulaan na offset. */
+    header {
+        position: sticky;
+        top: 0;
+        padding-top: max(6px, env(safe-area-inset-top));
+        padding-bottom: 6px;
+    }
+
+    main {
+        margin-top: 0;
+        padding-left: max(10px, env(safe-area-inset-left));
+        padding-right: max(10px, env(safe-area-inset-right));
+    }
+
+    /* Mas malapit sa gilid ang notification island sa telepono */
+    #di-outer {
+        top: max(10px, env(safe-area-inset-top));
+        width: 100%;
+        padding: 0 12px;
+        box-sizing: border-box;
+        align-items: center;
+    }
+
+    #di-outer.di-expanded #dynamic-island {
+        width: min(300px, 100%);
+    }
+
+    .di-student-name,
+    .di-student-subject {
+        max-width: min(260px, 78vw);
+    }
+}
+
+@media (max-width: 576px) {
+
+    /* 16px ang pinakamaliit na hindi nagpapa-zoom sa iOS Safari
+       kapag tinapik ang field. Sa 14px, biglang lumalaki ang page
+       tuwing bubuksan ang dropdown ng subject. */
+    .subject-selection select,
+    .subject-selection input,
+    .dataTables_filter input,
+    .dataTables_length select {
+        font-size: 16px;
+        min-height: 48px;
+    }
+
+    .dataTables_length select {
+        min-height: 40px;
+        padding: 6px 8px;
+    }
+
+    .subject-selection {
+        padding: 14px;
+        margin: 12px 0;
+    }
+
+    .instructor-info {
+        font-size: 0.9rem;
+        line-height: 1.45;
+    }
+
+    /* Kontrolado ng DataTables ang markup na ito. Sa telepono,
+       magkapatong ang "Show N entries" at "Search" kapag magkatabi —
+       kaya patung-patong na lang mula sa itaas. */
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        float: none;
+        width: 100%;
+        text-align: left;
+        margin-bottom: 10px;
+    }
+
+    .dataTables_wrapper .dataTables_filter label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .dataTables_wrapper .dataTables_filter input {
+        flex: 1;
+        min-width: 0;
+        margin-left: 0;
+        width: auto;
+    }
+
+    /* Sapat na laki para matapik ng daliri ang Previous/Next */
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 10px 14px;
+        min-width: 44px;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        float: none;
+        width: 100%;
+        text-align: center;
+    }
+
+    th,
+    td {
+        padding: 8px 10px;
+    }
+
+    /* Tanda na may mahihila pa sa gilid ang talahanayan.
+       Ingles ang teksto dahil Ingles ang buong UI ng app. */
+    #attendance {
+        position: relative;
+    }
+
+    #attendance::after {
+        content: "← swipe the table sideways →";
+        display: block;
+        text-align: center;
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 6px;
+    }
+
+    footer {
+        padding-bottom: max(15px, env(safe-area-inset-bottom));
+    }
+}
+
+/* Walang tunay na hover sa touch screen — natitigil ang highlight
+   pagkatapos tapikin ang isang row. */
+@media (hover: none) {
+    tr:hover td {
+        background-color: transparent;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .scan-line,
+    .scanner-frame,
+    .di-dot,
+    .student-card {
+        animation: none !important;
     }
 }
