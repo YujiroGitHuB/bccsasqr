@@ -26,8 +26,17 @@
     --set-muted: rgba(255, 255, 255, .45);
 }
 
+/* Naka-cap ang lapad dahil ang bawat hanay ay pangungusap na
+   babasahin — sa buong lapad ng malaking monitor ay lumalampas na
+   sa 120 titik ang isang linya at nahihirapan nang bumalik ang mata
+   sa simula ng susunod.
+
+   `margin: 0 auto` — kung nakakaliwa ito, ang natitirang espasyo ay
+   naiipon lahat sa kanan at mukhang nakalimutang ayusin sa halip na
+   sinadya. Kapareho ito ng ginawa sa profile page. */
 .set-page .set-wrap {
-    max-width: 900px;
+    max-width: 1040px;
+    margin: 0 auto;
 }
 
 /* ─── Hero ────────────────────────────────────────────────── */
