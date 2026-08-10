@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/includes/asset.php';
+
 session_start();
 include __DIR__ . '/includes/db_connect.php';
 
@@ -28,7 +29,7 @@ if ($locked) {
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="assets/css/reg.css">
+    <link rel="stylesheet" href="<?= asset('assets/css/reg.css') ?>">
 
     <style>
 
@@ -238,13 +239,13 @@ if ($locked) {
     ========================================= -->
 
     <!-- Text-to-Speech -->
-    <script src="assets/js/tts.js"></script>
+    <script src="<?= asset('assets/js/tts.js') ?>"></script>
 
     <!-- Form Validation & Interaction -->
-    <script src="assets/js/regScript.js"></script>
+    <script src="<?= asset('assets/js/regScript.js') ?>"></script>
 
     <!-- Face Recognition Script -->
-    <script src="assets/js/faceRecognition.js"></script>
+    <script src="<?= asset('assets/js/faceRecognition.js') ?>"></script>
 
 </body>
 

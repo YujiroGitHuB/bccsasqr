@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
 
@@ -56,7 +57,7 @@ if ($result && $result->num_rows > 0) {
     <title>Online Attendance Forms</title>
     <?php include __DIR__ . "/../includes/header.php" ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../assets/css/daily_attendance.css">
+    <link rel="stylesheet" href="<?= asset('../assets/css/daily_attendance.css') ?>">
 </head>
 
 <body class="attendance-page">
@@ -171,8 +172,8 @@ if ($result && $result->num_rows > 0) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/js/tts.js"></script>
-    <script src="../assets/js/detection.js"></script>
+    <script src="<?= asset('../assets/js/tts.js') ?>"></script>
+    <script src="<?= asset('../assets/js/detection.js') ?>"></script>
     <script>
         const isFormLocked = <?php echo $is_locked ? 'true' : 'false'; ?>;
         const attendanceData = <?php echo json_encode($attendance_data); ?>;

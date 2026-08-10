@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 session_start();
 include __DIR__ . "/../includes/auth.php";
 include "../includes/db_connect.php";
@@ -53,7 +54,7 @@ if (count($subjects) === 0 && $role !== 'admin') {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <title>No Subjects Assigned</title>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
     </head>
 
     <body class="no-subjects-body">
@@ -265,8 +266,8 @@ if (count($subjects) === 0 && $role !== 'admin') {
         console.log('Instructor Name:', instructorName);
         console.log('Subjects loaded:', <?= count($subjects) ?>);
     </script>
-    <script src="../assets/js/tts.js"></script>
-    <script src="js/scriptV3.js"></script>
+    <script src="<?= asset('../assets/js/tts.js') ?>"></script>
+    <script src="<?= asset('js/scriptV3.js') ?>"></script>
 </body>
 
 </html>

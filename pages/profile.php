@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -68,12 +69,12 @@ $system = mysqli_fetch_assoc($systemQuery);
 
     <?php include __DIR__ . "/../includes/footer.php"; ?>
 
-    <script src="../assets/js/profileUpdate.js"></script>
-    <script src="../assets/js/comingSoon.js"></script>
-    <script src="../assets/js/logout.js"></script>
-    <script src="../assets/js/toggleSidebar.js"></script>
-    <script src="../assets/js/datatables.js"></script>
-    <script src="../assets/js/lock.js"></script>
+    <script src="<?= asset('../assets/js/profileUpdate.js') ?>"></script>
+    <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
+    <script src="<?= asset('../assets/js/logout.js') ?>"></script>
+    <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
+    <script src="<?= asset('../assets/js/datatables.js') ?>"></script>
+    <script src="<?= asset('../assets/js/lock.js') ?>"></script>
 
 </body>
 

@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
@@ -22,8 +23,8 @@ $systemLogo    = $system['logo']           ?? '';
 
 <head>
     <?php include __DIR__ . "/../includes/header.php"; ?>
-    <link rel="stylesheet" href="../assets/css/settings.css">
-    <link rel="stylesheet" href="../assets/css/management-pages.css">
+    <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/management-pages.css') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 
@@ -352,10 +353,10 @@ $systemLogo    = $system['logo']           ?? '';
     <?php include __DIR__ . "/../includes/footer.php"; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../assets/js/comingSoon.js"></script>
-    <script src="../assets/js/logout.js"></script>
-    <script src="../assets/js/toggleSidebar.js"></script>
-    <script src="../assets/js/datatables.js"></script>
+    <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
+    <script src="<?= asset('../assets/js/logout.js') ?>"></script>
+    <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
+    <script src="<?= asset('../assets/js/datatables.js') ?>"></script>
 
     <script>
         let isEditMode = false;

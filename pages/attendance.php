@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
@@ -299,15 +300,11 @@ if ($from > $to) {
     </div><!-- /content -->
 
     <?php include __DIR__ . "/../includes/footer.php"; ?>
-    <script src="../assets/js/comingSoon.js"></script>
-    <script src="../assets/js/logout.js"></script>
-    <script src="../assets/js/toggleSidebar.js"></script>
-    <?php
-    // Auto cache-busting: browser re-fetches whenever the file changes.
-    $js = fn($f) => "../assets/js/$f?v=" . filemtime(__DIR__ . "/../assets/js/$f");
-    ?>
-    <script src="<?= $js('datatables.js') ?>"></script>
-    <script src="<?= $js('delete_attendance.js') ?>"></script>
-    <script src="<?= $js('filter.js') ?>"></script>
+    <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
+    <script src="<?= asset('../assets/js/logout.js') ?>"></script>
+    <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
+    <script src="<?= asset('../assets/js/datatables.js') ?>"></script>
+    <script src="<?= asset('../assets/js/delete_attendance.js') ?>"></script>
+    <script src="<?= asset('../assets/js/filter.js') ?>"></script>
 </body>
 </html>

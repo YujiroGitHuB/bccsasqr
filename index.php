@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/includes/asset.php';
+
 session_start();
 include __DIR__ . '/includes/db_connect.php';
 ?>
@@ -18,7 +19,7 @@ include __DIR__ . '/includes/db_connect.php';
     <!-- Face-api.js for face recognition -->
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
-    <link rel="stylesheet" href="assets/css/login.css?v=1.2">
+    <link rel="stylesheet" href="<?= asset('assets/css/login.css') ?>">
 </head>
 
 <body>
@@ -122,16 +123,16 @@ include __DIR__ . '/includes/db_connect.php';
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
 
     <!-- THEN YOUR SCRIPT -->
-    <script src="assets/js/shape.js?v=1.2"></script>
+    <script src="<?= asset('assets/js/shape.js') ?>"></script>
     <!-- Show/hide password -->
-    <script src="assets/js/showPassword.js?v=1.2"></script>
+    <script src="<?= asset('assets/js/showPassword.js') ?>"></script>
 
     <!-- Face login -->
-    <script src="assets/js/faceLogin.js"></script>
+    <script src="<?= asset('assets/js/faceLogin.js') ?>"></script>
     <!-- face modal -->
-    <script src="assets/js/faceModal.js"></script>
+    <script src="<?= asset('assets/js/faceModal.js') ?>"></script>
     <!-- flashlight -->
-    <script src="assets/js/flashlight.js"></script>
+    <script src="<?= asset('assets/js/flashlight.js') ?>"></script>
 
 </body>
 

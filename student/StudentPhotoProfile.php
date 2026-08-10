@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/../includes/asset.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Photo Upload</title>
   <link rel="shortcut icon" href="../assets/images/bcc logo.png" type="image/x-icon">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="<?= asset('assets/css/style.css') ?>">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -201,11 +202,11 @@
   <!-- footer -->
   <?php include __DIR__ . "/../components/footer.php"; ?>
 
-  <script src="assets/js/script.js"></script>
+  <script src="<?= asset('assets/js/script.js') ?>"></script>
   <!-- detection -->
-  <script src="../assets/js/detection.js"></script>
+  <script src="<?= asset('../assets/js/detection.js') ?>"></script>
   <!-- flashlight -->
-  <script src="../assets/js/flashlight.js"></script>
+  <script src="<?= asset('../assets/js/flashlight.js') ?>"></script>
 </body>
 
 </html>

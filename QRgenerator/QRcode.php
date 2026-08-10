@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 include "../includes/db_connect.php"; // ensure this connects to your DB
 
 // Fetch lock setting from database
@@ -36,20 +37,20 @@ if ($locked) {
   <!-- script -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <!-- text to speech -->
-  <script src="../assets/js/tts.js"></script>
-  <script src="js/scriptv2.js"></script>
-  <script src="js/fetch_students.js"></script>
-  <script src="js/instruction.js"></script>
-  <script src="../assets/js/detection.js"></script>
+  <script src="<?= asset('../assets/js/tts.js') ?>"></script>
+  <script src="<?= asset('js/scriptv2.js') ?>"></script>
+  <script src="<?= asset('js/fetch_students.js') ?>"></script>
+  <script src="<?= asset('js/instruction.js') ?>"></script>
+  <script src="<?= asset('../assets/js/detection.js') ?>"></script>
 
   <!-- LOAD LIBRARIES FIRST -->
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js"></script>
 
   <!-- THEN YOUR SCRIPT -->
-  <script src="../assets/js/shape.js"></script>
+  <script src="<?= asset('../assets/js/shape.js') ?>"></script>
   <!-- assistant -->
-  <script src="../assets/js/widget.js"></script>
+  <script src="<?= asset('../assets/js/widget.js') ?>"></script>
 
 </body>
 

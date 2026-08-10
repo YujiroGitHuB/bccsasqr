@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 
 session_start();
 include __DIR__ . "/../includes/auth.php";
@@ -1052,11 +1053,11 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
         </div>
     </div>
 
-    <script src="../assets/js/view_attendance.js"></script>
-    <script src="../assets/js/view_absences.js"></script>
+    <script src="<?= asset('../assets/js/view_attendance.js') ?>"></script>
+    <script src="<?= asset('../assets/js/view_absences.js') ?>"></script>
     <?php include __DIR__ . "/../includes/footer.php"; ?>
-    <script src="../assets/js/comingSoon.js"></script>
-    <script src="../assets/js/logout.js"></script>
-    <script src="../assets/js/toggleSidebar.js"></script>
+    <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
+    <script src="<?= asset('../assets/js/logout.js') ?>"></script>
+    <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
 </body>
 </html>

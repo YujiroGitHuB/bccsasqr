@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/../includes/asset.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -499,7 +500,7 @@
         </div>
     </div>
 
-    <script src="../assets/js/detection.js"></script>
+    <script src="<?= asset('../assets/js/detection.js') ?>"></script>
     <script>
         /* ── Floating particles ── */
         const container = document.getElementById('particles');

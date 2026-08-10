@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
@@ -168,23 +169,23 @@ include __DIR__ . "/../includes/auth.php";
     <!-- update students -->
     <?php include __DIR__ . "/../components/update_students_modal.php"; ?>
     <!-- script add student -->
-    <script src="../assets/js/addStudent.js"></script>
+    <script src="<?= asset('../assets/js/addStudent.js') ?>"></script>
     <!-- script student update -->
-    <script src="../assets/js/editStudent.js"></script>
+    <script src="<?= asset('../assets/js/editStudent.js') ?>"></script>
     <!-- script student delete -->
-    <script src="../assets/js/delStudent.js"></script>
+    <script src="<?= asset('../assets/js/delStudent.js') ?>"></script>
     <!-- import csv -->
-    <script src="../assets/js/importStudent.js"></script>
+    <script src="<?= asset('../assets/js/importStudent.js') ?>"></script>
     <!-- delete selected -->
-    <script src="../assets/js/deleteSelected.js"></script>
+    <script src="<?= asset('../assets/js/deleteSelected.js') ?>"></script>
     <!-- script -->
     <?php include __DIR__ . "/../includes/footer.php"; ?>
-    <script src="../assets/js/comingSoon.js"></script>
-    <script src="../assets/js/logout.js"></script>
-    <script src="../assets/js/toggleSidebar.js"></script>
-    <script src="../assets/js/datatables.js"></script>
-    <script src="../assets/js/delete_attendance.js"></script>
-    <script src="../assets/js/filter.js"></script>
+    <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
+    <script src="<?= asset('../assets/js/logout.js') ?>"></script>
+    <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
+    <script src="<?= asset('../assets/js/datatables.js') ?>"></script>
+    <script src="<?= asset('../assets/js/delete_attendance.js') ?>"></script>
+    <script src="<?= asset('../assets/js/filter.js') ?>"></script>
 
 </body>
 

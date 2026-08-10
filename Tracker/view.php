@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 // Include database connection
 include "../includes/db_connect.php";
 include __DIR__ . '/crud/att_display.php';
@@ -20,7 +21,7 @@ if ($locked) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Attendance Tracker</title>
     <link rel="shortcut icon" href="../assets/images/bcc logo.png" type="image/x-icon">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
@@ -70,17 +71,17 @@ if ($locked) {
         </div>
     </div>
     <!-- TTS Manager -->
-    <script src="../assets/js/tts.js"></script>
+    <script src="<?= asset('../assets/js/tts.js') ?>"></script>
     <!-- retrieve -->
-    <script src="js/script.js"></script>
+    <script src="<?= asset('js/script.js') ?>"></script>
     <!-- detection -->
-    <script src="../assets/js/detection.js"></script>
+    <script src="<?= asset('../assets/js/detection.js') ?>"></script>
       <!-- LOAD LIBRARIES FIRST -->
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js"></script>
 
   <!-- THEN YOUR SCRIPT -->
-  <script src="../assets/js/shape.js"></script>
+  <script src="<?= asset('../assets/js/shape.js') ?>"></script>
 
 </body>
 

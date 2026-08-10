@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
@@ -84,7 +85,7 @@ $sectionStmt->close();
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../assets/css/studPhotoPofile.css">
+    <link rel="stylesheet" href="<?= asset('../assets/css/studPhotoPofile.css') ?>">
 </head>
 <body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
@@ -215,10 +216,10 @@ $sectionStmt->close();
     </div>
 
     <?php include __DIR__ . "/../includes/footer.php"; ?>
-    <script src="../assets/js/logout.js"></script>
-    <script src="../assets/js/toggleSidebar.js"></script>
+    <script src="<?= asset('../assets/js/logout.js') ?>"></script>
+    <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
     <script>window.SP_IS_ADMIN = <?= $isAdminUser ? 'true' : 'false' ?>;</script>
-    <script src="../assets/js/studPhotoProfile.js"></script>
+    <script src="<?= asset('../assets/js/studPhotoProfile.js') ?>"></script>
 </body>
 
 </html>

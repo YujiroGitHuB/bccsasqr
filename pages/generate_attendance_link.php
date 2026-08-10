@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -18,7 +19,7 @@ $user_role = $_SESSION['role'];
 <head>
     <title>Generate Attendance Links</title>
     <?php include __DIR__ . "/../includes/header.php"; ?>
-    <link rel="stylesheet" href="../assets/css/daily_attendance.css">
+    <link rel="stylesheet" href="<?= asset('../assets/css/daily_attendance.css') ?>">
     <style>
         /* Skeleton loader */
         .skeleton-card {
@@ -203,13 +204,13 @@ $user_role = $_SESSION['role'];
     </div>
 
     <?php include __DIR__ . "/../includes/footer.php"; ?>
-    <script src="../assets/js/profileUpdate.js"></script>
-    <script src="../assets/js/comingSoon.js"></script>
-    <script src="../assets/js/logout.js"></script>
-    <script src="../assets/js/toggleSidebar.js"></script>
-    <script src="../assets/js/datatables.js"></script>
-    <script src="../assets/js/lock.js"></script>
+    <script src="<?= asset('../assets/js/profileUpdate.js') ?>"></script>
+    <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
+    <script src="<?= asset('../assets/js/logout.js') ?>"></script>
+    <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
+    <script src="<?= asset('../assets/js/datatables.js') ?>"></script>
+    <script src="<?= asset('../assets/js/lock.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="../assets/js/generate_link.js"></script>
+    <script src="<?= asset('../assets/js/generate_link.js') ?>"></script>
 </body>
 </html>

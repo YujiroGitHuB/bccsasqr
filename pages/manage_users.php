@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
@@ -23,9 +24,9 @@ $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FRO
 <html lang="en" data-bs-theme="dark">
 <head>
     <?php include __DIR__ . "/../includes/header.php"; ?>
-    <link rel="stylesheet" href="../assets/css/settings.css">
-    <link rel="stylesheet" href="../assets/css/management-pages.css">
-    <link rel="stylesheet" href="../assets/css/user-management.css">
+    <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/management-pages.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/user-management.css') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body>
@@ -179,12 +180,12 @@ $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FRO
     <?php include __DIR__ . "/../includes/footer.php"; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../assets/js/comingSoon.js"></script>
-    <script src="../assets/js/logout.js"></script>
-    <script src="../assets/js/toggleSidebar.js"></script>
-    <script src="../assets/js/datatables.js"></script>
-    <script src="../assets/js/lock.js"></script>
-    <script src="../assets/js/systemConfig.js"></script>
-    <script src="../assets/js/userManagement.js"></script>
+    <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
+    <script src="<?= asset('../assets/js/logout.js') ?>"></script>
+    <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
+    <script src="<?= asset('../assets/js/datatables.js') ?>"></script>
+    <script src="<?= asset('../assets/js/lock.js') ?>"></script>
+    <script src="<?= asset('../assets/js/systemConfig.js') ?>"></script>
+    <script src="<?= asset('../assets/js/userManagement.js') ?>"></script>
 </body>
 </html>
