@@ -22,5 +22,6 @@
      panuntunan doon) at bago ang mobile.css (na dapat manatiling
      huli para sa off-canvas na ayos sa telepono). -->
 <link rel="stylesheet" href="<?= asset('../assets/css/sidebar.css') ?>">
+<link rel="stylesheet" href="<?= asset('../assets/css/topbar.css') ?>">
 <!-- Mobile/tablet layout — dapat MANATILING huli para manaig sa main.css -->
 <link rel="stylesheet" href="<?= asset('../assets/css/mobile.css') ?>">

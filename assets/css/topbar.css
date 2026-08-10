@@ -1,0 +1,184 @@
+/* ============================================================
+   TOPBAR — profile dropdown
+
+   Ikinakarga pagkatapos ng main.css at bago ang mobile.css.
+
+   Ang inaayos dito:
+   · Walang lapad ang dropdown, kaya ang Bootstrap default na
+     10rem ang sumusukat — nagsasalansan ang pangalan sa tatlong
+     linya ("Charles / Nixon / Cayading").
+   · BANGGAAN: `.user-avatar` ang pangalan ng lalagyan ng avatar sa
+     topBar.php, pero may sarili ring `.user-avatar { width: 32px }`
+     ang management-pages.css para sa mga hanay ng talahanayan. Sa
+     bawat page na naglo-load niyon (backup, manage_users, mga
+     academic page) ay 32px na kahon ang nakabalot sa 48px na
+     `.avatar-circle` — kaya lumalabas at sumisikip. `.tb-avatar`
+     na ang pangalan dito para hindi na sila maabot ng isa't isa.
+   · Walang anumang estilo ang `.avatar-status` — patay na elemento
+     ito noon.
+   ============================================================ */
+
+.topbar .dropdown-menu {
+    /* Sapat para sa karaniwang buong pangalan sa isang linya; may
+       ellipsis pa rin ang sobrang haba (tingnan ang .tb-user-info). */
+    min-width: 268px;
+    max-width: 320px;
+    padding: 8px;
+    border-radius: 14px;
+    background: #16161a;
+    border: 1px solid rgba(255, 255, 255, .08);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, .55);
+}
+
+/* ─── Ulo: sino ang naka-login ────────────────────────────── */
+.topbar .user-dropdown-header {
+    padding: 0;
+}
+
+.topbar .tb-user {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .85rem .75rem .9rem;
+}
+
+.topbar .tb-avatar {
+    position: relative;
+    flex-shrink: 0;
+    line-height: 0;
+}
+
+.topbar .tb-avatar .avatar-circle {
+    width: 46px;
+    height: 46px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, .12);
+}
+
+/* Berdeng tuldok na "naka-online" — may span na para dito sa
+   topBar.php pero wala itong estilo noon, kaya hindi lumalabas. */
+.topbar .tb-status {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #34d399;
+    border: 2px solid #16161a;
+}
+
+.topbar .tb-user-info {
+    min-width: 0;
+}
+
+.topbar .tb-user-info h6 {
+    margin: 0 0 3px;
+    font-size: .92rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    /* Isang linya lang — ang mahabang pangalan ay pinuputol, hindi
+       pinapasalansan hanggang tumaas ang buong kahon. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.topbar .tb-role {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .12rem .55rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: #c7d2fe;
+    background: rgba(102, 126, 234, .16);
+    border: 1px solid rgba(102, 126, 234, .3);
+}
+
+/* ─── Mga item ────────────────────────────────────────────── */
+.topbar .dropdown-divider {
+    margin: 6px 2px;
+    border-color: rgba(255, 255, 255, .08);
+}
+
+.topbar .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .58rem .7rem;
+    border-radius: 9px;
+    font-size: .87rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    transition: background .18s ease, color .18s ease;
+}
+
+.topbar .dropdown-item i {
+    width: 18px;
+    font-size: 1rem;
+    text-align: center;
+    color: #94a3b8;
+    /* Ang `me-2` ng markup ay hinahalinhan ng gap sa itaas para
+       pantay ang agwat ng lahat ng item. */
+    margin-right: 0 !important;
+    transition: color .18s ease;
+}
+
+.topbar .dropdown-item:hover,
+.topbar .dropdown-item:focus {
+    background: rgba(102, 126, 234, .16);
+    color: #fff;
+}
+
+.topbar .dropdown-item:hover i {
+    color: #a5b4fc;
+}
+
+/* Ang paglabas ay hiwalay sa mga karaniwang aksyon — pula pa rin
+   ang teksto pero may sariling wash kapag hi-nover. */
+.topbar .dropdown-item.text-danger {
+    color: #f87171 !important;
+}
+
+.topbar .dropdown-item.text-danger i {
+    color: #f87171;
+}
+
+.topbar .dropdown-item.text-danger:hover {
+    background: rgba(239, 68, 68, .14);
+    color: #fca5a5 !important;
+}
+
+.topbar .dropdown-item.text-danger:hover i {
+    color: #fca5a5;
+}
+
+/* ─── Ang pindutan sa topbar mismo ────────────────────────── */
+.topbar .profile {
+    gap: 0;
+    padding: 4px 10px 4px 4px;
+    border-radius: 999px;
+    transition: background .18s ease;
+}
+
+.topbar .profile:hover {
+    background: rgba(255, 255, 255, .05);
+}
+
+.topbar .profile img {
+    border-color: rgba(255, 255, 255, .18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .topbar .dropdown-item,
+    .topbar .profile {
+        transition: none;
+    }
+}

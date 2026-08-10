@@ -42,8 +42,12 @@ $__avatarUrl  = $__avatarFile !== '' && is_file($__avatarFile)
         <ul class="dropdown-menu dropdown-menu-end mt-2">
             <!-- User Info Header -->
             <li class="user-dropdown-header">
-                <div class="d-flex align-items-center gap-3 p-3">
-                    <div class="user-avatar">
+                <!-- `.tb-avatar` at hindi `.user-avatar`: may sariling
+                     `.user-avatar { width: 32px }` ang management-pages.css
+                     para sa mga hanay ng talahanayan, at naaabot nito ang
+                     kahon na ito sa bawat page na naglo-load niyon. -->
+                <div class="tb-user">
+                    <div class="tb-avatar">
                         <div class="avatar-circle">
                             <?php if ($__avatarFile !== '' && is_file($__avatarFile)) { ?>
                                 <img src="<?php echo htmlspecialchars($__avatarUrl); ?>" alt="">
@@ -58,14 +62,16 @@ $__avatarUrl  = $__avatarFile !== '' && is_file($__avatarFile)
                                 echo $initials;
                             } ?>
                         </div>
-                        <span class="avatar-status"></span>
+                        <span class="tb-status" title="Online"></span>
                     </div>
-                    <div class="user-info">
-                        <h6 class="mb-0 fw-bold text-white"><?php echo $_SESSION['user_name']; ?></h6>
-                        <small class="text-white-50">
-                            <i class="bi bi-shield-check me-1"></i>
-                            <?php echo ucfirst($_SESSION['role']); ?>
-                        </small>
+                    <div class="tb-user-info">
+                        <h6 title="<?php echo htmlspecialchars($_SESSION['user_name']); ?>">
+                            <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+                        </h6>
+                        <span class="tb-role">
+                            <i class="bi bi-shield-check"></i>
+                            <?php echo htmlspecialchars(ucfirst($_SESSION['role'])); ?>
+                        </span>
                     </div>
                 </div>
             </li>
