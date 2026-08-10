@@ -8,10 +8,11 @@ function generateQR() {
     const course = sanitizeInput(document.getElementById('course').value.toUpperCase());
     const section = sanitizeInput(document.getElementById('section').value.toUpperCase());
 
+    // Katugma ng ibabaw at tuldik ng pahina (tingnan ang style.css).
     const swalTheme = {
-        confirmButtonColor: '#38bdf8',
-        background: '#0f172a',
-        color: '#e2e8f0'
+        confirmButtonColor: '#0ea5e9',
+        background: '#16161a',
+        color: '#e7e9ee'
     };
 
     // Empty student number
@@ -81,9 +82,13 @@ function generateQR() {
 
     const qrWrapper = document.getElementById('qrWrapper');
     const downloadBtn = document.getElementById('downloadBtn');
+    const placeholder = document.getElementById('qrPlaceholder');
 
-    qrWrapper.style.display = 'inline-block';
-    downloadBtn.style.display = 'inline-block';
+    // May QR na — wala nang dapat hintayin ang naghihintay na estado.
+    if (placeholder) placeholder.style.display = 'none';
+
+    qrWrapper.style.display = 'block';
+    downloadBtn.style.display = 'flex';
     setTimeout(() => {
         qrWrapper.style.opacity = '1';
         qrWrapper.style.transform = 'scale(1)';
@@ -96,8 +101,8 @@ function generateQR() {
         position: 'top-end',
         showConfirmButton: false,
         timer: 2000,
-        background: '#0f172a',
-        color: '#e2e8f0'
+        background: '#16161a',
+        color: '#e7e9ee'
     });
 }
 
@@ -147,49 +152,107 @@ function downloadQR() {
     const course = sanitizeInput(document.getElementById('course').value);
     const section = sanitizeInput(document.getElementById('section').value);
 
-    const details = `Student Number: ${id}\nName: ${name}\nCourse: ${course}\nSection: ${section}`;
+    const details = [
+        ['Student No.', id],
+        ['Name', name],
+        ['Course', course],
+        ['Section', section]
+    ];
 
-    const qrSize       = qrCanvas.width;
-    const logoHeight   = 70;
-    const textHeight   = 35;
-    const detailsHeight = 120;
-    const padding      = 30;
+    /* ── Ang ini-imprentang kard ──────────────────────────────────
+       Ito ang tanging bahaging dinadala ng estudyante palabas ng
+       sistema, kaya dapat itong mukhang galing dito: guhit na
+       tuldik sa itaas, malinis na tipo ng letra, at mga detalyeng
+       nakahanay bilang label/halaga sa halip na isang tumpok na
+       "Label: Halaga" na teksto.
+
+       Ang kulay ng likod ay dapat MANATILING kapareho ng
+       `colorLight` ng QR sa itaas — kung magkaiba, may kitang
+       parisukat na tahi sa palibot ng code.
+
+       Hindi ginagalaw ang kulay ng mismong QR. Ang jsQR sa
+       Qrscanner/js/scriptV3.js ay tinatawag nang walang opsiyon,
+       kaya "attemptBoth" ang default nito at nababasa ang baligtad
+       na QR — pero hindi lahat ng ibang scanner ay ganoon. */
+    const QR_BG = '#0f172a';   // = colorLight sa itaas
+    const INK = '#e2e8f0';
+    const INK_DIM = '#8b9bb0';
+    const FONT = '"Segoe UI", system-ui, -apple-system, Roboto, sans-serif';
+
+    const qrSize = qrCanvas.width;
+    const margin = 28;
+    const logoHeight = 58;
+    const rowHeight = 22;
+    const width = qrSize + margin * 2;
 
     const combinedCanvas = document.createElement('canvas');
     const ctx = combinedCanvas.getContext('2d');
+    combinedCanvas.width = width;
 
-    combinedCanvas.width  = qrSize + padding;
-    combinedCanvas.height = logoHeight + textHeight + qrSize + detailsHeight;
+    // Iginuguhit ang buong kard. Tinatawag ito ng dalawang landas
+    // ng logo (nakita / hindi nakita) — dati, ang landas ng error
+    // ay nagda-download ng hubad na QR nang walang kahit anong
+    // detalye, kaya walang pangalan sa larawan.
+    //
+    // Nakadepende ang taas sa kung may logo: kung wala, hindi na
+    // nagrereserba ng espasyo para dito kaysa mag-iwan ng butas.
+    function paintCard(logoImg) {
+        const logoBlock = logoImg ? logoHeight + 24 : 0;
+        const titleY = margin + logoBlock + 14;
+        const qrY = titleY + 18;
+        const dividerY = qrY + qrSize + 22;
+        const detailsY = dividerY + 26;
+        const height = detailsY + details.length * rowHeight + margin - 6;
 
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
+        combinedCanvas.height = height;
 
-    const logo = new Image();
-    logo.src = '../assets/images/bcc-logo.png';
+        ctx.fillStyle = QR_BG;
+        ctx.fillRect(0, 0, width, height);
 
-    logo.onload = function () {
-        const logoWidth = logo.width / (logo.height / logoHeight);
-        const logoX = (combinedCanvas.width - logoWidth) / 2;
-        ctx.drawImage(logo, logoX, 10, logoWidth, logoHeight);
+        // Guhit ng tuldik sa itaas — kapareho ng hero ng pahina.
+        const bar = ctx.createLinearGradient(0, 0, width, 0);
+        bar.addColorStop(0, '#0ea5e9');
+        bar.addColorStop(1, '#06b6d4');
+        ctx.fillStyle = bar;
+        ctx.fillRect(0, 0, width, 4);
 
-        ctx.fillStyle = '#9cacbdff';
-        ctx.font = 'bold 18px Segoe UI';
+        if (logoImg) {
+            const logoWidth = logoImg.width / (logoImg.height / logoHeight);
+            ctx.drawImage(logoImg, (width - logoWidth) / 2, margin, logoWidth, logoHeight);
+        }
+
         ctx.textAlign = 'center';
-        ctx.fillText('BCC Student QR', combinedCanvas.width / 2, logoHeight + 30);
+        ctx.fillStyle = INK;
+        ctx.font = `600 17px ${FONT}`;
+        ctx.fillText('BCC Student QR', width / 2, titleY);
 
-        const qrX = (combinedCanvas.width - qrSize) / 2;
-        const qrY = logoHeight + textHeight;
-        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        ctx.drawImage(qrCanvas, margin, qrY, qrSize, qrSize);
 
-        ctx.fillStyle = '#9cacbdff';
-        ctx.font = '14px Segoe UI';
-        ctx.textAlign = 'left';
+        ctx.strokeStyle = 'rgba(255,255,255,.1)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(margin, dividerY + .5);
+        ctx.lineTo(width - margin, dividerY + .5);
+        ctx.stroke();
 
-        const startY = qrY + qrSize + 25;
-        details.split('\n').forEach((line, i) => {
-            ctx.fillText(line, qrX + 1, startY + i * 20);
+        // Label sa kaliwa, halaga sa kanan — nababasa nang pahalang
+        // kahit magkaiba ang haba ng mga pangalan.
+        details.forEach(([label, value], i) => {
+            const y = detailsY + i * rowHeight;
+
+            ctx.textAlign = 'left';
+            ctx.fillStyle = INK_DIM;
+            ctx.font = `13px ${FONT}`;
+            ctx.fillText(label, margin, y);
+
+            ctx.textAlign = 'right';
+            ctx.fillStyle = INK;
+            ctx.font = `600 13px ${FONT}`;
+            ctx.fillText(value || '—', width - margin, y);
         });
+    }
 
+    function finish() {
         setTimeout(() => {
             const link = document.createElement('a');
             link.download = `${id}_qr.png`;
@@ -207,8 +270,8 @@ function downloadQR() {
                 position: 'top-end',
                 showConfirmButton: false,
                 timer: 2000,
-                background: '#0f172a',
-                color: '#e2e8f0'
+                background: '#16161a',
+                color: '#e7e9ee'
             });
 
             setTimeout(() => {
@@ -217,28 +280,20 @@ function downloadQR() {
                 textSpan.textContent = originalText;
                 btn.disabled = false;
             }, 2000);
-        }, 800);
+        }, 600);
+    }
+
+    const logo = new Image();
+    logo.src = '../assets/images/bcc-logo.png';
+
+    logo.onload = function () {
+        paintCard(logo);
+        finish();
     };
 
     logo.onerror = function () {
         console.warn('Logo not found — downloading without logo.');
-
-        setTimeout(() => {
-            const link = document.createElement('a');
-            link.download = `${id}_qr.png`;
-            link.href = qrCanvas.toDataURL('image/png');
-            link.click();
-
-            iconSpan.innerHTML = successIcon;
-            iconSpan.className = 'btn-icon success-icon';
-            textSpan.textContent = 'Done!';
-
-            setTimeout(() => {
-                iconSpan.innerHTML = downloadIcon;
-                iconSpan.className = 'btn-icon';
-                textSpan.textContent = originalText;
-                btn.disabled = false;
-            }, 2000);
-        }, 800);
+        paintCard(null);
+        finish();
     };
 }

@@ -22,9 +22,30 @@ if ($locked) {
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
-<body>
+<body class="qr-page">
   <div id="particles-js"></div>
-  <div class="container">
+
+  <div class="qr-shell">
+    <!-- Hero — kapareho ng anyo ng mga admin page (.stud-hero):
+         guhit na gradient sa itaas, tile na icon, pamagat, at mga
+         chip. Dating nakatago ang pamagat sa loob ng isang <h2> na
+         may inline na flex at isang GIF mula sa CDN ng flaticon. -->
+    <header class="qr-hero">
+      <div class="qr-hero-icon">
+        <img src="../<?php echo $systemLogo; ?>" alt="" width="34" height="34">
+      </div>
+
+      <div class="qr-hero-text">
+        <h1><?php echo htmlspecialchars($systemAcronym); ?> Code Generator</h1>
+        <p>Look up your record and generate the QR code used for attendance.</p>
+      </div>
+
+      <div class="qr-chips">
+        <span class="qr-chip"><i class="bi bi-shield-lock"></i> Verified records only</span>
+        <span class="qr-chip"><i class="bi bi-download"></i> Free download</span>
+      </div>
+    </header>
+
     <!-- left panel -->
     <?php include __DIR__ . "/components/left_panel.php" ?>
     <!-- right panel -->
@@ -32,6 +53,7 @@ if ($locked) {
     <!-- footer -->
     <?php include __DIR__ . "/../components/footer.php"; ?>
   </div>
+
   <!-- assistant -->
   <?php include __DIR__ . "/components/assistant.php" ?>
   <!-- script -->
