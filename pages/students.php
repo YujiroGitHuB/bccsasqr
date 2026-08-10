@@ -8,50 +8,90 @@ if(!isAdmin()){
     exit;
 }
 include __DIR__ . "/../includes/auth.php";
+include __DIR__ . "/../includes/db_connect.php";
+
+// Tatlong bilang para sa hero. Walang anumang kabuuan ang page na
+// ito noon — kailangan mo pang hintayin ang table at basahin ang
+// "Showing 1 to 10 of N" sa ibaba.
+$studentTotal = (int) (mysqli_fetch_assoc(
+    mysqli_query($conn, "SELECT COUNT(*) AS n FROM students_tbl")
+)['n'] ?? 0);
+
+$courseTotal = (int) (mysqli_fetch_assoc(
+    mysqli_query($conn, "SELECT COUNT(DISTINCT course) AS n FROM students_tbl")
+)['n'] ?? 0);
+
+$sectionTotal = (int) (mysqli_fetch_assoc(
+    mysqli_query($conn, "SELECT COUNT(DISTINCT CONCAT(course,'-',section)) AS n FROM students_tbl")
+)['n'] ?? 0);
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
 
 <head>
     <?php include __DIR__ . "/../includes/header.php" ?>
+    <link rel="stylesheet" href="<?= asset('../assets/css/students-page.css') ?>">
 </head>
 
 <body>
     <!-- Sidebar -->
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
     <!-- Content -->
-    <div class="content" id="content">
+    <div class="content stud-page" id="content">
         <!-- topbar -->
         <?php include("../components/topBar.php"); ?>
 
-        <h2>Students List</h2>
-        <div class="tab-content mt-3" id="attendanceTabsContent">
+        <div class="stud-hero">
+            <div class="stud-hero-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="stud-hero-text">
+                <h2>Students</h2>
+                <p>The master list. Every QR scan is checked against a record here.</p>
+            </div>
+            <div class="stud-chips">
+                <span class="stud-chip">
+                    <i class="bi bi-person-lines-fill"></i>
+                    <?= number_format($studentTotal) ?> student<?= $studentTotal === 1 ? '' : 's' ?>
+                </span>
+                <span class="stud-chip">
+                    <i class="bi bi-mortarboard"></i>
+                    <?= number_format($courseTotal) ?> course<?= $courseTotal === 1 ? '' : 's' ?>
+                </span>
+                <span class="stud-chip">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    <?= number_format($sectionTotal) ?> section<?= $sectionTotal === 1 ? '' : 's' ?>
+                </span>
+            </div>
+        </div>
+
+        <div class="tab-content" id="attendanceTabsContent">
             <div class="tab-pane fade show active" id="records" role="tabpanel">
-                <div class="card p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="m-0">Student Records</h5>
-                        <div class="d-flex gap-2">
+                <div>
+                    <div class="stud-toolbar">
+                        <div class="stud-toolbar-title">
+                            <i class="bi bi-table"></i> Student Records
+                        </div>
+                        <div class="stud-actions">
                             <!-- Import CSV Button -->
-                            <button class="btn btn-info btn-icon" id="importCsvBtn" title="Import from CSV">
+                            <button class="stud-btn ghost" id="importCsvBtn" title="Import from CSV">
                                 <i class="bi bi-file-earmark-arrow-up"></i>
-                                <span class="btn-text">Import Student CSV</span>
+                                <span class="btn-text">Import CSV</span>
                             </button>
                             <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
 
                             <!-- Delete Selected Button (hidden by default) -->
-                            <button class="btn btn-warning btn-icon d-none" id="deleteSelectedBtn" title="Delete Selected Students">
+                            <button class="stud-btn warn d-none" id="deleteSelectedBtn" title="Delete Selected Students">
                                 <i class="bi bi-trash2-fill"></i>
                                 <span class="btn-text">Delete Selected (<span id="selectedCount">0</span>)</span>
                             </button>
 
                             <!-- Delete All Button -->
-                            <button class="btn btn-danger btn-icon" id="deleteAllBtn" onclick="confirmDeleteAll()" title="Delete All Students">
+                            <button class="stud-btn danger" id="deleteAllBtn" onclick="confirmDeleteAll()" title="Delete All Students">
                                 <i class="bi bi-trash-fill"></i>
-                                <span class="btn-text">Delete All Student</span>
+                                <span class="btn-text">Delete All</span>
                             </button>
 
-                            <!-- Add Student Button -->
-                            <button class="btn btn-primary btn-icon" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                            <!-- Add Student Button — ang tanging punong aksyon -->
+                            <button class="stud-btn primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                                 <i class="bi bi-person-plus"></i>
                                 <span class="btn-text">Add Student</span>
                             </button>
@@ -59,7 +99,7 @@ include __DIR__ . "/../includes/auth.php";
                     </div>
                     <!-- add modal -->
                     <?php include __DIR__ . "/../components/add_students_modal.php"; ?>
-                    <div class="card">
+                    <div class="stud-table-card">
                         <!-- Loading Spinner -->
                         <div id="tableLoader" class="text-center py-5">
                             <div class="spinner-border text-primary" role="status">

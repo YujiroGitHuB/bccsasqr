@@ -1,0 +1,387 @@
+/* ============================================================
+   STUDENTS PAGE
+
+   Kulay: sky/cyan (#0ea5e9 → #06b6d4). Malamig pa rin kaya
+   kapamilya ng indigo ng sidebar at dashboard, nasa bokabularyo
+   na ng app (#38bdf8 sa QR Generator at Terms), at — ang
+   pinakamahalaga — WALA itong ibig sabihin sa estado. Ang berde,
+   amber, at pula ay nakalaan na sa Active/Present, babala, at
+   Disabled/Absent; kung isa sa mga iyon ang gagawing identidad ng
+   page, makikipag-agawan ito sa mga totoong badge sa talahanayan.
+
+   Ang hanay ng butones dati ay apat na hilaw na kulay ng Bootstrap
+   (info, warning, danger, primary) na magkakatabi — pantay-pantay
+   silang sumisigaw, kaya kasingtingkad ng "Add Student" ang
+   "Delete All". Isang punong butones na lang ngayon; tahimik na
+   tinted ang iba.
+   ============================================================ */
+
+.stud-page {
+    --stud: #0ea5e9;
+    --stud-deep: #06b6d4;
+    --stud-soft: rgba(14, 165, 233, .14);
+    --stud-line: rgba(14, 165, 233, .3);
+    --stud-ink: #7dd3fc;
+    --stud-surface: #16161a;
+    --stud-border: rgba(255, 255, 255, .07);
+}
+
+/* ─── Hero ────────────────────────────────────────────────── */
+.stud-page .stud-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid var(--stud-border);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(14, 165, 233, .16), transparent 55%),
+        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+    overflow: hidden;
+}
+
+.stud-page .stud-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--stud), var(--stud-deep));
+    box-shadow: 0 0 12px rgba(14, 165, 233, .6);
+}
+
+.stud-page .stud-hero-icon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--stud), var(--stud-deep));
+    box-shadow: 0 8px 20px rgba(14, 165, 233, .35);
+}
+
+.stud-page .stud-hero-text {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.stud-page .stud-hero-text h2 {
+    margin: 0 0 3px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: #fff;
+}
+
+.stud-page .stud-hero-text p {
+    margin: 0;
+    font-size: .85rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.stud-page .stud-chips {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.stud-page .stud-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .42rem .85rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--stud-ink);
+    background: var(--stud-soft);
+    border: 1px solid var(--stud-line);
+    white-space: nowrap;
+}
+
+/* ─── Toolbar ─────────────────────────────────────────────── */
+.stud-page .stud-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: .9rem 1.15rem;
+    border-radius: 14px 14px 0 0;
+    border: 1px solid var(--stud-border);
+    border-bottom: 0;
+    background: rgba(255, 255, 255, .02);
+}
+
+.stud-page .stud-toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    font-size: .95rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.stud-page .stud-toolbar-title i {
+    color: var(--stud-ink);
+}
+
+.stud-page .stud-actions {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+/* ─── Mga butones ─────────────────────────────────────────── */
+/* Nakikita na palagi ang label. Ang lumang `.btn-icon` ay
+   itinatago ito hanggang sa hi-nover — kaya magkatabi ang dalawang
+   magkamukhang pulang trash icon na walang pagkakaiba hangga't
+   hindi mo dinadaanan ng mouse. */
+.stud-page .stud-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .55rem 1rem;
+    border-radius: 10px;
+    font-size: .84rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+.stud-page .stud-btn .btn-text {
+    max-width: none;
+    opacity: 1;
+    margin-left: 0;
+}
+
+/* Ang tanging punong aksyon sa page. */
+.stud-page .stud-btn.primary {
+    color: #fff;
+    border: none;
+    background: linear-gradient(135deg, var(--stud), var(--stud-deep));
+    box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
+}
+
+.stud-page .stud-btn.primary:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 22px rgba(14, 165, 233, .4);
+}
+
+/* Pangalawang aksyon: nakikita pero hindi sumisigaw. */
+.stud-page .stud-btn.ghost {
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .12);
+}
+
+.stud-page .stud-btn.ghost:hover {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+}
+
+/* Mapanirang aksyon: pula ang teksto, hindi ang buong bloke —
+   hindi ito dapat ang unang mahuli ng mata sa page. */
+.stud-page .stud-btn.danger {
+    color: #f87171;
+    background: rgba(239, 68, 68, .1);
+    border: 1px solid rgba(239, 68, 68, .22);
+}
+
+.stud-page .stud-btn.danger:hover {
+    background: rgba(239, 68, 68, .2);
+    color: #fca5a5;
+}
+
+/* Lumalabas lang kapag may napiling row — amber, dahil bilang ito
+   ng napili at hindi ang "buburahin lahat". */
+.stud-page .stud-btn.warn {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .28);
+}
+
+.stud-page .stud-btn.warn:hover {
+    background: rgba(245, 158, 11, .22);
+}
+
+/* ─── Kahon ng talahanayan ────────────────────────────────── */
+.stud-page .stud-table-card {
+    padding: 1rem 1.15rem 1.15rem;
+    border-radius: 0 0 14px 14px;
+    border: 1px solid var(--stud-border);
+    background: var(--stud-surface);
+}
+
+.stud-page #stud_tbl thead th {
+    background: rgba(14, 165, 233, .08);
+    border-bottom: 1px solid var(--stud-line);
+    padding: .8rem .9rem;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--stud-ink);
+}
+
+.stud-page #stud_tbl tbody td {
+    padding: .75rem .9rem;
+    font-size: .86rem;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+}
+
+/* Ang `table-striped` ay nagdaragdag ng sariling background kada
+   isang hanay — sa madilim na card ay guhit-guhit ang labas. */
+.stud-page #stud_tbl.table-striped>tbody>tr:nth-of-type(odd)>* {
+    --bs-table-accent-bg: transparent;
+    background-color: transparent;
+    color: #e2e8f0;
+}
+
+.stud-page #stud_tbl tbody tr:hover td {
+    background: rgba(14, 165, 233, .07);
+}
+
+.stud-page .spinner-border {
+    color: var(--stud-ink) !important;
+}
+
+/* Mga aksyon kada hanay: malambot na tinted na kahon sa halip na
+   matingkad na solid na berde at pula. Sa 1,762 na hanay, ang
+   solidong bloke ay 3,524 na sumisigaw na kulay sa isang page —
+   sila ang unang nakikita, hindi ang mismong pangalan. Ginagawa ng
+   datatables.js ang mga butones na ito bilang .btn-success at
+   .btn-danger. */
+.stud-page td .btn-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 32px;
+    padding: 0 .55rem;
+    margin: 0 .15rem 0 0;
+    border-radius: 9px;
+    font-size: .82rem;
+    transition: all .15s;
+}
+
+.stud-page td .btn-success {
+    background: rgba(16, 185, 129, .12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, .25);
+}
+
+.stud-page td .btn-success:hover {
+    background: rgba(16, 185, 129, .22);
+    color: #34d399;
+}
+
+.stud-page td .btn-danger {
+    background: rgba(239, 68, 68, .12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, .25);
+}
+
+.stud-page td .btn-danger:hover {
+    background: rgba(239, 68, 68, .22);
+    color: #f87171;
+}
+
+/* ─── Mga kontrol ng DataTables ───────────────────────────── */
+.stud-page .dataTables_wrapper .dataTables_filter input,
+.stud-page .dataTables_wrapper .dataTables_length select {
+    background: #0f0f13;
+    border: 1px solid #2a2a33;
+    border-radius: 9px;
+    color: #f1f5f9;
+    padding: .4rem .7rem;
+    font-size: .85rem;
+}
+
+.stud-page .dataTables_wrapper .dataTables_filter input:focus,
+.stud-page .dataTables_wrapper .dataTables_length select:focus {
+    outline: none;
+    border-color: var(--stud);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, .18);
+}
+
+.stud-page .dataTables_wrapper .dataTables_info,
+.stud-page .dataTables_wrapper .dataTables_length,
+.stud-page .dataTables_wrapper .dataTables_filter {
+    font-size: .82rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.stud-page .dataTables_wrapper .page-link {
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .08);
+    color: #cbd5e1;
+    border-radius: 8px;
+    margin: 0 2px;
+    font-size: .82rem;
+}
+
+.stud-page .dataTables_wrapper .page-item.active .page-link {
+    background: linear-gradient(135deg, var(--stud), var(--stud-deep));
+    border-color: transparent;
+    color: #fff;
+}
+
+/* Ang mga export button ng DataTables ay sumasabay sa parehong
+   tahimik na estilo ng toolbar. */
+.stud-page .dt-buttons .btn {
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: #cbd5e1;
+    border-radius: 9px;
+    font-size: .8rem;
+    padding: .4rem .8rem;
+    margin-right: .35rem;
+}
+
+.stud-page .dt-buttons .btn:hover {
+    background: rgba(14, 165, 233, .16);
+    color: #fff;
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .stud-page .stud-hero {
+        padding: 1rem;
+    }
+
+    .stud-page .stud-hero-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .stud-page .stud-hero-text h2 {
+        font-size: 1.15rem;
+    }
+
+    .stud-page .stud-chips {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .stud-page .stud-actions {
+        width: 100%;
+    }
+
+    .stud-page .stud-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
