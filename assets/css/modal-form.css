@@ -28,7 +28,8 @@
    ng update_students_modal.php at userManagementModal.php.
    ============================================================ */
 
-.app-modal {
+.app-modal,
+.app-swal {
     --am: #0ea5e9;
     --am-deep: #06b6d4;
     --am-soft: rgba(14, 165, 233, .14);
@@ -150,7 +151,7 @@
     margin-bottom: 0;
 }
 
-.app-modal .app-field .form-label {
+.app-field .form-label {
     display: block;
     margin-bottom: .4rem;
     font-size: .78rem;
@@ -187,8 +188,8 @@
 /* Isang tuloy-tuloy na kahon — walang segment, walang guhit sa
    gilid. Kailangan ang lakas dito dahil may sariling background,
    border, at padding ang Bootstrap para sa .form-control. */
-.app-modal .app-input .form-control,
-.app-modal .app-input .form-select {
+.app-input .form-control,
+.app-input .form-select {
     width: 100%;
     min-height: 48px;
     padding: .6rem .9rem .6rem 2.6rem;
@@ -201,15 +202,15 @@
     transition: border-color .18s ease, box-shadow .18s ease;
 }
 
-.app-modal .app-input .form-control::placeholder {
+.app-input .form-control::placeholder {
     color: rgba(255, 255, 255, .25);
 }
 
 /* Ang `.form-control:focus` sa main.css ay may `!important` sa
    background (nag-iiwan ng lumang navy na #1a1a2e), kaya kailangan
    ding `!important` dito para mabawi. */
-.app-modal .app-input .form-control:focus,
-.app-modal .app-input .form-select:focus {
+.app-input .form-control:focus,
+.app-input .form-select:focus {
     border-color: var(--am) !important;
     background-color: var(--am-field) !important;
     color: var(--am-text) !important;
@@ -219,20 +220,20 @@
 
 /* Pinapanatili ang sariling pana ng Bootstrap sa kanan; ang
    padding lang ang inaayos para magkasya ang icon sa kaliwa. */
-.app-modal .app-input .form-select {
+.app-input .form-select {
     padding-right: 2.4rem;
     cursor: pointer;
 }
 
-.app-modal .app-input .form-select option {
+.app-input .form-select option {
     background-color: var(--am-surface);
     color: var(--am-text);
 }
 
 /* Hindi pa napipili — mas malabo, para malinaw na hindi pa ito
    sagot kundi paanyaya. */
-.app-modal .app-input .form-select:invalid,
-.app-modal .app-input .form-select option[value=""] {
+.app-input .form-select:invalid,
+.app-input .form-select option[value=""] {
     color: rgba(255, 255, 255, .35);
 }
 
@@ -261,7 +262,9 @@
     background: rgba(255, 255, 255, .02);
 }
 
-.app-modal .app-btn {
+/* Hindi naka-saklaw sa .app-modal — ginagamit din ito ng mga
+   dialog ng SweetAlert sa ibaba. */
+.app-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -278,35 +281,35 @@
 
 /* Ang tanging punong aksyon. Dati ay isang buong-lapad na bloke
    na walang katabi — walang paraang umatras maliban sa ✕. */
-.app-modal .app-btn.primary {
+.app-btn.primary {
     color: #fff;
     background: linear-gradient(135deg, var(--am), var(--am-deep));
     box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
 }
 
-.app-modal .app-btn.primary:hover {
+.app-btn.primary:hover {
     transform: translateY(-2px);
     filter: brightness(1.08);
     box-shadow: 0 10px 22px rgba(14, 165, 233, .4);
 }
 
-.app-modal .app-btn.primary:active {
+.app-btn.primary:active {
     transform: translateY(0);
 }
 
 /* Tahimik na pag-atras — nakikita, pero hindi nakikipag-agawan. */
-.app-modal .app-btn.ghost {
+.app-btn.ghost {
     color: #cbd5e1;
     background: rgba(255, 255, 255, .05);
     border-color: rgba(255, 255, 255, .12);
 }
 
-.app-modal .app-btn.ghost:hover {
+.app-btn.ghost:hover {
     background: rgba(255, 255, 255, .1);
     color: #fff;
 }
 
-.app-modal .app-btn:focus-visible {
+.app-btn:focus-visible {
     outline: 2px solid var(--am-ink);
     outline-offset: 2px;
 }
@@ -340,6 +343,361 @@
     }
 
     .app-modal .app-btn {
+        width: 100%;
+    }
+}
+
+/* ============================================================
+   SWEETALERT — pareho ng anyo ng .app-modal
+
+   Opt-in sa pamamagitan ng customClass.popup = 'app-swal'. Ang mga
+   panuntunan ay isinusulat gamit ang sariling klase ng SweetAlert
+   (hal. .app-swal .swal2-confirm) at hindi umaasa sa customClass ng
+   butones: iniinject ng SweetAlert ang sarili nitong style sa head
+   sa oras ng pagtakbo, kaya mas huli iyon kaysa sa file na ito at
+   mananalo sa pantay na specificity.
+
+   Ang lumang dialog ng import ay may lilang confirm (#7066e0, ang
+   default ng SweetAlert) at kulay-abong Cancel — dalawang kulay na
+   wala kahit saan sa app — at berdeng bilog na tandang-pananong.
+   Nakalaan ang berde sa ESTADO (Active/Present), kaya hindi ito
+   dapat gawing palamuti ng isang tanong.
+   ============================================================ */
+
+.app-swal.swal2-popup {
+    width: 34rem;
+    max-width: calc(100vw - 2rem);
+    padding: 0;
+    border: 1px solid var(--am-border);
+    border-radius: 18px;
+    background: var(--am-surface);
+    color: var(--am-text);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, .6);
+    overflow: hidden;
+}
+
+/* Ang guhit ng tuldik — kapareho ng .app-modal at ng .stud-hero. */
+.app-swal.swal2-popup::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--am), var(--am-deep));
+    box-shadow: 0 0 12px rgba(14, 165, 233, .6);
+    z-index: 2;
+}
+
+/* Ginagawa na ng nilalaman ang ulo, kaya itinatago ang malaking
+   bilog na icon at ang pamagat ng SweetAlert. */
+.app-swal .swal2-icon,
+.app-swal .swal2-title {
+    display: none !important;
+}
+
+.app-swal .swal2-html-container {
+    margin: 0;
+    padding: 0;
+    font-size: .9rem;
+    color: var(--am-text);
+    text-align: left;
+    overflow: visible;
+}
+
+/* ─── Ulo ────────────────────────────────────────────────── */
+
+.app-swal-head {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding: 1.25rem 1.4rem 1rem;
+    border-bottom: 1px solid var(--am-border);
+    background: radial-gradient(circle at 0% 0%, rgba(14, 165, 233, .12), transparent 60%);
+    text-align: left;
+}
+
+.app-swal-head .app-modal-icon {
+    font-size: 1.2rem;
+}
+
+.app-swal-head h2 {
+    margin: 0 0 2px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: #fff;
+}
+
+.app-swal-head p {
+    margin: 0;
+    font-size: .82rem;
+    color: rgba(255, 255, 255, .42);
+}
+
+/* Kulay ayon sa kahulugan, hindi palamuti. */
+.app-swal-head.is-ok .app-modal-icon {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, .3);
+}
+
+.app-swal-head.is-bad .app-modal-icon {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, .3);
+}
+
+/* ─── Katawan ────────────────────────────────────────────── */
+
+.app-swal-body {
+    padding: 1.2rem 1.4rem;
+}
+
+/* Ang kard ng file: pangalan at sukat nang magkasama bilang isang
+   bagay, hindi dalawang magkahiwalay na "Label: halaga" na linya. */
+.app-swal-file {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .8rem .9rem;
+    margin-bottom: .9rem;
+    border-radius: 11px;
+    border: 1px solid var(--am-border);
+    background: rgba(255, 255, 255, .03);
+}
+
+.app-swal-file>i {
+    flex-shrink: 0;
+    font-size: 1.5rem;
+    color: var(--am-ink);
+}
+
+.app-swal-file-meta {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+/* Mahaba ang mga pangalan ng file at hindi maganda ang wrap —
+   putulin nang tapat sa halip na sirain ang lapad ng dialog. */
+.app-swal-file-name {
+    display: block;
+    font-size: .88rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.app-swal-file-size {
+    display: block;
+    margin-top: 2px;
+    font-size: .75rem;
+    color: rgba(255, 255, 255, .4);
+}
+
+/* Tinted na paalala — pareho ng mga badge sa admin. */
+.app-note {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    padding: .65rem .8rem;
+    margin-bottom: 1.1rem;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font-size: .8rem;
+    line-height: 1.5;
+}
+
+.app-note>i {
+    flex-shrink: 0;
+    margin-top: .1rem;
+}
+
+.app-note.is-info {
+    background: var(--am-soft);
+    border-color: var(--am-line);
+    color: var(--am-ink);
+}
+
+.app-note.is-warn {
+    background: rgba(245, 158, 11, .12);
+    border-color: rgba(245, 158, 11, .28);
+    color: #fcd34d;
+}
+
+.app-note code {
+    padding: .1rem .3rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, .3);
+    color: inherit;
+    font-size: .95em;
+}
+
+/* Mga bilang pagkatapos ng import. */
+.app-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin-top: .8rem;
+}
+
+.app-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .35rem .8rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+}
+
+.app-chip.is-ok {
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .25);
+    color: #34d399;
+}
+
+.app-chip.is-warn {
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .28);
+    color: #fcd34d;
+}
+
+/* Talaan ng mga naiwan. Nag-i-scroll sa loob ng sariling kahon —
+   hindi nito dapat pahabain ang buong dialog. */
+.app-errors {
+    margin-top: .9rem;
+    border-radius: 10px;
+    border: 1px solid var(--am-border);
+    background: rgba(0, 0, 0, .25);
+    overflow: hidden;
+}
+
+.app-errors summary {
+    padding: .6rem .8rem;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    cursor: pointer;
+}
+
+.app-errors ul {
+    max-height: 190px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0 .8rem .7rem 1.7rem;
+    font-size: .78rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, .55);
+}
+
+/* ─── Mga butones ────────────────────────────────────────── */
+
+.app-swal .swal2-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .6rem;
+    width: auto;
+    margin: 0;
+    padding: 1rem 1.4rem;
+    border-top: 1px solid var(--am-border);
+    background: rgba(255, 255, 255, .02);
+}
+
+/* Walang `.swal2-styled` sa mga selector na ito: nakatakda ang
+   `buttonsStyling: false` sa importStudent.js, at iyon mismo ang
+   nag-aalis ng klaseng `.swal2-styled` — kaya walang tumatama ang
+   anumang panuntunang umaasa rito. Iyon din ang nagtatanggal sa
+   lilang default, kaya wala nang kaagaw ang mga panuntunang ito. */
+.app-swal .swal2-confirm,
+.app-swal .swal2-cancel,
+.app-swal .swal2-deny {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 44px;
+    margin: 0;
+    padding: .55rem 1.35rem;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+.app-swal .swal2-confirm {
+    color: #fff;
+    background: linear-gradient(135deg, var(--am), var(--am-deep));
+    box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
+}
+
+.app-swal .swal2-confirm:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 22px rgba(14, 165, 233, .4);
+}
+
+.app-swal .swal2-cancel {
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, .05);
+    border-color: rgba(255, 255, 255, .12);
+}
+
+.app-swal .swal2-cancel:hover {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+}
+
+.app-swal .swal2-confirm:focus-visible,
+.app-swal .swal2-cancel:focus-visible {
+    outline: 2px solid var(--am-ink);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+/* Mapanirang pagkumpirma (hal. "Burahin lahat") — pula ang punong
+   butones, hindi sky. */
+.app-swal.is-danger .swal2-confirm {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, .3);
+}
+
+.app-swal .swal2-validation-message {
+    margin: 0;
+    padding: .7rem 1.4rem;
+    background: rgba(239, 68, 68, .12);
+    color: #f87171;
+    font-size: .82rem;
+    font-weight: 500;
+}
+
+.app-swal .swal2-loader {
+    border-color: var(--am) transparent var(--am) transparent;
+}
+
+@media (max-width: 575.98px) {
+    .app-swal-head {
+        padding: 1.1rem 1.1rem .9rem;
+        gap: .7rem;
+    }
+
+    .app-swal-head p {
+        display: none;
+    }
+
+    .app-swal-body {
+        padding: 1.1rem;
+    }
+
+    .app-swal .swal2-actions {
+        flex-direction: column-reverse;
+        padding: .9rem 1.1rem;
+    }
+
+    .app-swal .swal2-styled.swal2-confirm,
+    .app-swal .swal2-styled.swal2-cancel {
         width: 100%;
     }
 }

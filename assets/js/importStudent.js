@@ -1,5 +1,50 @@
+// ============================================================
+// Import ng estudyante mula sa CSV/XLS
+//
+// Ang anyo ng mga dialog ay nasa assets/css/modal-form.css
+// (klase: .app-swal) — pareho ng .app-modal, kaya iisa ang mukha
+// ng buong daloy ng Students page.
+// ============================================================
+
+// Ang pangalan ng file at ang mga mensahe ng error ay pumapasok sa
+// `html:` ng SweetAlert, na innerHTML. Parehong galing ito sa
+// labas: pinipili ng gumagamit ang pangalan ng file, at ang mga
+// error ay may lamang student number na hinango mismo sa
+// ini-upload na spreadsheet (tingnan ang crud/import_students.php:51).
+// Kung walang escape, ang isang cell na naglalaman ng markup ay
+// tatakbo sa browser ng admin.
+function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[c]);
+}
+
+// Ibinabahagi ng lahat ng dialog sa daloy na ito.
+const SWAL_APP = {
+    background: '#16161a',
+    color: '#f1f5f9',
+    customClass: { popup: 'app-swal' },
+    buttonsStyling: false,
+    showClass: { popup: 'swal2-noanimation' }
+};
+
+function swalHead(icon, title, subtitle, tone) {
+    return `
+        <div class="app-swal-head ${tone ? 'is-' + tone : ''}">
+            <div class="app-modal-icon"><i class="bi ${icon}"></i></div>
+            <div>
+                <h2>${esc(title)}</h2>
+                <p>${esc(subtitle)}</p>
+            </div>
+        </div>`;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
-    const importBtn    = document.getElementById('importCsvBtn');
+    const importBtn = document.getElementById('importCsvBtn');
     const csvFileInput = document.getElementById('csvFileInput');
 
     // ✅ Accept both .csv and .xls
@@ -21,11 +66,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!isCSV && !isXLS) {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Invalid File',
-                    background: '#0f172a',
-                    color: '#e0e0e0',
-                    text: 'Please select a CSV or XLS file only.'
+                    ...SWAL_APP,
+                    html: swalHead('bi-file-earmark-x-fill', 'Invalid File', 'That file type cannot be imported.', 'bad') + `
+                        <div class="app-swal-body">
+                            <div class="app-note is-warn">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                <span>Please select a <code>.csv</code> or <code>.xls</code> file only.</span>
+                            </div>
+                        </div>`,
+                    confirmButtonText: 'OK'
                 });
                 csvFileInput.value = '';
                 return;
@@ -34,49 +83,76 @@ document.addEventListener('DOMContentLoaded', function () {
             // ✅ Try to parse course & section from filename
             // Expected format: SubjectName-COURSE_SECTION.xls
             // e.g. Applications_Development-BSIT_2A.xls → course=BSIT, section=2A
-            let detectedCourse  = '';
+            let detectedCourse = '';
             let detectedSection = '';
 
             const nameParts = file.name.replace(/\.(csv|xls)$/i, '').split('-');
             if (nameParts.length >= 2) {
-                const lastPart   = nameParts[nameParts.length - 1]; // e.g. BSIT_2A
-                const courseSec  = lastPart.split('_');
+                const lastPart = nameParts[nameParts.length - 1]; // e.g. BSIT_2A
+                const courseSec = lastPart.split('_');
                 if (courseSec.length >= 2) {
-                    detectedCourse  = courseSec[0].trim();                        // BSIT
+                    detectedCourse = courseSec[0].trim();                        // BSIT
                     detectedSection = courseSec.slice(1).join('_').trim();        // 2A or 3A-1
                 }
             }
 
-            const hint = isXLS
-                ? `<p class="text-info mt-2 small"><i class="bi bi-info-circle"></i> XLS format detected — course &amp; section extracted from filename.</p>`
-                : `<p class="text-warning mt-2 small"><i class="bi bi-exclamation-triangle"></i> CSV format — columns needed: <code>student_no, fullname, course, section</code></p>`;
+            const note = isXLS
+                ? `<div class="app-note is-info">
+                       <i class="bi bi-info-circle-fill"></i>
+                       <span>Course and section were read from the filename. Check them before importing.</span>
+                   </div>`
+                : `<div class="app-note is-warn">
+                       <i class="bi bi-exclamation-triangle-fill"></i>
+                       <span>CSV needs these columns: <code>student_no</code>, <code>fullname</code>, <code>course</code>, <code>section</code></span>
+                   </div>`;
+
+            const sizeKb = (file.size / 1024).toFixed(2);
 
             // ✅ Show confirmation with editable course & section fields
             Swal.fire({
-                title: 'Import Students?',
-                background: '#0f172a',
-                color: '#e0e0e0',
-                iconColor: '#4ade80',
-                icon: 'question',
-                html: `
-                    <p><strong>File:</strong> ${file.name}</p>
-                    <p><strong>Size:</strong> ${(file.size / 1024).toFixed(2)} KB</p>
-                    ${hint}
-                    <div class="mt-3 text-start">
-                        <label class="form-label small text-muted">Course</label>
-                        <input id="swal-course" class="form-control form-control-sm mb-2" 
-                            placeholder="e.g. BSIT" value="${detectedCourse}">
-                        <label class="form-label small text-muted">Section</label>
-                        <input id="swal-section" class="form-control form-control-sm" 
-                            placeholder="e.g. 2A" value="${detectedSection}">
-                    </div>
-                `,
+                ...SWAL_APP,
+                html:
+                    swalHead('bi-upload', 'Import Students?', 'Review the details before adding these records.') + `
+                    <div class="app-swal-body">
+                        <div class="app-swal-file">
+                            <i class="bi ${isXLS ? 'bi-file-earmark-spreadsheet' : 'bi-filetype-csv'}"></i>
+                            <div class="app-swal-file-meta">
+                                <span class="app-swal-file-name" title="${esc(file.name)}">${esc(file.name)}</span>
+                                <span class="app-swal-file-size">${sizeKb} KB &middot; ${isXLS ? 'XLS' : 'CSV'}</span>
+                            </div>
+                        </div>
+
+                        ${note}
+
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="app-field">
+                                    <label class="form-label" for="swal-course">Course</label>
+                                    <div class="app-input">
+                                        <i class="bi bi-mortarboard-fill"></i>
+                                        <input id="swal-course" class="form-control"
+                                               placeholder="e.g. BSIT" value="${esc(detectedCourse)}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="app-field">
+                                    <label class="form-label" for="swal-section">Section</label>
+                                    <div class="app-input">
+                                        <i class="bi bi-grid-3x3-gap-fill"></i>
+                                        <input id="swal-section" class="form-control"
+                                               placeholder="e.g. 2A" value="${esc(detectedSection)}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`,
                 showCancelButton: true,
-                confirmButtonText: 'Yes, Import',
+                confirmButtonText: 'Import',
                 cancelButtonText: 'Cancel',
                 showLoaderOnConfirm: true,
                 preConfirm: () => {
-                    const course  = document.getElementById('swal-course').value.trim();
+                    const course = document.getElementById('swal-course').value.trim();
                     const section = document.getElementById('swal-section').value.trim();
 
                     if (isXLS && (!course || !section)) {
@@ -110,31 +186,28 @@ function uploadFile(file, course, section, fileType) {
             if (data.success) {
                 let errorHtml = '';
                 if (data.errors && data.errors.length > 0) {
+                    // Nakatiklop bilang default — ang bilang ang unang
+                    // kailangang makita, hindi ang mahabang talaan.
                     errorHtml = `
-                        <div class="mt-3 text-start">
-                            <strong>Errors/Warnings:</strong>
-                            <ul class="text-danger small" style="max-height: 200px; overflow-y: auto;">
-                                ${data.errors.map(err => `<li>${err}</li>`).join('')}
-                            </ul>
-                        </div>
-                    `;
+                        <details class="app-errors">
+                            <summary>${data.errors.length} row${data.errors.length === 1 ? '' : 's'} need attention</summary>
+                            <ul>${data.errors.map(err => `<li>${esc(err)}</li>`).join('')}</ul>
+                        </details>`;
                 }
 
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Import Successful!',
-                    background: '#0f172a',
-                    color: '#e0e0e0',
-                    iconColor: '#4ade80',
-                    html: `
-                        <p>${data.message}</p>
-                        <div class="mt-2">
-                            <span class="badge bg-success">${data.imported} Imported</span>
-                            <span class="badge bg-warning text-dark">${data.skipped} Skipped</span>
-                        </div>
-                        ${errorHtml}
-                    `,
-                    confirmButtonText: 'OK'
+                    ...SWAL_APP,
+                    html:
+                        swalHead('bi-check-lg', 'Import Successful', 'The student list has been updated.', 'ok') + `
+                        <div class="app-swal-body">
+                            <p style="margin:0">${esc(data.message)}</p>
+                            <div class="app-chips">
+                                <span class="app-chip is-ok"><i class="bi bi-check-circle-fill"></i> ${Number(data.imported) || 0} imported</span>
+                                <span class="app-chip is-warn"><i class="bi bi-slash-circle"></i> ${Number(data.skipped) || 0} skipped</span>
+                            </div>
+                            ${errorHtml}
+                        </div>`,
+                    confirmButtonText: 'Done'
                 }).then(() => location.reload());
             } else {
                 throw new Error(data.message || 'Import failed');
@@ -142,12 +215,13 @@ function uploadFile(file, course, section, fileType) {
         })
         .catch(error => {
             Swal.fire({
-                icon: 'error',
-                title: 'Import Failed',
-                background: '#0f172a',
-                color: '#e0e0e0',
-                text: error.message || 'An error occurred while importing the file.'
+                ...SWAL_APP,
+                html:
+                    swalHead('bi-exclamation-triangle-fill', 'Import Failed', 'No records were added.', 'bad') + `
+                    <div class="app-swal-body">
+                        <p style="margin:0">${esc(error.message || 'An error occurred while importing the file.')}</p>
+                    </div>`,
+                confirmButtonText: 'Close'
             });
         });
 }
-
