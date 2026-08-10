@@ -59,7 +59,7 @@ if ($result && $result->num_rows > 0) {
     <link rel="stylesheet" href="../assets/css/daily_attendance.css">
 </head>
 
-<body>
+<body class="attendance-page">
     <?php include __DIR__ . "/../includes/attendance_lock.php" ?>
     <div class="attendance-card <?php echo $is_locked ? 'form-disabled' : ''; ?>">
         <div class="card-header">

@@ -48,13 +48,15 @@ $user_role = $_SESSION['role'];
     </style>
 </head>
 
-<body style="display: block !important;">
+<body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
 
     <div class="content" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <div class="container-fluid px-4 py-3">
+        <!-- px-3 sa telepono, px-4 sa mas malaking screen: masyadong
+             malaki ang 24px kada gilid kapag 375px lang ang screen -->
+        <div class="container-fluid px-3 px-md-4 py-3">
 
             <!-- Page header -->
             <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">

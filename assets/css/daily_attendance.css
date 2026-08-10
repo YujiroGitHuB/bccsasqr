@@ -1,6 +1,16 @@
-body {
+/* Dalawa ang gumagamit ng file na ito:
+     1. pages/daily_attendance.php  — student page, nakasentrong card
+     2. pages/generate_attendance_link.php — admin page, may sidebar
+
+   Para sa (1) lang ang buong-page na pagsentro sa ibaba. Dati itong
+   hubad na `body`, kaya nakukuha rin ito ng (2) — at napipilitan itong
+   maglagay ng `style="display: block !important"` para kanselahin ang
+   flex. Ang 20px na padding ay hindi nakansela, kaya 40px ang nawawala
+   sa lapad ng admin page sa telepono. Naka-scope na ito ngayon. */
+body.attendance-page {
     background-color: #0f172a;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -685,4 +695,76 @@ h5 {
 /* ── No results ── */
 #noResults {
     display: none;
+}
+
+/* ============================================================
+   ATTENDANCE LINKS — MOBILE
+   ============================================================ */
+
+/* Nananatiling "naka-hover" ang card pagkatapos tapikin sa touch. */
+@media (hover: none) {
+    .link-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 576px) {
+
+    /* Dating `btn-sm` lang: 31px ang taas — masyadong maliit para sa
+       daliri, lalo na ang trash na icon-only at hindi na maibabalik
+       kapag namali. 44px ang pinakamaliit na inirerekomenda. */
+    .link-card .btn {
+        min-height: 44px;
+        padding-top: 0;
+        padding-bottom: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Copy / Test / QR: pantay-pantay at pinupuno ang isang hanay.
+       Ang trash ay may sariling sukat sa dulo. */
+    .link-card .d-flex.flex-wrap>.btn:not(.btn-outline-danger) {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .link-card .btn-outline-danger {
+        min-width: 48px;
+    }
+
+    /* `break-all` dati: pinupuno nito ang bawat linya kaya naghahati sa
+       gitna ng salita ("…/pa" + "ges/…"). Sa `break-word`, ginagamit
+       muna ang mga pinapayagang hatian — ang <wbr> na inilalagay ng
+       wbrUrl() sa generate_link.js pagkatapos ng bawat / ? = & — at
+       sa gitna lang humahati kung talagang hindi kasya.
+       (Hindi `anywhere`: pinupuno rin nito ang linya tulad ng
+       break-all, kaya babalik ang parehong problema.) */
+    .link-display {
+        word-break: normal;
+        overflow-wrap: break-word;
+        font-size: .75rem;
+        line-height: 1.5;
+        padding: 10px 12px;
+    }
+
+    /* Puno ng lapad ang search at mga filter — walang halagang
+       ipagsiksikan ang mga ito sa telepono. */
+    .search-wrap,
+    #filterSection,
+    #filterOwner {
+        width: 100%;
+    }
+
+    .link-card .card-body {
+        gap: .75rem !important;
+    }
+
+    /* Doble ang padding: may `.card { padding: 20px }` ang app at may
+       sariling padding din ang `.card-body` sa loob. Sa telepono, 40px
+       pa iyon na nawawala sa laman ng card. Sa .card-body na lang. */
+    .link-card {
+        padding: 0;
+    }
 }

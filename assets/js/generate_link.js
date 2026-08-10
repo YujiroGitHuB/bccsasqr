@@ -97,7 +97,7 @@ function buildCard(l) {
                         </span>
                     </div>
 
-                    <div class="link-display" id="${uid}">${escHtml(link)}</div>
+                    <div class="link-display" id="${uid}">${wbrUrl(link)}</div>
 
                     <div class="d-flex flex-wrap gap-2 mt-auto">
                         <button class="btn btn-sm btn-primary" onclick="copyLink('${uid}', this)">
@@ -172,7 +172,9 @@ function updateCount(visible, total) {
 
 // ─── Copy link ────────────────────────────────────────────────────────────────
 function copyLink(uid, btn) {
-    const text = document.getElementById(uid)?.innerText;
+    // textContent, hindi innerText: hindi ito apektado ng layout, kaya
+    // walang panganib na makasingit ang mga soft line break sa kopya.
+    const text = document.getElementById(uid)?.textContent.trim();
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
         const original = btn.innerHTML;
@@ -292,6 +294,16 @@ function downloadQR() {
 }
 
 // ─── Escape helpers ───────────────────────────────────────────────────────────
+// Isang mahabang "salita" ang URL na walang puwang, kaya kahit saan ito
+// pinuputol ng browser — kalagitnaan ng "daily_attendance" sa telepono.
+// Ang <wbr> ay nagtuturo ng pinapayagang hatian: pagkatapos ng / ? = &
+// kaya sa hangganan ng path o parameter na ito nahahati.
+//
+// Walang idinaragdag na teksto ang <wbr>, kaya buo pa rin ang nakokopya.
+function wbrUrl(str) {
+    return escHtml(str).replace(/(&amp;|[\/?=])/g, '$1<wbr>');
+}
+
 function escHtml(str) {
     return String(str ?? '')
         .replace(/&/g, '&amp;')
