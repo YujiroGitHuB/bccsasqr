@@ -31,6 +31,9 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
 <head>
     <?php include __DIR__ . "/../includes/header.php" ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/students-page.css') ?>">
+    <!-- Anyo ng mga modal na may porma (.app-modal). Dapat kasunod ng
+         main.css para mabawi ang mga lumang panuntunan doon. -->
+    <link rel="stylesheet" href="<?= asset('../assets/css/modal-form.css') ?>">
 </head>
 
 <body>
