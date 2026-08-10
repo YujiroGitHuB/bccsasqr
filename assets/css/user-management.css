@@ -1,264 +1,497 @@
-/* Modern User Management Styles */
-:root {
-    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-    --danger-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-    --card-bg: rgba(255, 255, 255, 0.05);
-    --card-border: rgba(255, 255, 255, 0.1);
-    --hover-bg: rgba(255, 255, 255, 0.08);
-}
-.page-header h2 {
-    color: white;
-    font-weight: 600;
-    font-size: 2rem;
-    background: var(--primary-gradient);
-    background-clip: text;
-}
+/* ============================================================
+   MANAGE USERS
 
-/* Filter Section */
-.filter-section {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    backdrop-filter: blur(10px);
-}
+   Ang naunang bersyon ng file na ito ay para sa lumang modal
+   (`.filter-section`, `.table-container`, `.stats-card`) na wala
+   nang gumagamit — at nag-o-override pa ito ng mga pangkalahatang
+   `.badge` at `.btn-sm` na hindi naman sa page na ito nakatira.
+   Pinalitan ito ng mga estilong tumutugma sa aktuwal na markup.
 
-.filter-section .form-control,
-.filter-section .form-select {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #fff;
-    transition: all 0.3s ease;
-}
-.filter-section .form-control:focus,
-.filter-section .form-select:focus {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
+   Nakasandal sa management-pages.css (stat-card, filter-bar,
+   table-card, role/status badge) — ang mga karagdagan lang ang
+   nasa file na ito.
+   ============================================================ */
 
-.filter-section .btn-secondary {
-    border: none;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-/* Table Container */
-.table-container {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    backdrop-filter: blur(10px);
-    margin-bottom: 2rem;
-}
-
-/* Table Styles */
-#usersTable {
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-#usersTable thead th {
-    color: white;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    padding: 1rem;
-    border: none;
-}
-
-#usersTable thead th:first-child {
-    border-top-left-radius: 8px;
-}
-
-#usersTable thead th:last-child {
-    border-top-right-radius: 8px;
-}
-
-#usersTable tbody tr {
-    background: rgba(255, 255, 255, 0.03);
-    transition: all 0.3s ease;
-}
-
-#usersTable tbody td {
-    padding: 1rem;
-    vertical-align: middle;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* User Name Styling */
-#usersTable .bi-person-circle {
-    font-size: 1.5rem;
-    margin-right: 0.5rem;
-    vertical-align: middle;
-}
-
-/* Badge Styles */
-.badge {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-weight: 500;
-    font-size: 0.85rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-/* Action Buttons */
-.btn-sm {
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 500;
-    font-size: 0.85rem;
-    transition: all 0.3s ease;
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.btn-sm.btn-danger {
-    background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-}
-
-.btn-sm.btn-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(235, 51, 73, 0.3);
-}
-
-.btn-sm.btn-success {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-}
-
-.btn-sm.btn-success:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(17, 153, 142, 0.3);
-}
-
-/* Stats Cards */
-.stats-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+/* ─── Hero header ─────────────────────────────────────────── */
+.users-page .users-hero {
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, .07);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(59, 130, 246, .16), transparent 55%),
+        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
     overflow: hidden;
 }
 
-.stats-card::before {
+.users-page .users-hero::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: var(--primary-gradient);
-    transition: height 0.3s ease;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    box-shadow: 0 0 12px rgba(59, 130, 246, .6);
 }
 
-.stats-card.success::before {
-    background: var(--success-gradient);
+.users-page .users-hero-icon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, .35);
 }
 
-.stats-card.danger::before {
-    background: var(--danger-gradient);
+.users-page .users-hero-text {
+    flex: 1 1 240px;
+    min-width: 0;
 }
 
-.stats-card.info::before {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.stats-card .card-body {
-    background: transparent;
-    border: none;
-    position: relative;
-    z-index: 1;
-}
-
-.stats-card h3 {
-    font-size: 2.5rem;
+.users-page .users-hero-text h2 {
+    margin: 0 0 3px;
+    font-size: 1.35rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    letter-spacing: -.02em;
+    color: #fff;
 }
 
-.stats-card small {
-    font-size: 0.9rem;
+.users-page .users-hero-text p {
+    margin: 0;
+    font-size: .85rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.users-page .btn-add-user {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin-left: auto;
+    padding: .65rem 1.3rem;
+    border: none;
+    border-radius: 11px;
+    font-size: .9rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, .3);
+    cursor: pointer;
+    transition: transform .2s, box-shadow .2s, filter .2s;
+}
+
+.users-page .btn-add-user:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 22px rgba(59, 130, 246, .4);
+}
+
+/* ─── Stat grid: apat na card ─────────────────────────────── */
+.users-page .users-stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1200px) {
+    .users-page .users-stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .users-page .users-stat-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ─── Avatar sa table ─────────────────────────────────────── */
+/* May tunay nang larawan ang mga account (users.avatar) — ang
+   letra ay fallback na lang kapag wala pang na-upload. */
+.users-page .user-avatar {
+    overflow: hidden;
+}
+
+.users-page .user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.users-page .you-badge {
+    vertical-align: middle;
+}
+
+/* ─── Mga aksyon sa hanay ─────────────────────────────────── */
+.users-page .row-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.users-page .btn-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .3rem .85rem;
+    border-radius: 7px;
+    font-size: .78rem;
+    font-weight: 600;
+    background: rgba(59, 130, 246, .1);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, .2);
+    transition: all .15s;
+    cursor: pointer;
+}
+
+.users-page .btn-edit:hover {
+    background: rgba(59, 130, 246, .2);
+    color: #93c5fd;
+}
+
+/* ─── Mga kontrol ng DataTables ───────────────────────────── */
+.users-page .dataTables_wrapper .dataTables_info {
+    font-size: .8rem;
+    color: rgba(255, 255, 255, .35);
+    padding-left: .2rem;
+}
+
+.users-page .dataTables_wrapper .page-link {
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .08);
+    color: #cbd5e1;
+    border-radius: 8px;
+    margin: 0 2px;
+    font-size: .82rem;
+}
+
+.users-page .dataTables_wrapper .page-item.active .page-link {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-color: transparent;
+    color: #fff;
+}
+
+.users-page .dataTables_wrapper .page-item.disabled .page-link {
+    opacity: .4;
+}
+
+.users-page .empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: rgba(255, 255, 255, .3);
+}
+
+.users-page .empty-state i {
+    font-size: 2.2rem;
+    display: block;
+    margin-bottom: .6rem;
+    opacity: .35;
+}
+
+.users-page .empty-state strong {
+    display: block;
+    color: rgba(255, 255, 255, .6);
+    font-size: .95rem;
+    margin-bottom: .2rem;
+}
+
+.users-page .empty-state span {
+    font-size: .82rem;
+}
+
+.users-page td.dataTables_empty {
+    padding: 0;
+}
+
+/* ============================================================
+   ADD / EDIT USER MODAL
+   ============================================================ */
+.user-modal {
+    background: #16161a;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
+    overflow: hidden;
+}
+
+.user-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: 1.15rem 1.35rem;
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    background: linear-gradient(135deg, rgba(59, 130, 246, .1), transparent);
+}
+
+.user-modal-icon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.15rem;
+    color: #fff;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+}
+
+.user-modal .modal-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.user-modal .modal-header small {
+    font-size: .78rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.user-modal .modal-body {
+    padding: 1.35rem;
+    display: grid;
+    gap: 1rem;
+}
+
+.user-modal .field label {
+    display: block;
+    font-size: .82rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: .45rem;
+}
+
+.user-modal .label-hint {
     font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: rgba(255, 255, 255, .35);
 }
 
-/* Icon Animations */
-.stats-card .bi {
-    font-size: 3rem;
+.user-modal .input-icon {
+    position: relative;
+}
+
+.user-modal .input-icon>i {
     position: absolute;
-    right: 1rem;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    opacity: 0.1;
+    color: #64748b;
+    pointer-events: none;
+    transition: color .2s;
 }
 
-/* Responsive Design */
+.user-modal .user-input {
+    display: block;
+    width: 100%;
+    background: #0f0f13;
+    border: 1px solid #2a2a33;
+    border-radius: 11px;
+    padding: .72rem .9rem .72rem 42px;
+    font-size: .92rem;
+    color: #f1f5f9;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+}
+
+.user-modal .user-input::placeholder {
+    color: #4b5563;
+}
+
+.user-modal .user-input:focus {
+    outline: none;
+    background: #101018;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, .18);
+}
+
+.user-modal .input-icon:focus-within>i {
+    color: #a5b4fc;
+}
+
+.user-modal #formPassword {
+    padding-right: 46px;
+}
+
+.user-modal .input-eye {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.user-modal .input-eye:hover {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, .06);
+}
+
+/* ─── Role picker ─────────────────────────────────────────── */
+/* Radio na may paliwanag sa halip na <select>: ang pagkakaiba ng
+   admin at instructor ay hindi halata sa pangalan lang. */
+.user-modal .role-picker {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .6rem;
+}
+
+.user-modal .role-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.user-modal .role-option>span {
+    display: block;
+    padding: .75rem .85rem;
+    border-radius: 12px;
+    border: 1px solid #2a2a33;
+    background: #0f0f13;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+}
+
+.user-modal .role-option i {
+    font-size: 1rem;
+    color: #818cf8;
+}
+
+.user-modal .role-option b {
+    display: block;
+    font-size: .88rem;
+    color: #e2e8f0;
+    margin: .2rem 0 .1rem;
+}
+
+.user-modal .role-option small {
+    display: block;
+    font-size: .72rem;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, .4);
+}
+
+.user-modal .role-option input:checked+span {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, .12);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, .12);
+}
+
+.user-modal .role-option input:disabled+span {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.user-modal .field-note {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .5rem;
+    font-size: .76rem;
+    color: rgba(255, 255, 255, .4);
+}
+
+.user-modal .field-error {
+    display: none;
+    margin-top: .5rem;
+    font-size: .78rem;
+    color: #f87171;
+}
+
+.user-modal .field-error.show {
+    display: block;
+}
+
+/* ─── Footer ──────────────────────────────────────────────── */
+.user-modal .modal-footer {
+    padding: 1rem 1.35rem;
+    border-top: 1px solid rgba(255, 255, 255, .07);
+    display: flex;
+    justify-content: flex-end;
+    gap: .6rem;
+}
+
+.user-modal .btn-save {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .65rem 1.4rem;
+    border: none;
+    border-radius: 11px;
+    font-size: .9rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    cursor: pointer;
+    transition: transform .2s, box-shadow .2s, filter .2s;
+}
+
+.user-modal .btn-save:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 8px 18px rgba(59, 130, 246, .35);
+}
+
+.user-modal .btn-save:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+}
+
+.user-modal .btn-ghost {
+    padding: .65rem 1.2rem;
+    border-radius: 11px;
+    font-size: .88rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .12);
+    cursor: pointer;
+    transition: .2s;
+}
+
+.user-modal .btn-ghost:hover {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
-    .page-header h2 {
-        font-size: 1.5rem;
-    }
-    
-    .filter-section {
+    .users-page .users-hero {
         padding: 1rem;
     }
-    
-    .table-container {
-        padding: 1rem;
-        overflow-x: auto;
+
+    .users-page .users-hero-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        border-radius: 12px;
     }
-    
-    #usersTable {
-        font-size: 0.85rem;
+
+    .users-page .users-hero-text h2 {
+        font-size: 1.15rem;
     }
-    
-    .stats-card h3 {
-        font-size: 2rem;
+
+    /* Buong lapad ang Add User sa telepono — hindi na siya
+       sumisiksik sa tabi ng pamagat. */
+    .users-page .btn-add-user {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
     }
-}
 
-/* Loading Animation */
-.table-loading {
-    text-align: center;
-    padding: 3rem;
-}
-
-.table-loading::after {
-    content: '';
-    display: inline-block;
-    width: 50px;
-    height: 50px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top-color: #667eea;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 3rem;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.empty-state i {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.3;
+    .user-modal .role-picker {
+        grid-template-columns: 1fr;
+    }
 }

@@ -309,6 +309,10 @@ $(document).ready(function () {
         });
     }
 
-    if ($('#usersTable').length)      { $('#usersTable').DataTable(); }
+    // Ang #usersTable ay hindi na dito ini-initialize: kailangan nito
+    // ng sarili nitong config (nakatagong search box, filter ng role at
+    // status) at nasa assets/js/userManagement.js na iyon. Kapag dalawang
+    // beses na-initialize ang isang table, "Cannot reinitialise" ang
+    // ibinabato ng DataTables.
 
 });

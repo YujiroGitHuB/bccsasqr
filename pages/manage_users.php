@@ -19,6 +19,19 @@ $systemLogo    = $system['logo']           ?? '';
 $active   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM users WHERE IFNULL(status,'active') = 'active'"))['count'];
 $disabled = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM users WHERE status = 'disabled'"))['count'];
 $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM users"))['count'];
+$admins   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM users WHERE role = 'admin'"))['count'];
+
+// Ang `avatar` column ay galing sa migrations/2026-08-10_add_user_avatar.sql.
+// Hindi pa ito nakapasok sa lahat ng server, kaya tinatanong muna bago
+// isama sa SELECT — kung hindi, mag-e-error ang buong page.
+$hasAvatarColumn = false;
+try {
+    $col = $conn->query("SHOW COLUMNS FROM users LIKE 'avatar'");
+    $hasAvatarColumn = $col && $col->num_rows > 0;
+} catch (Throwable $e) {
+    $hasAvatarColumn = false;
+}
+$avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
@@ -31,15 +44,22 @@ $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FRO
 </head>
 <body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
-    <div class="content" id="content">
+    <div class="content users-page" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <div class="users-page-header">
-            <h2><i class="bi bi-people-fill"></i> Manage Users</h2>
+        <div class="users-hero">
+            <div class="users-hero-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="users-hero-text">
+                <h2>Manage Users</h2>
+                <p>Ang mga account na makakapasok sa system — admin at instructor.</p>
+            </div>
+            <button type="button" class="btn-add-user" id="openAddUser">
+                <i class="bi bi-person-plus-fill"></i> Add User
+            </button>
         </div>
 
         <!-- ── Stat Cards ── -->
-        <div class="stat-grid">
+        <div class="stat-grid users-stat-grid">
             <div class="stat-card green">
                 <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
                 <div class="stat-label">Active Users</div>
@@ -49,6 +69,11 @@ $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FRO
                 <div class="stat-icon"><i class="bi bi-person-x-fill"></i></div>
                 <div class="stat-label">Disabled Users</div>
                 <div class="stat-value" id="disabledCount"><?= $disabled ?></div>
+            </div>
+            <div class="stat-card cyan">
+                <div class="stat-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                <div class="stat-label">Admins</div>
+                <div class="stat-value" id="adminCount"><?= $admins ?></div>
             </div>
             <div class="stat-card blue">
                 <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
@@ -102,7 +127,7 @@ $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FRO
                 <tbody>
                     <?php
                     $users_query = mysqli_query($conn, "
-                        SELECT id, name, email, role,
+                        SELECT id, name, email, role, $avatarSelect
                                IFNULL(status,'active') as status,
                                last_login
                         FROM users ORDER BY id DESC
@@ -112,14 +137,32 @@ $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FRO
                     while ($user = mysqli_fetch_assoc($users_query)):
                         $user_status = !empty($user['status']) ? $user['status'] : 'active';
                         $initial     = strtoupper(substr($user['name'], 0, 1));
+                        $isSelf      = $user['id'] == $_SESSION['user_id'];
+
+                        $avatarPath = trim((string)($user['avatar'] ?? ''));
+                        $avatarUrl  = $avatarPath !== '' && is_file(__DIR__ . '/../' . $avatarPath)
+                            ? '../' . $avatarPath
+                            : '';
                     ?>
-                    <tr data-user-id="<?= $user['id'] ?>" data-role="<?= $user['role'] ?>" data-status="<?= $user_status ?>">
+                    <tr data-user-id="<?= $user['id'] ?>" data-role="<?= $user['role'] ?>" data-status="<?= $user_status ?>"
+                        data-name="<?= htmlspecialchars($user['name'], ENT_QUOTES) ?>"
+                        data-email="<?= htmlspecialchars($user['email'], ENT_QUOTES) ?>"
+                        data-self="<?= $isSelf ? '1' : '0' ?>">
                         <td class="text-muted" style="font-size:.8rem"><?= $counter++ ?></td>
                         <td>
                             <div class="user-name">
-                                <div class="user-avatar"><?= $initial ?></div>
+                                <div class="user-avatar">
+                                    <?php if ($avatarUrl !== ''): ?>
+                                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="">
+                                    <?php else: ?>
+                                        <?= $initial ?>
+                                    <?php endif; ?>
+                                </div>
                                 <div>
                                     <strong><?= htmlspecialchars($user['name']) ?></strong>
+                                    <?php if ($isSelf): ?>
+                                        <span class="you-badge ms-1">You</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </td>
@@ -155,19 +198,22 @@ $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FRO
                             <?php endif; ?>
                         </td>
                         <td class="text-center">
-                            <?php if ($user['id'] != $_SESSION['user_id']): ?>
-                                <?php if ($user_status === 'active'): ?>
-                                <button class="btn-disable" onclick="toggleUserStatus(<?= $user['id'] ?>, 'disabled', '<?= addslashes(htmlspecialchars($user['name'])) ?>')">
-                                    <i class="bi bi-person-x me-1"></i>Disable
+                            <div class="row-actions">
+                                <button class="btn-edit" onclick="openEditUser(<?= $user['id'] ?>)">
+                                    <i class="bi bi-pencil"></i> Edit
                                 </button>
-                                <?php else: ?>
-                                <button class="btn-enable" onclick="toggleUserStatus(<?= $user['id'] ?>, 'active', '<?= addslashes(htmlspecialchars($user['name'])) ?>')">
-                                    <i class="bi bi-person-check me-1"></i>Enable
-                                </button>
+                                <?php if (!$isSelf): ?>
+                                    <?php if ($user_status === 'active'): ?>
+                                    <button class="btn-disable" onclick="toggleUserStatus(<?= $user['id'] ?>, 'disabled')">
+                                        <i class="bi bi-person-x me-1"></i>Disable
+                                    </button>
+                                    <?php else: ?>
+                                    <button class="btn-enable" onclick="toggleUserStatus(<?= $user['id'] ?>, 'active')">
+                                        <i class="bi bi-person-check me-1"></i>Enable
+                                    </button>
+                                    <?php endif; ?>
                                 <?php endif; ?>
-                            <?php else: ?>
-                                <span class="you-badge"><i class="bi bi-person-fill me-1"></i>You</span>
-                            <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                     <?php endwhile; ?>
@@ -176,6 +222,99 @@ $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FRO
         </div>
 
     </div><!-- /content -->
+
+    <!-- ════════════════════════════════════════════════════════
+         ADD / EDIT USER
+
+         Iisang modal ang ginagamit ng dalawa: pareho ang mga field,
+         ang password lang ang naiiba (kailangan sa bago, opsyonal sa
+         pag-edit). Isang markup na lang ang inaalagaan.
+         ════════════════════════════════════════════════════════ -->
+    <div class="modal fade" id="userFormModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content user-modal">
+                <form id="userForm">
+                    <input type="hidden" name="user_id" id="formUserId" value="">
+
+                    <div class="modal-header">
+                        <div class="user-modal-icon"><i class="bi bi-person-plus-fill" id="formIcon"></i></div>
+                        <div>
+                            <h5 class="modal-title" id="formTitle">Add User</h5>
+                            <small id="formSubtitle">Gumawa ng bagong account na makakapasok sa system.</small>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="field">
+                            <label for="formName">Full Name</label>
+                            <div class="input-icon">
+                                <i class="bi bi-person"></i>
+                                <input type="text" name="name" id="formName" class="user-input"
+                                    placeholder="e.g. Juan Dela Cruz" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="formEmail">Email Address</label>
+                            <div class="input-icon">
+                                <i class="bi bi-envelope"></i>
+                                <input type="email" name="email" id="formEmail" class="user-input"
+                                    placeholder="e.g. juan@bcc.edu.ph" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="formRole">Role</label>
+                            <div class="role-picker">
+                                <label class="role-option">
+                                    <input type="radio" name="role" value="instructor" checked>
+                                    <span>
+                                        <i class="bi bi-person-badge"></i>
+                                        <b>Instructor</b>
+                                        <small>Attendance at sariling section lang.</small>
+                                    </span>
+                                </label>
+                                <label class="role-option">
+                                    <input type="radio" name="role" value="admin">
+                                    <span>
+                                        <i class="bi bi-shield-fill"></i>
+                                        <b>Admin</b>
+                                        <small>Buong akses, kasama ang mga user.</small>
+                                    </span>
+                                </label>
+                            </div>
+                            <small class="field-note" id="roleNote" style="display:none">
+                                <i class="bi bi-info-circle"></i>
+                                Hindi mo mababago ang sarili mong role — para hindi ka mai-lock out.
+                            </small>
+                        </div>
+
+                        <div class="field">
+                            <label for="formPassword">
+                                Password <span id="passwordHint" class="label-hint">(min. 8 characters)</span>
+                            </label>
+                            <div class="input-icon">
+                                <i class="bi bi-lock"></i>
+                                <input type="password" name="password" id="formPassword" class="user-input"
+                                    placeholder="At least 8 characters" autocomplete="new-password">
+                                <button type="button" class="input-eye" id="toggleFormPassword"
+                                    aria-label="Show password"><i class="bi bi-eye"></i></button>
+                            </div>
+                            <small class="field-error" id="formError"></small>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn-save" id="formSubmit">
+                            <i class="bi bi-check2-circle"></i> Save User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <?php include __DIR__ . "/../includes/footer.php"; ?>
 
