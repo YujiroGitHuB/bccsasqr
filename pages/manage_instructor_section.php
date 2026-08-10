@@ -51,7 +51,7 @@ $allSections = (int) (mysqli_fetch_assoc(
             <div class="acad-hero-icon"><i class="bi bi-diagram-3-fill"></i></div>
             <div class="acad-hero-text">
                 <h2>Sections</h2>
-                <p>Kung aling section ang nasasakop ng bawat instructor. Ito ang naglilimita sa mga estudyanteng nakikita nila.</p>
+                <p>Which sections each instructor covers. This limits the students they can see.</p>
             </div>
             <div class="acad-hero-meta">
                 <span class="acad-chip">

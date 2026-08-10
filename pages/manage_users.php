@@ -51,7 +51,7 @@ $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
             <div class="users-hero-icon"><i class="bi bi-people-fill"></i></div>
             <div class="users-hero-text">
                 <h2>Manage Users</h2>
-                <p>Ang mga account na makakapasok sa system — admin at instructor.</p>
+                <p>The accounts that can sign in to the system — admins and instructors.</p>
             </div>
             <button type="button" class="btn-add-user" id="openAddUser">
                 <i class="bi bi-person-plus-fill"></i> Add User
@@ -240,7 +240,7 @@ $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
                         <div class="user-modal-icon"><i class="bi bi-person-plus-fill" id="formIcon"></i></div>
                         <div>
                             <h5 class="modal-title" id="formTitle">Add User</h5>
-                            <small id="formSubtitle">Gumawa ng bagong account na makakapasok sa system.</small>
+                            <small id="formSubtitle">Create a new account that can sign in to the system.</small>
                         </div>
                         <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -272,7 +272,7 @@ $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
                                     <span>
                                         <i class="bi bi-person-badge"></i>
                                         <b>Instructor</b>
-                                        <small>Attendance at sariling section lang.</small>
+                                        <small>Attendance and their own sections only.</small>
                                     </span>
                                 </label>
                                 <label class="role-option">
@@ -280,13 +280,13 @@ $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
                                     <span>
                                         <i class="bi bi-shield-fill"></i>
                                         <b>Admin</b>
-                                        <small>Buong akses, kasama ang mga user.</small>
+                                        <small>Full access, including user management.</small>
                                     </span>
                                 </label>
                             </div>
                             <small class="field-note" id="roleNote" style="display:none">
                                 <i class="bi bi-info-circle"></i>
-                                Hindi mo mababago ang sarili mong role — para hindi ka mai-lock out.
+                                You cannot change your own role — this prevents locking yourself out.
                             </small>
                         </div>
 

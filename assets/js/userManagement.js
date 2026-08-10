@@ -59,12 +59,12 @@ $(document).ready(function () {
         language: {
             emptyTable: '<div class="empty-state">' +
                         '<i class="bi bi-person-slash"></i>' +
-                        '<strong>Walang user na nakita</strong>' +
-                        '<span>Subukang i-reset ang mga filter.</span></div>',
+                        '<strong>No users found</strong>' +
+                        '<span>Try resetting the filters.</span></div>',
             zeroRecords: '<div class="empty-state">' +
                          '<i class="bi bi-search"></i>' +
-                         '<strong>Walang tumugma sa paghahanap</strong>' +
-                         '<span>Subukang i-reset ang mga filter.</span></div>',
+                         '<strong>Nothing matched your search</strong>' +
+                         '<span>Try resetting the filters.</span></div>',
             info: 'Showing _START_ to _END_ of _TOTAL_ users',
             infoEmpty: 'No users to show',
             infoFiltered: '(filtered from _MAX_)'
@@ -191,7 +191,7 @@ function openAddUser() {
     setRoleLock(false);
     document.getElementById('formIcon').className     = 'bi bi-person-plus-fill';
     document.getElementById('formTitle').textContent  = 'Add User';
-    document.getElementById('formSubtitle').textContent = 'Gumawa ng bagong account na makakapasok sa system.';
+    document.getElementById('formSubtitle').textContent = 'Create a new account that can sign in to the system.';
     document.getElementById('passwordHint').textContent = '(min. 8 characters)';
     document.getElementById('formPassword').placeholder = 'At least 8 characters';
     document.getElementById('formPassword').required    = true;
@@ -225,7 +225,7 @@ function openEditUser(userId) {
 
     document.getElementById('formIcon').className     = 'bi bi-pencil-square';
     document.getElementById('formTitle').textContent  = 'Edit User';
-    document.getElementById('formSubtitle').textContent = 'Iwanang blangko ang password kung hindi ito papalitan.';
+    document.getElementById('formSubtitle').textContent = 'Leave the password blank to keep the current one.';
     document.getElementById('passwordHint').textContent = '(optional — leave blank to keep current)';
     document.getElementById('formPassword').placeholder = 'Leave blank to keep current password';
     document.getElementById('formPassword').required    = false;

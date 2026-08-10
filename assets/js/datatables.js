@@ -294,8 +294,8 @@ $(document).ready(function () {
     if ($('#subjectTable').length) {
         $('#subjectTable').DataTable({
             language: {
-                emptyTable: emptyMsg('journal-x', 'Wala pang subject',
-                    'Idagdag ang una sa form sa kaliwa.')
+                emptyTable: emptyMsg('journal-x', 'No subjects yet',
+                    'Add the first one using the form on the left.')
             }
         });
     }
@@ -303,8 +303,8 @@ $(document).ready(function () {
     if ($('#assignmentTable').length) {
         $('#assignmentTable').DataTable({
             language: {
-                emptyTable: emptyMsg('inbox', 'Wala pang assignment',
-                    'Gamitin ang form sa kaliwa para magtakda.')
+                emptyTable: emptyMsg('inbox', 'No assignments yet',
+                    'Use the form on the left to create one.')
             }
         });
     }

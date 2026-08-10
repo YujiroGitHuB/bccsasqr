@@ -90,6 +90,11 @@ $view_mode       = (isset($_GET['view']) && in_array($_GET['view'], ['sections',
 $can_switch_view = ($has_subjects && $has_sections) || ($role === 'admin' && $has_subjects);
 
 // ── Top Metrics ───────────────────────────────────────────
+// Ang $trend_where ay ang KAPAREHONG saklaw ng mga bilang sa itaas.
+// Iisang pinagmumulan para hindi magkaiba ang sinasabi ng KPI at ng
+// trend chart sa ilalim nito.
+$trend_where = null;
+
 if ($view_mode === 'sections') {
     if ($role === 'admin') {
         $totalStudent          = $conn->query("SELECT COUNT(DISTINCT student_no) AS total FROM students_tbl WHERE user_id = '$user_id'")->fetch_assoc()['total'];
@@ -103,6 +108,7 @@ if ($view_mode === 'sections') {
         ")->fetch_assoc();
         $totalStudents         = $m['total'];
         $presentOnSelectedDate = $m['present'];
+        $trend_where           = "user_id = '$user_id'";
     } elseif ($has_sections) {
         // ✅ FIXED: use full_section in IN clause
         $sections_in           = "'" . implode("','", array_map(fn($s) => $conn->real_escape_string($s), $user_sections)) . "'";
@@ -117,6 +123,7 @@ if ($view_mode === 'sections') {
         ")->fetch_assoc();
         $totalStudents         = $m['total'];
         $presentOnSelectedDate = $m['present'];
+        $trend_where           = "CONCAT(course,'-',section) IN ($sections_in) AND user_id = '$user_id'";
     } else {
         $totalStudent = $totalStudents = $presentOnSelectedDate = 0;
     }
@@ -133,6 +140,7 @@ if ($view_mode === 'sections') {
         $totalStudent          = $m['total'];
         $totalStudents         = $totalStudent;
         $presentOnSelectedDate = $m['present'];
+        $trend_where           = "subject IN ($subjects_in) AND user_id = '$user_id'";
     } else {
         $totalStudent = $totalStudents = $presentOnSelectedDate = 0;
     }
@@ -151,6 +159,60 @@ function getYearLevel(string $full_section): string {
     if (preg_match('/^4/', $sec)) return '4th Year';
     return 'Other';
 }
+
+// ============================================================
+//  ATTENDANCE TREND (14 araw hanggang sa napiling petsa)
+//
+//  Ito ang tanging tanong na hindi kayang sagutin ng mga numero
+//  sa itaas: snapshot lahat sila ng iisang araw. Ang linya ang
+//  nagsasabi kung pataas o pababa.
+//
+//  BILANG ng estudyanteng nag-scan ang ipinapakita, hindi
+//  porsyento: ang denominador ay 1,762 estudyante samantalang
+//  iilang section lang ang may klase kada araw — magmumukhang
+//  bumagsak sa 5% ang attendance gayong hindi naman.
+// ============================================================
+$trend_from   = date('Y-m-d', strtotime($selected_date . ' -13 days'));
+$trend_series = [];   // ['label' => ..., 'iso' => ..., 'value' => int]
+$trend_days   = 0;    // ilang araw ang may kahit isang scan
+
+if ($trend_where !== null) {
+    // Isang query lang; may idx_section_date(date) ang attendance_tbl.
+    $tq = $conn->query("
+        SELECT DATE(date) AS d, COUNT(DISTINCT student_no) AS n
+        FROM attendance_tbl
+        WHERE ($trend_where)
+          AND DATE(date) BETWEEN '$trend_from' AND '$selected_date'
+        GROUP BY DATE(date)
+    ");
+
+    $byDate = [];
+    if ($tq) {
+        while ($row = $tq->fetch_assoc()) {
+            $byDate[$row['d']] = (int)$row['n'];
+        }
+    }
+
+    // Punuin ang buong kalendaryo: ang araw na walang scan ay tunay
+    // na zero, at pantay-pantay dapat ang agwat ng mga tuldok sa x —
+    // ang linyang laktaw-laktaw ang petsa ay nagsisinungaling.
+    for ($i = 13; $i >= 0; $i--) {
+        $iso = date('Y-m-d', strtotime($selected_date . " -$i days"));
+        $val = $byDate[$iso] ?? 0;
+        if ($val > 0) $trend_days++;
+
+        $trend_series[] = [
+            'iso'   => $iso,
+            'label' => date('M j', strtotime($iso)),
+            'full'  => date('D, M j, Y', strtotime($iso)),
+            'value' => $val,
+        ];
+    }
+}
+
+// Dalawang araw ang pinakamababa bago may masabing "trend" —
+// ang isang tuldok ay hindi linya.
+$trend_ready = $trend_days >= 2;
 
 // ── Helper: matatag na kulay kada section ────────────────────
 // Palatandaan lang ito para mabilis makilala ang isang card sa
@@ -334,7 +396,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                         </div>
                     </div>
                     <div class="dash-kpi-foot">
-                        <span><?= $view_mode === 'subjects' ? 'Sa mga subject mo' : 'Sa mga section mo' ?></span>
+                        <span><?= $view_mode === 'subjects' ? 'Across your subjects' : 'Across your sections' ?></span>
                     </div>
                     <div class="dash-bar"><span style="width:100%"></span></div>
                 </div>
@@ -348,7 +410,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                         </div>
                     </div>
                     <div class="dash-kpi-foot">
-                        <span>Nakapag-scan kahit minsan</span>
+                        <span>Scanned at least once</span>
                         <b><?= $scanRate ?>%</b>
                     </div>
                     <div class="dash-bar"><span style="width:<?= min(100, $scanRate) ?>%"></span></div>
@@ -406,6 +468,63 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                     <?php endif; ?>
                 </form>
             </div>
+
+            <!-- ── Attendance trend ───────────────────────────────
+                 Nasa ILALIM ng toolbar dahil ang date filter sa itaas
+                 ang nagtatakda ng dulo ng 14-araw na bintana — ang
+                 kontrol ay dapat nasa ibabaw ng lahat ng sinasaklaw
+                 nito, at walang hiwalay na filter sa loob ng card. -->
+            <section class="dash-trend">
+                <div class="dash-trend-head">
+                    <div>
+                        <h5>Attendance trend</h5>
+                        <small>
+                            Students who scanned per day ·
+                            <?= date('M j', strtotime($trend_from)) ?> – <?= date('M j, Y', strtotime($selected_date)) ?>
+                        </small>
+                    </div>
+                </div>
+
+                <?php if ($trend_ready): ?>
+                    <div class="dash-chart">
+                        <canvas id="attendanceTrend"
+                            role="img"
+                            aria-label="Line chart of students who scanned per day over 14 days. Exact values are in the table below."></canvas>
+                    </div>
+
+                    <!-- Ang tooltip ay pandagdag lang, hindi tanging
+                         daan papunta sa halaga — narito ang buong datos. -->
+                    <details class="dash-table-view">
+                        <summary>Show as table</summary>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Scanned</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($trend_series as $pt): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($pt['full']) ?></td>
+                                        <td><?= number_format($pt['value']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </details>
+                <?php else: ?>
+                    <div class="dash-empty">
+                        <i class="bi bi-graph-up"></i>
+                        <strong>Not enough data for a trend</strong>
+                        <span>
+                            <?= $trend_days === 1
+                                ? 'Only one day in this window has scans — at least two are needed.'
+                                : 'No scans yet in this 14-day window.' ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
+            </section>
 
             <!-- CARDS -->
             <div class="row g-3">
@@ -500,7 +619,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                                         <?php if (!$has_subjects): ?>
                                             <div class="dash-notice warn mb-3" style="font-size:.78rem;padding:.6rem .8rem">
                                                 <i class="bi bi-info-circle-fill"></i>
-                                                <span>Walang naka-assign na subject.</span>
+                                                <span>No subjects assigned yet.</span>
                                             </div>
                                         <?php endif; ?>
 
@@ -557,7 +676,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                     } else {
                         echo '<div class="col-12"><div class="dash-notice">
                                 <i class="bi bi-info-circle-fill"></i>
-                                <span>Wala pang naka-assign na section.</span>
+                                <span>No sections assigned yet.</span>
                               </div></div>';
                     }
 
@@ -694,14 +813,14 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                             <div class="col-12">
                                 <div class="dash-notice">
                                     <i class="bi bi-info-circle-fill"></i>
-                                    <span>Wala pang attendance record ang mga subject mo.</span>
+                                    <span>No attendance records for your subjects yet.</span>
                                 </div>
                             </div>
                         <?php endif;
                     } else {
                         echo '<div class="col-12"><div class="dash-notice">
                                 <i class="bi bi-info-circle-fill"></i>
-                                <span>Wala pang naka-assign na subject.</span>
+                                <span>No subjects assigned yet.</span>
                               </div></div>';
                     }
                 }
@@ -713,7 +832,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
 
             <div class="dash-section-title mt-5">
                 Recent Activity
-                <span class="count">Huling 5 scan ngayong araw</span>
+                <span class="count">Last 5 scans today</span>
             </div>
 
             <div class="row g-3">
@@ -776,8 +895,8 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                             else: ?>
                                 <div class="dash-empty">
                                     <i class="bi bi-inbox"></i>
-                                    <strong>Wala pang aktibidad</strong>
-                                    <span>Lilitaw dito ang mga scan pagkatapos mag-attendance ng estudyante.</span>
+                                    <strong>No activity yet</strong>
+                                    <span>Scans will appear here once students take attendance.</span>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -793,5 +912,125 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
     <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
     <script src="<?= asset('../assets/js/logout.js') ?>"></script>
     <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
+
+    <?php if ($trend_ready): ?>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script>
+            (function () {
+                const canvas = document.getElementById('attendanceTrend');
+                if (!canvas || typeof Chart === 'undefined') return;
+
+                const points = <?= json_encode($trend_series, JSON_UNESCAPED_UNICODE) ?>;
+
+                // Kaparehong #667eea ng dashboard. Sinuri laban sa surface
+                // na #16161a: pasado sa lightness band, chroma floor, at
+                // 3:1 na contrast.
+                const SERIES  = '#667eea';
+                const SURFACE = '#16161a';
+                const GRID    = 'rgba(255,255,255,.06)';
+                const INK     = 'rgba(255,255,255,.38)';
+
+                const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+                // Ang halaga sa dulo ay direktang nilalagyan ng label —
+                // isa lang, hindi lahat ng tuldok (magulo iyon at hindi
+                // nababasa). Ang axis at tooltip ang bahala sa iba.
+                const endLabel = {
+                    id: 'endLabel',
+                    afterDatasetsDraw(chart) {
+                        const meta = chart.getDatasetMeta(0);
+                        const last = meta.data[meta.data.length - 1];
+                        if (!last) return;
+
+                        const value = points[points.length - 1].value;
+                        const ctx   = chart.ctx;
+
+                        ctx.save();
+                        ctx.font = '600 12px system-ui, -apple-system, "Segoe UI", sans-serif';
+                        ctx.fillStyle = 'rgba(255,255,255,.85)';
+                        ctx.textAlign = 'right';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(value.toLocaleString(), last.x + 2, last.y - 12);
+                        ctx.restore();
+                    }
+                };
+
+                new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: points.map(p => p.label),
+                        datasets: [{
+                            data: points.map(p => p.value),
+                            borderColor: SERIES,
+                            // Wash lang ang fill (~10%), hindi solidong bloke.
+                            backgroundColor: 'rgba(102,126,234,.10)',
+                            fill: true,
+                            borderWidth: 2,
+                            borderJoinStyle: 'round',
+                            borderCapStyle: 'round',
+                            tension: .25,
+                            pointRadius: 4,
+                            pointBackgroundColor: SERIES,
+                            // 2px na singsing sa kulay ng surface para
+                            // manatiling malinaw ang tuldok sa ibabaw ng linya.
+                            pointBorderColor: SURFACE,
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 6,
+                            pointHoverBorderWidth: 2,
+                            pointHitRadius: 24
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: reduceMotion ? false : { duration: 500 },
+                        layout: { padding: { top: 24, right: 14, left: 2, bottom: 2 } },
+                        // Isang series lang — ang pamagat sa itaas ang
+                        // nagsasabi kung ano ito, kaya walang legend box.
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: '#0f0f13',
+                                borderColor: 'rgba(255,255,255,.12)',
+                                borderWidth: 1,
+                                titleColor: '#f1f5f9',
+                                bodyColor: '#cbd5e1',
+                                padding: 10,
+                                displayColors: false,
+                                callbacks: {
+                                    title: (items) => points[items[0].dataIndex].full,
+                                    label: (item) => ' ' + item.parsed.y.toLocaleString() + ' scanned'
+                                }
+                            }
+                        },
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                border: { color: 'rgba(255,255,255,.1)' },
+                                ticks: { color: INK, font: { size: 11 }, maxRotation: 0, autoSkipPadding: 12 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: GRID, drawTicks: false },
+                                border: { display: false },
+                                ticks: {
+                                    color: INK,
+                                    font: { size: 11 },
+                                    padding: 8,
+                                    precision: 0,
+                                    maxTicksLimit: 5,
+                                    callback: (v) => v.toLocaleString()
+                                }
+                            }
+                        }
+                    },
+                    plugins: [endLabel]
+                });
+            })();
+        </script>
+    <?php endif; ?>
 </body>
 </html>

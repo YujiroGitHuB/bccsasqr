@@ -249,7 +249,7 @@ if ($user_role === 'admin') {
             <div class="acad-hero-icon"><i class="bi bi-book-half"></i></div>
             <div class="acad-hero-text">
                 <h2>Subject Enrollment</h2>
-                <p>Kung anong subject ang kinukuha ng bawat estudyante — ito ang sinusuri ng scanner tuwing may attendance.</p>
+                <p>Which subjects each student is taking — the scanner checks this on every attendance.</p>
             </div>
             <div class="acad-hero-meta">
                 <span class="acad-chip">

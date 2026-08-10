@@ -132,7 +132,7 @@ $system = mysqli_fetch_assoc($systemQuery);
                         <i class="bi bi-person-vcard"></i>
                         <div>
                             <h4>Account Details</h4>
-                            <small>Ito ang pangalang lumalabas sa topbar at sa mga record.</small>
+                            <small>This is the name shown in the topbar and on records.</small>
                         </div>
                     </div>
 
@@ -164,7 +164,7 @@ $system = mysqli_fetch_assoc($systemQuery);
                         <i class="bi bi-key"></i>
                         <div>
                             <h4>Change Password</h4>
-                            <small>Iwanang blangko kung ayaw mong palitan ang password.</small>
+                            <small>Leave blank if you do not want to change your password.</small>
                         </div>
                     </div>
 

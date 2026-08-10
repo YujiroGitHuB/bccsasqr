@@ -49,7 +49,7 @@ $assignedTotal = (int) (mysqli_fetch_assoc(
             <div class="acad-hero-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
             <div class="acad-hero-text">
                 <h2>Subjects</h2>
-                <p>Ang master list ng mga asignatura. Dito nakabatay ang enrollment at ang mga assignment sa instructor.</p>
+                <p>The master list of subjects. Enrollment and instructor assignments are built on this.</p>
             </div>
             <div class="acad-hero-meta">
                 <span class="acad-chip">

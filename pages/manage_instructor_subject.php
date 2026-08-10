@@ -73,7 +73,7 @@ $unassignedTotal = (int) (mysqli_fetch_assoc(
             <div class="acad-hero-icon"><i class="bi bi-person-badge-fill"></i></div>
             <div class="acad-hero-text">
                 <h2>Instructors</h2>
-                <p>Kung sinong instructor ang humahawak sa bawat subject. Ito ang batayan ng makikita nilang attendance.</p>
+                <p>Which instructor handles each subject. This drives the attendance they can see.</p>
             </div>
             <div class="acad-hero-meta">
                 <span class="acad-chip">

@@ -372,6 +372,107 @@
     background: var(--kpi, #667eea);
 }
 
+/* ─── Attendance trend ────────────────────────────────────── */
+.dash-page .dash-trend {
+    padding: 1.15rem 1.35rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid var(--dash-line);
+    background: var(--dash-surface);
+}
+
+.dash-page .dash-trend-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.dash-page .dash-trend-head h5 {
+    margin: 0 0 2px;
+    font-size: .98rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.dash-page .dash-trend-head small {
+    font-size: .78rem;
+    color: var(--dash-muted);
+}
+
+/* Kasama na sa taas ang banda ng x-axis — kung ang plot lang ang
+   sinukat, may sariling maliit na scroll ang card at naipuputol
+   ang mga label ng petsa. */
+.dash-page .dash-chart {
+    position: relative;
+    height: 240px;
+}
+
+@media (max-width: 576px) {
+    .dash-page .dash-chart {
+        height: 200px;
+    }
+}
+
+/* ─── Table view (ang kambal ng chart) ────────────────────── */
+.dash-page .dash-table-view {
+    margin-top: .9rem;
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    padding-top: .7rem;
+}
+
+.dash-page .dash-table-view summary {
+    font-size: .78rem;
+    font-weight: 600;
+    color: #93c5fd;
+    cursor: pointer;
+    list-style: none;
+}
+
+.dash-page .dash-table-view summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: .4rem;
+    transition: transform .15s;
+}
+
+.dash-page .dash-table-view[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.dash-page .dash-table-view table {
+    width: 100%;
+    margin-top: .7rem;
+    font-size: .8rem;
+    border-collapse: collapse;
+}
+
+.dash-page .dash-table-view th {
+    text-align: left;
+    padding: .4rem .5rem;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .35);
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+
+.dash-page .dash-table-view td {
+    padding: .4rem .5rem;
+    color: #cbd5e1;
+    border-bottom: 1px solid rgba(255, 255, 255, .04);
+}
+
+/* Naka-hanay na hanay ng numero — dito lang bagay ang tabular. */
+.dash-page .dash-table-view td:last-child,
+.dash-page .dash-table-view th:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
 /* ─── Section title ───────────────────────────────────────── */
 .dash-page .dash-section-title {
     display: flex;
