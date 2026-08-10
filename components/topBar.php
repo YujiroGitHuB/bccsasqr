@@ -42,14 +42,16 @@ $__avatarUrl  = $__avatarFile !== '' && is_file($__avatarFile)
          Sa desktop ay nananatili itong nakatago — nasa sidebar na ang
          logo at pangalan doon, at magiging ulit lang ito.
 
-         Ang mga variable ay galing sa includes/systemConfig.php, na
+         Acronym lang ang ipinapakita rito — walang logo. Dalawang
+         magkatabing bilog na larawan ang lalabas kung may logo (ang
+         brand at ang avatar), at hindi naman nagsasabi ng pangalan ng
+         sistema ang isang maliit na bilog. Ang teksto ang nagsasabi.
+
+         Ang `$systemAcronym` ay galing sa includes/systemConfig.php, na
          isinasama ng includes/header.php sa bawat page na may topbar.
          May fallback pa rin kung sakaling isama ito kung saan wala ang
          header. -->
     <a class="tb-brand" href="../pages/dashboard.php">
-        <?php if (!empty($systemLogo)) { ?>
-            <img src="../<?php echo htmlspecialchars($systemLogo); ?>" alt="">
-        <?php } ?>
         <span><?php echo htmlspecialchars($systemAcronym ?? 'Home'); ?></span>
     </a>
 

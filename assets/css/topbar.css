@@ -207,7 +207,6 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: .5rem;
         flex: 1 1 auto;
         min-width: 0;
         padding: 0 .5rem;
@@ -221,31 +220,22 @@
         color: #fff;
     }
 
-    .topbar .tb-brand img {
-        flex-shrink: 0;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
+    /* Kumakapit ang sukat sa lapad ng viewport sa halip na tumalon sa
+       mga breakpoint: ~13.6px sa 360px na telepono hanggang ~16.8px sa
+       992px, tuloy-tuloy. Ang `.74rem + .5vw` at hindi purong `vw` —
+       may kasamang `rem` ang formula kaya sumusunod pa rin ito sa
+       pinalaking font ng browser (accessibility), at hindi masyadong
+       matarik ang pagbabago.
 
-    /* May mga acronym na mahaba ("BCC SASQR v1.0") — putulin nang
+       May mga acronym pa ring mahaba ("BCC SASQR v1.0") — putulin nang
        tapat sa halip na itulak ang avatar palabas ng screen. */
     .topbar .tb-brand span {
         min-width: 0;
-        font-size: .95rem;
+        font-size: clamp(.85rem, .74rem + .5vw, 1.05rem);
         font-weight: 700;
         letter-spacing: -.01em;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-}
-
-/* Sa napakakipot na screen, ang logo na lang — nauunang mawala ang
-   teksto kaysa sumiksik ang tatlong bagay. */
-@media (max-width: 380px) {
-    .topbar .tb-brand span {
-        display: none;
     }
 }
