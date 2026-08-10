@@ -1,0 +1,290 @@
+/* ============================================================
+   MANAGE SETTINGS
+
+   Ang dating ayos ay apat na 340px na card na naka-`text-align:
+   center`. Tatlong problema niyon:
+
+   · Nagsasalansan ang pamagat ("Page Lock / Settings" sa dalawang
+     linya) at naka-center ang paliwanag — pinakamahirap basahing
+     ayos para sa tekstong maraming linya.
+   · Bawat card ay may sariling <h2> na #38bdf8 — limang <h2> sa
+     isang page, kaya nakikipagsapalaran ang mga ito sa mismong
+     pamagat ng page.
+   · Iba-iba ang taas at gilagid ang grid: maikli ang Attendance
+     Lock, napakataas ng Student Photo, at malawak na blangko sa
+     kanan.
+
+   Kapalit: isang listahan ng hanay — icon at paliwanag sa kaliwa,
+   estado at switch sa kanan. Iyon ang karaniwang anyo ng settings
+   dahil kaya nitong tumanggap ng mahabang paliwanag nang hindi
+   nasisira ang hanay.
+   ============================================================ */
+
+.set-page {
+    --set-line: rgba(255, 255, 255, .07);
+    --set-surface: #16161a;
+    --set-muted: rgba(255, 255, 255, .45);
+}
+
+.set-page .set-wrap {
+    max-width: 900px;
+}
+
+/* ─── Hero ────────────────────────────────────────────────── */
+.set-page .set-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid var(--set-line);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(102, 126, 234, .16), transparent 55%),
+        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+    overflow: hidden;
+}
+
+.set-page .set-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    box-shadow: 0 0 12px rgba(102, 126, 234, .6);
+}
+
+.set-page .set-hero-icon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, .35);
+}
+
+.set-page .set-hero h2 {
+    margin: 0 0 3px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: #fff;
+}
+
+.set-page .set-hero p {
+    margin: 0;
+    font-size: .85rem;
+    color: var(--set-muted);
+}
+
+/* ─── Pangkat ─────────────────────────────────────────────── */
+.set-page .set-group-title {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 1.75rem 0 .75rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .35);
+}
+
+.set-page .set-group-title::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: #667eea;
+}
+
+.set-page .set-list {
+    border-radius: 16px;
+    border: 1px solid var(--set-line);
+    background: var(--set-surface);
+    overflow: hidden;
+}
+
+/* ─── Hanay ───────────────────────────────────────────────── */
+.set-page .set-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.15rem 1.35rem;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+}
+
+.set-page .set-row:last-child {
+    border-bottom: 0;
+}
+
+.set-page .set-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    font-size: 1.05rem;
+    color: #a5b4fc;
+    background: rgba(102, 126, 234, .14);
+    border: 1px solid rgba(102, 126, 234, .28);
+}
+
+.set-page .set-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.set-page .set-main h3 {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    margin: 0 0 .3rem;
+    font-size: .98rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+/* Naka-align sa kaliwa at may hangganan sa lapad — ang naka-center
+   na talata ay kailangang habulin ng mata sa bawat bagong linya. */
+.set-page .set-main p {
+    margin: 0;
+    max-width: 62ch;
+    font-size: .84rem;
+    line-height: 1.55;
+    color: var(--set-muted);
+}
+
+.set-page .set-control {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    min-height: 50px;
+}
+
+/* ─── Badge ng estado ─────────────────────────────────────── */
+.set-page .set-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .2rem .65rem;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.set-page .set-badge.on {
+    color: #6ee7b7;
+    background: rgba(16, 185, 129, .13);
+    border: 1px solid rgba(16, 185, 129, .3);
+}
+
+.set-page .set-badge.off {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, .13);
+    border: 1px solid rgba(245, 158, 11, .3);
+}
+
+.set-page .set-badge.strict {
+    color: #c7d2fe;
+    background: rgba(102, 126, 234, .16);
+    border: 1px solid rgba(102, 126, 234, .32);
+}
+
+.set-page .set-badge.muted {
+    color: rgba(255, 255, 255, .5);
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .12);
+}
+
+/* ─── Babala sa loob ng hanay ─────────────────────────────── */
+.set-page .set-warn {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    margin-top: .75rem;
+    padding: .65rem .85rem;
+    border-radius: 10px;
+    font-size: .82rem;
+    line-height: 1.5;
+    color: #fcd34d;
+    background: rgba(245, 158, 11, .1);
+    border: 1px solid rgba(245, 158, 11, .26);
+}
+
+.set-page .set-warn.danger {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, .1);
+    border-color: rgba(239, 68, 68, .28);
+}
+
+.set-page .set-warn i {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* ─── Butones ─────────────────────────────────────────────── */
+.set-page .set-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem 1.2rem;
+    border: none;
+    border-radius: 11px;
+    font-size: .87rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, .28);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform .2s, box-shadow .2s, filter .2s;
+}
+
+.set-page .set-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 22px rgba(102, 126, 234, .38);
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .set-page .set-hero {
+        padding: 1rem;
+    }
+
+    .set-page .set-hero-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .set-page .set-hero h2 {
+        font-size: 1.15rem;
+    }
+
+    /* Sa makipot na screen ay bumababa ang switch sa ilalim ng
+       paliwanag — hindi na ito sumisiksik sa gilid. */
+    .set-page .set-row {
+        flex-wrap: wrap;
+        padding: 1rem;
+    }
+
+    .set-page .set-control {
+        width: 100%;
+        justify-content: flex-start;
+        padding-left: 56px;
+    }
+}

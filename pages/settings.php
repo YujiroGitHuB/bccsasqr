@@ -123,184 +123,254 @@ $systemLogo = $system['logo'] ?? '';
 <head>
     <?php include __DIR__ . "/../includes/header.php"; ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/settings-page.css') ?>">
 </head>
 
 <body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
-    <div class="content" id="content">
+    <div class="content set-page" id="content">
         <?php include("../components/topBar.php"); ?>
-        <h2><i class="bi bi-sliders"></i> Manage Settings</h2>
-        <div class="settings-container">
-            <!-- Page Lock Settings -->
-            <div class="settings-card">
-                <h2><i class="bi bi-shield-lock-fill"></i> Page Lock Settings</h2>
-                <p class="status-text"> Current Status: <?php if ($isLocked): ?> <span class="locked"><i class="bi bi-lock"></i> LOCKED</span> <?php else: ?> <span class="unlocked"><i class="bi bi-unlock-fill"></i> UNLOCKED</span> <?php endif; ?> </p>
-                <form method="post" id="lockForm"> <input type="hidden" name="lock_status" id="lock_status" value="<?= $isLocked ? 'true' : 'false' ?>">
-                    <div class="toggle-container">
-                        <div class="toggle-wrap"> <input class="toggle-input" id="holo-toggle" type="checkbox" <?= $isLocked ? 'checked' : '' ?> /> <label class="toggle-track" for="holo-toggle">
-                                <div class="track-lines">
-                                    <div class="track-line"></div>
-                                </div>
-                                <div class="toggle-thumb">
-                                    <div class="thumb-core"></div>
-                                    <div class="thumb-inner"></div>
-                                    <div class="thumb-scan"></div>
-                                    <div class="thumb-particles">
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                    </div>
-                                </div>
 
-                                <div class="energy-rings">
-                                    <div class="energy-ring"></div>
-                                    <div class="energy-ring"></div>
-                                    <div class="energy-ring"></div>
-                                </div>
-                                <div class="interface-lines">
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                </div>
-                                <div class="toggle-reflection"></div>
-                                <div class="holo-glow"></div>
-                            </label>
-                        </div>
-                    </div>
-                </form>
+        <div class="set-wrap">
+
+            <div class="set-hero">
+                <div class="set-hero-icon"><i class="bi bi-sliders"></i></div>
+                <div>
+                    <h2>Manage Settings</h2>
+                    <p>System-wide switches. Changes take effect immediately for everyone.</p>
+                </div>
             </div>
 
-            <!-- Attendance Lock Settings -->
-            <div class="settings-card">
-                <h2><i class="bi bi-calendar-check-fill"></i> Attendance Lock Settings</h2>
-                <p class="status-text"> Current Status: <?php if ($isAttendanceLocked): ?> <span class="locked"><i class="bi bi-lock"></i> LOCKED</span> <?php else: ?> <span class="unlocked"><i class="bi bi-unlock-fill"></i> UNLOCKED</span> <?php endif; ?> </p>
-                <form method="post" id="attendanceLockForm"> <input type="hidden" name="attendance_lock_status" id="attendance_lock_status" value="<?= $isAttendanceLocked ? '1' : '0' ?>">
-                    <div class="toggle-container">
-                        <div class="toggle-wrap"> <input class="toggle-input" id="attendance-toggle" type="checkbox" <?= $isAttendanceLocked ? 'checked' : '' ?> /> <label class="toggle-track" for="attendance-toggle">
-                                <div class="track-lines">
-                                    <div class="track-line"></div>
-                                </div>
-                                <div class="toggle-thumb">
-                                    <div class="thumb-core"></div>
-                                    <div class="thumb-inner"></div>
-                                    <div class="thumb-scan"></div>
-                                    <div class="thumb-particles">
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                    </div>
-                                </div>
+            <!-- ══ ACCESS CONTROL ══════════════════════════════ -->
+            <div class="set-group-title">Access control</div>
+            <div class="set-list">
 
-                                <div class="energy-rings">
-                                    <div class="energy-ring"></div>
-                                    <div class="energy-ring"></div>
-                                    <div class="energy-ring"></div>
-                                </div>
-                                <div class="interface-lines">
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                </div>
-                                <div class="toggle-reflection"></div>
-                                <div class="holo-glow"></div>
-                            </label>
-                        </div>
+                <!-- Page Lock -->
+                <div class="set-row">
+                    <div class="set-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                    <div class="set-main">
+                        <h3>
+                            Page Lock
+                            <span class="set-badge <?= $isLocked ? 'off' : 'on' ?>" id="pageLockStatus">
+                                <i class="bi bi-<?= $isLocked ? 'lock-fill' : 'unlock-fill' ?>"></i>
+                                <?= $isLocked ? 'Locked' : 'Unlocked' ?>
+                            </span>
+                        </h3>
+                        <p>
+                            When locked, the QR Generator, QR Scanner, Attendance Tracker,
+                            and the registration page stop opening for everyone. Use it
+                            outside class hours.
+                        </p>
                     </div>
-                </form>
+                    <div class="set-control">
+                        <form method="post" id="lockForm">
+                            <input type="hidden" name="lock_status" id="lock_status" value="<?= $isLocked ? 'true' : 'false' ?>">
+                            <div class="toggle-container">
+                                <div class="toggle-wrap">
+                                    <input class="toggle-input" id="holo-toggle" type="checkbox" <?= $isLocked ? 'checked' : '' ?> />
+                                    <label class="toggle-track" for="holo-toggle">
+                                        <div class="track-lines">
+                                            <div class="track-line"></div>
+                                        </div>
+                                        <div class="toggle-thumb">
+                                            <div class="thumb-core"></div>
+                                            <div class="thumb-inner"></div>
+                                            <div class="thumb-scan"></div>
+                                            <div class="thumb-particles">
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                            </div>
+                                        </div>
+                                        <div class="energy-rings">
+                                            <div class="energy-ring"></div>
+                                            <div class="energy-ring"></div>
+                                            <div class="energy-ring"></div>
+                                        </div>
+                                        <div class="interface-lines">
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                        </div>
+                                        <div class="toggle-reflection"></div>
+                                        <div class="holo-glow"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Attendance Lock -->
+                <div class="set-row">
+                    <div class="set-icon"><i class="bi bi-calendar-check-fill"></i></div>
+                    <div class="set-main">
+                        <h3>
+                            Attendance Lock
+                            <span class="set-badge <?= $isAttendanceLocked ? 'off' : 'on' ?>" id="attendanceLockStatus">
+                                <i class="bi bi-<?= $isAttendanceLocked ? 'lock-fill' : 'unlock-fill' ?>"></i>
+                                <?= $isAttendanceLocked ? 'Locked' : 'Unlocked' ?>
+                            </span>
+                        </h3>
+                        <p>
+                            When locked, the shared attendance link stops accepting
+                            submissions. Students opening it see a closed notice instead
+                            of the form.
+                        </p>
+                    </div>
+                    <div class="set-control">
+                        <form method="post" id="attendanceLockForm">
+                            <input type="hidden" name="attendance_lock_status" id="attendance_lock_status" value="<?= $isAttendanceLocked ? '1' : '0' ?>">
+                            <div class="toggle-container">
+                                <div class="toggle-wrap">
+                                    <input class="toggle-input" id="attendance-toggle" type="checkbox" <?= $isAttendanceLocked ? 'checked' : '' ?> />
+                                    <label class="toggle-track" for="attendance-toggle">
+                                        <div class="track-lines">
+                                            <div class="track-line"></div>
+                                        </div>
+                                        <div class="toggle-thumb">
+                                            <div class="thumb-core"></div>
+                                            <div class="thumb-inner"></div>
+                                            <div class="thumb-scan"></div>
+                                            <div class="thumb-particles">
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                            </div>
+                                        </div>
+                                        <div class="energy-rings">
+                                            <div class="energy-ring"></div>
+                                            <div class="energy-ring"></div>
+                                            <div class="energy-ring"></div>
+                                        </div>
+                                        <div class="interface-lines">
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                        </div>
+                                        <div class="toggle-reflection"></div>
+                                        <div class="holo-glow"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
-            <!-- Student Photo Requirement -->
-            <div class="settings-card">
-                <h2><i class="bi bi-person-badge-fill"></i> Student Photo Requirement</h2>
-                <p class="status-text">
-                    Current Status:
-                    <?php if ($isPhotoRequired): ?>
-                        <span class="locked"><i class="bi bi-shield-lock-fill"></i> REQUIRED</span>
-                    <?php else: ?>
-                        <span class="unlocked"><i class="bi bi-shield-slash"></i> OPTIONAL</span>
-                    <?php endif; ?>
-                </p>
+            <!-- ══ ATTENDANCE RULES ════════════════════════════ -->
+            <div class="set-group-title">Attendance rules</div>
+            <div class="set-list">
 
-                <p style="font-size:.85rem; color:#94a3b8; max-width:520px; margin:0 auto 1rem;">
-                    When ON, students without an uploaded photo cannot record attendance —
-                    the instructor has no face to check against the QR being presented.
-                    When OFF, the scan still goes through but shows a warning that
-                    identity could not be verified.
-                </p>
+                <!-- Student Photo Requirement -->
+                <div class="set-row">
+                    <div class="set-icon"><i class="bi bi-person-badge-fill"></i></div>
+                    <div class="set-main">
+                        <h3>
+                            Student Photo Requirement
+                            <span class="set-badge <?= $isPhotoRequired ? 'strict' : 'muted' ?>" id="photoStatus">
+                                <i class="bi bi-<?= $isPhotoRequired ? 'shield-lock-fill' : 'shield-slash' ?>"></i>
+                                <?= $isPhotoRequired ? 'Required' : 'Optional' ?>
+                            </span>
+                        </h3>
+                        <p>
+                            When ON, students without an uploaded photo cannot record
+                            attendance — the instructor has no face to check against the
+                            QR being presented. When OFF, the scan still goes through but
+                            shows a warning that identity could not be verified.
+                        </p>
 
-                <?php if ($photoMissing > 0): ?>
-                    <p style="font-size:.82rem; color:<?= $isPhotoRequired ? '#f87171' : '#facc15' ?>;
-                              background:rgba(250,204,21,.08); border:1px solid rgba(250,204,21,.25);
-                              border-radius:8px; padding:.6rem .9rem; max-width:520px; margin:0 auto 1rem;">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <strong><?= number_format($photoMissing) ?></strong> of
-                        <strong><?= number_format($photoTotal) ?></strong> students have no
-                        photo<?= $isPhotoRequired
-                            ? ' — they cannot record attendance right now.'
-                            : '. If you turn this on now, they will not be able to record attendance.' ?>
-                    </p>
-                <?php endif; ?>
-
-                <form method="post" id="requirePhotoForm">
-                    <input type="hidden" name="require_photo_status" id="require_photo_status"
-                        value="<?= $isPhotoRequired ? '1' : '0' ?>">
-                    <div class="toggle-container">
-                        <div class="toggle-wrap">
-                            <input class="toggle-input" id="require-photo-toggle" type="checkbox"
-                                <?= $isPhotoRequired ? 'checked' : '' ?> />
-                            <label class="toggle-track" for="require-photo-toggle">
-                                <div class="track-lines">
-                                    <div class="track-line"></div>
-                                </div>
-                                <div class="toggle-thumb">
-                                    <div class="thumb-core"></div>
-                                    <div class="thumb-inner"></div>
-                                    <div class="thumb-scan"></div>
-                                    <div class="thumb-particles">
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                        <div class="thumb-particle"></div>
-                                    </div>
-                                </div>
-                                <div class="energy-rings">
-                                    <div class="energy-ring"></div>
-                                    <div class="energy-ring"></div>
-                                    <div class="energy-ring"></div>
-                                </div>
-                                <div class="interface-lines">
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                    <div class="interface-line"></div>
-                                </div>
-                                <div class="toggle-reflection"></div>
-                                <div class="holo-glow"></div>
-                            </label>
-                        </div>
+                        <?php if ($photoMissing > 0): ?>
+                            <!-- Ang id ay binabasa ng requirePhoto.js para sa teksto ng
+                                 kumpirmasyon — dating hinahalungkat nito ang DOM mula sa
+                                 icon ng babala pataas. -->
+                            <div class="set-warn <?= $isPhotoRequired ? 'danger' : '' ?>" id="photoWarning">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                <span>
+                                    <strong><?= number_format($photoMissing) ?></strong> of
+                                    <strong><?= number_format($photoTotal) ?></strong> students have no
+                                    photo<?= $isPhotoRequired
+                                        ? ' — they cannot record attendance right now.'
+                                        : '. If you turn this on now, they will not be able to record attendance.' ?>
+                                </span>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                </form>
+                    <div class="set-control">
+                        <form method="post" id="requirePhotoForm">
+                            <input type="hidden" name="require_photo_status" id="require_photo_status"
+                                value="<?= $isPhotoRequired ? '1' : '0' ?>">
+                            <div class="toggle-container">
+                                <div class="toggle-wrap">
+                                    <input class="toggle-input" id="require-photo-toggle" type="checkbox"
+                                        <?= $isPhotoRequired ? 'checked' : '' ?> />
+                                    <label class="toggle-track" for="require-photo-toggle">
+                                        <div class="track-lines">
+                                            <div class="track-line"></div>
+                                        </div>
+                                        <div class="toggle-thumb">
+                                            <div class="thumb-core"></div>
+                                            <div class="thumb-inner"></div>
+                                            <div class="thumb-scan"></div>
+                                            <div class="thumb-particles">
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                            </div>
+                                        </div>
+                                        <div class="energy-rings">
+                                            <div class="energy-ring"></div>
+                                            <div class="energy-ring"></div>
+                                            <div class="energy-ring"></div>
+                                        </div>
+                                        <div class="interface-lines">
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                        </div>
+                                        <div class="toggle-reflection"></div>
+                                        <div class="holo-glow"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
-            <!-- System Configuration -->
-            <div class="settings-card">
-                <h2><i class="bi bi-gear-fill"></i> System Configuration</h2>
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#systemConfigModal">
-                    <i class="bi bi-arrow-repeat"></i> Update System
-                </button>
+            <!-- ══ SYSTEM ══════════════════════════════════════ -->
+            <div class="set-group-title">System</div>
+            <div class="set-list">
+                <div class="set-row">
+                    <div class="set-icon"><i class="bi bi-gear-fill"></i></div>
+                    <div class="set-main">
+                        <h3>System Configuration</h3>
+                        <p>
+                            The system name, acronym, and logo shown in the sidebar,
+                            the browser tab, and on exported reports.
+                        </p>
+                    </div>
+                    <div class="set-control">
+                        <button class="set-btn" data-bs-toggle="modal" data-bs-target="#systemConfigModal">
+                            <i class="bi bi-arrow-repeat"></i> Update System
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <?php include __DIR__ . "/../components/systemConfig.php"; ?>

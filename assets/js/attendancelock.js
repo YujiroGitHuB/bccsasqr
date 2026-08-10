@@ -30,12 +30,16 @@ attendanceToggle.addEventListener('change', () => {
                 color: '#e2e8f0'
             });
 
-            // Update the status text on the page dynamically
-            const statusText = document.querySelector('.settings-card:nth-child(2) .status-text');
-            if (newStatus === '1') {
-                statusText.innerHTML = 'Current Status: <span class="locked"><i class="bi bi-lock"></i> LOCKED</span>';
-            } else {
-                statusText.innerHTML = 'Current Status: <span class="unlocked"><i class="bi bi-unlock-fill"></i> UNLOCKED</span>';
+            // Dating `.settings-card:nth-child(2) .status-text` —
+            // nakasalalay sa posisyon ng card, kaya tahimik na maling
+            // hanay ang ina-update kapag may naunang naidagdag.
+            const statusText = document.getElementById('attendanceLockStatus');
+            if (statusText) {
+                const locked = newStatus === '1';
+                statusText.className = 'set-badge ' + (locked ? 'off' : 'on');
+                statusText.innerHTML = locked
+                    ? '<i class="bi bi-lock-fill"></i> Locked'
+                    : '<i class="bi bi-unlock-fill"></i> Unlocked';
             }
         })
         .catch(err => {

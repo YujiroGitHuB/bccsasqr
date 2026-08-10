@@ -17,10 +17,10 @@ if (requirePhotoToggle && requirePhotoInput) {
         // tinatanong muna. Ang pagsara ay hindi mapanganib — dumaan
         // agad.
         if (turningOn) {
-            const warning = document.querySelector('#requirePhotoForm')
-                ?.closest('.settings-card')
-                ?.querySelector('.bi-exclamation-triangle-fill')
-                ?.parentElement?.textContent?.trim();
+            // Diretso nang sa id — dating hinahalungkat nito ang DOM
+            // pataas mula sa icon ng babala, na nasisira sa bawat
+            // pagbabago ng balangkas ng page.
+            const warning = document.getElementById('photoWarning')?.textContent?.trim();
 
             const result = await Swal.fire({
                 icon: 'warning',

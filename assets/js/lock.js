@@ -29,12 +29,16 @@ toggle.addEventListener('change', () => {
             });
 
 
-            // Update the status text on the page dynamically
-            const statusText = document.querySelector('.status-text');
-            if (newStatus === 'true') {
-                statusText.innerHTML = 'Current Status: <span class="locked"><i class="bi bi-lock"></i> LOCKED</span>';
-            } else {
-                statusText.innerHTML = 'Current Status: <span class="unlocked"><i class="bi bi-unlock-fill"></i> UNLOCKED</span>';
+            // Sa id na, hindi na sa UNANG `.status-text` sa page —
+            // nasisira iyon sa sandaling magbago ang pagkakasunod-sunod
+            // ng mga hanay.
+            const statusText = document.getElementById('pageLockStatus');
+            if (statusText) {
+                const locked = newStatus === 'true';
+                statusText.className = 'set-badge ' + (locked ? 'off' : 'on');
+                statusText.innerHTML = locked
+                    ? '<i class="bi bi-lock-fill"></i> Locked'
+                    : '<i class="bi bi-unlock-fill"></i> Unlocked';
             }
         })
         .catch(err => {
