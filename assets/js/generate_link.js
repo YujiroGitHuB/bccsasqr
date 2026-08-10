@@ -272,12 +272,20 @@ function generateQR(link, section, code, name) {
     const container     = document.getElementById('qrcode');
     container.innerHTML = '';
 
+    // Itim sa puti — hindi palamuti ito, sinusukat ng camera.
+    //
+    // Dati: cyan (#00c8ff) na module sa madilim na navy (#0a1628).
+    // Dalawang problema roon: mababa ang kontrast ng dalawang kulay,
+    // at BALIKTAD ang polarity — inaasahan ng QR spec na madilim ang
+    // module at maliwanag ang background. May ilang scanner na kayang
+    // basahin ang baliktad, marami ang hindi. Kasama rin ito sa
+    // dina-download na PNG na ipinapaskil o ipinipinta sa projector.
     qrInstance = new QRCode(container, {
         text        : link,
         width       : 220,
         height      : 220,
-        colorDark   : '#00c8ff',
-        colorLight  : '#0a1628',
+        colorDark   : '#000000',
+        colorLight  : '#ffffff',
         correctLevel: QRCode.CorrectLevel.H,
     });
 

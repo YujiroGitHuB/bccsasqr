@@ -1,0 +1,378 @@
+/* ============================================================
+   ATTENDANCE LINKS
+
+   Kaparehong violet (#8b5cf6) ng Attendance — magkapangkat sila sa
+   sidebar, kaya dapat magkakilala ang dalawang page. Tingnan ang
+   attendance-page.css para sa buong lohika ng sistema ng kulay.
+
+   Ang inaayos dito: asul ng Bootstrap (#0d6efd / #6ea8fe) ang buong
+   page — ang short-code pill, ang mga icon ng empty state, ang QR
+   modal — samantalang wala nang asul sa natitirang bahagi ng
+   pangkat na ito.
+   ============================================================ */
+
+.link-page {
+    --lnk: #8b5cf6;
+    --lnk-deep: #7c3aed;
+    --lnk-soft: rgba(139, 92, 246, .14);
+    --lnk-line: rgba(139, 92, 246, .3);
+    --lnk-ink: #c4b5fd;
+    --lnk-surface: #16161a;
+    --lnk-border: rgba(255, 255, 255, .07);
+}
+
+/* ─── Hero ────────────────────────────────────────────────── */
+.link-page .lnk-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.25rem;
+    border-radius: 16px;
+    border: 1px solid var(--lnk-border);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(139, 92, 246, .16), transparent 55%),
+        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+    overflow: hidden;
+}
+
+.link-page .lnk-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--lnk), var(--lnk-deep));
+    box-shadow: 0 0 12px rgba(139, 92, 246, .6);
+}
+
+.link-page .lnk-hero-icon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--lnk), var(--lnk-deep));
+    box-shadow: 0 8px 20px rgba(139, 92, 246, .35);
+}
+
+.link-page .lnk-hero-text {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.link-page .lnk-hero-text h2 {
+    margin: 0 0 3px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: #fff;
+}
+
+.link-page .lnk-hero-text p {
+    margin: 0;
+    font-size: .85rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.link-page .count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin-left: auto;
+    padding: .42rem .85rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--lnk-ink);
+    background: var(--lnk-soft);
+    border: 1px solid var(--lnk-line);
+    white-space: nowrap;
+}
+
+/* ─── Filter bar ──────────────────────────────────────────── */
+.link-page .lnk-filters {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: .85rem 1rem;
+    margin-bottom: 1.25rem;
+    border-radius: 14px;
+    border: 1px solid var(--lnk-border);
+    background: rgba(255, 255, 255, .02);
+}
+
+.link-page .lnk-filters .search-wrap {
+    flex: 1 1 280px;
+}
+
+/* `width: 100%` ang .form-select ng Bootstrap. Sa loob ng flex row
+   ay buong hanay ang kinukuha ng bawat isa, kaya nagsasalansan ang
+   tatlong filter sa tatlong linya sa halip na magkatabi. */
+.link-page .lnk-filters .form-select {
+    flex: 0 1 auto;
+    width: auto;
+}
+
+.link-page .lnk-filters .form-control,
+.link-page .lnk-filters .form-select {
+    background: #0f0f13;
+    border: 1px solid #2a2a33;
+    border-radius: 10px !important;
+    color: #f1f5f9;
+    font-size: .87rem;
+    padding: .5rem .8rem;
+}
+
+.link-page .lnk-filters #searchInput {
+    padding-left: 40px;
+}
+
+.link-page .lnk-filters .form-control:focus,
+.link-page .lnk-filters .form-select:focus {
+    outline: none;
+    border-color: var(--lnk);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, .18);
+}
+
+.link-page .lnk-filters .form-control::placeholder {
+    color: #4b5563;
+}
+
+.link-page .search-wrap .bi-search {
+    color: var(--lnk-ink);
+}
+
+/* ─── Card ────────────────────────────────────────────────── */
+/* Ginagawa ng generate_link.js ang mga card na ito — hindi natin
+   binabago ang JS, ang hitsura lang ang pinapatugma. */
+.link-page .link-card {
+    border-radius: 14px;
+    border: 1px solid var(--lnk-border);
+    background: var(--lnk-surface);
+}
+
+.link-page .link-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(139, 92, 246, .28);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
+}
+
+/* Sariling subject — berde ang gilid dahil pag-aari ito ang ibig
+   sabihin, hindi estado. Iniwan na berde para tugma sa "Mine". */
+.link-page .link-card.my-subject {
+    border-left: 3px solid #34d399;
+}
+
+.link-page .short-code-pill {
+    font-family: 'Courier New', monospace;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: var(--lnk-soft);
+    color: var(--lnk-ink);
+    border: 1px solid var(--lnk-line);
+    border-radius: 7px;
+    padding: 3px 10px;
+}
+
+.link-page .link-display {
+    font-family: monospace;
+    font-size: .78rem;
+    background: rgba(0, 0, 0, .35);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 9px;
+    padding: 10px 12px;
+    color: #94a3b8;
+}
+
+.link-page .instructor-badge {
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: .76rem;
+}
+
+/* Ang section chip at ang "Mine" ay hilaw na `bg-secondary` at
+   `bg-success` ng Bootstrap — solidong bloke sa isang card na
+   tahimik naman ang iba. */
+.link-page .link-card .badge.bg-secondary {
+    background: rgba(255, 255, 255, .07) !important;
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: #cbd5e1;
+    font-weight: 600;
+    border-radius: 7px;
+    padding: .3rem .6rem;
+}
+
+.link-page .link-card .badge.bg-success {
+    background: rgba(16, 185, 129, .14) !important;
+    border: 1px solid rgba(16, 185, 129, .3);
+    color: #6ee7b7;
+    font-weight: 700;
+    border-radius: 7px;
+    padding: .3rem .6rem;
+}
+
+/* ─── Mga butones sa card ─────────────────────────────────── */
+.link-page .link-card .btn-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .38rem .8rem;
+    border-radius: 9px;
+    font-size: .78rem;
+    font-weight: 600;
+    transition: background .15s ease, color .15s ease;
+}
+
+/* Copy — ang punong aksyon ng card. */
+.link-page .link-card .btn-primary {
+    background: linear-gradient(135deg, var(--lnk), var(--lnk-deep));
+    border: none;
+    color: #fff;
+    box-shadow: none;
+}
+
+.link-page .link-card .btn-primary:hover {
+    filter: brightness(1.1);
+    transform: none;
+}
+
+.link-page .link-card .btn-outline-success {
+    background: rgba(16, 185, 129, .1);
+    border: 1px solid rgba(16, 185, 129, .25);
+    color: #34d399;
+}
+
+.link-page .link-card .btn-outline-success:hover {
+    background: rgba(16, 185, 129, .2);
+    color: #34d399;
+}
+
+.link-page .link-card .btn-outline-info {
+    background: var(--lnk-soft);
+    border: 1px solid var(--lnk-line);
+    color: var(--lnk-ink);
+}
+
+.link-page .link-card .btn-outline-info:hover {
+    background: rgba(139, 92, 246, .24);
+    color: #ddd6fe;
+}
+
+.link-page .link-card .btn-outline-danger {
+    background: rgba(239, 68, 68, .1);
+    border: 1px solid rgba(239, 68, 68, .22);
+    color: #f87171;
+}
+
+.link-page .link-card .btn-outline-danger:hover {
+    background: rgba(239, 68, 68, .2);
+    color: #fca5a5;
+}
+
+/* ─── Empty state ─────────────────────────────────────────── */
+.link-page .lnk-empty-icon {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    font-size: 2.2rem;
+    color: var(--lnk-ink);
+    background: var(--lnk-soft);
+    border: 1px solid var(--lnk-line);
+}
+
+.link-page .lnk-step {
+    min-width: 210px;
+    padding: .9rem 1.1rem;
+    border-radius: 12px;
+    text-align: left;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid rgba(255, 255, 255, .07);
+}
+
+.link-page .lnk-step .num {
+    color: var(--lnk-ink);
+}
+
+/* ─── QR modal ────────────────────────────────────────────── */
+.lnk-qr-modal {
+    border-radius: 16px !important;
+    border: 1px solid var(--lnk-line) !important;
+    background: #16161a !important;
+}
+
+.lnk-qr-modal .modal-title i {
+    color: var(--lnk-ink);
+}
+
+.lnk-qr-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .35rem .8rem;
+    border-radius: 8px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--lnk-ink);
+    background: var(--lnk-soft);
+    border: 1px solid var(--lnk-line);
+}
+
+.lnk-qr-chip.plain {
+    color: #adb5bd;
+    background: rgba(255, 255, 255, .05);
+    border-color: rgba(255, 255, 255, .1);
+}
+
+/* Puti ang plate ng QR — kailangan ng kontrast para mabasa ito ng
+   camera; hindi ito palamuti. */
+.lnk-qr-plate {
+    display: inline-block;
+    padding: 14px;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 0 30px rgba(139, 92, 246, .35);
+}
+
+.lnk-qr-modal .btn-primary {
+    background: linear-gradient(135deg, var(--lnk), var(--lnk-deep));
+    border: none;
+}
+
+.lnk-qr-modal .btn-secondary {
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: #cbd5e1;
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .link-page .lnk-hero {
+        padding: 1rem;
+    }
+
+    .link-page .lnk-hero-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .link-page .lnk-hero-text h2 {
+        font-size: 1.15rem;
+    }
+
+    .link-page .count-badge {
+        margin-left: 0;
+    }
+}

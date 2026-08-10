@@ -1,6 +1,15 @@
 const toggle = document.getElementById('holo-toggle');
 const lockStatusInput = document.getElementById('lock_status');
 
+// Sa settings.php lang nakatira ang toggle na ito, pero WALO ang page
+// na naglo-load ng lock.js (backup, generate_attendance_link,
+// manage_subject, manage_users, profile, student_subjects, ...). Sa
+// pito sa kanila ay `null` ang `toggle`, kaya "Cannot read properties
+// of null" agad ang ibinabato at humihinto ang buong file. Hindi ito
+// nakikita ng gumagamit — pero anumang idagdag dito sa hinaharap ay
+// hindi tatakbo sa mga page na iyon.
+if (toggle && lockStatusInput) {
+
 toggle.addEventListener('change', () => {
     const newStatus = toggle.checked ? 'true' : 'false';
     lockStatusInput.value = newStatus;
@@ -54,3 +63,5 @@ toggle.addEventListener('change', () => {
             toggle.checked = !toggle.checked;
         });
 });
+
+} // /if (toggle && lockStatusInput)

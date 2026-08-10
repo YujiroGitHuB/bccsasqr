@@ -20,6 +20,7 @@ $user_role = $_SESSION['role'];
     <title>Generate Attendance Links</title>
     <?php include __DIR__ . "/../includes/header.php"; ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/daily_attendance.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/links-page.css') ?>">
     <style>
         /* Skeleton loader */
         .skeleton-card {
@@ -52,50 +53,42 @@ $user_role = $_SESSION['role'];
 <body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
 
-    <div class="content" id="content">
+    <div class="content link-page" id="content">
         <?php include("../components/topBar.php"); ?>
 
         <!-- px-3 sa telepono, px-4 sa mas malaking screen: masyadong
              malaki ang 24px kada gilid kapag 375px lang ang screen -->
         <div class="container-fluid px-3 px-md-4 py-3">
 
-            <!-- Page header -->
-            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-                <div>
-                    <h3 class="mb-0 fw-semibold">Attendance Links</h3>
-                    <small class="text-muted">Generate and share short links for student attendance</small>
+            <div class="lnk-hero">
+                <div class="lnk-hero-icon"><i class="bi bi-link-45deg"></i></div>
+                <div class="lnk-hero-text">
+                    <h2>Attendance Links</h2>
+                    <p>Short links and QR codes students open to record their own attendance.</p>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="count-badge">
-                        <i class="bi bi-collection me-1"></i>
-                        <span id="visibleCount">—</span> of <span id="totalCount">—</span> subject(s)
-                    </span>
-                </div>
+                <span class="count-badge">
+                    <i class="bi bi-collection"></i>
+                    <span id="visibleCount">—</span> of <span id="totalCount">—</span> subject(s)
+                </span>
             </div>
 
             <!-- Search + filter row -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                    <div class="search-wrap">
-                        <i class="bi bi-search"></i>
-                        <input type="text" id="searchInput" class="form-control"
-                            placeholder="Search by subject, section, or instructor…" autocomplete="off">
-                    </div>
+            <div class="lnk-filters">
+                <div class="search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="searchInput" class="form-control"
+                        placeholder="Search by subject, section, or instructor…" autocomplete="off">
                 </div>
-                <div class="col-md-3">
-                    <select id="filterSection" class="form-select" style="border-radius:10px;">
-                        <option value="">All Sections</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <select id="filterOwner" class="form-select" style="border-radius:10px;">
-                        <option value="">All Subjects</option>
-                        <?php if ($user_role === 'admin'): ?>
-                            <option value="mine">My Subjects Only</option>
-                            <option value="others">Others' Subjects</option>
-                        <?php endif; ?>
-                    </select>
-                </div>
+                <select id="filterSection" class="form-select" style="min-width:170px">
+                    <option value="">All Sections</option>
+                </select>
+                <select id="filterOwner" class="form-select" style="min-width:180px">
+                    <option value="">All Subjects</option>
+                    <?php if ($user_role === 'admin'): ?>
+                        <option value="mine">My Subjects Only</option>
+                        <option value="others">Others' Subjects</option>
+                    <?php endif; ?>
+                </select>
             </div>
 
             <!-- Skeleton loader (shown while AJAX loads) -->
@@ -127,25 +120,22 @@ $user_role = $_SESSION['role'];
             <!-- Empty state (hidden by default) -->
             <div id="emptyState" style="display:none;">
                 <div class="text-center py-5 mt-3">
-                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4"
-                        style="width:90px; height:90px; background:rgba(13,110,253,.08); border:1px solid rgba(13,110,253,.15);">
-                        <i class="bi bi-journal-x" style="font-size:2.5rem; color:#6ea8fe;"></i>
-                    </div>
+                    <div class="lnk-empty-icon mb-4"><i class="bi bi-journal-x"></i></div>
                     <h5 class="fw-semibold mb-2">No Subjects Available</h5>
                     <p class="text-muted mb-4" style="font-size:.9rem; max-width:380px; margin:0 auto;">
                         No attendance links can be generated yet. Please make sure subjects and enrollments are properly set up.
                     </p>
                     <div class="d-flex justify-content-center gap-3 flex-wrap">
-                        <div class="px-4 py-3 rounded-3 text-start" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); min-width:200px;">
+                        <div class="lnk-step">
                             <div class="d-flex align-items-center gap-2 mb-1">
-                                <i class="bi bi-1-circle-fill text-primary"></i>
+                                <i class="bi bi-1-circle-fill num"></i>
                                 <span class="fw-semibold" style="font-size:.85rem;">Assign Subjects</span>
                             </div>
                             <p class="text-muted mb-0" style="font-size:.8rem;">Link instructors to subjects in the subject management page.</p>
                         </div>
-                        <div class="px-4 py-3 rounded-3 text-start" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); min-width:200px;">
+                        <div class="lnk-step">
                             <div class="d-flex align-items-center gap-2 mb-1">
-                                <i class="bi bi-2-circle-fill text-success"></i>
+                                <i class="bi bi-2-circle-fill num"></i>
                                 <span class="fw-semibold" style="font-size:.85rem;">Enroll Students</span>
                             </div>
                             <p class="text-muted mb-0" style="font-size:.8rem;">Make sure students are enrolled in their respective subjects.</p>
@@ -156,9 +146,8 @@ $user_role = $_SESSION['role'];
 
             <div id="noResults" style="display:none;">
                 <div class="text-center py-5 mt-3">
-                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4"
-                        style="width:80px; height:80px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);">
-                        <i class="bi bi-search" style="font-size:2rem; color:#6c757d;"></i>
+                    <div class="lnk-empty-icon mb-4" style="color:#6c757d; background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.08);">
+                        <i class="bi bi-search"></i>
                     </div>
                     <h5 class="fw-semibold mb-2">No matches found</h5>
                     <p class="text-muted mb-0" style="font-size:.9rem;">Try a different keyword or clear your filters.</p>
@@ -171,24 +160,28 @@ $user_role = $_SESSION['role'];
     <!-- QR Modal -->
     <div class="modal fade" id="qrModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius:16px; border:1px solid rgba(13,110,253,.3); background:#0d1117;">
+            <div class="modal-content lnk-qr-modal">
                 <div class="modal-header border-0 pb-0">
                     <div>
-                        <h5 class="modal-title fw-bold mb-0"><i class="bi bi-qr-code me-2 text-primary"></i>Attendance QR Code</h5>
+                        <h5 class="modal-title fw-bold mb-0"><i class="bi bi-qr-code me-2"></i>Attendance QR Code</h5>
                         <small class="text-muted" id="qrSubjectName"></small>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center py-4">
                     <div class="mb-3 d-flex justify-content-center gap-2 flex-wrap">
-                        <span class="badge fs-6 px-3 py-2" style="background:rgba(13,110,253,.15); color:#6ea8fe; border:1px solid rgba(13,110,253,.3); border-radius:8px;">
-                            <i class="bi bi-book me-1"></i><span id="qrSubjectCode"></span>
+                        <span class="lnk-qr-chip">
+                            <i class="bi bi-book"></i><span id="qrSubjectCode"></span>
                         </span>
-                        <span class="badge fs-6 px-3 py-2" style="background:rgba(13,110,253,.08); color:#adb5bd; border:1px solid rgba(255,255,255,.1); border-radius:8px;">
+                        <span class="lnk-qr-chip plain">
                             <span id="qrSubjectFullName"></span>
                         </span>
                     </div>
-                    <div class="d-inline-block p-3 rounded-4" style="background:#0a1628; box-shadow:0 0 30px rgba(0,200,255,.4);">
+                    <!-- Puting plate: kailangan ng kontrast ang QR para
+                         mabasa ito ng camera. Ang dating #0a1628 na
+                         madilim na plate ay umaasa sa kulay ng mismong
+                         QR module para sa kontrast. -->
+                    <div class="lnk-qr-plate">
                         <div id="qrcode"></div>
                     </div>
                     <p class="mt-3 text-muted small"><i class="bi bi-phone me-1"></i>Students can scan this to open the attendance form</p>
