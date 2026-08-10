@@ -40,6 +40,9 @@ if ($locked) {
   <script src="<?= asset('../assets/js/tts.js') ?>"></script>
   <script src="<?= asset('js/scriptv2.js') ?>"></script>
   <script src="<?= asset('js/fetch_students.js') ?>"></script>
+  <!-- Dapat kasunod ng fetch_students.js — binabalot nito ang
+       enable/disable ng Generate button -->
+  <script src="<?= asset('js/terms.js') ?>"></script>
   <script src="<?= asset('js/instruction.js') ?>"></script>
   <script src="<?= asset('../assets/js/detection.js') ?>"></script>
 

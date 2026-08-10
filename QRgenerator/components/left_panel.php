@@ -28,6 +28,40 @@
         <label for="section">Section (format: 2A)</label>
         <input readonly type="text" id="section" placeholder="e.g. 3A" />
     </div>
+    <!-- Terms and Conditions — kailangang tanggapin bago mabuksan
+         ang Generate. Tingnan ang includes/terms.php para sa teksto. -->
+    <div class="terms-agree" id="termsAgree">
+        <label class="terms-check">
+            <input type="checkbox" id="agreeTerms">
+            <span>
+                I agree to the
+                <button type="button" class="terms-link" id="openTerms">Terms and Conditions</button>
+            </span>
+        </label>
+    </div>
+
     <!-- generate button -->
     <?php include __DIR__ . "/button_generate.php" ?>
+</div>
+
+<!-- Terms Modal -->
+<div class="terms-modal" id="termsModal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+    <div class="terms-modal-content">
+        <div class="terms-modal-header">
+            <h3 id="termsTitle"><i class="bi bi-file-earmark-text"></i> Terms and Conditions</h3>
+            <button type="button" class="terms-close" id="closeTerms" aria-label="Close">&times;</button>
+        </div>
+        <div class="terms-modal-body">
+            <?php
+            require_once __DIR__ . "/../../includes/terms.php";
+            echo terms_body_html();
+            ?>
+        </div>
+        <div class="terms-modal-footer">
+            <button type="button" class="terms-btn terms-btn-ghost" id="termsClose2">Close</button>
+            <button type="button" class="terms-btn terms-btn-primary" id="termsAccept">
+                I Agree
+            </button>
+        </div>
+    </div>
 </div>

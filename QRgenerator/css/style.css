@@ -1046,3 +1046,167 @@
    .btn:disabled .btn-letter {
        opacity: 0.5;
    }
+/* ============================================================
+   TERMS AND CONDITIONS
+   Kailangang tanggapin bago mabuksan ang Generate.
+   ============================================================ */
+
+.terms-agree {
+    margin: 14px 0 4px;
+}
+
+.terms-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    font-size: .88rem;
+    line-height: 1.45;
+    color: #cbd5e1;
+}
+
+/* 20px at may sariling padding sa label — madaling matapik sa
+   telepono, hindi lang ang maliit na kahon. */
+.terms-check input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    cursor: pointer;
+    accent-color: #38bdf8;
+}
+
+.terms-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #38bdf8;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+}
+
+/* ── Modal ── */
+.terms-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0, 0, 0, .75);
+    backdrop-filter: blur(4px);
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+}
+
+.terms-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.terms-modal-content {
+    background: #0f172a;
+    border: 1px solid rgba(56, 189, 248, .3);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 620px;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+}
+
+.terms-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+.terms-modal-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #38bdf8;
+}
+
+.terms-close {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .08);
+    color: #e2e8f0;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* Ang teksto ang tanging bahaging nag-i-scroll — nananatiling
+   nakikita ang header at ang mga button. */
+.terms-modal-body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    color: #cbd5e1;
+    font-size: .9rem;
+    line-height: 1.6;
+}
+
+.terms-modal-body h4 {
+    color: #e2e8f0;
+    font-size: .95rem;
+    margin: 18px 0 6px;
+}
+
+.terms-modal-body h4:first-child {
+    margin-top: 0;
+}
+
+.terms-modal-body p {
+    margin: 0 0 4px;
+}
+
+.terms-modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 14px 18px;
+    border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+.terms-btn {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 10px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.terms-btn-ghost {
+    background: rgba(255, 255, 255, .07);
+    border-color: rgba(255, 255, 255, .15);
+    color: #e2e8f0;
+}
+
+.terms-btn-primary {
+    background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+    color: #04283b;
+}
+
+@media (max-width: 576px) {
+    .terms-modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    .terms-btn {
+        width: 100%;
+    }
+}
