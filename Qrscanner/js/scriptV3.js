@@ -549,18 +549,44 @@ function addToAttendance(date, student) {
 /* ============================================================
    SUBJECT SELECT EVENT
    ============================================================ */
+/* ── Scan mode (telepono) ─────────────────────────────────────────────────────
+   Kapag may napiling subject, itinatago ang lahat ng hindi kailangan sa
+   itaas ng camera at idinidikit ang camera sa itaas ng screen. Nasa CSS
+   ang mismong paglalayout — dito lang binubuksan at sinasara. */
+function setScanMode(on, subjectLabel) {
+    document.body.classList.toggle('scan-mode', on);
+
+    const chipSubject = document.getElementById('scanChipSubject');
+    if (chipSubject) chipSubject.textContent = subjectLabel || '';
+}
+
+document.getElementById('scanChipChange')?.addEventListener('click', () => {
+    // Lumabas sa scan mode para bumalik ang buong picker, saka ito
+    // idulog sa gumagamit.
+    setScanMode(false);
+    subjectSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    subjectSelect.focus();
+});
+
 subjectSelect.addEventListener('change', function () {
     const selected      = this.options[this.selectedIndex];
     selectedSubject     = this.value;
     selectedSubjectName = selected.getAttribute('data-name');
 
     if (selectedSubject) {
-        scannerStatus.textContent = `Ready to scan for: ${selectedSubjectName}`;
+        // Sa telepono, nasa chip na ang pangalan ng subject — dalawang
+        // linyang ulit lang ito at espasyo ang kinakain sa itaas ng camera.
+        const compact = window.matchMedia('(max-width: 768px)').matches;
+        scannerStatus.textContent = compact
+            ? 'Ready to scan'
+            : `Ready to scan for: ${selectedSubjectName}`;
         scannerStatus.classList.add('active');
+        setScanMode(true, `${selectedSubjectName} (${selectedSubject})`);
         if (!stream) startCamera();
     } else {
         scannerStatus.textContent = 'Please select a subject first';
         scannerStatus.classList.remove('active');
+        setScanMode(false);
     }
 });
 

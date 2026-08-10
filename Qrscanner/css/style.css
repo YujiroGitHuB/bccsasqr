@@ -1408,6 +1408,115 @@ body {
     }
 }
 
+/* ============================================================
+   SCAN MODE (telepono lang)
+
+   Sa 390x844 na telepono, 466px ang chrome sa itaas ng camera:
+   header 82 + dekorasyong gif 90 + instructor info 62 + subject
+   picker 48 + status 38, dagdag pa ang mga margin. Sa Safari na may
+   sariling URL bar at toolbar, ~650px lang ang totoong nakikita —
+   kaya putol ang camera at kailangang mag-scroll tuwing magsi-scan.
+
+   Kapag nakapili na ng subject, iniaalis natin ang lahat ng hindi
+   kailangan habang nag-i-scan at idinidikit ang camera sa itaas.
+   Nasa desktop pa rin ang buong anyo.
+   ============================================================ */
+
+/* Nakatago ang chip maliban sa scan mode sa telepono */
+.scan-chip {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: rgba(56, 189, 248, .12);
+    border: 1px solid rgba(56, 189, 248, .3);
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    color: #38bdf8;
+    font-size: .85rem;
+}
+
+.scan-chip-subject {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #e2e8f0;
+    text-align: left;
+}
+
+.scan-chip-change {
+    flex-shrink: 0;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, .2);
+    background: rgba(255, 255, 255, .08);
+    color: #e2e8f0;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+
+    body.scan-mode .scan-chip {
+        display: flex;
+    }
+
+    /* Purong dekorasyon — 90px na hindi kailangan habang nag-i-scan */
+    body.scan-mode .qr-decor,
+    body.scan-mode .instructor-info,
+    body.scan-mode .subject-selection label,
+    body.scan-mode .subject-selection select {
+        display: none;
+    }
+
+    /* Ang pamagat at logo ay hindi kailangan habang nag-i-scan.
+       Pinapayagan nating mag-scroll palayo para sa camera ang
+       buong itaas ng screen. */
+    body.scan-mode header {
+        position: static;
+    }
+
+    body.scan-mode .subject-selection {
+        padding: 10px;
+        margin: 0 0 10px;
+    }
+
+    body.scan-mode #scannerStatus {
+        margin-bottom: 0;
+        padding: 7px;
+        font-size: .82rem;
+    }
+
+    /* Kailangan ito para gumana ang sticky sa ibaba: ang `overflow-x:
+       auto` ng #leftPanel ay ginagawa ring `auto` ang overflow-y, kaya
+       ito ang nagiging scroll container at sa loob nito dumidikit ang
+       camera — hindi sa screen. Hindi na ito kailangan mula nang
+       ayusin ang tunay na sanhi ng overflow (ang padding ng
+       #scannerContainer). */
+    body.scan-mode #leftPanel {
+        overflow: visible;
+    }
+
+    /* Ang pinakamahalaga: nananatiling nakikita ang camera kahit
+       mag-scroll pababa sa talaan ng attendance. */
+    body.scan-mode #scannerContainer {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        max-height: 52vh;
+    }
+
+    body.scan-mode #video {
+        max-height: 52vh;
+        object-fit: cover;
+    }
+}
+
 /* Walang tunay na hover sa touch screen — natitigil ang highlight
    pagkatapos tapikin ang isang row. */
 @media (hover: none) {

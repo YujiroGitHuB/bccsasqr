@@ -138,7 +138,9 @@ if (count($subjects) === 0 && $role !== 'admin') {
         <!-- ── Left Panel ──────────────────────────────────────── -->
         <div id="leftPanel">
 
-            <div style="text-align: center;">
+            <!-- Dekorasyon lang — itinatago sa telepono kapag nag-scan
+                 na (tingnan ang .scan-mode sa css/style.css) -->
+            <div class="qr-decor" style="text-align: center;">
                 <h2 style="display: inline-flex; align-items: center; gap: 10px;">
                     <img src="https://cdn-icons-gif.flaticon.com/15575/15575638.gif"
                         alt="QR Icon"
@@ -149,6 +151,17 @@ if (count($subjects) === 0 && $role !== 'admin') {
 
             <!-- Subject Selection -->
             <div class="subject-selection">
+
+                <!-- Compact na kapalit ng buong subject picker habang
+                     nag-i-scan sa telepono. Nakatago sa desktop. -->
+                <div class="scan-chip" id="scanChip">
+                    <i class="bi bi-camera-video-fill"></i>
+                    <span class="scan-chip-subject" id="scanChipSubject"></span>
+                    <button type="button" class="scan-chip-change" id="scanChipChange">
+                        Change
+                    </button>
+                </div>
+
                 <div class="instructor-info">
                     <strong>
                         <?php if ($role === 'admin'): ?>
