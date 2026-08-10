@@ -20,7 +20,7 @@
 const TERMS_VERSION = 1;
 
 // Palitan ng totoong opisina/email ng paaralan.
-const TERMS_CONTACT = 'registrar@bcc.edu.ph';
+const TERMS_CONTACT = 'charlesnixoncayading@gmail.com';
 
 function terms_body_html(): string
 {
