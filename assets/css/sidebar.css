@@ -21,14 +21,26 @@
      nakadikit sa ilalim.
    ============================================================ */
 
+/* ─── Kulay ng rail ───────────────────────────────────────────
+   Kaparehong pamilya ng indigo (#667eea) ng mga accent at button,
+   dinala lang sa napakadilim na hakbang para manatiling madaling
+   basahin ang teksto sa ibabaw nito. Sa isang variable nakatakda
+   ang buong hitsura — dito lang palitan kung gusto ng ibang lakas. */
+:root {
+    --sb-bg: linear-gradient(180deg, #1c1e3a 0%, #141530 55%, #101127 100%);
+    --sb-line: rgba(165, 180, 252, .1);
+    --sb-active-bg: linear-gradient(90deg, rgba(129, 140, 248, .3), rgba(129, 140, 248, .06));
+    --sb-active-bar: #a5b4fc;
+}
+
 .sidebar {
     /* Kailangan ng flex column para maitulak ng footer ang sarili
        sa ilalim gamit ang `margin-top: auto`. */
     display: flex;
     flex-direction: column;
-    background: linear-gradient(180deg, #161a24 0%, #0d1017 100%);
-    border-right: 1px solid rgba(255, 255, 255, .06);
-    box-shadow: 2px 0 18px rgba(0, 0, 0, .35);
+    background: var(--sb-bg);
+    border-right: 1px solid var(--sb-line);
+    box-shadow: 2px 0 18px rgba(0, 0, 0, .4);
 }
 
 /* HUWAG alisin: nakatakda sa 100vh ang taas ng sidebar, kaya sa isang
@@ -66,7 +78,7 @@
 /* ─── Logo ────────────────────────────────────────────────── */
 .sidebar .logo {
     padding: 22px 12px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    border-bottom: 1px solid var(--sb-line);
     margin-bottom: 4px;
 }
 
@@ -103,7 +115,7 @@
 .sidebar.collapsed .sidebar-label {
     font-size: 0;
     padding: .5rem .9rem;
-    border-top: 1px solid rgba(255, 255, 255, .07);
+    border-top: 1px solid var(--sb-line);
 }
 
 /* ─── Nav item ────────────────────────────────────────────── */
@@ -149,8 +161,8 @@
    kinaroroonan mo nang hindi binabasa lahat. */
 .nav-link.active,
 .dropdown-toggle.active {
-    background: linear-gradient(90deg, rgba(102, 126, 234, .22), rgba(102, 126, 234, .05));
-    box-shadow: inset 3px 0 0 #818cf8;
+    background: var(--sb-active-bg);
+    box-shadow: inset 3px 0 0 var(--sb-active-bar);
     border-radius: 10px;
     color: #fff !important;
     font-weight: 600;
@@ -209,7 +221,7 @@
 }
 
 .submenu-item.active::before {
-    background: #818cf8;
+    background: var(--sb-active-bar);
     width: 2px;
 }
 
@@ -299,7 +311,7 @@
 .sidebar footer {
     margin-top: auto !important;
     padding: 16px 14px !important;
-    border-top: 1px solid rgba(255, 255, 255, .07);
+    border-top: 1px solid var(--sb-line);
     font-size: .72rem !important;
     line-height: 1.5;
     color: rgba(255, 255, 255, .35) !important;
