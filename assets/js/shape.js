@@ -1,7 +1,11 @@
+// Mas kaunting particles sa maliliit na screen para mas magaan sa mobile
+var isSmallScreen = window.matchMedia("(max-width: 576px)").matches;
+var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 particlesJS("particles-js", {
     particles: {
         number: {
-            value: 6,
+            value: isSmallScreen ? 3 : 6,
             density: {
                 enable: true,
                 value_area: 800
@@ -21,37 +25,18 @@ particlesJS("particles-js", {
             random: true
         },
         size: {
-            value: 160,
+            value: isSmallScreen ? 110 : 160,
             anim: {
-                enable: true,
+                enable: !prefersReducedMotion,
                 speed: 10,
                 size_min: 40
             }
         },
         move: {
-            enable: true,
-            speed: 8
+            enable: !prefersReducedMotion,
+            speed: isSmallScreen ? 4 : 8
         }
     },
-    retina_detect: true
+    // Retina rendering sa mobile = 2-3x na pixels na iginuguhit kada frame
+    retina_detect: !isSmallScreen
 });
-
-var stats = new Stats();
-stats.showPanel(0);
-document.body.appendChild(stats.dom);
-
-var count_particles = document.querySelector(".js-count-particles");
-
-function update() {
-    stats.begin();
-    stats.end();
-
-    if (window.pJSDom.length > 0) {
-        count_particles.innerText =
-            window.pJSDom[0].pJS.particles.array.length;
-    }
-
-    requestAnimationFrame(update);
-}
-
-requestAnimationFrame(update);
