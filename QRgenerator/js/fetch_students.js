@@ -126,19 +126,24 @@ function setButtonText(text1, text2) {
     btnText1.innerHTML = "";
     btnText2.innerHTML = "";
     
+    // Non-breaking space ang espasyo — inline-block ang .btn-letter
+    // kaya nagco-collapse ang ordinaryong space at nagdidikit ang
+    // dalawang salita ("VerifyFirst").
+    const letter = (char) => (char === " " ? "\u00A0" : char);
+
     // Add new letters for text1
     for (let char of text1) {
         const span = document.createElement("span");
         span.className = "btn-letter";
-        span.textContent = char;
+        span.textContent = letter(char);
         btnText1.appendChild(span);
     }
-    
+
     // Add new letters for text2
     for (let char of text2) {
         const span = document.createElement("span");
         span.className = "btn-letter";
-        span.textContent = char;
+        span.textContent = letter(char);
         btnText2.appendChild(span);
     }
 }

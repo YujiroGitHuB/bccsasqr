@@ -1061,8 +1061,12 @@
     gap: 10px;
     cursor: pointer;
     font-size: .88rem;
+    /* Bawiin ang global na `label { font-weight: 600 }` — normal
+       weight lang ang tamang basa para sa consent text. */
+    font-weight: 400;
     line-height: 1.45;
     color: #cbd5e1;
+    margin-bottom: 0;
 }
 
 /* 20px at may sariling padding sa label — madaling matapik sa
@@ -1076,6 +1080,9 @@
     accent-color: #38bdf8;
 }
 
+/* Link ito, hindi buton — kaya kailangang bawiin ang mobile rule
+   na `button { width: 100% }` na nagtutulak sa kaniya sa sariling
+   linya at nagse-center ng teksto sa telepono. */
 .terms-link {
     background: none;
     border: none;
@@ -1085,6 +1092,12 @@
     cursor: pointer;
     font-size: inherit;
     font-family: inherit;
+    font-weight: inherit;
+    display: inline;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    text-align: left;
 }
 
 /* ── Modal ── */

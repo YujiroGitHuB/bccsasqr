@@ -17,7 +17,7 @@
                 <span class="btn-letter">i</span>
                 <span class="btn-letter">f</span>
                 <span class="btn-letter">y</span>
-                <span class="btn-letter"> </span>
+                <span class="btn-letter">&nbsp;</span>
                 <span class="btn-letter">F</span>
                 <span class="btn-letter">i</span>
                 <span class="btn-letter">r</span>
@@ -31,7 +31,7 @@
                 <span class="btn-letter">i</span>
                 <span class="btn-letter">f</span>
                 <span class="btn-letter">y</span>
-                <span class="btn-letter"> </span>
+                <span class="btn-letter">&nbsp;</span>
                 <span class="btn-letter">F</span>
                 <span class="btn-letter">i</span>
                 <span class="btn-letter">r</span>
