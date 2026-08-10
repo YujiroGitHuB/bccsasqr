@@ -30,9 +30,28 @@ $__avatarUrl  = $__avatarFile !== '' && is_file($__avatarFile)
     ? '../' . $__avatar . '?v=' . @filemtime($__avatarFile)
     : 'https://cdn-icons-png.flaticon.com/128/15329/15329400.png';
 ?>
-<!-- Topbar with Toggle (Left) and Profile (Right) -->
+<!-- Topbar with Toggle (Left), Brand (Center) and Profile (Right) -->
 <div class="topbar">
     <button class="toggle-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+
+    <!-- Brand — nakikita lang kapag off-canvas na ang sidebar (≤992px).
+         Sa ganoong lapad ay nakatago ang buong sidebar, kaya wala nang
+         kahit anong nagsasabi kung anong sistema ito; walang laman ang
+         gitna ng topbar mula sa hamburger hanggang sa avatar.
+
+         Sa desktop ay nananatili itong nakatago — nasa sidebar na ang
+         logo at pangalan doon, at magiging ulit lang ito.
+
+         Ang mga variable ay galing sa includes/systemConfig.php, na
+         isinasama ng includes/header.php sa bawat page na may topbar.
+         May fallback pa rin kung sakaling isama ito kung saan wala ang
+         header. -->
+    <a class="tb-brand" href="../pages/dashboard.php">
+        <?php if (!empty($systemLogo)) { ?>
+            <img src="../<?php echo htmlspecialchars($systemLogo); ?>" alt="">
+        <?php } ?>
+        <span><?php echo htmlspecialchars($systemAcronym ?? 'Home'); ?></span>
+    </a>
 
     <div class="dropdown">
         <div class="profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
