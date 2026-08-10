@@ -94,6 +94,35 @@ try {
     $name   = $student_data['fullname'];
     $course = $student_data['course'];
 
+    // ── 4b. Photo requirement ─────────────────────────────────────────────────
+    // Ang photo ang tanging biswal na patunay ng pagkakakilanlan sa scanner.
+    // Kapag naka-ON ang setting, hindi tumutuloy ang scan nang wala ito.
+    // Kapag OFF, tumutuloy pero may ipinapadalang babala sa scanner para
+    // alam ng instructor na hindi niya mapapatunayan kung sino ang harap
+    // niya. Naka-OFF ang default — tingnan ang migration para sa dahilan.
+    $photo_missing = empty($student_data['photo_path']);
+
+    $require_photo = false;
+    $photo_setting = $conn->query("
+        SELECT setting_value
+        FROM attendance_settings
+        WHERE setting_key = 'require_student_photo'
+        LIMIT 1
+    ");
+    if ($photo_setting && $photo_setting->num_rows > 0) {
+        $require_photo = ($photo_setting->fetch_assoc()['setting_value'] === '1');
+    }
+
+    if ($require_photo && $photo_missing) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'photo_required',
+            'name'    => $name,
+            'error'   => "$name has no photo on file. Ask the admin to upload one before scanning."
+        ]);
+        exit;
+    }
+
     // ── 5. Check if student is enrolled in this subject ───────────────────────
     $enroll_check = $conn->prepare("
         SELECT section
@@ -191,6 +220,9 @@ try {
             'photo_url' => !empty($student_data['photo_path'])
                 ? '../' . $student_data['photo_path']
                 : null,
+            // Naipasok ang attendance, pero walang mukhang maipapakita —
+            // ipinaaalam sa scanner para makapagbabala ito.
+            'photo_missing' => $photo_missing,
         ]);
     } else {
         throw new Exception("Insert execute failed: " . $insert->error);

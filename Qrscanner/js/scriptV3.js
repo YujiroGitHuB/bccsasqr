@@ -141,7 +141,17 @@ function showStudentCard(student, subject, time) {
     document.getElementById('cardName').textContent    = student.name;
     document.getElementById('cardMeta').textContent    =
         [student.course, student.section].filter(Boolean).join(' — ');
-    document.getElementById('cardSubject').textContent = '✓ ' + subject;
+
+    // Ang initials ay madaling mapagkamalang totoong photo sa sulyap.
+    // Sinasabi natin nang tahasan na walang mukhang maikukumpara.
+    const subjectEl = document.getElementById('cardSubject');
+    if (student.photo_url) {
+        subjectEl.textContent = '✓ ' + subject;
+        subjectEl.classList.remove('no-photo');
+    } else {
+        subjectEl.textContent = '⚠ No photo — identity not verified';
+        subjectEl.classList.add('no-photo');
+    }
     document.getElementById('cardTime').innerHTML      =
         time + '<br><span style="color:#38bdf8">' + getToday() + '</span>';
 
@@ -389,9 +399,20 @@ function handleScanned(text) {
                 photoUrl: response.photo_url ?? null,
             });
 
-            qrResult.textContent = `✓ ${response.name ?? student.id} - ${selectedSubjectName}`;
-            qrResult.style.color = '#4ade80';
-            qrResult.className   = 'success';
+            if (response.photo_missing) {
+                // Naitala ang attendance, pero walang mukhang maipapakita —
+                // walang paraan ang instructor na tiyaking siya nga ang
+                // may hawak ng QR. Sinasabi natin ito nang malinaw sa
+                // halip na tahimik na magpakita ng initials.
+                qrResult.textContent =
+                    `✓ ${response.name ?? student.id} — ⚠ no photo, identity not verified`;
+                qrResult.style.color = '#facc15';
+                qrResult.className   = 'warning';
+            } else {
+                qrResult.textContent = `✓ ${response.name ?? student.id} - ${selectedSubjectName}`;
+                qrResult.style.color = '#4ade80';
+                qrResult.className   = 'success';
+            }
             beep.play();
             navigator.vibrate?.([50, 30, 50]);
             TTSManager.speak(`Time in recorded for ${response.name ?? student.id} in ${selectedSubjectName}.`);
@@ -433,6 +454,23 @@ function handleScanned(text) {
             Swal.fire({ icon: 'error', title: 'Section Not Covered',
                 html: `<p class="text-warning">Student's section is not covered by <strong>${selectedSubjectName}</strong>.</p>`,
                 confirmButtonColor: '#38bdf8', background: '#0f172a', color: '#e2e8f0' });
+
+        } else if (response.message === 'photo_required') {
+            // Naka-ON ang "Require student photo for scanning" at walang
+            // photo ang estudyante — hindi naitala ang attendance.
+            qrResult.textContent = '✗ No photo on file — cannot verify identity';
+            qrResult.style.color = '#f87171';
+            qrResult.className   = 'error';
+            beep.play(); navigator.vibrate?.([100, 50, 100]);
+            TTSManager.speak('Student photo required.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Student Photo Required',
+                html: `<p><strong>${response.name ?? student.id}</strong> has no photo on file.</p>
+                       <p class="text-warning">Attendance was not recorded. Ask the admin to
+                       upload a photo first.</p>`,
+                confirmButtonColor: '#38bdf8', background: '#0f172a', color: '#e2e8f0'
+            });
 
         } else if (response.message === 'not_enrolled') {
             qrResult.textContent = `✗ Student not enrolled in ${selectedSubjectName}`;
