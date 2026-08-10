@@ -1304,7 +1304,7 @@ tr.row-selected td {
     white-space: nowrap;
 }
 
-.sd-trigger .sd-trigger-text.placeholder {
+.sd-trigger .sd-trigger-text.sd-placeholder {
     color: #6c757d;
 }
 
@@ -1675,5 +1675,17 @@ select option {
 
     .badge-count {
         margin-top: .5rem;
+    }
+
+    /* Nagsasalansan ang padding sa telepono: .content + .row + .col +
+       .card-custom. Sa 375px, 144px (38% ng screen) ang naubos noon at
+       229px na lang ang natitira sa mismong laman. Pinapaliit natin
+       ang dalawang layer na kontrolado ng file na ito. */
+    .content {
+        padding: .625rem;
+    }
+
+    .card-custom {
+        padding: .875rem;
     }
 }

@@ -151,10 +151,10 @@ function sdSelect(id, value, label, el, isReset = false) {
     const txt = document.getElementById('sd-txt-' + id);
     if (isReset || !value) {
         txt.textContent = label;
-        txt.classList.add('placeholder');
+        txt.classList.add('sd-placeholder');
     } else {
         txt.textContent = label;
-        txt.classList.remove('placeholder');
+        txt.classList.remove('sd-placeholder');
     }
     document.querySelectorAll('#sd-list-' + id + ' .sd-item')
         .forEach(i => i.classList.remove('selected'));
@@ -228,7 +228,7 @@ function sdSelectSection(sectionInputId, courseInputId, rawSection, course, full
 
     const txt = document.getElementById('sd-txt-' + sectionInputId);
     txt.innerHTML = `<span class="sd-course-pill">${course}</span>&nbsp;${rawSection}`;
-    txt.classList.remove('placeholder');
+    txt.classList.remove('sd-placeholder');
 
     document.querySelectorAll('#sd-list-' + sectionInputId + ' .sd-item')
         .forEach(i => i.classList.remove('selected'));
@@ -278,7 +278,7 @@ function selectStudent(el) {
 
     const trigText = document.getElementById('studentTriggerText');
     trigText.textContent = `[${fullSec}] ${name}`;
-    trigText.classList.remove('placeholder');
+    trigText.classList.remove('sd-placeholder');
 
     document.querySelectorAll('#studentList .sd-item').forEach(i => i.classList.remove('selected'));
     el.classList.add('selected');
@@ -365,7 +365,7 @@ function filterEnrollStudents() {
     document.getElementById('enrollStudentSelect').value = '';
     const trigText = document.getElementById('studentTriggerText');
     trigText.textContent = '-- Select Student --';
-    trigText.classList.add('placeholder');
+    trigText.classList.add('sd-placeholder');
     document.querySelectorAll('#studentList .sd-item').forEach(i => i.classList.remove('selected'));
     filterStudentList(document.getElementById('studentSearch')?.value || '');
 }

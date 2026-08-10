@@ -133,7 +133,7 @@ if ($user_role === 'admin') {
         .sd-trigger { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:.75rem 1rem; color:#fff; cursor:pointer; text-align:left; font-size:.9rem; transition:all .3s; display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
         .sd-trigger:focus,.sd-trigger.open { border-color:#667eea; box-shadow:0 0 0 .2rem rgba(102,126,234,.25); background:rgba(255,255,255,.08); outline:none; }
         .sd-trigger .sd-trigger-text { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .sd-trigger .sd-trigger-text.placeholder { color:#6c757d; }
+        .sd-trigger .sd-trigger-text.sd-placeholder { color:#6c757d; }
         .sd-trigger .sd-arrow { flex-shrink:0; color:#6c757d; transition:transform .2s; }
         .sd-trigger.open .sd-arrow { transform:rotate(180deg); }
         .sd-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:#1a1a2e; border:1px solid rgba(102,126,234,.4); border-radius:10px; z-index:9999; box-shadow:0 8px 30px rgba(0,0,0,.5); overflow:hidden; animation:sdFade .15s ease; }
@@ -290,7 +290,7 @@ if ($user_role === 'admin') {
                             <input type="hidden" id="filterSection" value="">
                             <div class="searchable-dropdown" id="sd-wrap-filterSection">
                                 <button type="button" class="sd-trigger" id="sd-btn-filterSection" onclick="sdToggle('filterSection')">
-                                    <span class="sd-trigger-text placeholder" id="sd-txt-filterSection">-- All Sections --</span>
+                                    <span class="sd-trigger-text sd-placeholder" id="sd-txt-filterSection">-- All Sections --</span>
                                     <i class="bi bi-chevron-down sd-arrow"></i>
                                 </button>
                                 <div class="sd-panel" id="sd-panel-filterSection">
@@ -332,7 +332,7 @@ if ($user_role === 'admin') {
                             <input type="hidden" id="enrollStudentSelect" value="">
                             <div class="searchable-dropdown" id="studentDropdown">
                                 <button type="button" class="sd-trigger" id="studentTrigger" onclick="toggleStudentDropdown()">
-                                    <span class="sd-trigger-text placeholder" id="studentTriggerText">-- Select Student --</span>
+                                    <span class="sd-trigger-text sd-placeholder" id="studentTriggerText">-- Select Student --</span>
                                     <i class="bi bi-chevron-down sd-arrow"></i>
                                 </button>
                                 <div class="sd-panel" id="studentPanel">
@@ -383,7 +383,7 @@ if ($user_role === 'admin') {
                             <input type="hidden" id="enrollSubjectSelect" value="">
                             <div class="searchable-dropdown" id="sd-wrap-enrollSubjectSelect">
                                 <button type="button" class="sd-trigger" id="sd-btn-enrollSubjectSelect" onclick="sdToggle('enrollSubjectSelect')">
-                                    <span class="sd-trigger-text placeholder" id="sd-txt-enrollSubjectSelect">-- Select Subject --</span>
+                                    <span class="sd-trigger-text sd-placeholder" id="sd-txt-enrollSubjectSelect">-- Select Subject --</span>
                                     <i class="bi bi-chevron-down sd-arrow"></i>
                                 </button>
                                 <div class="sd-panel" id="sd-panel-enrollSubjectSelect">
@@ -415,7 +415,7 @@ if ($user_role === 'admin') {
                             <input type="hidden" id="enrollCourseSelect"  value="">
                             <div class="searchable-dropdown" id="sd-wrap-enrollSectionSelect">
                                 <button type="button" class="sd-trigger" id="sd-btn-enrollSectionSelect" onclick="sdToggle('enrollSectionSelect')">
-                                    <span class="sd-trigger-text placeholder" id="sd-txt-enrollSectionSelect">-- Select Section --</span>
+                                    <span class="sd-trigger-text sd-placeholder" id="sd-txt-enrollSectionSelect">-- Select Section --</span>
                                     <i class="bi bi-chevron-down sd-arrow"></i>
                                 </button>
                                 <div class="sd-panel" id="sd-panel-enrollSectionSelect">
@@ -468,7 +468,7 @@ if ($user_role === 'admin') {
                             <input type="hidden" id="bulkSectionCourse" value="">
                             <div class="searchable-dropdown" id="sd-wrap-bulkSection">
                                 <button type="button" class="sd-trigger" id="sd-btn-bulkSection" onclick="sdToggle('bulkSection')">
-                                    <span class="sd-trigger-text placeholder" id="sd-txt-bulkSection">-- Select Section --</span>
+                                    <span class="sd-trigger-text sd-placeholder" id="sd-txt-bulkSection">-- Select Section --</span>
                                     <i class="bi bi-chevron-down sd-arrow"></i>
                                 </button>
                                 <div class="sd-panel" id="sd-panel-bulkSection">
@@ -508,7 +508,7 @@ if ($user_role === 'admin') {
                             <input type="hidden" id="bulkSubject" value="">
                             <div class="searchable-dropdown" id="sd-wrap-bulkSubject">
                                 <button type="button" class="sd-trigger" id="sd-btn-bulkSubject" onclick="sdToggle('bulkSubject')">
-                                    <span class="sd-trigger-text placeholder" id="sd-txt-bulkSubject">-- Select Subject --</span>
+                                    <span class="sd-trigger-text sd-placeholder" id="sd-txt-bulkSubject">-- Select Subject --</span>
                                     <i class="bi bi-chevron-down sd-arrow"></i>
                                 </button>
                                 <div class="sd-panel" id="sd-panel-bulkSubject">

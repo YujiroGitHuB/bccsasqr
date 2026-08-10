@@ -141,10 +141,22 @@ body {
     margin-bottom: 8px;
   }
 
-  .dataTables_wrapper .dataTables_filter input {
+  /* Ang input ay nasa loob ng <label> na may teksto pang "Search:".
+     Sa `width: 100%` ay sinusukat ito laban sa buong label, kaya ang
+     lapad ng "Search:" ang sobra — lumalabas ang kahon sa gilid ng
+     card. Sa flex, kinukuha na lang nito ang natitirang espasyo. */
+  .dataTables_wrapper .dataTables_filter label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
+  }
+
+  .dataTables_wrapper .dataTables_filter input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
     margin-left: 0;
-    display: block;
   }
 
   /* Mga export button: hayaang mag-wrap kaysa lumabas ng screen. */
