@@ -31,6 +31,19 @@
     box-shadow: 2px 0 18px rgba(0, 0, 0, .35);
 }
 
+/* HUWAG alisin: nakatakda sa 100vh ang taas ng sidebar, kaya sa isang
+   flex column ay pinipiga ng flex-shrink ang mga item kapag mas mahaba
+   ang menu kaysa sa screen — bago pa man umandar ang overflow-y scroll.
+   Karaniwang pinipigilan ito ng `min-height: auto`, PERO hindi kapag
+   `overflow: hidden` ang item: nagiging zero ang awtomatikong minimum.
+   Iyon ang tanging item na may `overflow: hidden` dito — ang
+   .sidebar-label — kaya ang mga pamagat ng grupo lang ang nasasakal at
+   naputol ("MAIN" na kalahati ng letra lang ang kita) habang mukhang
+   ayos ang mga nav link. */
+.sidebar>* {
+    flex-shrink: 0;
+}
+
 /* Madilim na scrollbar — hindi na ang #f1f1f1 na track na
    nagmumukhang puting guhit sa gilid ng rail. */
 .sidebar::-webkit-scrollbar {
@@ -73,6 +86,9 @@
 .sidebar-label {
     display: block;
     font-size: .63rem;
+    /* Tahasang line-height para matiyak ang taas ng kahon kahit
+       anong default ang minana nito. */
+    line-height: 1.5;
     font-weight: 700;
     letter-spacing: 1.6px;
     text-transform: uppercase;
@@ -229,6 +245,14 @@
 .sidebar.collapsed .nav-link i {
     width: 100%;
     margin-right: 0;
+}
+
+/* May `ps-3` (Bootstrap: padding-left 1rem !important) ang mga
+   collapse div sa sidebar.php. Sa 80px na rail ay itinutulak nito
+   ang mga submenu icon nang 16px pakanan — hindi na sila nakahanay
+   sa mga pangunahing icon at parang natabig ang hanay. */
+.sidebar.collapsed .nav-item.dropdown .collapse {
+    padding-left: 0 !important;
 }
 
 .sidebar.collapsed .submenu-item {
