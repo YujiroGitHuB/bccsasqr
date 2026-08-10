@@ -16,6 +16,19 @@ $system = mysqli_fetch_assoc($systemQuery);
 $systemName    = $system['system_name']    ?? '';
 $systemAcronym = $system['system_acronym'] ?? '';
 $systemLogo    = $system['logo']           ?? '';
+
+// Hero chips + badge sa card header — isang query kada bilang.
+$assignmentTotal = (int) (mysqli_fetch_assoc(
+    mysqli_query($conn, "SELECT COUNT(*) as total FROM instructor_section_tbl")
+)['total'] ?? 0);
+
+$coveredSections = (int) (mysqli_fetch_assoc(
+    mysqli_query($conn, "SELECT COUNT(DISTINCT CONCAT(course,'-',section)) as total FROM instructor_section_tbl")
+)['total'] ?? 0);
+
+$allSections = (int) (mysqli_fetch_assoc(
+    mysqli_query($conn, "SELECT COUNT(DISTINCT CONCAT(course,'-',section)) as total FROM students_tbl")
+)['total'] ?? 0);
 ?>
 
 <!doctype html>
@@ -25,20 +38,38 @@ $systemLogo    = $system['logo']           ?? '';
     <?php include __DIR__ . "/../includes/header.php"; ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">
     <link rel="stylesheet" href="<?= asset('../assets/css/management-pages.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/academic-pages.css') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 
 <body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
-    <div class="content" id="content">
+    <div class="content acad-page" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <div class="page-header">
-            <h2>Manage Section Assignment</h2>
+        <div class="acad-hero">
+            <div class="acad-hero-icon"><i class="bi bi-diagram-3-fill"></i></div>
+            <div class="acad-hero-text">
+                <h2>Sections</h2>
+                <p>Kung aling section ang nasasakop ng bawat instructor. Ito ang naglilimita sa mga estudyanteng nakikita nila.</p>
+            </div>
+            <div class="acad-hero-meta">
+                <span class="acad-chip">
+                    <i class="bi bi-link-45deg"></i>
+                    <?= $assignmentTotal ?> <?= $assignmentTotal === 1 ? 'Assignment' : 'Assignments' ?>
+                </span>
+                <span class="acad-chip <?= ($allSections > 0 && $coveredSections >= $allSections) ? 'green' : 'amber' ?>">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    <?= $coveredSections ?>/<?= $allSections ?> sections covered
+                </span>
+            </div>
         </div>
 
         <div class="row">
             <!-- LEFT PANEL: ASSIGN FORM -->
+            <!-- Walang acad-sticky dito: mataas ang form (checkbox grid
+                 ng mga section), kaya hindi na kasya sa screen kapag
+                 idinikit sa itaas. -->
             <div class="col-lg-4 col-md-12 mb-4">
                 <div class="card-custom">
                     <div class="card-header-custom">
@@ -228,11 +259,7 @@ $systemLogo    = $system['logo']           ?? '';
                         <i class="bi bi-table"></i>
                         <h4>Section Assignments</h4>
                         <span class="badge-count ms-auto" id="assignmentCount">
-                            <?php
-                            $countQuery = mysqli_query($conn, "SELECT COUNT(*) as total FROM instructor_section_tbl");
-                            $count = mysqli_fetch_assoc($countQuery)['total'];
-                            echo $count . ' ' . ($count == 1 ? 'Assignment' : 'Assignments');
-                            ?>
+                            <?= $assignmentTotal ?> <?= $assignmentTotal === 1 ? 'Assignment' : 'Assignments' ?>
                         </span>
                     </div>
 
@@ -287,6 +314,8 @@ $systemLogo    = $system['logo']           ?? '';
                                         ORDER BY si.section ASC
                                     ");
 
+                                    // Ang mensahe kapag walang laman ay hawak ng
+                                    // DataTables (assets/js/datatables.js).
                                     if (mysqli_num_rows($assignments) > 0):
                                         $i = 1;
                                         while ($row = mysqli_fetch_assoc($assignments)):

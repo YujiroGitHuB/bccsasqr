@@ -35,6 +35,21 @@ $system = mysqli_fetch_assoc($systemQuery);
 $systemName = $system['system_name'] ?? '';
 $systemAcronym = $system['system_acronym'] ?? '';
 $systemLogo = $system['logo'] ?? '';
+
+// Para sa hero chips at sa badge ng card header — isang query kada
+// bilang lang, ginagamit sa dalawang lugar.
+$assignmentTotal = (int) (mysqli_fetch_assoc(
+    mysqli_query($conn, "SELECT COUNT(*) as total FROM subject_instructors_tbl")
+)['total'] ?? 0);
+
+$unassignedTotal = (int) (mysqli_fetch_assoc(
+    mysqli_query($conn, "
+        SELECT COUNT(*) as total
+        FROM subjects_tbl s
+        LEFT JOIN subject_instructors_tbl si ON si.subject_id = s.id
+        WHERE si.id IS NULL
+    ")
+)['total'] ?? 0);
 ?>
 
 <!doctype html>
@@ -44,23 +59,38 @@ $systemLogo = $system['logo'] ?? '';
     <?php include __DIR__ . "/../includes/header.php"; ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">
     <link rel="stylesheet" href="<?= asset('../assets/css/management-pages.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/academic-pages.css') ?>">
     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 
 <body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
-    <div class="content" id="content">
+    <div class="content acad-page" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <div class="page-header">
-            <h2>Manage Subject Assignment</h2>
+        <div class="acad-hero">
+            <div class="acad-hero-icon"><i class="bi bi-person-badge-fill"></i></div>
+            <div class="acad-hero-text">
+                <h2>Instructors</h2>
+                <p>Kung sinong instructor ang humahawak sa bawat subject. Ito ang batayan ng makikita nilang attendance.</p>
+            </div>
+            <div class="acad-hero-meta">
+                <span class="acad-chip">
+                    <i class="bi bi-link-45deg"></i>
+                    <?= $assignmentTotal ?> <?= $assignmentTotal === 1 ? 'Assignment' : 'Assignments' ?>
+                </span>
+                <span class="acad-chip <?= $unassignedTotal > 0 ? 'amber' : 'green' ?>">
+                    <i class="bi bi-<?= $unassignedTotal > 0 ? 'exclamation-triangle' : 'check2-circle' ?>"></i>
+                    <?= $unassignedTotal ?> unassigned
+                </span>
+            </div>
         </div>
 
         <div class="row">
             <!-- LEFT PANEL: ASSIGN FORM -->
             <div class="col-lg-4 col-md-12 mb-4">
-                <div class="card-custom">
+                <div class="card-custom acad-sticky">
                     <div class="card-header-custom">
                         <i class="bi bi-person-plus-fill"></i>
                         <h4 id="formTitle">Assign Instructor</h4>
@@ -118,11 +148,7 @@ $systemLogo = $system['logo'] ?? '';
                         <i class="bi bi-table"></i>
                         <h4>Assignment List</h4>
                         <span class="badge-count ms-auto" id="assignmentCount">
-                            <?php
-                            $countQuery = mysqli_query($conn, "SELECT COUNT(*) as total FROM subject_instructors_tbl");
-                            $count = mysqli_fetch_assoc($countQuery)['total'];
-                            echo $count . ' ' . ($count == 1 ? 'Assignment' : 'Assignments');
-                            ?>
+                            <?= $assignmentTotal ?> <?= $assignmentTotal === 1 ? 'Assignment' : 'Assignments' ?>
                         </span>
                     </div>
 
@@ -153,6 +179,8 @@ $systemLogo = $system['logo'] ?? '';
                                         ORDER BY s.subject_code ASC
                                     ");
 
+                                    // Ang mensahe kapag walang laman ay hawak ng
+                                    // DataTables (assets/js/datatables.js).
                                     if (mysqli_num_rows($assignments) > 0) {
                                         $i = 1;
                                         while ($row = mysqli_fetch_assoc($assignments)) {

@@ -1,0 +1,479 @@
+/* ============================================================
+   ACADEMIC SETTINGS — Subject Enrollment, Subjects, Sections,
+   Instructors
+
+   Ang apat na page na ito ay may parehong hugis: hero header sa
+   itaas, form card sa kaliwa, table card sa kanan. Dati ay
+   `.page-header h2` lang ang pamagat at iba-iba ang timpla ng
+   card at butones sa bawat isa.
+
+   LAHAT ay naka-scope sa `.acad-page` (nasa <div class="content">
+   ng apat na page). Kasama sa management-pages.css ang backup.php
+   at manage_users.php na may sariling bagong disenyo na — hindi
+   sila dapat magalaw ng ginagawa rito.
+
+   Ikinakarga PAGKATAPOS ng management-pages.css.
+   ============================================================ */
+
+/* ─── Hero header ─────────────────────────────────────────── */
+.acad-page .acad-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, .07);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(102, 126, 234, .16), transparent 55%),
+        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+    overflow: hidden;
+}
+
+/* Manipis na guhit ng kulay sa itaas — pareho ng `.stat-card`
+   sa management-pages.css para magkapamilya ang hitsura. */
+.acad-page .acad-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    box-shadow: 0 0 12px rgba(102, 126, 234, .6);
+}
+
+.acad-page .acad-hero-icon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, .35);
+}
+
+.acad-page .acad-hero-text {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.acad-page .acad-hero-text h2 {
+    margin: 0 0 3px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: #fff;
+}
+
+.acad-page .acad-hero-text p {
+    margin: 0;
+    font-size: .85rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.acad-page .acad-hero-meta {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.acad-page .acad-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .42rem .85rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #c7d2fe;
+    background: rgba(102, 126, 234, .14);
+    border: 1px solid rgba(102, 126, 234, .3);
+    white-space: nowrap;
+}
+
+.acad-page .acad-chip i {
+    opacity: .8;
+}
+
+.acad-page .acad-chip.green {
+    color: #6ee7b7;
+    background: rgba(16, 185, 129, .13);
+    border-color: rgba(16, 185, 129, .3);
+}
+
+.acad-page .acad-chip.cyan {
+    color: #7dd3fc;
+    background: rgba(6, 182, 212, .13);
+    border-color: rgba(6, 182, 212, .3);
+}
+
+.acad-page .acad-chip.amber {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, .13);
+    border-color: rgba(245, 158, 11, .3);
+}
+
+/* ─── Cards ───────────────────────────────────────────────── */
+.acad-page .card-custom {
+    background: #16161a;
+    border: 1px solid rgba(255, 255, 255, .07);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+}
+
+/* Ang table sa kanan ay mahaba; ang form sa kaliwa ay maikli.
+   Sinusundan ng form ang scroll para hindi na kailangang bumalik
+   sa itaas tuwing may ie-edit na row. */
+@media (min-width: 1200px) {
+    .acad-page .acad-sticky {
+        position: sticky;
+        top: 1rem;
+        /* Kailangang `auto` — sa `.card-custom { height: 100% }` ay
+           kasingtaas ng buong table column ang card, at hindi
+           makakadikit sa itaas ang isang bagay na kasintaas ng
+           lalagyan nito. */
+        height: auto;
+    }
+}
+
+.acad-page .card-header-custom {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    margin-bottom: 1.15rem;
+    padding-bottom: .9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+
+/* Ang icon ay nakakahon na ngayon sa halip na lumulutang na glyph. */
+.acad-page .card-header-custom>i {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+    color: #a5b4fc;
+    background: rgba(102, 126, 234, .14);
+    border: 1px solid rgba(102, 126, 234, .28);
+}
+
+.acad-page .card-header-custom h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.acad-page .badge-count {
+    padding: .3rem .8rem;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 700;
+    color: #c7d2fe;
+    background: rgba(102, 126, 234, .16);
+    border: 1px solid rgba(102, 126, 234, .28);
+    white-space: nowrap;
+}
+
+/* ─── Mga field ───────────────────────────────────────────── */
+.acad-page .form-label {
+    font-size: .82rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: .45rem;
+}
+
+.acad-page .form-label i {
+    color: #818cf8;
+}
+
+.acad-page .form-control,
+.acad-page .form-select,
+.acad-page .sd-trigger {
+    background: #0f0f13;
+    border: 1px solid #2a2a33;
+    border-radius: 11px;
+    padding: .7rem .9rem;
+    font-size: .9rem;
+    color: #f1f5f9;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+}
+
+.acad-page .form-control:focus,
+.acad-page .form-select:focus,
+.acad-page .sd-trigger:focus,
+.acad-page .sd-trigger.open {
+    background: #101018;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, .18);
+    color: #f1f5f9;
+}
+
+.acad-page .form-control::placeholder {
+    color: #4b5563;
+}
+
+/* ─── Mga butones ─────────────────────────────────────────── */
+.acad-page .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 11px;
+    padding: .7rem 1.4rem;
+    font-size: .9rem;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(102, 126, 234, .28);
+    transition: transform .2s, box-shadow .2s, filter .2s;
+}
+
+.acad-page .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 22px rgba(102, 126, 234, .38);
+}
+
+.acad-page .btn-secondary {
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 11px;
+    padding: .65rem 1.3rem;
+    font-size: .88rem;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.acad-page .btn-secondary:hover {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+    transform: none;
+}
+
+/* Mga aksyon sa hanay ng table: malambot na tinted na kahon sa
+   halip na matingkad na solid na Bootstrap button — hindi na sila
+   nakakalamon ng pansin kaysa sa mismong datos. */
+.acad-page td .btn-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 32px;
+    padding: 0 .55rem;
+    margin: 0 .15rem;
+    border-radius: 9px;
+    font-size: .82rem;
+    font-weight: 600;
+    transition: all .15s;
+}
+
+.acad-page td .btn-success {
+    background: rgba(16, 185, 129, .12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, .25);
+}
+
+.acad-page td .btn-success:hover {
+    background: rgba(16, 185, 129, .22);
+    color: #34d399;
+}
+
+.acad-page td .btn-danger {
+    background: rgba(239, 68, 68, .12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, .25);
+}
+
+.acad-page td .btn-danger:hover {
+    background: rgba(239, 68, 68, .22);
+    color: #f87171;
+}
+
+/* ─── Table ───────────────────────────────────────────────── */
+.acad-page .table-wrapper {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(255, 255, 255, .015);
+    overflow: hidden;
+}
+
+.acad-page .table {
+    margin: 0;
+    --bs-table-bg: transparent;
+}
+
+.acad-page .table thead th {
+    background: rgba(255, 255, 255, .04);
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    padding: .8rem 1rem;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .42);
+}
+
+.acad-page .table tbody td {
+    padding: .8rem 1rem;
+    font-size: .875rem;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    border-top: 0;
+}
+
+.acad-page .table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.acad-page .table tbody tr:hover td {
+    background: rgba(102, 126, 234, .07);
+}
+
+/* ─── Mga badge sa loob ng table ──────────────────────────── */
+.acad-page .badge-subject {
+    background: rgba(102, 126, 234, .16);
+    border: 1px solid rgba(102, 126, 234, .28);
+    color: #c7d2fe;
+    padding: .2rem .6rem;
+    border-radius: 7px;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.acad-page .badge-instructor {
+    background: rgba(139, 92, 246, .14);
+    border: 1px solid rgba(139, 92, 246, .28);
+    color: #c4b5fd;
+    padding: .2rem .6rem;
+    border-radius: 7px;
+    font-size: .78rem;
+    font-weight: 600;
+}
+
+.acad-page .badge-section {
+    background: rgba(6, 182, 212, .14);
+    border: 1px solid rgba(6, 182, 212, .3);
+    color: #7dd3fc;
+    padding: .25rem .7rem;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.acad-page td small {
+    display: inline-block;
+    margin-top: 3px;
+    color: rgba(255, 255, 255, .42);
+}
+
+/* ─── Walang laman ────────────────────────────────────────── */
+.acad-page .empty-state {
+    padding: 2.5rem 1rem;
+    color: rgba(255, 255, 255, .3);
+}
+
+.acad-page .empty-state i {
+    font-size: 2.2rem;
+    display: block;
+    margin-bottom: .6rem;
+    opacity: .35;
+}
+
+.acad-page .empty-state strong {
+    display: block;
+    color: rgba(255, 255, 255, .6);
+    font-size: .95rem;
+    margin-bottom: .2rem;
+}
+
+.acad-page .empty-state span {
+    font-size: .82rem;
+}
+
+/* ─── Mga kontrol ng DataTables ───────────────────────────── */
+/* Bootstrap 5 theme ang gamit ng DataTables dito, pero mas maliwanag
+   ang default nito kaysa sa mga card — pinapatugma natin. */
+.acad-page .dataTables_wrapper .dataTables_length,
+.acad-page .dataTables_wrapper .dataTables_filter,
+.acad-page .dataTables_wrapper .dataTables_info {
+    font-size: .82rem;
+    color: rgba(255, 255, 255, .45);
+    padding: .35rem 0;
+}
+
+.acad-page .dataTables_wrapper .dataTables_filter input,
+.acad-page .dataTables_wrapper .dataTables_length select {
+    background: #0f0f13;
+    border: 1px solid #2a2a33;
+    border-radius: 9px;
+    color: #f1f5f9;
+    padding: .4rem .7rem;
+    font-size: .85rem;
+}
+
+.acad-page .dataTables_wrapper .dataTables_filter input:focus,
+.acad-page .dataTables_wrapper .dataTables_length select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, .18);
+}
+
+.acad-page .dataTables_wrapper .page-link {
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .08);
+    color: #cbd5e1;
+    border-radius: 8px;
+    margin: 0 2px;
+    font-size: .82rem;
+}
+
+.acad-page .dataTables_wrapper .page-item.active .page-link {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-color: transparent;
+    color: #fff;
+}
+
+.acad-page .dataTables_wrapper .page-item.disabled .page-link {
+    opacity: .4;
+}
+
+/* Ang sariling padding ng .empty-state ang sumusukat sa taas — kung
+   hindi, dodoble ito sa padding ng cell ng DataTables. */
+.acad-page td.dataTables_empty {
+    padding: 0;
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .acad-page .acad-hero {
+        padding: 1rem;
+        gap: .85rem;
+    }
+
+    .acad-page .acad-hero-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .acad-page .acad-hero-text h2 {
+        font-size: 1.15rem;
+    }
+
+    /* Sa makipot na screen ay sa sariling linya na ang mga chip —
+       kung hindi, nasisiksik ang pamagat sa dalawang letra kada linya. */
+    .acad-page .acad-hero-meta {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .acad-page .card-custom {
+        padding: 1rem;
+    }
+}

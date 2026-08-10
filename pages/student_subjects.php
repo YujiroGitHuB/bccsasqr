@@ -120,6 +120,7 @@ if ($user_role === 'admin') {
     <?php include __DIR__ . "/../includes/header.php"; ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">
     <link rel="stylesheet" href="<?= asset('../assets/css/management-pages.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/academic-pages.css') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         .enroll-tabs { display:flex; gap:4px; margin-bottom:20px; background:rgba(0,0,0,.25); padding:4px; border-radius:8px; }
@@ -241,22 +242,28 @@ if ($user_role === 'admin') {
 
 <body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
-    <div class="content" id="content">
+    <div class="content acad-page" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <div class="page-header">
-            <h2>
-                <i class="bi bi-book-half"></i>Subject Enrollment
+        <div class="acad-hero">
+            <div class="acad-hero-icon"><i class="bi bi-book-half"></i></div>
+            <div class="acad-hero-text">
+                <h2>Subject Enrollment</h2>
+                <p>Kung anong subject ang kinukuha ng bawat estudyante — ito ang sinusuri ng scanner tuwing may attendance.</p>
+            </div>
+            <div class="acad-hero-meta">
+                <span class="acad-chip">
+                    <i class="bi bi-list-check"></i> <?= count($enrollments) ?> enrolled
+                </span>
+                <span class="acad-chip cyan">
+                    <i class="bi bi-grid-3x3-gap"></i> <?= count($sections) ?> sections
+                </span>
                 <?php if ($user_role === 'admin'): ?>
-                    <span class="badge ms-2" style="font-size:.7rem;background:linear-gradient(135deg,#667eea,#764ba2);vertical-align:middle;">
-                        Admin — All Sections
-                    </span>
+                    <span class="acad-chip"><i class="bi bi-shield-check"></i> Admin — All Sections</span>
                 <?php else: ?>
-                    <span class="badge ms-2" style="font-size:.7rem;background:linear-gradient(135deg,#10b981,#059669);vertical-align:middle;">
-                        Instructor — My Sections Only
-                    </span>
+                    <span class="acad-chip green"><i class="bi bi-person-check"></i> Instructor — My Sections Only</span>
                 <?php endif; ?>
-            </h2>
+            </div>
         </div>
 
         <div class="row g-4">

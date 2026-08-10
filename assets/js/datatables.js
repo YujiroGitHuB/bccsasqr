@@ -279,8 +279,36 @@ $(document).ready(function () {
     // ================================================================
     // OTHER TABLES
     // ================================================================
-    if ($('#subjectTable').length)    { $('#subjectTable').DataTable(); }
-    if ($('#assignmentTable').length) { $('#assignmentTable').DataTable(); }
+    // Ang mensahe kapag walang laman ay dito ipinapasa at hindi
+    // isinisingit sa HTML ng page: ang isang <tr><td colspan> sa loob
+    // ng tbody ay binibilang ng DataTables bilang tunay na row, kaya
+    // hindi tugma ang bilang ng column at nasisira ang table.
+    var emptyMsg = function (icon, title, hint) {
+        return '<div class="empty-state">' +
+               '<i class="bi bi-' + icon + '"></i>' +
+               '<strong>' + title + '</strong>' +
+               '<span>' + hint + '</span>' +
+               '</div>';
+    };
+
+    if ($('#subjectTable').length) {
+        $('#subjectTable').DataTable({
+            language: {
+                emptyTable: emptyMsg('journal-x', 'Wala pang subject',
+                    'Idagdag ang una sa form sa kaliwa.')
+            }
+        });
+    }
+
+    if ($('#assignmentTable').length) {
+        $('#assignmentTable').DataTable({
+            language: {
+                emptyTable: emptyMsg('inbox', 'Wala pang assignment',
+                    'Gamitin ang form sa kaliwa para magtakda.')
+            }
+        });
+    }
+
     if ($('#usersTable').length)      { $('#usersTable').DataTable(); }
 
 });
