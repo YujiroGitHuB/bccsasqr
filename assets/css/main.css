@@ -128,12 +128,43 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Palitan-palitan ang logo mula sa Settings, at karamihan ng logo ng
+   paaralan ay madilim ang tinta at transparent ang background — kaya
+   nawawala ang mga ito sa madilim na sidebar. Ang puting plate ang
+   nagbibigay ng sariling kontrast sa logo kahit ano ang ma-upload.
+
+   `contain` (hindi `cover`): hindi na pinuputol ang gilid ng logo. */
 .logo-img {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  object-fit: cover;
+  background: #fff;
+  object-fit: contain;
+  padding: 6px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
   transition: transform 0.3s ease;
+}
+
+/* Madilim (#1e293b) ang .card sa app na ito, kaya nawawala rin dito ang
+   logo — at dito pa mismo tinitingnan ng admin ang na-upload niya.
+   Puting plate para talagang makita kung ano ang na-upload. */
+/* `.card.` — kailangan ng dalawang klase: may sariling
+   `.card { background-color: #1e293b }` din ang settings.css at mas
+   huli itong na-load, kaya kinakain nito ang puting background kapag
+   `.logo-preview-plate` lang ang selector. */
+.card.logo-preview-plate {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+
+.logo-preview-plate img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .logo-text {
@@ -155,6 +186,7 @@ body {
 .sidebar.collapsed .logo-img {
   width: 45px;
   height: 45px;
+  padding: 4px;
 }
 
 table.dataTable thead {

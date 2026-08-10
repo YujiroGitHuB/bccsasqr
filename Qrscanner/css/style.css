@@ -42,6 +42,19 @@ header .header-title {
     font-weight: bold;
 }
 
+/* Puting plate sa likod ng uploaded na logo. Madilim ang header, at
+   karaniwang madilim din ang tinta ng logo ng paaralan — nalulusaw ito
+   kapag walang sariling background. Tugma ito sa .logo-img sa
+   assets/css/main.css (sidebar). */
+.brand-logo {
+    border-radius: 50%;
+    background: #fff;
+    object-fit: contain;
+    padding: 3px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+    flex-shrink: 0;
+}
+
 main {
     margin-top: 80px;
     display: flex;

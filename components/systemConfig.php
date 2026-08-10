@@ -28,7 +28,7 @@
                                 <!-- Logo Preview -->
                                 <div id="logoPreview" class="mb-3 d-flex justify-content-center">
                                     <?php if ($systemLogo): ?>
-                                        <div class="card border-0 shadow-sm rounded-3 p-2" style="width:120px; height:120px; display:flex; align-items:center; justify-content:center;">
+                                        <div class="card border-0 shadow-sm rounded-3 p-2 logo-preview-plate">
                                             <img src="../<?= $systemLogo ?>" alt="Logo Preview" class="img-fluid rounded-3">
                                         </div>
                                     <?php else: ?>

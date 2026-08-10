@@ -124,7 +124,7 @@ if (count($subjects) === 0 && $role !== 'admin') {
             <img src="../<?php echo $systemLogo; ?>"
                 alt="System Logo"
                 width="40" height="40"
-                style="border-radius: 50%; object-fit: cover;">
+                class="brand-logo">
             BCC SASQR Scanner
             <img src="https://cdn-icons-gif.flaticon.com/7994/7994392.gif"
                 alt="QR Animation"
