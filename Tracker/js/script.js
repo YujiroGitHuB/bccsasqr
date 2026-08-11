@@ -1,10 +1,32 @@
 let typingTimer;
 const typingDelay = 1000;
 const input = document.getElementById('studentNoInput');
-const statusIdle = document.querySelector('.status-idle');
-const statusChecking = document.querySelector('.status-checking');
+const searchWrapper = document.querySelector('.search-wrapper');
 const resultsContainer = document.getElementById('resultsContainer');
 const messageContainer = document.getElementById('messageContainer');
+const placeholder = document.getElementById('trkPlaceholder');
+
+// Klase sa wrapper, hindi `style.display` sa bawat span — ang inline
+// na estilo ay hindi na kayang bawiin ng CSS, kaya hindi na maitatago
+// ang "Type to search" sa makipot na telepono.
+function setChecking(isChecking) {
+    searchWrapper.classList.toggle('is-checking', isChecking);
+}
+
+// Ang naghihintay na estado ay para lang sa bago pa ang unang
+// paghahanap; kapag may nakikita ka nang resulta, wala na itong
+// sinasabi.
+function setPlaceholder(visible) {
+    if (placeholder) {
+        placeholder.classList.toggle('hidden', !visible);
+    }
+}
+
+function showResults(html) {
+    resultsContainer.innerHTML = html;
+    resultsContainer.classList.remove('hidden');
+    setPlaceholder(false);
+}
 
 function showMessage(type, text, icon) {
     const messageClass = `message-${type}`;
@@ -26,16 +48,15 @@ input.addEventListener('input', function () {
     const value = this.value.trim();
 
     if (value.length === 0) {
-        statusIdle.style.display = 'inline';
-        statusChecking.style.display = 'none';
+        setChecking(false);
         resultsContainer.classList.add('hidden');
         resultsContainer.innerHTML = '';
+        setPlaceholder(true);
         clearMessage();
         return;
     }
 
-    statusIdle.style.display = 'none';
-    statusChecking.style.display = 'flex';
+    setChecking(true);
     clearMessage();
 
     typingTimer = setTimeout(() => {
@@ -106,8 +127,7 @@ async function searchAttendance(studentNo) {
         }
 
         console.log('Hiding status indicators...');
-        statusChecking.style.display = 'none';
-        statusIdle.style.display = 'inline';
+        setChecking(false);
         console.log('Status indicators updated');
 
         if (results) {
@@ -127,8 +147,7 @@ async function searchAttendance(studentNo) {
                     TTSManager.speak(successMsg);
                 }
 
-                resultsContainer.innerHTML = results.innerHTML;
-                resultsContainer.classList.remove('hidden');
+                showResults(results.innerHTML);
                 console.log('Results displayed');
 
             } else if (status === 'no-attendance') {
@@ -144,8 +163,7 @@ async function searchAttendance(studentNo) {
                     TTSManager.speak(noAttendanceMsg);
                 }
 
-                resultsContainer.innerHTML = results.innerHTML;
-                resultsContainer.classList.remove('hidden');
+                showResults(results.innerHTML);
                 console.log('No attendance message displayed');
 
             } else if (status === 'not-found') {
@@ -161,16 +179,15 @@ async function searchAttendance(studentNo) {
                     TTSManager.speak(errorMsg);
                 }
 
-                resultsContainer.innerHTML = `
+                showResults(`
                     <div class="no-results">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <h3>Student Not Found</h3>
-                        <p>This student number does not exist in the database.</p>
+                        <h3>Student not found</h3>
+                        <p>No record matches that student number. Check for a missing dash or a typo, then try again.</p>
                     </div>
-                `;
-                resultsContainer.classList.remove('hidden');
+                `);
                 console.log('Not found message displayed');
             } else {
                 console.log('UNKNOWN STATUS:', status);
@@ -188,16 +205,15 @@ async function searchAttendance(studentNo) {
                 TTSManager.speak(errorMsg);
             }
 
-            resultsContainer.innerHTML = `
+            showResults(`
                 <div class="no-results">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <h3>No attendance records found</h3>
-                    <p>This student number was not found in the database.</p>
+                    <h3>Student not found</h3>
+                    <p>No record matches that student number. Check for a missing dash or a typo, then try again.</p>
                 </div>
-            `;
-            resultsContainer.classList.remove('hidden');
+            `);
             console.log('Fallback error displayed');
         }
 
@@ -209,8 +225,7 @@ async function searchAttendance(studentNo) {
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
 
-        statusChecking.style.display = 'none';
-        statusIdle.style.display = 'inline';
+        setChecking(false);
 
         const errorMsg = 'Database connection error. Please try again.';
         showMessage('error', errorMsg, `
@@ -223,16 +238,15 @@ async function searchAttendance(studentNo) {
             TTSManager.speak(errorMsg);
         }
 
-        resultsContainer.innerHTML = `
+        showResults(`
                     <div class="no-results">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <h3>Something went wrong</h3>
                         <p>Please try again later.</p>
                     </div>
-                `;
-        resultsContainer.classList.remove('hidden');
+                `);
         console.log('Error handler executed');
     }
 }

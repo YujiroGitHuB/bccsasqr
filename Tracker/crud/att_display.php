@@ -75,80 +75,136 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
     }
 
     if ($search_performed && isset($_POST['student_no'])) {
+
+        // Mga unang titik para sa tile ng pangalan. Walang larawan
+        // ang pahinang ito ng estudyante, at ang isang blangkong
+        // bilog ay wala ring sinasabi.
+        $trk_initials = function ($name) {
+            // "Apelyido, Pangalan G." ang pormat ng fullname dito, kaya
+            // ang unang dalawang salita ang kinukuha at hindi ang una
+            // at huli — ang huli ay ang inisyal ng gitnang pangalan.
+            $parts = preg_split('/[\s,]+/', trim((string) $name), -1, PREG_SPLIT_NO_EMPTY);
+            if (!$parts) {
+                return '?';
+            }
+            $letters = mb_substr($parts[0], 0, 1);
+            if (isset($parts[1])) {
+                $letters .= mb_substr($parts[1], 0, 1);
+            }
+            return mb_strtoupper($letters);
+        };
+
+        // Huling pagdalo. Naka-uri ang query ayon sa subject bago
+        // ang petsa, kaya hindi ang unang hanay ang pinakabago sa
+        // buong talaan — kailangang hanapin ang pinakamalaki.
+        $latest_date = null;
+        foreach ($attendance_records as $record) {
+            $ts = strtotime((string) $record['date']);
+            if ($ts && (!$latest_date || $ts > $latest_date)) {
+                $latest_date = $ts;
+            }
+        }
 ?>
         <div class="results-container" data-status="<?= $status ?>">
             <?php if ($status === 'success'): ?>
-                <!-- Student Info -->
-                <div class="student-info">
-                    <div class="info-row">
-                        <span class="info-label">Student Number:</span>
-                        <span class="info-value"><?= htmlspecialchars($student_info['student_no']) ?></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Name:</span>
-                        <span class="info-value"><?= htmlspecialchars($student_info['fullname']) ?></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Course:</span>
-                        <span class="info-value"><?= htmlspecialchars($student_info['course']) ?></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Section:</span>
-                        <span class="info-value"><?= htmlspecialchars($student_info['section']) ?></span>
+                <!-- Sino ang natagpuan. Ang pangalan ang hinahanap ng
+                     mata para makumpirmang tama ang tao; ang iba ay
+                     mga chip na sumusuporta lang. -->
+                <div class="trk-identity">
+                    <div class="trk-avatar"><?= htmlspecialchars($trk_initials($student_info['fullname'])) ?></div>
+                    <div class="trk-identity-text">
+                        <h2><?= htmlspecialchars($student_info['fullname']) ?></h2>
+                        <div class="trk-meta">
+                            <span><i class="bi bi-person-badge"></i> <?= htmlspecialchars($student_info['student_no']) ?></span>
+                            <span><i class="bi bi-mortarboard"></i> <?= htmlspecialchars($student_info['course']) ?></span>
+                            <span><i class="bi bi-people"></i> <?= htmlspecialchars($student_info['section']) ?></span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Total Attendance -->
-                <div class="total-attendance">
-                    <h2>Total Attendance</h2>
-                    <div class="total-count"><?= $total_attendance ?></div>
-                    <p>days present</p>
+                <!-- Ang buod. Ang bilang ng subject at ang huling
+                     pagdalo ay nasa talaan na noon pero kailangan mong
+                     bilangin sila mismo. -->
+                <div class="trk-stats">
+                    <div class="trk-stat is-primary">
+                        <div class="trk-stat-label"><i class="bi bi-check2-circle"></i> Days present</div>
+                        <div class="trk-stat-value"><?= (int) $total_attendance ?></div>
+                    </div>
+                    <div class="trk-stat">
+                        <div class="trk-stat-label"><i class="bi bi-journal-text"></i> Subjects</div>
+                        <div class="trk-stat-value"><?= count($subjects_summary) ?></div>
+                    </div>
+                    <div class="trk-stat">
+                        <div class="trk-stat-label"><i class="bi bi-calendar-event"></i> Last attended</div>
+                        <div class="trk-stat-value is-text"><?= $latest_date ? date('M d, Y', $latest_date) : '—' ?></div>
+                    </div>
                 </div>
 
-                <!-- NEW: Attendance Per Subject -->
+                <!-- Attendance Per Subject -->
                 <div class="subjects-container">
-                    <h2>Attendance by Subject</h2>
                     <?php foreach ($subjects_summary as $subject => $data): ?>
                         <div class="subject-card">
                             <div class="subject-header">
-                                <h3><?= htmlspecialchars($subject) ?></h3>
-                                <span class="subject-count"><?= $data['count'] ?> days</span>
+                                <div class="subject-heading">
+                                    <h3><?= htmlspecialchars($subject) ?></h3>
+                                    <p class="instructor-name"><i class="bi bi-person"></i> <?= htmlspecialchars($data['instructor']) ?></p>
+                                </div>
+                                <span class="subject-count">
+                                    <i class="bi bi-check2"></i>
+                                    <?= $data['count'] ?> <?= $data['count'] === 1 ? 'day' : 'days' ?>
+                                </span>
                             </div>
-                            <p class="instructor-name">Instructor: <?= htmlspecialchars($data['instructor']) ?></p>
-                            
-                            <table class="attendance-table">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Date</th>
-                                        <th>Time In</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($data['records'] as $index => $record): ?>
+
+                            <div class="table-scroll">
+                                <table class="attendance-table">
+                                    <thead>
                                         <tr>
-                                            <td><?= $index + 1 ?></td>
-                                            <td><?= date('F d, Y', strtotime($record['date'])) ?></td>
-                                            <td><?= htmlspecialchars($record['time_in']) ?></td>
+                                            <th class="col-num">#</th>
+                                            <th>Date</th>
+                                            <th class="col-time">Time in</th>
                                         </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($data['records'] as $index => $record): ?>
+                                            <?php $ts = strtotime((string) $record['date']); ?>
+                                            <tr>
+                                                <td class="col-num"><?= $index + 1 ?></td>
+                                                <td class="cell-date">
+                                                    <?= $ts ? date('M d, Y', $ts) : htmlspecialchars($record['date']) ?>
+                                                    <?php if ($ts): ?>
+                                                        <span class="cell-day"><?= date('l', $ts) ?></span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td class="cell-time"><?= htmlspecialchars($record['time_in']) ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
 
             <?php elseif ($status === 'no-attendance'): ?>
-                <!-- Same as before -->
-                <div class="student-info">
-                    <div class="info-row">
-                        <span class="info-label">Student Number:</span>
-                        <span class="info-value"><?= htmlspecialchars($student_info['student_no']) ?></span>
+                <div class="trk-identity">
+                    <div class="trk-avatar"><?= htmlspecialchars($trk_initials($student_info['fullname'])) ?></div>
+                    <div class="trk-identity-text">
+                        <h2><?= htmlspecialchars($student_info['fullname']) ?></h2>
+                        <div class="trk-meta">
+                            <span><i class="bi bi-person-badge"></i> <?= htmlspecialchars($student_info['student_no']) ?></span>
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Name:</span>
-                        <span class="info-value"><?= htmlspecialchars($student_info['fullname']) ?></span>
-                    </div>
+                </div>
+
+                <!-- Ang pangalan lang ang lumalabas dati dito, na
+                     mukhang putol na resulta. Sinasabi na ngayon kung
+                     bakit walang talahanayan sa ilalim. -->
+                <div class="no-results">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"></path>
+                    </svg>
+                    <h3>No attendance yet</h3>
+                    <p>This record exists, but no scan has been logged for it. Your first scan will show up here.</p>
                 </div>
             <?php endif; ?>
         </div>
