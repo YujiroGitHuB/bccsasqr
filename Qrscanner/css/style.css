@@ -1,9 +1,44 @@
+/* ============================================================
+   QR SCANNER — anyo ng page
+
+   Isinasunod nito ang page sa wika ng mga admin page (tingnan ang
+   assets/css/students-page.css at modal-form.css): sky/cyan na
+   tuldik (#0ea5e9 → #06b6d4), ibabaw na #16161a, hangganang
+   rgba(255,255,255,.07), 3px na gradient sa itaas ng bawat panel,
+   at mga pill chip.
+
+   Ang dating anyo ay may sariling bokabularyo na wala kahit saan
+   sa app: navy na #071029 / #0f1a3a / #060f35 na mga ibabaw,
+   DALAWANG magkaibang asul (sky #38bdf8 sa teksto at blue #3b82f6
+   sa scanner frame) sa iisang screen,
+   at 2px na buong-paikot na sky na hangganan sa subject picker na
+   kasingtingkad ng camera mismo.
+
+   HINDI binabago ang `font-family`: `* { font-family: 'Times New
+   Roman' }` ang nasa unang linya ng assets/css/main.css, kaya
+   serif ang TOTOONG sulat ng buong app — ang pagpapalit dito lang
+   ang siyang lilikha ng pagkakaiba, hindi ang pag-iwan.
+   ============================================================ */
+
 body {
+    --scan: #0ea5e9;
+    --scan-deep: #06b6d4;
+    --scan-soft: rgba(14, 165, 233, .14);
+    --scan-line: rgba(14, 165, 233, .3);
+    --scan-ink: #7dd3fc;
+
+    --scan-bg: #0f0f13;
+    --scan-surface: #16161a;
+    --scan-raised: #1c1c22;
+    --scan-border: rgba(255, 255, 255, .07);
+    --scan-text: #f1f5f9;
+    --scan-dim: rgba(255, 255, 255, .45);
+
     font-family: 'Times New Roman', Times, serif;
-    background: radial-gradient(circle at top left, #1e293b, #0f172a 60%);
+    background: var(--scan-bg);
     background-attachment: fixed;
     background-size: cover;
-    color: #e2e8f0;
+    color: var(--scan-text);
     margin: 0;
     padding: 0;
     min-height: 100vh;
@@ -18,28 +53,105 @@ header {
     top: 0;
     left: 0;
     width: 100%;
-    background-color: #1c1c1c;
-    color: white;
     z-index: 1000;
-    padding: 10px 20px;
-    background: rgba(7, 16, 41, 0.9);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    box-sizing: border-box;
+    padding: .7rem 1.1rem;
+    color: #fff;
+    border-bottom: 1px solid var(--scan-border);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(14, 165, 233, .12), transparent 60%),
+        rgba(22, 22, 26, .92);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .45);
 }
 
+/* Ang guhit ng tuldik sa itaas — kapareho ng .stud-hero::before at
+   ng .app-modal, kaya kapamilya ng natitirang app ang page na ito. */
+header::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--scan), var(--scan-deep));
+    box-shadow: 0 0 12px rgba(14, 165, 233, .6);
+}
+
+/* Hanay at hindi naka-center: logo, pamagat, at balikan. Dating
+   isang naka-center na linya ang lahat — walang mapagkakakilanlang
+   pangunahin dahil pantay-pantay lahat ng bagay sa gitna. */
+.scan-head {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.scan-head-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+}
 
 header .header-title {
-    display: flex;
+    margin: 0;
+    color: #fff;
+    text-align: left;
+    /* Dating `clamp(.625rem, …)` — 10px ang ibaba niyon, mas maliit
+       pa kaysa sa katawan ng teksto, kaya halos hindi mabasa ang
+       pamagat sa telepono. */
+    font-size: clamp(1rem, .82rem + .85vw, 1.4rem);
+    font-weight: 700;
+    letter-spacing: -.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-    justify-content: center;
+.scan-head-text p {
+    margin: 1px 0 0;
+    font-size: .78rem;
+    color: rgba(255, 255, 255, .42);
+}
 
+/* Tahimik na pag-alis — nakikita, pero hindi nakikipag-agawan sa
+   camera na siyang tunay na trabaho ng page. */
+.scan-head-back {
+    flex-shrink: 0;
+    display: inline-flex;
     align-items: center;
+    gap: .45rem;
+    min-height: 40px;
+    padding: 0 .9rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(255, 255, 255, .05);
+    color: #cbd5e1;
+    font-size: .82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .18s ease, color .18s ease;
+}
 
-    gap: 6px;
+.scan-head-back:hover {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+}
 
-    width: 100%;
+/* Sa telepono ay ang pamagat ang nangangailangan ng lapad —
+   sapat na ang icon ng butones, at ang paliwanag sa ilalim ng
+   pamagat ang unang nawawala. */
+@media (max-width: 640px) {
 
-    font-size: clamp(0.625rem, 0.4688rem + 2.5vw, 1.875rem);
-    font-weight: bold;
+    .scan-head-text p,
+    .scan-head-back span {
+        display: none;
+    }
+
+    .scan-head-back {
+        padding: 0 .7rem;
+    }
 }
 
 /* Puting plate sa likod ng uploaded na logo. Madilim ang header, at
@@ -68,49 +180,83 @@ main {
 
 h2,
 h3 {
-    color: #38bdf8;
+    color: var(--scan-ink);
     margin-bottom: 10px;
     text-align: center;
 }
 
-#leftPanel {
+/* ── Mga panel ──────────────────────────────────────────── */
+
+#leftPanel,
+#attendance {
+    position: relative;
     flex: 1;
     min-width: 340px;
-    max-width: 400px;
-    background: rgba(7, 16, 41, 0.8);
     border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    text-align: center;
+    border: 1px solid var(--scan-border);
+    background: var(--scan-surface);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
     overflow-x: auto;
+}
+
+/* Ang parehong 3px na guhit ng header — nagsasabing iisang pamilya
+   ang mga kahon sa page. */
+#leftPanel::before,
+#attendance::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+    background: linear-gradient(90deg, var(--scan), var(--scan-deep));
+    opacity: .8;
+}
+
+#leftPanel {
+    max-width: 400px;
+    padding: 20px;
+    text-align: center;
+}
+
+#attendance {
+    padding: 20px;
+    height: fit-content;
+}
+
+/* Icon at teksto sa iisang linya — dati ay isang GIF, tapos `<br>`,
+   tapos ang pamagat: tatlong hakbang para sa isang pamagat. */
+#attendance h3 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    margin: 0 0 .9rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+#attendance h3 i {
+    color: var(--scan-ink);
 }
 
 #video {
     width: 100%;
     aspect-ratio: 1/1;
     border-radius: 12px;
-    border: 3px solid #38bdf8;
+    border: 3px solid var(--scan);
     object-fit: cover;
 }
 
 .card {
-    background: #0f1a3a;
+    background: var(--scan-raised);
     padding: 12px;
     border-radius: 8px;
     margin-top: 12px;
     font-size: 1rem;
 }
 
-#attendance {
-    flex: 1;
-    min-width: 340px;
-    background: rgba(7, 16, 41, 0.9);
-    border-radius: 16px;
-    padding: 20px;
-    height: fit-content;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    overflow-x: auto;
-}
+/* ── Talahanayan ────────────────────────────────────────── */
 
 table {
     width: 100%;
@@ -122,35 +268,44 @@ table {
 
 th,
 td {
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid var(--scan-border);
     padding: 10px;
     text-align: left;
     white-space: nowrap;
 }
 
 th {
-    color: #38bdf8;
+    color: var(--scan-ink);
     font-weight: 600;
-    background: #13213e;
+    font-size: .78rem;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, .03);
 }
 
 tr:hover td {
-    background-color: rgba(56, 189, 248, 0.1);
+    background-color: var(--scan-soft);
 }
 
 #qrResult {
-    color: #38bdf8;
+    color: var(--scan-ink);
     font-weight: bold;
-
 }
 
 .dataTables_filter input,
 .dataTables_length select {
-    background: #1e293b;
-    color: #e2e8f0;
-    border: 1px solid #334155;
-    border-radius: 6px;
-    padding: 4px 8px;
+    background: var(--scan-bg);
+    color: var(--scan-text);
+    border: 1px solid #2a2a33;
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+
+.dataTables_filter input:focus,
+.dataTables_length select:focus {
+    outline: none;
+    border-color: var(--scan);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, .18);
 }
 
 /* Mobile Responsive Tweaks */
@@ -242,7 +397,7 @@ tr:hover td {
     overflow: hidden;
     box-shadow:
         0 10px 40px rgba(0, 0, 0, 0.3),
-        0 0 60px rgba(59, 130, 246, 0.2);
+        0 0 60px rgba(14, 165, 233, 0.2);
 }
 
 #video {
@@ -271,7 +426,7 @@ tr:hover td {
     position: relative;
     width: 72%;
     aspect-ratio: 1/1;
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(14, 165, 233, 0.05);
     border-radius: 20px;
     overflow: hidden;
     animation: frameGlow 3s ease-in-out infinite;
@@ -282,14 +437,14 @@ tr:hover td {
     0%,
     100% {
         box-shadow:
-            0 0 30px rgba(59, 130, 246, 0.3),
-            inset 0 0 30px rgba(59, 130, 246, 0.1);
+            0 0 30px rgba(14, 165, 233, 0.3),
+            inset 0 0 30px rgba(14, 165, 233, 0.1);
     }
 
     50% {
         box-shadow:
-            0 0 50px rgba(59, 130, 246, 0.5),
-            inset 0 0 50px rgba(59, 130, 246, 0.2);
+            0 0 50px rgba(14, 165, 233, 0.5),
+            inset 0 0 50px rgba(14, 165, 233, 0.2);
     }
 }
 
@@ -306,7 +461,7 @@ tr:hover td {
 .corner.tl {
     top: -2px;
     left: -2px;
-    border-color: #3b82f6 transparent transparent #3b82f6;
+    border-color: #0ea5e9 transparent transparent #0ea5e9;
     border-top-left-radius: 18px;
     animation: cornerPulseTL 2s ease-in-out infinite;
 }
@@ -314,7 +469,7 @@ tr:hover td {
 .corner.tr {
     top: -2px;
     right: -2px;
-    border-color: #3b82f6 #3b82f6 transparent transparent;
+    border-color: #0ea5e9 #0ea5e9 transparent transparent;
     border-top-right-radius: 18px;
     animation: cornerPulseTR 2s ease-in-out infinite 0.5s;
 }
@@ -322,7 +477,7 @@ tr:hover td {
 .corner.bl {
     bottom: -2px;
     left: -2px;
-    border-color: transparent transparent #3b82f6 #3b82f6;
+    border-color: transparent transparent #0ea5e9 #0ea5e9;
     border-bottom-left-radius: 18px;
     animation: cornerPulseBL 2s ease-in-out infinite 1s;
 }
@@ -330,7 +485,7 @@ tr:hover td {
 .corner.br {
     bottom: -2px;
     right: -2px;
-    border-color: transparent #3b82f6 #3b82f6 transparent;
+    border-color: transparent #0ea5e9 #0ea5e9 transparent;
     border-bottom-right-radius: 18px;
     animation: cornerPulseBR 2s ease-in-out infinite 1.5s;
 }
@@ -339,12 +494,12 @@ tr:hover td {
 
     0%,
     100% {
-        filter: drop-shadow(0 0 8px #3b82f6);
+        filter: drop-shadow(0 0 8px #0ea5e9);
         transform: translate(0, 0);
     }
 
     50% {
-        filter: drop-shadow(0 0 15px #60a5fa);
+        filter: drop-shadow(0 0 15px #7dd3fc);
         transform: translate(-3px, -3px);
     }
 }
@@ -353,12 +508,12 @@ tr:hover td {
 
     0%,
     100% {
-        filter: drop-shadow(0 0 8px #3b82f6);
+        filter: drop-shadow(0 0 8px #0ea5e9);
         transform: translate(0, 0);
     }
 
     50% {
-        filter: drop-shadow(0 0 15px #60a5fa);
+        filter: drop-shadow(0 0 15px #7dd3fc);
         transform: translate(3px, -3px);
     }
 }
@@ -367,12 +522,12 @@ tr:hover td {
 
     0%,
     100% {
-        filter: drop-shadow(0 0 8px #3b82f6);
+        filter: drop-shadow(0 0 8px #0ea5e9);
         transform: translate(0, 0);
     }
 
     50% {
-        filter: drop-shadow(0 0 15px #60a5fa);
+        filter: drop-shadow(0 0 15px #7dd3fc);
         transform: translate(-3px, 3px);
     }
 }
@@ -381,12 +536,12 @@ tr:hover td {
 
     0%,
     100% {
-        filter: drop-shadow(0 0 8px #3b82f6);
+        filter: drop-shadow(0 0 8px #0ea5e9);
         transform: translate(0, 0);
     }
 
     50% {
-        filter: drop-shadow(0 0 15px #60a5fa);
+        filter: drop-shadow(0 0 15px #7dd3fc);
         transform: translate(3px, 3px);
     }
 }
@@ -400,14 +555,14 @@ tr:hover td {
     height: 3px;
     background: linear-gradient(90deg,
             transparent,
-            rgba(59, 130, 246, 0.3) 10%,
-            #3b82f6 50%,
-            rgba(59, 130, 246, 0.3) 90%,
+            rgba(14, 165, 233, 0.3) 10%,
+            #0ea5e9 50%,
+            rgba(14, 165, 233, 0.3) 90%,
             transparent);
     box-shadow:
-        0 0 20px #3b82f6,
-        0 0 40px rgba(59, 130, 246, 0.5),
-        0 2px 10px rgba(59, 130, 246, 0.8);
+        0 0 20px #0ea5e9,
+        0 0 40px rgba(14, 165, 233, 0.5),
+        0 2px 10px rgba(14, 165, 233, 0.8);
     border-radius: 50%;
     animation: scanMove 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     z-index: 3;
@@ -440,11 +595,11 @@ tr:hover td {
     inset: 0;
     background-image:
         repeating-linear-gradient(0deg,
-            rgba(59, 130, 246, 0.03) 0px,
+            rgba(14, 165, 233, 0.03) 0px,
             transparent 1px,
             transparent 20px),
         repeating-linear-gradient(90deg,
-            rgba(59, 130, 246, 0.03) 0px,
+            rgba(14, 165, 233, 0.03) 0px,
             transparent 1px,
             transparent 20px);
     pointer-events: none;
@@ -465,40 +620,41 @@ tr:hover td {
 }
 
 
-/* Enhanced result card */
+/* Ang kard ng resulta. Dating `linear-gradient(135deg, #060f35,
+   #040237)` — halos lilang navy na wala kahit saan sa app, at
+   `rgba(102, 126, 234, .1)` na glow na ikaapat na asul sa page. */
 #result.card {
     margin-top: 15px;
-    padding: 18px 24px;
-    background: linear-gradient(135deg, #060f35 0%, #040237 100%);
-    border-radius: 15px;
-    border: none;
-    box-shadow:
-        0 4px 15px rgba(6, 21, 88, 0),
-        0 0 30px rgba(102, 126, 234, 0.1);
-    color: rgb(199, 199, 205);
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, .03);
+    border-radius: 12px;
+    border: 1px solid var(--scan-border);
+    box-shadow: none;
+    color: #cbd5e1;
     text-align: center;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: border-color .3s ease;
 }
 
+/* Etiketa lang ito ng patlang, hindi pamagat — 18px at
+   `letter-spacing: 1.5px` ang dati, kaya mas malaki pa ito kaysa sa
+   mismong sagot sa ilalim nito. */
 #result.card strong {
-    display: inline-block;
-    font-size: 18px;
-    letter-spacing: 1.5px;
-    margin-bottom: 8px;
-    opacity: 0.95;
-    position: relative;
+    display: block;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .4);
+    margin-bottom: 6px;
 }
 
-#result.card strong::before {
-    content: '●';
-    display: inline-block;
-    margin-right: 8px;
-    animation: statusBlink 1.5s ease-in-out infinite;
-    color: #4ade80;
-    text-shadow: 0 0 10px #4ade80;
-}
+/* Tinanggal ang laging-BERDENG kumukurap na tuldok sa harap ng
+   "Status": berde ang ibig sabihin ay naitala na — pero kumukurap
+   ito kahit "Waiting..." pa lang at kahit bigo ang huling scan.
+   Ang mismong teksto ng resulta na ang may kulay (itinatakda ito ng
+   Qrscanner/js/scriptV3.js). */
 
 @keyframes statusBlink {
 
@@ -512,16 +668,20 @@ tr:hover td {
     }
 }
 
+/* `.15` na puti ang dati — sa dating halos-itim na navy ay tahimik
+   iyon, pero sa bagong #16161a ay mas maliwanag ang kahon kaysa sa
+   panel na naglalaman nito. */
 #qrResult {
     display: block;
     font-size: 15px;
     font-weight: 600;
     padding: 10px 15px;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, .28);
+    border: 1px solid var(--scan-border);
+    box-sizing: border-box;
     border-radius: 10px;
-    backdrop-filter: blur(10px);
     margin-top: 5px;
-    transition: all 0.3s ease;
+    transition: color .3s ease;
     position: relative;
 }
 
@@ -743,59 +903,201 @@ tr:hover td {
     }
 }
 
+/* ── Subject picker ─────────────────────────────────────── */
+
+/* Dating `border: 2px solid #38bdf8` sa buong paikot — isang
+   makapal na sky na kahon na kasingtingkad ng camera sa ilalim
+   nito, kaya dalawang bagay ang sabay na sumisigaw. Ang tuldik ay
+   nasa focus ring at sa status na lang ngayon. */
 .subject-selection {
-    background: #1e293b;
-    padding: 20px;
-    border-radius: 10px;
+    background: rgba(255, 255, 255, .03);
+    padding: 16px;
+    border-radius: 12px;
     margin: 15px 0;
-    border: 2px solid #38bdf8;
+    border: 1px solid var(--scan-border);
+    text-align: left;
 }
 
 .subject-selection label {
     display: block;
-    color: #94a3b8;
-    margin-bottom: 8px;
+    color: #cbd5e1;
+    margin-bottom: .4rem;
+    font-size: .78rem;
     font-weight: 600;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+}
+
+.subject-selection label .req {
+    color: var(--scan-ink);
+}
+
+/* Isang icon sa loob ng kahon — pareho ng .app-input sa
+   assets/css/modal-form.css. */
+.scan-field {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.scan-field>i {
+    position: absolute;
+    left: .85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .95rem;
+    line-height: 1;
+    color: var(--scan-dim);
+    pointer-events: none;
+    z-index: 2;
+    transition: color .18s ease;
+}
+
+.scan-field:focus-within>i {
+    color: var(--scan-ink);
 }
 
 .subject-selection select,
 .subject-selection input {
     width: 100%;
-    padding: 12px;
-    background: #0f172a;
-    border: 2px solid #334155;
-    border-radius: 8px;
-    color: #e2e8f0;
+    box-sizing: border-box;
+    min-height: 48px;
+    padding: .6rem .9rem .6rem 2.6rem;
+    background: var(--scan-bg);
+    border: 1px solid #2a2a33;
+    border-radius: 11px;
+    color: var(--scan-text);
     font-size: 14px;
-    margin-bottom: 15px;
+    margin-bottom: 0;
+    cursor: pointer;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.subject-selection select option {
+    background: var(--scan-surface);
+    color: var(--scan-text);
 }
 
 .subject-selection select:focus,
 .subject-selection input:focus {
     outline: none;
-    border-color: #38bdf8;
+    border-color: var(--scan);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, .18);
 }
+
+/* ── Instructor ─────────────────────────────────────────── */
 
 .instructor-info {
-    background: #334155;
-    padding: 10px;
-    border-radius: 6px;
-    color: #94a3b8;
-    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .7rem .8rem;
+    border-radius: 11px;
+    border: 1px solid var(--scan-border);
+    background: rgba(255, 255, 255, .03);
+    color: #cbd5e1;
+    margin-bottom: 14px;
+    text-align: left;
 }
 
-.scanner-status {
-    padding: 10px;
-    background: #ef4444;
-    color: white;
-    border-radius: 6px;
-    text-align: center;
-    margin-bottom: 10px;
+.instructor-avatar {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    font-size: 1.05rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--scan), var(--scan-deep));
+    box-shadow: 0 6px 14px rgba(14, 165, 233, .3);
+}
+
+.instructor-meta {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.instructor-name {
+    display: block;
+    font-size: .9rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.instructor-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+    margin-top: .3rem;
+}
+
+/* Dating apat na halagang pinaghihiwalay ng "|" sa dalawang linya.
+   Chip bawat isa: nababasa nang hiwalay at hindi na kailangang
+   hanapin kung saan nagsisimula ang susunod. */
+.scan-chip-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: .12rem .5rem;
+    border-radius: 999px;
+    border: 1px solid var(--scan-line);
+    background: var(--scan-soft);
+    color: var(--scan-ink);
+    font-size: .68rem;
     font-weight: 600;
+    white-space: nowrap;
 }
 
+/* Karagdagang detalye lang (ID, bilang) — hindi ito estado, kaya
+   walang kulay. */
+.scan-chip-tag.is-quiet {
+    border-color: rgba(255, 255, 255, .1);
+    background: rgba(255, 255, 255, .04);
+    color: rgba(255, 255, 255, .45);
+}
+
+/* ── Status ─────────────────────────────────────────────── */
+
+/* Dating PULA ang "Please select a subject first". Hindi naman
+   iyon kamalian — panuto ito, at nakalaan ang pula sa estado
+   (Absent / bigo). Tahimik na ngayon hangga't hindi pa handa. */
+.scanner-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    padding: .55rem .8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    background: rgba(255, 255, 255, .04);
+    color: rgba(255, 255, 255, .5);
+    text-align: center;
+    margin-bottom: 0;
+    font-size: .82rem;
+    font-weight: 600;
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.scanner-status::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+/* Berde = tunay na estado: bukas na ang camera at tumatanggap. */
 .scanner-status.active {
-    background: #10b981;
+    border-color: rgba(16, 185, 129, .3);
+    background: rgba(16, 185, 129, .12);
+    color: #34d399;
+}
+
+.scanner-status.active::before {
+    animation: statusBlink 1.6s ease-in-out infinite;
 }
 
 /* ============================================================
@@ -805,9 +1107,10 @@ tr:hover td {
 
 /* ── No Subjects Assigned Page ─────────────────────────── */
 .no-subjects-body {
-    background: #0f172a;
+    background: var(--scan-bg);
     color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Dating `'Segoe UI', …` — pangatlong sulat sa iisang page
+       (serif ang body, Georgia ang mga inisyal). Iisa na lang. */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -820,39 +1123,100 @@ tr:hover td {
 }
 
 .message-box {
-    background: #1e293b;
-    padding: 40px;
-    border-radius: 12px;
+    position: relative;
+    background: var(--scan-surface);
+    padding: 34px 30px;
+    border-radius: 16px;
     text-align: center;
-    border: 2px solid #38bdf8;
+    border: 1px solid var(--scan-border);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
     /* Walang hangganan ang lapad noon kaya umaapaw sa telepono */
     box-sizing: border-box;
     width: 100%;
     max-width: 420px;
     margin: 16px;
+    overflow: hidden;
+}
+
+/* Ang parehong 3px na guhit ng ibang panel ng app. */
+.message-box::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--scan), var(--scan-deep));
 }
 
 @media (max-width: 480px) {
     .message-box {
-        padding: 24px 18px;
+        padding: 26px 20px;
     }
 }
 
-.message-box h2 {
-    color: #38bdf8;
-    margin-bottom: 20px;
+.message-icon {
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 16px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--scan), var(--scan-deep));
+    box-shadow: 0 8px 20px rgba(14, 165, 233, .35);
 }
 
+.message-box h2 {
+    color: #fff;
+    font-size: 1.2rem;
+    margin: 0 0 10px;
+}
+
+.message-box p {
+    margin: 0 0 8px;
+    font-size: .9rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, .55);
+}
+
+.message-id {
+    display: inline-block;
+    margin-top: 4px !important;
+    padding: .2rem .7rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    background: rgba(255, 255, 255, .04);
+    font-size: .72rem !important;
+    color: rgba(255, 255, 255, .45) !important;
+}
+
+/* Dating puting sulat sa ibabaw ng #38bdf8 — mababa ang kontrast
+   (2.3:1). Gradient at parehong hugis ng .app-btn.primary sa
+   assets/css/modal-form.css. */
 .btn {
-    background: #38bdf8;
-    color: white;
-    padding: 12px 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 44px;
+    padding: .55rem 1.35rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--scan), var(--scan-deep));
+    box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
+    color: #fff;
+    font-size: .88rem;
+    font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    display: inline-block;
     margin-top: 20px;
+    transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 22px rgba(14, 165, 233, .4);
 }
 
 /* ── Result Card ────────────────────────────────────────── */
@@ -866,7 +1230,7 @@ tr:hover td {
     align-items: center;
     gap: 14px;
     padding: 10px 4px 12px;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid var(--scan-border);
     margin-bottom: 10px;
     animation: slideDown .3s ease;
 }
@@ -882,8 +1246,8 @@ tr:hover td {
     height: 54px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid #38bdf8;
-    background: #0f172a;
+    border: 2px solid var(--scan);
+    background: var(--scan-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -904,8 +1268,8 @@ tr:hover td {
     justify-content: center;
     font-size: 1.3rem;
     font-weight: 800;
-    color: #38bdf8;
-    font-family: Georgia, serif;
+    color: var(--scan-ink);
+    /* Dating Georgia — pang-apat na sulat sa page. Minamana na lang. */
 }
 
 .avatar-check {
@@ -916,7 +1280,7 @@ tr:hover td {
     height: 18px;
     background: #10b981;
     border-radius: 50%;
-    border: 2px solid #0f172a;
+    border: 2px solid var(--scan-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -949,9 +1313,9 @@ tr:hover td {
 
 .student-subject-badge {
     font-size: .7rem;
-    color: #38bdf8;
-    background: rgba(56, 189, 248, .1);
-    border: 1px solid rgba(56, 189, 248, .2);
+    color: var(--scan-ink);
+    background: rgba(14, 165, 233, .1);
+    border: 1px solid rgba(14, 165, 233, .2);
     border-radius: 999px;
     padding: .15rem .6rem;
     display: inline-block;
@@ -989,15 +1353,13 @@ tr:hover td {
 }
 
 /* ── Attendance List GIF ────────────────────────────────── */
-.attendance-gif {
-    width: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-}
+/* Tinanggal ang `.attendance-gif` — wala nang GIF sa pamagat ng
+   talaan, isang `.bi-card-checklist` na lang (tingnan ang
+   `#attendance h3` sa itaas). */
 
 /* ── Admin badge / Role colors ──────────────────────────── */
 .role-admin {
-    color: #38bdf8;
+    color: var(--scan-ink);
 }
 
 .role-all-access {
@@ -1045,13 +1407,13 @@ tr:hover td {
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    border: 3px solid #38bdf8;
-    background: #0f172a;
+    border: 3px solid var(--scan);
+    background: var(--scan-bg);
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 0 4px #0a0f1e, 0 0 20px rgba(56, 189, 248, .35);
+    box-shadow: 0 0 0 4px var(--scan-surface), 0 0 20px rgba(14, 165, 233, .35);
 }
 
 .di-avatar-circle img {
@@ -1069,8 +1431,8 @@ tr:hover td {
     justify-content: center;
     font-size: 2rem;
     font-weight: 800;
-    color: #38bdf8;
-    font-family: Georgia, serif;
+    color: var(--scan-ink);
+    /* Minamana ang sulat — tingnan ang .avatar-initials sa itaas. */
 }
 
 .di-avatar-check {
@@ -1081,7 +1443,7 @@ tr:hover td {
     height: 22px;
     background: #10b981;
     border-radius: 50%;
-    border: 3px solid #0a0f1e;
+    border: 3px solid var(--scan-surface);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1093,7 +1455,7 @@ tr:hover td {
 /* ── Island pill ────────────────────────────────────────────── */
 #dynamic-island {
     position: relative;
-    background: #0a0f1e;
+    background: var(--scan-surface);
     border-radius: 999px;
     width: 140px;
     height: 36px;
@@ -1117,9 +1479,9 @@ tr:hover td {
 
 /* ── Scan ring pulse ────────────────────────────────────────── */
 @keyframes di-scan-pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(56, 189, 248, .75); }
-    70%  { box-shadow: 0 0 0 18px rgba(56, 189, 248, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+    0%   { box-shadow: 0 0 0 0 rgba(14, 165, 233, .75); }
+    70%  { box-shadow: 0 0 0 18px rgba(14, 165, 233, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
 }
 #dynamic-island.di-scanning {
     animation: di-scan-pulse .55s ease-out 1;
@@ -1132,7 +1494,7 @@ tr:hover td {
     left: 0;
     height: 2px;
     width: 0%;
-    background: #38bdf8;
+    background: var(--scan);
     border-radius: 0 0 28px 28px;
 }
 
@@ -1161,7 +1523,7 @@ tr:hover td {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #38bdf8;
+    background: var(--scan);
     animation: di-blink 1.8s ease-in-out infinite;
 }
 
@@ -1204,9 +1566,9 @@ tr:hover td {
 
 .di-student-subject {
     font-size: 10px;
-    color: #38bdf8;
-    background: rgba(56, 189, 248, .12);
-    border: 1px solid rgba(56, 189, 248, .25);
+    color: var(--scan-ink);
+    background: rgba(14, 165, 233, .12);
+    border: 1px solid rgba(14, 165, 233, .25);
     border-radius: 999px;
     padding: 2px 10px;
     display: inline-block;
@@ -1427,12 +1789,12 @@ body {
     display: none;
     align-items: center;
     gap: 8px;
-    background: rgba(56, 189, 248, .12);
-    border: 1px solid rgba(56, 189, 248, .3);
+    background: rgba(14, 165, 233, .12);
+    border: 1px solid rgba(14, 165, 233, .3);
     border-radius: 10px;
     padding: 8px 10px;
     margin-bottom: 10px;
-    color: #38bdf8;
+    color: var(--scan-ink);
     font-size: .85rem;
 }
 
@@ -1466,19 +1828,26 @@ body {
         display: flex;
     }
 
-    /* Purong dekorasyon — 90px na hindi kailangan habang nag-i-scan */
-    body.scan-mode .qr-decor,
+    /* Tinanggal na ang `.qr-decor` (dekorasyong GIF) sa markup, kaya
+       wala na rin ito rito. Ang `.scan-field` ang itinatago at hindi
+       na ang `select` mismo: nasa balot na ngayon ang icon, at
+       maiiwan itong lumulutang kung ang loob lang ang mawawala. */
     body.scan-mode .instructor-info,
     body.scan-mode .subject-selection label,
-    body.scan-mode .subject-selection select {
+    body.scan-mode .scan-field {
         display: none;
     }
 
     /* Ang pamagat at logo ay hindi kailangan habang nag-i-scan.
        Pinapayagan nating mag-scroll palayo para sa camera ang
        buong itaas ng screen. */
+    /* `relative` at hindi `static`: pareho silang naiiwan sa normal
+       na daloy (walang epekto ang `top/left` sa relative dito), pero
+       kailangan ng `header::before` ng nakapusisyong magulang —
+       kung `static`, sa buong itaas ng page tumatawid ang 3px na
+       gradient sa halip na sa loob ng header. */
     body.scan-mode header {
-        position: static;
+        position: relative;
     }
 
     body.scan-mode .subject-selection {

@@ -54,16 +54,19 @@ if (count($subjects) === 0 && $role !== 'admin') {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <title>No Subjects Assigned</title>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
         <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
     </head>
 
     <body class="no-subjects-body">
         <div class="message-box">
+            <div class="message-icon"><i class="bi bi-journal-x" aria-hidden="true"></i></div>
             <h2>No Subjects Assigned</h2>
-            <p>You don't have any subjects assigned to your account yet.</p>
-            <p>Please contact the administrator to assign subjects.</p>
-            <p><small>Your Instructor ID: <?= $instructor_id ?></small></p>
-            <a href="../pages/dashboard.php" class="btn">Go to Dashboard</a>
+            <p>You don't have any subjects assigned to your account yet. Ask an administrator to assign one before you can scan.</p>
+            <p class="message-id">Instructor ID <?= (int)$instructor_id ?></p>
+            <a href="../pages/dashboard.php" class="btn">
+                <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i> Go to Dashboard
+            </a>
         </div>
     </body>
 
@@ -120,34 +123,37 @@ if (count($subjects) === 0 && $role !== 'admin') {
         </div>
 
     </div>
+    <!-- Ang pamagat ay galing na sa Settings ($systemAcronym) sa halip
+         na nakasulat na "BCC SASQR" — isang lugar na lang ang pinagmumulan
+         ng pangalan ng sistema.
+
+         Tinanggal ang dalawang GIF mula sa flaticon CDN (isa rito, isa sa
+         #leftPanel): dekorasyon lamang sila, panlabas na request bawat
+         page load, at wala sa bokabularyo ng natitirang bahagi ng app. -->
     <header>
-        <h2 class="header-title">
-            <img src="../<?php echo $systemLogo; ?>"
-                alt="System Logo"
+        <div class="scan-head">
+            <img src="../<?php echo htmlspecialchars($systemLogo); ?>"
+                alt=""
                 width="40" height="40"
                 class="brand-logo">
-            BCC SASQR Scanner
-            <img src="https://cdn-icons-gif.flaticon.com/7994/7994392.gif"
-                alt="QR Animation"
-                width="40" height="40"
-                style="border-radius: 50%; object-fit: cover;">
-        </h2>
+
+            <div class="scan-head-text">
+                <h2 class="header-title"><?= htmlspecialchars($systemAcronym) ?> Scanner</h2>
+                <p>QR attendance capture</p>
+            </div>
+
+            <!-- Wala talagang paraang bumalik sa app mula rito noon
+                 maliban sa back button ng browser. -->
+            <a class="scan-head-back" href="../pages/dashboard.php">
+                <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>
+                <span>Dashboard</span>
+            </a>
+        </div>
     </header>
 
     <main>
         <!-- ── Left Panel ──────────────────────────────────────── -->
         <div id="leftPanel">
-
-            <!-- Dekorasyon lang — itinatago sa telepono kapag nag-scan
-                 na (tingnan ang .scan-mode sa css/style.css) -->
-            <div class="qr-decor" style="text-align: center;">
-                <h2 style="display: inline-flex; align-items: center; gap: 10px;">
-                    <img src="https://cdn-icons-gif.flaticon.com/15575/15575638.gif"
-                        alt="QR Icon"
-                        width="60" height="60"
-                        style="border-radius: 50%; object-fit: cover;">
-                </h2>
-            </div>
 
             <!-- Subject Selection -->
             <div class="subject-selection">
@@ -162,36 +168,45 @@ if (count($subjects) === 0 && $role !== 'admin') {
                     </button>
                 </div>
 
+                <!-- Sinong nakatayo sa likod ng camera. Dating apat na
+                     halaga sa dalawang linyang pinaghihiwalay ng "|" —
+                     hanay na ngayon: mukha sa kaliwa, pangalan at chip
+                     ng papel sa kanan. -->
                 <div class="instructor-info">
-                    <strong>
-                        <?php if ($role === 'admin'): ?>
-                            <span class="role-admin">Admin:</span>
-                        <?php else: ?>
-                            Instructor:
-                        <?php endif; ?>
-                    </strong>
-                    <?= htmlspecialchars($instructor_name) ?>
-                    <br>
-                    <small>
-                        ID: <?= $instructor_id ?> |
-                        Subjects: <?= count($subjects) ?>
-                        <?php if ($role === 'admin'): ?>
-                            <span class="role-all-access"> | All Sections Accessible</span>
-                        <?php endif; ?>
-                    </small>
+                    <div class="instructor-avatar">
+                        <i class="bi bi-person-fill" aria-hidden="true"></i>
+                    </div>
+                    <div class="instructor-meta">
+                        <span class="instructor-name"><?= htmlspecialchars($instructor_name) ?></span>
+                        <span class="instructor-chips">
+                            <?php if ($role === 'admin'): ?>
+                                <span class="scan-chip-tag role-admin">Admin</span>
+                                <span class="scan-chip-tag role-all-access">All sections</span>
+                            <?php else: ?>
+                                <span class="scan-chip-tag">Instructor</span>
+                            <?php endif; ?>
+                            <span class="scan-chip-tag is-quiet">
+                                <?= count($subjects) ?> subject<?= count($subjects) === 1 ? '' : 's' ?>
+                            </span>
+                            <span class="scan-chip-tag is-quiet">ID <?= (int)$instructor_id ?></span>
+                        </span>
+                    </div>
                 </div>
 
-                <label for="subjectSelect">Select Your Subject *</label>
-                <select id="subjectSelect" required>
-                    <option value="">-- Select Subject to Scan --</option>
-                    <?php foreach ($subjects as $subject): ?>
-                        <option value="<?= htmlspecialchars($subject['subject_code']) ?>"
-                            data-name="<?= htmlspecialchars($subject['subject_name']) ?>">
-                            <?= htmlspecialchars($subject['subject_name']) ?>
-                            (<?= htmlspecialchars($subject['subject_code']) ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <label for="subjectSelect">Select Your Subject <span class="req">*</span></label>
+                <div class="scan-field">
+                    <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
+                    <select id="subjectSelect" required>
+                        <option value="">-- Select Subject to Scan --</option>
+                        <?php foreach ($subjects as $subject): ?>
+                            <option value="<?= htmlspecialchars($subject['subject_code']) ?>"
+                                data-name="<?= htmlspecialchars($subject['subject_name']) ?>">
+                                <?= htmlspecialchars($subject['subject_name']) ?>
+                                (<?= htmlspecialchars($subject['subject_code']) ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
                 <div id="scannerStatus" class="scanner-status">
                     Please select a subject first
@@ -239,17 +254,15 @@ if (count($subjects) === 0 && $role !== 'admin') {
                 </div>
 
                 <!-- Status text -->
-                <strong>Status :</strong> <span id="qrResult">Waiting...</span>
+                <strong>Status</strong> <span id="qrResult">Waiting...</span>
             </div>
         </div>
 
         <!-- ── Attendance List ─────────────────────────────────── -->
         <div id="attendance">
             <h3>
-                <img class="attendance-gif"
-                    src="https://cdn-icons-gif.flaticon.com/15575/15575693.gif"
-                    alt="Attendance Icon">
-                <br>Attendance List
+                <i class="bi bi-card-checklist" aria-hidden="true"></i>
+                Attendance List
             </h3>
             <table id="attendanceTable" class="display nowrap" style="width:100%">
                 <thead>

@@ -9,4 +9,9 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<!-- Bootstrap Icons — kailangan ng mga `.bi` na icon sa qrscanner.php.
+     Wala ito dati, kaya blangko ang lahat ng icon sa page na ito
+     (hal. ang `.bi-camera-video-fill` sa scan chip): parehong pamilya
+     ito ng ginagamit sa includes/header.php ng mga admin page. -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
