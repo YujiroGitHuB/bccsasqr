@@ -366,7 +366,8 @@ $systemLogo = $system['logo'] ?? '';
                         <h3>System Configuration</h3>
                         <p>
                             The system name, acronym, and logo shown in the sidebar,
-                            the browser tab, and on exported reports.
+                            the browser tab, and on exported reports — plus the
+                            copyright footer at the bottom of every page.
                         </p>
                     </div>
                     <div class="set-control">

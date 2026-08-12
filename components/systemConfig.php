@@ -8,7 +8,9 @@
      assets/js/systemConfig.js and crud/update_system_config.php
      read. -->
 <div class="modal fade app-modal" id="systemConfigModal" tabindex="-1" aria-labelledby="systemConfigModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <!-- modal-lg: the footer fields below are laid out in two columns
+         and are cramped at the default width. -->
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
 
             <div class="modal-header">
@@ -109,6 +111,99 @@
                                 <!-- crud/update_system_config.php accepts only the four
                                      types it checks with `getimagesize`. -->
                                 <span class="app-hint" id="systemLogoHint">JPG, PNG, GIF, or WEBP. Square images sit best on the plate.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Page footer ───────────────────────────────
+                         Shown at the bottom of every page: the sidebar
+                         pages, login, registration, QR generator, QR
+                         scanner, and the tracker. This used to be
+                         hardcoded in two files that had already drifted
+                         apart. -->
+                    <div class="set-group-title" style="margin: 1.6rem 0 .9rem">Page footer</div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div class="app-field">
+                                <label for="footerOrg" class="form-label">Organization</label>
+                                <div class="app-input">
+                                    <i class="bi bi-c-circle" aria-hidden="true"></i>
+                                    <input type="text"
+                                        class="form-control"
+                                        id="footerOrg"
+                                        name="footerOrg"
+                                        value="<?= htmlspecialchars($footerOrg ?? '') ?>"
+                                        placeholder="Binalatongan Community College"
+                                        autocomplete="off"
+                                        maxlength="255"
+                                        aria-describedby="footerOrgHint">
+                                </div>
+                                <span class="app-hint" id="footerOrgHint">The name after the &copy;. Leave blank to drop the copyright line.</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="app-field">
+                                <label for="footerYear" class="form-label">Year</label>
+                                <div class="app-input">
+                                    <i class="bi bi-calendar3" aria-hidden="true"></i>
+                                    <input type="text"
+                                        class="form-control"
+                                        id="footerYear"
+                                        name="footerYear"
+                                        value="<?= htmlspecialchars($system['footer_year'] ?? '') ?>"
+                                        placeholder="<?= date('Y') ?>"
+                                        autocomplete="off"
+                                        maxlength="20"
+                                        aria-describedby="footerYearHint">
+                                </div>
+                                <!-- The raw column value is shown here, not
+                                     $footerYear — that one has already been
+                                     replaced with the current year when blank,
+                                     and echoing it back would silently freeze
+                                     the year on the next save. -->
+                                <span class="app-hint" id="footerYearHint">Blank = always the current year (<?= date('Y') ?>).</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <div class="app-field">
+                                <label for="footerDeveloper" class="form-label">Developed by</label>
+                                <div class="app-input">
+                                    <i class="bi bi-code-slash" aria-hidden="true"></i>
+                                    <input type="text"
+                                        class="form-control"
+                                        id="footerDeveloper"
+                                        name="footerDeveloper"
+                                        value="<?= htmlspecialchars($footerDeveloper ?? '') ?>"
+                                        placeholder="CNCCayading"
+                                        autocomplete="off"
+                                        maxlength="255"
+                                        aria-describedby="footerDeveloperHint">
+                                </div>
+                                <span class="app-hint" id="footerDeveloperHint">Leave blank to drop the credit line.</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-7">
+                            <div class="app-field">
+                                <label for="footerDeveloperUrl" class="form-label">Developer Link</label>
+                                <div class="app-input">
+                                    <i class="bi bi-link-45deg" aria-hidden="true"></i>
+                                    <input type="url"
+                                        class="form-control"
+                                        id="footerDeveloperUrl"
+                                        name="footerDeveloperUrl"
+                                        value="<?= htmlspecialchars($footerDeveloperUrl ?? '') ?>"
+                                        placeholder="https://cncc.vercel.app/"
+                                        autocomplete="off"
+                                        maxlength="255"
+                                        aria-describedby="footerDeveloperUrlHint">
+                                </div>
+                                <span class="app-hint" id="footerDeveloperUrlHint">Must start with http:// or https://. Blank shows the name as plain text.</span>
                             </div>
                         </div>
                     </div>

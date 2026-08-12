@@ -12,6 +12,15 @@ if ($locked) {
     include __DIR__ . "/includes/lock.php";
     exit;
 }
+
+// $footerOrg / $footerYear / $footerDeveloper / $footerDeveloperUrl —
+// this page keeps its own <footer> markup (its stylesheet targets the
+// bare tag, and the separator is a "|" rather than a line break), but
+// the TEXT now comes from the same row as every other footer. It used
+// to carry a second, hardcoded copy that had already drifted: the
+// developer was spelled out in full here and abbreviated everywhere
+// else.
+include __DIR__ . "/includes/systemConfig.php";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -224,11 +233,32 @@ if ($locked) {
              FOOTER
         ========================================= -->
         <footer>
-            &copy; 2025 Binalatongan Community College. All rights reserved. |
-            Developed by
-            <a href="https://cncc.vercel.app/" target="_blank">
-                Charles Nixon C. Cayading
-            </a>
+            <?php
+            // Same href guard as components/footer.php — see the note
+            // there for why a `javascript:` URL has to be rejected at
+            // render time and not only on save.
+            $regFooterLink = '';
+            if (!empty($footerDeveloperUrl)) {
+                $regScheme = strtolower((string) parse_url($footerDeveloperUrl, PHP_URL_SCHEME));
+                if ($regScheme === 'http' || $regScheme === 'https') {
+                    $regFooterLink = $footerDeveloperUrl;
+                }
+            }
+            ?>
+            <?php if ($footerOrg !== ''): ?>
+                &copy; <?= htmlspecialchars($footerYear) ?> <?= htmlspecialchars($footerOrg) ?>. All rights reserved.
+                <?= $footerDeveloper !== '' ? '|' : '' ?>
+            <?php endif; ?>
+            <?php if ($footerDeveloper !== ''): ?>
+                Developed by
+                <?php if ($regFooterLink !== ''): ?>
+                    <a href="<?= htmlspecialchars($regFooterLink) ?>" target="_blank" rel="noopener noreferrer">
+                        <?= htmlspecialchars($footerDeveloper) ?>
+                    </a>
+                <?php else: ?>
+                    <?= htmlspecialchars($footerDeveloper) ?>
+                <?php endif; ?>
+            <?php endif; ?>
         </footer>
 
     </div>
