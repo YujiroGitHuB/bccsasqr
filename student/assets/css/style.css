@@ -1,24 +1,62 @@
-/* ── TOKENS ─────────────────────────────────────────────── */
+/* ============================================================
+   STUDENT PHOTO UPLOAD
+
+   Ito ang tanging page na nakikita ng mismong estudyante, pero
+   iisang produkto pa rin ito — kaya kaparehong wika ng mga admin
+   page (tingnan ang assets/css/students-page.css at
+   assets/css/modal-form.css): sky/cyan na tuldik (#0ea5e9 →
+   #06b6d4), ibabaw na #16161a, hangganang rgba(255,255,255,.07),
+   3px na gradient sa itaas ng card, at IISANG punong butones kada
+   hakbang.
+
+   Ang lumang bersyon ay may sariling identidad:
+
+     • dalawang webfont — DM Sans para sa katawan at DM Serif
+       Display (italic) para sa "Photo" sa pamagat. Walang serif
+       na pamagat kahit saan sa app, at katutubong font stack ang
+       ginagamit ng lahat ng ibang page.
+     • paleta ng GitHub: #0d1117 na base, #58a6ff na asul, #3fb950
+       na berde, #30363d na hangganan — magkaiba ng lahi sa sky ng
+       mga admin page.
+     • TATLONG radial gradient sa likod ng body — asul, berde, at
+       asul ulit.
+     • BERDE ang "Use This Photo" na butones. Nakalaan ang berde
+       sa ESTADO (Verified, Present, tagumpay) — dito ay punong
+       aksyon lang ito ng hakbang 2, kaya kaagaw nito ang tunay na
+       berdeng "Verified" na badge sa itaas mismo nito.
+     • lila-indigo (#667eea) at rosas-pula (#f5576c) ang flashlight
+       — dalawang kulay na wala sa page na ito kahit saan.
+   ============================================================ */
+
 :root {
-    --bg: #0d1117;
-    --bg2: #161b22;
-    --surface: #1c2333;
-    --border: #30363d;
-    --border-lt: #21262d;
-    --accent: #58a6ff;
-    --accent-dk: #1f6feb;
-    --accent-glow: rgba(88, 166, 255, .18);
-    --green: #3fb950;
-    --green-glow: rgba(63, 185, 80, .15);
-    --red: #f85149;
-    --red-glow: rgba(248, 81, 73, .12);
-    --amber: #e3b341;
-    --text: #e6edf3;
-    --text-2: #8b949e;
-    --text-3: #484f58;
+    --sp: #0ea5e9;
+    --sp-deep: #06b6d4;
+    --sp-soft: rgba(14, 165, 233, .12);
+    --sp-line: rgba(14, 165, 233, .28);
+    --sp-ink: #7dd3fc;
+
+    --bg: #0f172a;
+    --surface: #16161a;
+    --field: #0f0f13;
+    --raised: rgba(255, 255, 255, .05);
+    --border: rgba(255, 255, 255, .07);
+    --border-in: #2a2a33;
+
+    --text: #f1f5f9;
+    --text-2: rgba(255, 255, 255, .5);
+    --text-3: rgba(255, 255, 255, .3);
+
+    /* Kulay ng estado — hindi palamuti. */
+    --ok: #10b981;
+    --ok-ink: #34d399;
+    --warn: #f59e0b;
+    --warn-ink: #fcd34d;
+    --bad: #ef4444;
+    --bad-ink: #f87171;
+
     --r: 12px;
-    --font: 'DM Sans', system-ui, sans-serif;
-    --font-head: 'DM Serif Display', Georgia, serif;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "Noto Sans", sans-serif;
     --shadow: 0 8px 32px rgba(0, 0, 0, .4);
 }
 
@@ -31,19 +69,21 @@
     padding: 0
 }
 
+/* Isang mahinang sky na sinag mula sa itaas — kapareho ng
+   radial sa .stud-hero. Tatlo ito dati (asul, berde, asul). */
 body {
     background: var(--bg);
+    background-image:
+        radial-gradient(ellipse 90% 45% at 50% -5%, rgba(14, 165, 233, .16) 0%, transparent 65%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     font-family: var(--font);
     color: var(--text);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2.5rem 1rem 4rem;
-    background-image:
-        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(31, 111, 235, .18) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(63, 185, 80, .10) 0%, transparent 55%),
-        radial-gradient(ellipse 40% 30% at 60% 50%, rgba(88, 166, 255, .04) 0%, transparent 50%);
+    padding: 2.5rem 1rem 3rem;
 }
 
 /* ── HEADER ─────────────────────────────────────────────── */
@@ -51,60 +91,42 @@ body {
     width: 100%;
     max-width: 460px;
     text-align: center;
-    margin-bottom: 2.25rem;
+    margin-bottom: 2rem;
     animation: fadeUp .5s ease both;
 }
 
-.brand-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: .45rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: .35rem .9rem;
-    font-size: .72rem;
-    font-weight: 600;
-    color: var(--text-2);
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    margin-bottom: 1.1rem;
+.header-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    margin-bottom: .85rem;
 }
 
-.brand-chip i {
-    color: var(--green);
-    font-size: .85rem;
-}
-
+/* Isang kulay, walang italic na serif na salita sa gitna. */
 h1 {
-    font-family: var(--font-head);
-    font-size: 2.1rem;
-    font-weight: 400;
-    line-height: 1.15;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -.02em;
     margin-bottom: .5rem;
-    letter-spacing: -.01em;
-}
-
-h1 span {
-    color: var(--accent);
-    font-style: italic;
+    color: #fff;
 }
 
 .page-subtitle {
     font-size: .875rem;
     color: var(--text-2);
-    line-height: 1.65;
+    line-height: 1.6;
     max-width: 340px;
     margin: 0 auto;
 }
 
-/* ── STEP TRACKER ────────────────────────────────────────── */
+/* ── STEP TRACKER ───────────────────────────────────────── */
 .step-track {
     display: flex;
     align-items: center;
     width: 100%;
     max-width: 460px;
-    margin-bottom: 1.75rem;
+    margin-bottom: 1.5rem;
     animation: fadeUp .5s .1s ease both;
 }
 
@@ -113,7 +135,7 @@ h1 span {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .35rem;
+    gap: .4rem;
     position: relative;
 }
 
@@ -129,95 +151,115 @@ h1 span {
 }
 
 .step-item.done:not(:last-child)::after {
-    background: var(--accent-dk);
+    background: var(--sp-line);
 }
 
 .step-num {
     width: 32px;
     height: 32px;
     border-radius: 50%;
+    display: grid;
+    place-items: center;
     background: var(--surface);
-    border: 1.5px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border: 1px solid var(--border);
     font-size: .78rem;
     font-weight: 700;
     color: var(--text-3);
-    transition: all .3s;
+    transition: background .3s, color .3s, border-color .3s, box-shadow .3s;
     z-index: 1;
 }
 
 .step-item.active .step-num {
-    background: var(--accent-dk);
-    border-color: var(--accent);
     color: #fff;
-    box-shadow: 0 0 0 4px var(--accent-glow);
+    background: linear-gradient(135deg, var(--sp), var(--sp-deep));
+    border-color: transparent;
+    box-shadow: 0 0 0 4px var(--sp-soft);
 }
 
+/* Natapos na: mas mahina kaysa sa kasalukuyan, pero hindi na
+   patay — makikita mo kung gaano ka kalayo na. */
 .step-item.done .step-num {
-    background: var(--accent-dk);
-    border-color: var(--accent-dk);
-    color: #fff;
+    color: var(--sp-ink);
+    background: var(--sp-soft);
+    border-color: var(--sp-line);
 }
 
 .step-lbl {
-    font-size: .67rem;
-    color: var(--text-3);
+    font-size: .68rem;
     font-weight: 600;
     letter-spacing: .05em;
     text-transform: uppercase;
+    color: var(--text-3);
     white-space: nowrap;
 }
 
 .step-item.active .step-lbl {
-    color: var(--accent);
+    color: var(--sp-ink);
 }
 
 .step-item.done .step-lbl {
     color: var(--text-2);
 }
 
-/* ── CARD ────────────────────────────────────────────────── */
+/* ── CARD ───────────────────────────────────────────────── */
 .card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-    padding: 2rem;
+    position: relative;
     width: 100%;
     max-width: 460px;
+    padding: 1.9rem;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    overflow: hidden;
     animation: fadeUp .5s .15s ease both;
 }
 
-/* ── STEP LABEL ──────────────────────────────────────────── */
+/* Ang guhit ng tuldik — kapareho ng .app-modal at ng .stud-hero,
+   kaya kapamilya ng admin ang page na ito. */
+.card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--sp), var(--sp-deep));
+    box-shadow: 0 0 12px rgba(14, 165, 233, .6);
+}
+
+/* ── STEP LABEL ─────────────────────────────────────────── */
 .step-eyebrow {
     display: inline-flex;
     align-items: center;
     gap: .35rem;
+    margin-bottom: .55rem;
     font-size: .68rem;
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: .6rem;
+    color: var(--sp-ink);
 }
 
 .card h2 {
-    font-size: 1.2rem;
-    font-weight: 700;
     margin-bottom: .3rem;
+    font-size: 1.15rem;
+    font-weight: 700;
     line-height: 1.3;
+    letter-spacing: -.01em;
+    color: #fff;
 }
 
 .card .desc {
-    font-size: .845rem;
+    margin-bottom: 1.4rem;
+    font-size: .85rem;
+    line-height: 1.6;
     color: var(--text-2);
-    margin-bottom: 1.5rem;
-    line-height: 1.65;
 }
 
-/* ── FORM FIELDS ─────────────────────────────────────────── */
+.card .desc strong {
+    color: #cbd5e1;
+}
+
+/* ── FORM FIELDS ────────────────────────────────────────── */
 .field {
     margin-bottom: 1.1rem;
 }
@@ -226,16 +268,17 @@ h1 span {
     display: flex;
     align-items: center;
     gap: .35rem;
-    font-size: .75rem;
-    font-weight: 600;
-    color: var(--text-2);
-    letter-spacing: .05em;
-    text-transform: uppercase;
     margin-bottom: .45rem;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .3px;
+    /* Buong lakas ng kulay — nabasa dapat ang label. */
+    color: #cbd5e1;
 }
 
 .field-label i {
     font-size: .9rem;
+    color: var(--text-3);
 }
 
 .input-shell {
@@ -247,50 +290,57 @@ h1 span {
     left: .9rem;
     top: 50%;
     transform: translateY(-50%);
+    font-size: .95rem;
+    line-height: 1;
     color: var(--text-3);
-    font-size: 1rem;
     pointer-events: none;
+    transition: color .18s ease;
+}
+
+.input-shell:focus-within i.lead {
+    color: var(--sp-ink);
 }
 
 input[type=text] {
     width: 100%;
-    background: var(--bg);
-    border: 1.5px solid var(--border);
-    border-radius: var(--r);
-    padding: .75rem 1rem .75rem 2.6rem;
+    min-height: 48px;
+    padding: .7rem 1rem .7rem 2.6rem;
+    border-radius: 11px;
+    border: 1px solid var(--border-in);
+    background: var(--field);
+    color: var(--text);
     font-size: .95rem;
     font-family: var(--font);
-    color: var(--text);
     outline: none;
-    transition: border-color .2s, box-shadow .2s;
+    transition: border-color .18s ease, box-shadow .18s ease;
 }
 
 input[type=text]:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-    background: var(--bg2);
+    border-color: var(--sp);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, .18);
 }
 
 input[type=text]::placeholder {
-    color: var(--text-3);
+    color: rgba(255, 255, 255, .25);
 }
 
 .field-hint {
-    font-size: .73rem;
-    color: var(--text-3);
-    margin-top: .35rem;
     display: flex;
     align-items: center;
     gap: .3rem;
+    margin-top: .4rem;
+    font-size: .75rem;
+    color: rgba(255, 255, 255, .38);
 }
 
-/* ── BUTTONS ─────────────────────────────────────────────── */
+/* ── BUTTONS ────────────────────────────────────────────── */
 .btn {
     width: 100%;
-    border: none;
-    border-radius: var(--r);
-    padding: .8rem 1rem;
-    font-size: .925rem;
+    min-height: 46px;
+    padding: .75rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    font-size: .9rem;
     font-weight: 600;
     font-family: var(--font);
     cursor: pointer;
@@ -298,186 +348,132 @@ input[type=text]::placeholder {
     align-items: center;
     justify-content: center;
     gap: .5rem;
-    transition: opacity .2s, transform .1s, box-shadow .2s;
-}
-
-.btn:active {
-    transform: scale(.98);
+    transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease, filter .18s ease;
 }
 
 .btn:disabled {
-    opacity: .5;
+    opacity: .55;
     cursor: not-allowed;
     transform: none;
+    filter: none;
 }
 
+/* Ang tanging punong aksyon kada hakbang. Ginagamit ito ng
+   "Verify Identity" at ng "Use This Photo" — dating berde ang
+   pangalawa, kaagaw ng tunay na berdeng "Verified" na badge. */
 .btn-primary {
-    background: var(--accent-dk);
     color: #fff;
-    box-shadow: 0 0 0 0 var(--accent-glow);
+    background: linear-gradient(135deg, var(--sp), var(--sp-deep));
+    box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
 }
 
 .btn-primary:hover:not(:disabled) {
-    opacity: .9;
-    box-shadow: 0 0 0 4px var(--accent-glow);
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 22px rgba(14, 165, 233, .4);
 }
 
-.btn-success {
-    background: #1a4a1e;
-    color: var(--green);
-    border: 1px solid rgba(63, 185, 80, .3);
-    flex: 2;
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
 }
 
-.btn-success:hover:not(:disabled) {
-    background: #1f5724;
-    box-shadow: 0 0 0 3px var(--green-glow);
-}
-
-.btn-ghost {
-    background: var(--surface);
-    color: var(--text-2);
-    border: 1.5px solid var(--border);
-    flex: 1;
-}
-
-.btn-ghost:hover:not(:disabled) {
-    background: var(--bg);
-    color: var(--text);
-}
-
+/* Tahimik na pag-atras — nakikita, pero hindi nakikipag-agawan. */
+.btn-ghost,
 .btn-done {
-    background: var(--surface);
-    color: var(--text);
-    border: 1.5px solid var(--border);
+    color: #cbd5e1;
+    background: var(--raised);
+    border-color: rgba(255, 255, 255, .12);
 }
 
-.btn-done:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+.btn-ghost:hover:not(:disabled),
+.btn-done:hover:not(:disabled) {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--sp-ink);
+    outline-offset: 2px;
 }
 
 .btn-row {
     display: flex;
-    gap: .75rem;
+    gap: .7rem;
 }
 
-/* ── VERIFIED BADGE ──────────────────────────────────────── */
+/* Mas malaki ang punong aksyon kaysa sa "Change Photo". */
+.btn-row .btn-ghost {
+    flex: 1;
+}
+
+.btn-row .btn-primary {
+    flex: 2;
+}
+
+/* ── VERIFIED CARD ──────────────────────────────────────── */
 .verified-card {
     display: flex;
     align-items: center;
     gap: .9rem;
-    background: rgba(88, 166, 255, .07);
-    border: 1px solid rgba(88, 166, 255, .2);
+    margin-bottom: 1.4rem;
+    padding: .85rem 1rem;
     border-radius: var(--r);
-    padding: .9rem 1.1rem;
-    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, .03);
 }
 
 .v-avatar {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: var(--accent-dk);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    font-weight: 700;
+    display: grid;
+    place-items: center;
     flex-shrink: 0;
-    font-family: var(--font-head);
+    color: #fff;
+    background: linear-gradient(135deg, var(--sp), var(--sp-deep));
+    font-size: 1rem;
+    font-weight: 700;
     letter-spacing: -.02em;
 }
 
 .v-name {
-    font-weight: 700;
     font-size: .92rem;
-    color: var(--text);
+    font-weight: 700;
+    color: #fff;
 }
 
 .v-meta {
-    font-size: .75rem;
-    color: var(--text-2);
     margin-top: .15rem;
+    font-size: .76rem;
+    color: var(--text-2);
 }
 
+/* Berde dito ay TUNAY na estado: napatunayan na kung sino ka. */
 .v-badge {
     margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: .3rem;
-    background: rgba(63, 185, 80, .15);
-    color: var(--green);
-    border: 1px solid rgba(63, 185, 80, .3);
-    border-radius: 999px;
-    font-size: .7rem;
-    font-weight: 700;
     padding: .25rem .65rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--ok-ink);
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .25);
 }
 
-/* ── UPLOAD ZONE ─────────────────────────────────────────── */
-.drop-zone {
-    border: 1.5px dashed var(--border);
-    border-radius: var(--r);
-    padding: 2rem 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color .2s, background .2s;
-    margin-bottom: 1.25rem;
-    position: relative;
-    background: var(--bg);
-}
-
-.drop-zone:hover,
-.drop-zone.over {
-    border-color: var(--accent);
-    background: rgba(88, 166, 255, .04);
-}
-
-.drop-zone input[type=file] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-}
-
-.drop-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: rgba(88, 166, 255, .1);
-    border: 1px solid rgba(88, 166, 255, .2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    color: var(--accent);
-    margin: 0 auto .9rem;
-}
-
-.drop-zone h3 {
-    font-size: .92rem;
-    font-weight: 700;
-    margin-bottom: .3rem;
-}
-
-.drop-zone p {
-    font-size: .78rem;
-    color: var(--text-3);
-    line-height: 1.6;
-}
-
-/* ── SOURCE TABS ─────────────────────────────────────────── */
+/* ── SOURCE TABS ────────────────────────────────────────── */
+/* Segmented control, kapareho ng .dash-switch. Solidong asul na
+   bloke ito dati — kasingtingkad ng punong butones sa ibaba. */
 .src-tabs {
     display: flex;
-    gap: .5rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: .35rem;
+    gap: 4px;
     margin-bottom: 1.1rem;
+    padding: 4px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, .3);
+    border: 1px solid var(--border);
 }
 
 .src-tab {
@@ -487,39 +483,93 @@ input[type=text]::placeholder {
     justify-content: center;
     gap: .4rem;
     padding: .6rem .75rem;
-    border-radius: 8px;
     border: none;
+    border-radius: 9px;
     background: transparent;
-    color: var(--text-2);
-    font-size: .82rem;
+    color: #94a3b8;
+    font-size: .83rem;
     font-weight: 600;
     font-family: var(--font);
     cursor: pointer;
-    transition: all .2s;
+    transition: background .18s ease, color .18s ease;
 }
 
 .src-tab:hover {
-    color: var(--text);
-    background: var(--surface);
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, .05);
 }
 
 .src-tab.active {
-    background: var(--accent-dk);
+    color: var(--sp-ink);
+    background: var(--sp-soft);
+}
+
+.src-tab:focus-visible {
+    outline: 2px solid var(--sp-ink);
+    outline-offset: 1px;
+}
+
+/* ── UPLOAD ZONE ────────────────────────────────────────── */
+.drop-zone {
+    position: relative;
+    margin-bottom: 1.2rem;
+    padding: 2rem 1.5rem;
+    border: 1.5px dashed var(--border-in);
+    border-radius: var(--r);
+    background: var(--field);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .18s ease, background .18s ease;
+}
+
+.drop-zone:hover,
+.drop-zone.over {
+    border-color: var(--sp);
+    background: rgba(14, 165, 233, .05);
+}
+
+.drop-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.drop-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto .9rem;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    font-size: 1.35rem;
+    color: var(--sp-ink);
+    background: var(--sp-soft);
+    border: 1px solid var(--sp-line);
+}
+
+.drop-zone h3 {
+    margin-bottom: .3rem;
+    font-size: .92rem;
+    font-weight: 700;
     color: #fff;
-    box-shadow: 0 2px 8px rgba(31, 111, 235, .4);
 }
 
-.src-tab i {
-    font-size: .95rem;
+.drop-zone p {
+    font-size: .78rem;
+    line-height: 1.6;
+    color: var(--text-3);
 }
 
-/* ── CAMERA CAPTURE ──────────────────────────────────────── */
+/* ── CAMERA ─────────────────────────────────────────────── */
 .cam-wrap {
     position: relative;
+    margin-bottom: 1rem;
     border-radius: var(--r);
+    border: 1px solid var(--border);
     overflow: hidden;
     background: #000;
-    margin-bottom: 1rem;
     aspect-ratio: 4/3;
     display: flex;
     align-items: center;
@@ -531,6 +581,7 @@ input[type=text]::placeholder {
     height: 100%;
     object-fit: cover;
     display: block;
+    /* Salamin — ganito ka nakasanayang tingnan ang sarili mo. */
     transform: scaleX(-1);
 }
 
@@ -548,7 +599,7 @@ input[type=text]::placeholder {
     width: 52%;
     aspect-ratio: 1;
     border-radius: 50%;
-    border: 2px solid rgba(88, 166, 255, .55);
+    border: 2px solid rgba(14, 165, 233, .6);
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, .35);
 }
 
@@ -557,12 +608,12 @@ input[type=text]::placeholder {
     flex-direction: column;
     align-items: center;
     gap: .75rem;
-    color: var(--text-3);
     font-size: .85rem;
+    color: var(--text-3);
 }
 
 .cam-placeholder i {
-    font-size: 2.5rem;
+    font-size: 2.4rem;
 }
 
 .cam-btns {
@@ -579,11 +630,11 @@ input[type=text]::placeholder {
 
 .btn-cam-action {
     flex: 1;
-    background: rgba(88, 166, 255, .1);
-    color: var(--accent);
-    border: 1.5px solid rgba(88, 166, 255, .25);
-    border-radius: var(--r);
     padding: .72rem 1rem;
+    border-radius: 11px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: var(--raised);
+    color: #cbd5e1;
     font-size: .85rem;
     font-weight: 600;
     font-family: var(--font);
@@ -592,44 +643,50 @@ input[type=text]::placeholder {
     align-items: center;
     justify-content: center;
     gap: .4rem;
-    transition: all .2s;
+    transition: background .18s ease, color .18s ease;
 }
 
 .btn-cam-action:hover:not(:disabled) {
-    background: rgba(88, 166, 255, .18);
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
 }
 
 .btn-cam-action:disabled {
-    opacity: .35;
+    opacity: .4;
     cursor: not-allowed;
 }
 
+/* Ang punong aksyon ng kamera. */
 .btn-capture {
     flex: 2;
-    background: var(--accent-dk);
-    color: #fff;
-    border: none;
-    border-radius: var(--r);
     padding: .72rem 1rem;
-    font-size: .9rem;
-    font-weight: 700;
+    border: none;
+    border-radius: 11px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--sp), var(--sp-deep));
+    box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
+    font-size: .88rem;
+    font-weight: 600;
     font-family: var(--font);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: .5rem;
-    transition: all .2s;
+    transition: filter .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
 .btn-capture:hover:not(:disabled) {
-    opacity: .9;
-    box-shadow: 0 0 0 4px var(--accent-glow);
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 22px rgba(14, 165, 233, .4);
 }
 
 .btn-capture:disabled {
-    opacity: .35;
+    opacity: .4;
     cursor: not-allowed;
+    transform: none;
+    filter: none;
 }
 
 .cam-flash {
@@ -645,12 +702,60 @@ input[type=text]::placeholder {
     opacity: .75;
 }
 
-/* ── CROPPER ─────────────────────────────────────────────── */
+/* ── FLASHLIGHT ─────────────────────────────────────────── */
+/* Patay: tahimik na ghost, gaya ng ibang pangalawang butones.
+   Buhay: AMBER — estado iyon (may nakabukas na ilaw), at iyon din
+   ang kulay ng mismong liwanag. Lila-indigo ito dati kapag patay
+   at rosas-pula kapag buhay; wala ang dalawang iyon sa page. */
+.flashlight-toggle {
+    width: 100%;
+    padding: .72rem 1rem;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 11px;
+    background: var(--raised);
+    color: #cbd5e1;
+    font-size: .85rem;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.flashlight-toggle:hover {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+}
+
+.flashlight-toggle.active {
+    color: var(--warn-ink);
+    background: rgba(245, 158, 11, .12);
+    border-color: rgba(245, 158, 11, .3);
+}
+
+.flashlight-toggle.active:hover {
+    background: rgba(245, 158, 11, .2);
+}
+
+#flashlightIcon {
+    font-size: 1rem;
+    transition: filter .2s;
+}
+
+.flashlight-toggle.active #flashlightIcon {
+    filter: drop-shadow(0 0 5px rgba(252, 211, 77, .8));
+}
+
+/* ── CROPPER ────────────────────────────────────────────── */
 .crop-wrap {
+    margin-bottom: 1.1rem;
     border-radius: var(--r);
+    border: 1px solid var(--border);
     overflow: hidden;
     background: #000;
-    margin-bottom: 1.1rem;
     max-height: 300px;
 }
 
@@ -659,34 +764,35 @@ input[type=text]::placeholder {
     max-width: 100%;
 }
 
+/* Kaparehong anyo ng .app-note.is-info sa modal-form.css. */
 .crop-tip {
     display: flex;
-    align-items: center;
-    gap: .5rem;
-    background: rgba(88, 166, 255, .07);
-    border: 1px solid rgba(88, 166, 255, .15);
-    border-radius: 8px;
-    padding: .6rem .85rem;
-    font-size: .78rem;
-    color: var(--text-2);
+    align-items: flex-start;
+    gap: .55rem;
     margin-bottom: 1.1rem;
+    padding: .65rem .8rem;
+    border-radius: 10px;
+    border: 1px solid var(--sp-line);
+    background: var(--sp-soft);
+    font-size: .78rem;
     line-height: 1.5;
+    color: var(--sp-ink);
 }
 
 .crop-tip i {
-    color: var(--accent);
     flex-shrink: 0;
+    margin-top: .1rem;
 }
 
 .preview-row {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.4rem;
+    margin-bottom: 1.3rem;
     padding: .9rem;
-    background: var(--bg);
-    border: 1px solid var(--border-lt);
     border-radius: var(--r);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, .03);
 }
 
 #crop-preview {
@@ -694,40 +800,41 @@ input[type=text]::placeholder {
     height: 68px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid var(--border);
-    background: var(--surface);
     flex-shrink: 0;
+    border: 2px solid var(--sp-line);
+    background: var(--field);
 }
 
 .preview-info .lbl {
-    font-size: .7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .07em;
-    color: var(--text-3);
     margin-bottom: .2rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-3);
 }
 
 .preview-info .sub {
-    font-size: .76rem;
-    color: var(--text-2);
+    font-size: .78rem;
     line-height: 1.5;
+    color: var(--text-2);
 }
 
-/* ── SUCCESS ─────────────────────────────────────────────── */
+/* ── SUCCESS ────────────────────────────────────────────── */
 .success-wrap {
     text-align: center;
     padding: .5rem 0 .25rem;
 }
 
+/* Berde: tagumpay — tunay na estado, hindi palamuti. */
 .success-photo-ring {
     width: 110px;
     height: 110px;
+    margin: 0 auto 1.25rem;
     border-radius: 50%;
     overflow: hidden;
-    margin: 0 auto 1.25rem;
-    border: 3px solid var(--green);
-    box-shadow: 0 0 0 6px var(--green-glow);
+    border: 3px solid var(--ok);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, .15);
     animation: popIn .4s cubic-bezier(.34, 1.56, .64, 1);
 }
 
@@ -740,32 +847,32 @@ input[type=text]::placeholder {
 .success-check {
     width: 56px;
     height: 56px;
-    background: rgba(63, 185, 80, .15);
-    border: 1.5px solid rgba(63, 185, 80, .4);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
     margin: 0 auto 1.1rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.6rem;
+    color: var(--ok-ink);
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .3);
     animation: popIn .4s cubic-bezier(.34, 1.56, .64, 1);
-    color: var(--green);
 }
 
 .success-wrap h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
     margin-bottom: .4rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
 }
 
 .success-wrap p {
+    margin-bottom: 1.4rem;
     font-size: .85rem;
+    line-height: 1.6;
     color: var(--text-2);
-    line-height: 1.65;
-    margin-bottom: 1.5rem;
 }
 
-/* ── SPINNER ─────────────────────────────────────────────── */
+/* ── SPINNER ────────────────────────────────────────────── */
 .spinner {
     width: 16px;
     height: 16px;
@@ -776,7 +883,7 @@ input[type=text]::placeholder {
     flex-shrink: 0;
 }
 
-/* ── ANIMATIONS ──────────────────────────────────────────── */
+/* ── ANIMATIONS ─────────────────────────────────────────── */
 @keyframes fadeUp {
     from {
         opacity: 0;
@@ -807,7 +914,7 @@ input[type=text]::placeholder {
     }
 }
 
-/* ── DYNAMIC ISLAND ──────────────────────────────────────── */
+/* ── DYNAMIC ISLAND ─────────────────────────────────────── */
 .d-island {
     position: fixed;
     top: 16px;
@@ -855,7 +962,7 @@ input[type=text]::placeholder {
     border-radius: 50%;
     overflow: hidden;
     flex-shrink: 0;
-    border: 2px solid rgba(63, 185, 80, .5);
+    border: 2px solid rgba(16, 185, 129, .5);
     background: #1a1a1a;
     opacity: 0;
     transform: scale(0.4);
@@ -874,16 +981,15 @@ input[type=text]::placeholder {
     display: block;
 }
 
+/* Walang Georgia — katutubong stack tulad ng buong page. */
 .di-photo-placeholder {
     width: 100%;
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #3fb950;
-    font-family: Georgia, serif;
+    display: grid;
+    place-items: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--ok-ink);
 }
 
 .di-text {
@@ -900,37 +1006,36 @@ input[type=text]::placeholder {
 }
 
 .di-title {
+    margin-bottom: .12rem;
     font-size: .8rem;
     font-weight: 700;
-    color: #e6edf3;
+    line-height: 1.25;
+    color: #f1f5f9;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.25;
-    margin-bottom: .12rem;
 }
 
 .di-sub {
-    font-size: .68rem;
-    color: #3fb950;
-    font-weight: 600;
     display: flex;
     align-items: center;
     gap: .3rem;
+    font-size: .7rem;
+    font-weight: 600;
+    color: var(--ok-ink);
 }
 
 .di-check {
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    background: rgba(63, 185, 80, .15);
-    border: 1.5px solid rgba(63, 185, 80, .4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: .85rem;
-    color: #3fb950;
+    display: grid;
+    place-items: center;
     flex-shrink: 0;
+    font-size: .85rem;
+    color: var(--ok-ink);
+    background: rgba(16, 185, 129, .15);
+    border: 1px solid rgba(16, 185, 129, .4);
     opacity: 0;
     transform: scale(0.3) rotate(-40deg);
     transition: opacity .3s .38s ease, transform .45s .32s cubic-bezier(.34, 1.56, .64, 1);
@@ -947,7 +1052,7 @@ input[type=text]::placeholder {
     left: 0;
     height: 2px;
     width: 100%;
-    background: linear-gradient(90deg, #3fb950, #58a6ff);
+    background: linear-gradient(90deg, var(--ok), var(--sp));
     border-radius: 0 0 999px 999px;
     transform-origin: left;
     transform: scaleX(1);
@@ -956,7 +1061,7 @@ input[type=text]::placeholder {
 }
 
 .d-island.expanded .di-bar {
-    opacity: 0.45;
+    opacity: .45;
 }
 
 .di-bar.draining {
@@ -964,85 +1069,78 @@ input[type=text]::placeholder {
     transform: scaleX(0);
 }
 
-/* ── DYNAMIC ISLAND — COLOR VARIANTS ─────────────────────── */
+/* ── ISLAND — MGA KULAY NG ESTADO ───────────────────────── */
 
-/* Error (red) */
-.d-island.type-error .di-sub {
-    color: #f85149;
+/* Mali (pula) */
+.d-island.type-error .di-sub,
+.d-island.type-error .di-check {
+    color: var(--bad-ink);
 }
 
 .d-island.type-error .di-check {
-    color: #f85149;
-    background: rgba(248, 81, 73, .15);
-    border-color: rgba(248, 81, 73, .4);
+    background: rgba(239, 68, 68, .15);
+    border-color: rgba(239, 68, 68, .4);
 }
 
 .d-island.type-error .di-bar {
-    background: linear-gradient(90deg, #f85149, #ff6b65);
+    background: linear-gradient(90deg, var(--bad), #fca5a5);
 }
 
 .d-island.type-error .di-photo {
-    border-color: rgba(248, 81, 73, .5);
+    border-color: rgba(239, 68, 68, .5);
 }
 
 .d-island.type-error .di-photo-placeholder {
-    color: #f85149;
+    color: var(--bad-ink);
     font-size: 1.3rem;
-    font-family: var(--font);
-    font-weight: 700;
 }
 
-/* Warning (amber) */
-.d-island.type-warning .di-sub {
-    color: #e3b341;
+/* Babala (amber) */
+.d-island.type-warning .di-sub,
+.d-island.type-warning .di-check {
+    color: var(--warn-ink);
 }
 
 .d-island.type-warning .di-check {
-    color: #e3b341;
-    background: rgba(227, 179, 65, .15);
-    border-color: rgba(227, 179, 65, .4);
+    background: rgba(245, 158, 11, .15);
+    border-color: rgba(245, 158, 11, .4);
 }
 
 .d-island.type-warning .di-bar {
-    background: linear-gradient(90deg, #e3b341, #f0cc6e);
+    background: linear-gradient(90deg, var(--warn), #fde68a);
     transition: transform 6600ms linear;
 }
 
 .d-island.type-warning .di-photo {
-    border-color: rgba(227, 179, 65, .5);
+    border-color: rgba(245, 158, 11, .5);
 }
 
 .d-island.type-warning .di-photo-placeholder {
-    color: #e3b341;
+    color: var(--warn-ink);
     font-size: 1.3rem;
-    font-family: var(--font);
-    font-weight: 700;
 }
 
-/* Success (green — default, already defined above) */
-.d-island.type-success .di-sub {
-    color: #3fb950;
+/* Tagumpay (berde) — siya ang default sa itaas. */
+.d-island.type-success .di-sub,
+.d-island.type-success .di-check,
+.d-island.type-success .di-photo-placeholder {
+    color: var(--ok-ink);
 }
 
 .d-island.type-success .di-check {
-    color: #3fb950;
-    background: rgba(63, 185, 80, .15);
-    border-color: rgba(63, 185, 80, .4);
+    background: rgba(16, 185, 129, .15);
+    border-color: rgba(16, 185, 129, .4);
 }
 
 .d-island.type-success .di-bar {
-    background: linear-gradient(90deg, #3fb950, #58a6ff);
+    background: linear-gradient(90deg, var(--ok), var(--sp));
 }
 
 .d-island.type-success .di-photo {
-    border-color: rgba(63, 185, 80, .5);
+    border-color: rgba(16, 185, 129, .5);
 }
 
-.d-island.type-success .di-photo-placeholder {
-    color: #3fb950;
-}
-
-/* ── PANELS ──────────────────────────────────────────────── */
+/* ── PANELS ─────────────────────────────────────────────── */
 .panel {
     display: none;
 }
@@ -1051,52 +1149,35 @@ input[type=text]::placeholder {
     display: block;
 }
 
-/* ── FLASHLIGHT BUTTON ───────────────────────────────────── */
-.flashlight-toggle {
-    width: 100%;
-    padding: .72rem 1rem;
-    background: rgba(102, 126, 234, .1);
-    color: #a5b4fc;
-    border: 1.5px solid rgba(102, 126, 234, .25);
-    border-radius: var(--r);
-    font-size: .85rem;
-    font-weight: 600;
-    font-family: var(--font);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: .5rem;
-    transition: all .2s;
+/* ── TELEPONO ───────────────────────────────────────────── */
+@media (max-width: 480px) {
+    body {
+        padding: 1.75rem 1rem 2.5rem;
+    }
+
+    .card {
+        padding: 1.4rem 1.15rem;
+    }
+
+    h1 {
+        font-size: 1.35rem;
+    }
 }
 
-.flashlight-toggle:hover {
-    background: rgba(102, 126, 234, .18);
-}
+/* Hindi lahat ay gustong may gumagalaw sa screen. Ang gumagana
+   pa ring pahiwatig ay ang KULAY at ang teksto, hindi ang paggalaw. */
+@media (prefers-reduced-motion: reduce) {
 
-.flashlight-toggle.active {
-    background: rgba(245, 87, 108, .12);
-    color: #fca5a5;
-    border-color: rgba(245, 87, 108, .3);
-}
+    .page-header,
+    .step-track,
+    .card,
+    .success-photo-ring,
+    .success-check {
+        animation: none;
+    }
 
-.flashlight-toggle.active:hover {
-    background: rgba(245, 87, 108, .2);
-}
-
-#flashlightIcon {
-    font-size: 1rem;
-    transition: all .2s;
-}
-
-.flashlight-toggle.active #flashlightIcon {
-    color: #fff59d;
-    filter: drop-shadow(0 0 4px #fff59d);
-}
-.header-logo {
-    width: 72px;
-    height: 72px;
-    object-fit: contain;
-    margin-bottom: .75rem;
-    filter: drop-shadow(0 0 12px rgba(88, 166, 255, .25));
+    .btn-primary:hover:not(:disabled),
+    .btn-capture:hover:not(:disabled) {
+        transform: none;
+    }
 }
