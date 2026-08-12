@@ -50,64 +50,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Get current logo from database
-    $currentLogo = '';
-    $result = $conn->query("SELECT logo FROM system_settings_tbl WHERE id=1");
+    // Get current image paths from database
+    $currentLogo   = '';
+    $currentHeader = '';
+    $result = $conn->query("SELECT logo, report_header FROM system_settings_tbl WHERE id=1");
     if ($row = $result->fetch_assoc()) {
-        $currentLogo = $row['logo'];
+        $currentLogo   = $row['logo'] ?? '';
+        $currentHeader = $row['report_header'] ?? '';
     }
 
-    // Default to current logo if no new file uploaded
-    $logoPath = $currentLogo;
+    /**
+     * Shared by the logo and the report letterhead — the same upload
+     * was written out twice otherwise.
+     *
+     * Validates that the upload really is an image and derives a SAFE
+     * extension from its real type; the client filename is never
+     * trusted, because honouring it would allow logo.php → remote
+     * code execution.
+     *
+     * Returns the new relative path, or $current when nothing was
+     * uploaded. Exits with JSON on a bad file.
+     */
+    function handleImageUpload($field, $prefix, $current, $label, $maxBytes)
+    {
+        if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) {
+            return $current;
+        }
 
-    // Handle logo upload
-    if (isset($_FILES['systemLogo']) && $_FILES['systemLogo']['error'] === UPLOAD_ERR_OK) {
+        if ($_FILES[$field]['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'message' => "$label upload failed. The file may be larger than the server allows."]);
+            exit;
+        }
 
-        // Validate that the upload is actually an image, and derive a SAFE
-        // extension from its real type — never trust the client filename
-        // (that would allow uploading logo.php → remote code execution).
-        $allowed  = [
+        if ($_FILES[$field]['size'] > $maxBytes) {
+            $mb = round($maxBytes / 1048576, 1);
+            echo json_encode(['success' => false, 'message' => "$label must be {$mb} MB or smaller."]);
+            exit;
+        }
+
+        $allowed = [
             IMAGETYPE_JPEG => 'jpg',
             IMAGETYPE_PNG  => 'png',
             IMAGETYPE_GIF  => 'gif',
             IMAGETYPE_WEBP => 'webp',
         ];
-        $info = @getimagesize($_FILES['systemLogo']['tmp_name']);
+        $info = @getimagesize($_FILES[$field]['tmp_name']);
         if ($info === false || !isset($allowed[$info[2]])) {
-            echo json_encode(['success' => false, 'message' => 'Logo must be a JPG, PNG, GIF, or WEBP image.']);
+            echo json_encode(['success' => false, 'message' => "$label must be a JPG, PNG, GIF, or WEBP image."]);
             exit;
         }
 
-        $ext         = $allowed[$info[2]];
-        $newFileName = 'logo_' . time() . '.' . $ext;
+        $newFileName = $prefix . '_' . time() . '.' . $allowed[$info[2]];
         $destination = __DIR__ . '/../assets/images/' . $newFileName;
 
-        // Delete old logo file if it exists
-        if (!empty($currentLogo) && file_exists(__DIR__ . '/../' . $currentLogo)) {
-            unlink(__DIR__ . '/../' . $currentLogo);
-        }
-
-        // Upload new logo file
-        if (move_uploaded_file($_FILES['systemLogo']['tmp_name'], $destination)) {
-            $logoPath = 'assets/images/' . $newFileName; // relative path for DB
-        } else {
-            $response = ['success' => false, 'message' => 'Failed to move uploaded file. Check folder permissions.'];
-            echo json_encode($response);
+        if (!move_uploaded_file($_FILES[$field]['tmp_name'], $destination)) {
+            echo json_encode(['success' => false, 'message' => 'Failed to move uploaded file. Check folder permissions.']);
             exit;
         }
+
+        // Only delete the old file once the new one is safely in place.
+        if (!empty($current) && is_file(__DIR__ . '/../' . $current)) {
+            @unlink(__DIR__ . '/../' . $current);
+        }
+
+        return 'assets/images/' . $newFileName;
+    }
+
+    $logoPath   = handleImageUpload('systemLogo', 'logo', $currentLogo, 'Logo', 4 * 1048576);
+    $headerPath = handleImageUpload('reportHeader', 'letterhead', $currentHeader, 'Report header', 4 * 1048576);
+
+    // Clearing the letterhead sends the PDF reports back to the
+    // two-logo layout, so it needs an explicit way out — there is no
+    // "empty file" you can pick in a file input.
+    if (!empty($_POST['removeReportHeader']) && $headerPath === $currentHeader) {
+        if (!empty($currentHeader) && is_file(__DIR__ . '/../' . $currentHeader)) {
+            @unlink(__DIR__ . '/../' . $currentHeader);
+        }
+        $headerPath = '';
     }
 
     // Update database
     $sql = "UPDATE system_settings_tbl
-            SET system_name=?, system_acronym=?, logo=?,
+            SET system_name=?, system_acronym=?, logo=?, report_header=?,
                 footer_org=?, footer_year=?, footer_developer=?, footer_developer_url=?
             WHERE id=1";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param(
-        'sssssss',
+        'ssssssss',
         $systemName,
         $systemAcronym,
         $logoPath,
+        $headerPath,
         $footerOrg,
         $footerYear,
         $footerDeveloper,

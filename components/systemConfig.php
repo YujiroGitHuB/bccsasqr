@@ -115,6 +115,61 @@
                         </div>
                     </div>
 
+                    <!-- ── Report letterhead ─────────────────────────
+                         Drawn full width at the top of every exported
+                         PDF. Blank falls back to the two-logo layout
+                         the reports used before this existed. -->
+                    <div class="set-group-title" style="margin: 1.6rem 0 .9rem">PDF reports</div>
+
+                    <div class="app-field">
+                        <label for="reportHeader" class="form-label">Report Header</label>
+
+                        <div class="cfg-logo is-banner">
+                            <?php $reportHeader = $system['report_header'] ?? ''; ?>
+                            <div class="cfg-plate is-banner<?= $reportHeader ? '' : ' is-empty' ?>" id="headerPreview">
+                                <?php if ($reportHeader): ?>
+                                    <img src="../<?= htmlspecialchars($reportHeader) ?>" alt="Current report header">
+                                <?php else: ?>
+                                    <i class="bi bi-file-earmark-image" aria-hidden="true"></i>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="cfg-logo-side">
+                                <input type="file"
+                                    class="cfg-file"
+                                    id="reportHeader"
+                                    name="reportHeader"
+                                    accept="image/jpeg,image/png,image/gif,image/webp"
+                                    aria-describedby="reportHeaderHint">
+
+                                <div class="cfg-logo-actions">
+                                    <label for="reportHeader" class="app-btn ghost cfg-pick">
+                                        <i class="bi bi-upload" aria-hidden="true"></i> Choose banner
+                                    </label>
+                                    <button type="button" class="cfg-undo" id="headerReset" hidden>
+                                        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Undo
+                                    </button>
+                                    <!-- A file input has no "empty" value to
+                                         pick, so clearing needs its own
+                                         control. Hidden when there is nothing
+                                         to clear. -->
+                                    <button type="button" class="cfg-undo" id="headerRemove"
+                                        <?= $reportHeader ? '' : 'hidden' ?>>
+                                        <i class="bi bi-x-lg" aria-hidden="true"></i> Remove
+                                    </button>
+                                </div>
+                                <input type="hidden" name="removeReportHeader" id="removeReportHeader" value="">
+
+                                <span class="cfg-file-name is-idle" id="headerFileName">
+                                    <?= $reportHeader ? 'Keeping the current header' : 'No header - reports use the two-logo layout' ?>
+                                </span>
+                                <span class="app-hint" id="reportHeaderHint">
+                                    A wide banner works best (about 7:1, e.g. 2000&times;280). JPG, PNG, GIF, or WEBP, max 4&nbsp;MB.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- ── Page footer ───────────────────────────────
                          Shown at the bottom of every page: the sidebar
                          pages, login, registration, QR generator, QR

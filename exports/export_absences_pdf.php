@@ -1,23 +1,30 @@
 <?php
-/**
- * Export Absences to PDF
- */
+// ============================================================
+// Absence report: students in a section at or above an absence
+// threshold, with how much of the term they have missed.
+//
+// The page furniture is shared with export_pdf.php — see
+// includes/pdf_report.php.
+// ============================================================
 
 session_start();
-require('../includes/fpdf/fpdf.php');
 include __DIR__ . "/../includes/db_connect.php";
+include __DIR__ . "/../includes/systemConfig.php";
+require __DIR__ . '/../includes/pdf_report.php';
+
+date_default_timezone_set('Asia/Manila');
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../pages/index.php");
+    header("Location: ../index.php");
     exit;
 }
 
-$user_id      = $_SESSION['user_id'];
-$role         = $_SESSION['role'];
-$user_name    = $_SESSION['user_name'];
+$user_id   = $_SESSION['user_id'];
+$role      = $_SESSION['role'];
+$user_name = $_SESSION['user_name'] ?? $_SESSION['name'] ?? 'Unknown';
 
-$full_section = isset($_POST['section'])      ? $_POST['section']      : '';
-$min_absences = isset($_POST['min_absences']) ? (int)$_POST['min_absences'] : 3;
+$full_section = $_POST['section']      ?? '';
+$min_absences = isset($_POST['min_absences']) ? (int) $_POST['min_absences'] : 3;
 
 if (empty($full_section)) {
     $_SESSION['error_message'] = "Section is required";
@@ -25,7 +32,7 @@ if (empty($full_section)) {
     exit;
 }
 
-// ✅ FIXED: split "BSIT-1A" → course="BSIT", section="1A"
+// "BSIT-1A" → course="BSIT", section="1A"
 $parts   = explode('-', $full_section, 2);
 $course  = trim($parts[0] ?? '');
 $section = trim($parts[1] ?? $full_section);
@@ -76,202 +83,172 @@ if ($role !== 'admin') {
 }
 
 // ── Total unique class dates ──────────────────────────────
-// ✅ FIXED: attendance_tbl has separate course + section columns
-if ($role === 'admin') {
-    $stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT DATE(date)) as total_classes
-        FROM attendance_tbl
-        WHERE course = ? AND section = ?
-    ");
-    $stmt->bind_param("ss", $course, $section);
-} else {
-    $stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT DATE(date)) as total_classes
-        FROM attendance_tbl
-        WHERE course = ? AND section = ?
-        $subjects_filter
-    ");
-    $stmt->bind_param("ss", $course, $section);
-}
+$stmt = $conn->prepare("
+    SELECT COUNT(DISTINCT DATE(date)) as total_classes
+    FROM attendance_tbl
+    WHERE course = ? AND section = ?
+    " . ($role === 'admin' ? '' : $subjects_filter) . "
+");
+$stmt->bind_param("ss", $course, $section);
 $stmt->execute();
-$total_classes = (int)$stmt->get_result()->fetch_assoc()['total_classes'];
+$total_classes = (int) $stmt->get_result()->fetch_assoc()['total_classes'];
+$stmt->close();
+
+// ── How big the section is ────────────────────────────────
+// Needed to say what share of the class is being flagged — the old
+// report printed a count with nothing to compare it against.
+$stmt = $conn->prepare("SELECT COUNT(*) AS n FROM students_tbl WHERE course = ? AND section = ?");
+$stmt->bind_param("ss", $course, $section);
+$stmt->execute();
+$section_size = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+$stmt->close();
 
 // ── Students with absences >= min_absences ────────────────
-// ✅ FIXED: all WHERE clauses use course + section separately
-//           students_tbl also uses course + section separately
-if ($role === 'admin') {
-    $students_query = "
-        SELECT
-            s.student_no,
-            s.fullname,
-            s.course,
-            s.section,
-            COALESCE(a.attended, 0)                          AS attended,
-            $total_classes                                    AS total_classes,
-            ($total_classes - COALESCE(a.attended, 0))       AS absences
-        FROM students_tbl s
-        LEFT JOIN (
-            SELECT student_no, COUNT(DISTINCT DATE(date)) AS attended
-            FROM attendance_tbl
-            WHERE course = ? AND section = ?
-            GROUP BY student_no
-        ) a ON s.student_no = a.student_no
-        WHERE s.course = ? AND s.section = ?
-        HAVING absences >= ?
-        ORDER BY absences DESC, s.fullname ASC
-    ";
-    $stmt = $conn->prepare($students_query);
-    $stmt->bind_param("ssssi", $course, $section, $course, $section, $min_absences);
-} else {
-    $students_query = "
-        SELECT
-            s.student_no,
-            s.fullname,
-            s.course,
-            s.section,
-            COALESCE(a.attended, 0)                          AS attended,
-            $total_classes                                    AS total_classes,
-            ($total_classes - COALESCE(a.attended, 0))       AS absences
-        FROM students_tbl s
-        LEFT JOIN (
-            SELECT student_no, COUNT(DISTINCT DATE(date)) AS attended
-            FROM attendance_tbl
-            WHERE course = ? AND section = ?
-            $subjects_filter
-            GROUP BY student_no
-        ) a ON s.student_no = a.student_no
-        WHERE s.course = ? AND s.section = ?
-        HAVING absences >= ?
-        ORDER BY absences DESC, s.fullname ASC
-    ";
-    $stmt = $conn->prepare($students_query);
-    $stmt->bind_param("ssssi", $course, $section, $course, $section, $min_absences);
-}
-
+$inner_filter = $role === 'admin' ? '' : $subjects_filter;
+$students_query = "
+    SELECT
+        s.student_no,
+        s.fullname,
+        s.course,
+        s.section,
+        COALESCE(a.attended, 0)                     AS attended,
+        $total_classes                              AS total_classes,
+        ($total_classes - COALESCE(a.attended, 0))  AS absences
+    FROM students_tbl s
+    LEFT JOIN (
+        SELECT student_no, COUNT(DISTINCT DATE(date)) AS attended
+        FROM attendance_tbl
+        WHERE course = ? AND section = ?
+        $inner_filter
+        GROUP BY student_no
+    ) a ON s.student_no = a.student_no
+    WHERE s.course = ? AND s.section = ?
+    HAVING absences >= ?
+    ORDER BY absences DESC, s.fullname ASC
+";
+$stmt = $conn->prepare($students_query);
+$stmt->bind_param("ssssi", $course, $section, $course, $section, $min_absences);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// ── PDF Class ─────────────────────────────────────────────
-class PDF extends FPDF
-{
-    function Header()
-    {
-        global $full_section, $min_absences, $user_name, $total_classes;
+// Buffered so the stat cards — which are drawn ABOVE the table — can
+// be computed from the same rows.
+$rows               = [];
+$total_absences_sum = 0;
+$at_risk            = 0;    // 5+ absences
+$worst              = 0;
 
-        $logo_left  = __DIR__ . '/../assets/images/bcc-logo.png';
-        $logo_right = __DIR__ . '/../assets/images/scc-logo.png';
-        $logo_w = 22;
-        $logo_h = 22;
-        $top_y  = 8;
-
-        if (file_exists($logo_left))  $this->Image($logo_left,  10, $top_y, $logo_w, $logo_h);
-        if (file_exists($logo_right)) $this->Image($logo_right, $this->GetPageWidth() - $logo_w - 10, $top_y, $logo_w, $logo_h);
-
-        $this->SetY($top_y);
-        $this->SetFont('Arial', 'B', 14);
-        $this->Cell(0, 8, 'BINALATONGAN COMMUNITY COLLEGE', 0, 1, 'C');
-
-        $this->SetFont('Arial', 'B', 13);
-        $this->Cell(0, 7, 'ABSENCE REPORT', 0, 1, 'C');
-
-        $this->SetFont('Arial', 'B', 10);
-        $this->Cell(0, 6, "Students with {$min_absences}+ Absences", 0, 1, 'C');
-
-        $this->SetFont('Arial', '', 9);
-        // ✅ FIXED: display full_section "BSIT-1A" not raw "1A"
-        $this->Cell(0, 5, "Section: {$full_section} | Total Classes: {$total_classes}", 0, 1, 'C');
-
-        if ($this->GetY() < $top_y + $logo_h + 2) {
-            $this->SetY($top_y + $logo_h + 2);
-        }
-
-        $this->Ln(3);
-
-        $this->SetFillColor(255, 243, 205);
-        $this->SetDrawColor(255, 193, 7);
-        $this->SetFont('Arial', '', 9);
-        $this->MultiCell(0, 5, "Generated by: {$user_name}\nDate: " . date('F d, Y g:i A'), 1, 'L', true);
-
-        $this->Ln(4);
-
-        $this->SetFont('Arial', 'B', 10);
-        $this->SetFillColor(52, 58, 64);
-        $this->SetTextColor(255, 255, 255);
-
-        $this->Cell(8,  8, '#',           1, 0, 'C', true);
-        $this->Cell(30, 8, 'Student No.', 1, 0, 'C', true);
-        $this->Cell(67, 8, 'Name',        1, 0, 'C', true);
-        $this->Cell(23, 8, 'Course',      1, 0, 'C', true);
-        $this->Cell(20, 8, 'Attended',    1, 0, 'C', true);
-        $this->Cell(20, 8, 'Absences',    1, 0, 'C', true);
-        $this->Cell(22, 8, 'Rate',        1, 1, 'C', true);
-
-        $this->SetTextColor(0, 0, 0);
-    }
-
-    function Footer()
-    {
-        $this->SetY(-15);
-        $this->SetFont('Arial', 'I', 8);
-        $this->Cell(0, 10, 'Page ' . $this->PageNo(), 0, 0, 'C');
-    }
+while ($row = $result->fetch_assoc()) {
+    $rows[] = $row;
+    $total_absences_sum += (int) $row['absences'];
+    if ((int) $row['absences'] >= 5) $at_risk++;
+    if ((int) $row['absences'] > $worst) $worst = (int) $row['absences'];
 }
 
-$pdf = new PDF();
+$listed       = count($rows);
+$avg_absences = $listed > 0 ? round($total_absences_sum / $listed, 1) : 0;
+$share        = $section_size > 0 ? round(($listed / $section_size) * 100, 1) : 0;
+
+// ── Build ─────────────────────────────────────────────────
+$pdf = new ReportPDF('P', 'mm', 'A4');
+$pdf->loadBranding($system);
+$pdf->setReportTitle('Absence Report', "Students with {$min_absences}+ absences");
+$pdf->setPreparedBy($user_name);
+$pdf->SetMargins(ReportPDF::MARGIN, 10, ReportPDF::MARGIN);
+$pdf->SetAutoPageBreak(true, 20);
+$pdf->AliasNbPages();
 $pdf->AddPage();
-$pdf->SetFont('Arial', '', 9);
 
-$count              = 1;
-$total_students     = 0;
-$total_absences_sum = 0;
+$pdf->MetaBar([
+    'Section'      => $full_section,
+    'Classes held' => (string) $total_classes,
+    'Threshold'    => $min_absences . ' absences or more',
+]);
 
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $absences     = $row['absences'];
+$pdf->StatCards([
+    'Section Size'    => [(string) $section_size, 'plain'],
+    'Flagged'         => [(string) $listed, $listed > 0 ? 'warn' : 'ok'],
+    'At Risk (5+)'    => [(string) $at_risk, $at_risk > 0 ? 'bad' : 'ok'],
+    'Share of Class'  => [$share . '%', $share >= 25 ? 'bad' : ($share > 0 ? 'warn' : 'ok')],
+]);
+
+$pdf->BlockTitle('Flagged students');
+
+$pdf->setTableColumns([
+    [10, '#', 'C'], [30, 'Student No.', 'C'], [68, 'Name', 'L'], [22, 'Course', 'C'],
+    [20, 'Attended', 'C'], [20, 'Absent', 'C'], [20, 'Missed', 'C'],
+]);
+$pdf->TableHead();
+$pdf->BeginTableBody();
+
+if ($listed === 0) {
+    $pdf->EmptyRow("No students in {$full_section} have {$min_absences} or more absences.");
+} else {
+    $count = 1;
+    $fill  = false;
+
+    foreach ($rows as $row) {
+        $absences     = (int) $row['absences'];
         $absence_rate = $total_classes > 0 ? round(($absences / $total_classes) * 100, 1) : 0;
 
-        if ($count % 2 == 0) {
-            $pdf->SetFillColor(248, 249, 250);
-        } else {
-            $pdf->SetFillColor(255, 255, 255);
-        }
+        $pdf->SetFillColor(247, 249, 251);
 
+        // 5+ absences is the line the school acts on, so those rows
+        // are red and bold rather than needing the number read.
         if ($absences >= 5) {
-            $pdf->SetTextColor(220, 38, 38);
+            $pdf->SetTextColor(185, 28, 28);
             $pdf->SetFont('Arial', 'B', 9);
         } else {
             $pdf->SetTextColor(0, 0, 0);
             $pdf->SetFont('Arial', '', 9);
         }
 
-        $pdf->Cell(8,  7, $count,                             1, 0, 'C', true);
-        $pdf->Cell(30, 7, $row['student_no'],                 1, 0, 'L', true);
-        $pdf->Cell(67, 7, substr($row['fullname'], 0, 35),    1, 0, 'L', true);
-        // ✅ FIXED: display course from row (already stored separately)
-        $pdf->Cell(23, 7, $row['course'],                     1, 0, 'C', true);
-        $pdf->Cell(20, 7, $row['attended'],                   1, 0, 'C', true);
-        $pdf->Cell(20, 7, $absences,                          1, 0, 'C', true);
-        $pdf->Cell(22, 7, $absence_rate . '%',                1, 1, 'C', true);
+        $pdf->Cell(10, 7.5, $count,                                  1, 0, 'C', $fill);
+        $pdf->Cell(30, 7.5, ReportPDF::txt($row['student_no']),      1, 0, 'C', $fill);
+        // After SetFont above, so the wider bold face used for the
+        // 5+ rows is what the width is measured against.
+        $pdf->Cell(68, 7.5, $pdf->fit($row['fullname'], 68),         1, 0, 'L', $fill);
+        $pdf->Cell(22, 7.5, ReportPDF::txt($row['course']),          1, 0, 'C', $fill);
+        $pdf->Cell(20, 7.5, (string) $row['attended'],               1, 0, 'C', $fill);
+        $pdf->Cell(20, 7.5, (string) $absences,                      1, 0, 'C', $fill);
+        $pdf->Cell(20, 7.5, $absence_rate . '%',                     1, 1, 'C', $fill);
 
         $count++;
-        $total_students++;
-        $total_absences_sum += $absences;
+        $fill = !$fill;
     }
-
-    $pdf->Ln(5);
-    $pdf->SetFont('Arial', 'B', 10);
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->Cell(0, 8, "Summary", 0, 1, 'L');
-
-    $pdf->SetFont('Arial', '', 9);
-    $pdf->Cell(0, 6, "Total Students with {$min_absences}+ Absences: {$total_students}", 0, 1);
-    $avg_absences = $total_students > 0 ? round($total_absences_sum / $total_students, 1) : 0;
-    $pdf->Cell(0, 6, "Average Absences: {$avg_absences}", 0, 1);
-} else {
-    $pdf->SetFont('Arial', 'I', 10);
-    $pdf->Cell(0, 10, 'No students found with ' . $min_absences . '+ absences.', 0, 1, 'C');
 }
 
-// ✅ FIXED: filename uses full_section "BSIT-1A" not raw "1A"
-$filename = "Absences_Report_Section_{$full_section}_" . date('Y-m-d') . ".pdf";
+$pdf->EndTableBody();
+
+// ── Summary ───────────────────────────────────────────────
+if ($listed > 0) {
+    $pdf->Ln(5);
+    $pdf->BlockTitle('Summary');
+
+    $pdf->SetFont('Arial', '', 9);
+    $pdf->SetFillColor(248, 250, 252);
+    $pdf->SetDrawColor(225, 229, 234);
+
+    $lines = [
+        'Students flagged'  => "{$listed} of {$section_size} in the section ({$share}%)",
+        'Average absences'  => "{$avg_absences} of {$total_classes} classes",
+        'Highest absences'  => "{$worst} of {$total_classes} classes",
+        'At risk (5+)'      => "{$at_risk} student" . ($at_risk === 1 ? '' : 's'),
+    ];
+
+    foreach ($lines as $label => $value) {
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->SetTextColor(90, 98, 108);
+        $pdf->Cell(60, 7, ReportPDF::txt($label), 1, 0, 'L', true);
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->SetTextColor(17, 24, 39);
+        $pdf->Cell(130, 7, ReportPDF::txt($value), 1, 1, 'L', true);
+    }
+    $pdf->SetTextColor(0, 0, 0);
+}
+
+$filename = "Absences_Report_{$full_section}_" . date('Y-m-d') . ".pdf";
+
+$pdf->AddSignature();
 $pdf->Output('D', $filename);

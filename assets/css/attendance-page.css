@@ -409,21 +409,6 @@
     color: #fff;
 }
 
-.att-page .dt-buttons .btn {
-    background: rgba(255, 255, 255, .05);
-    border: 1px solid rgba(255, 255, 255, .12);
-    color: #cbd5e1;
-    border-radius: 9px;
-    font-size: .8rem;
-    padding: .4rem .8rem;
-    margin-right: .35rem;
-}
-
-.att-page .dt-buttons .btn:hover {
-    background: rgba(139, 92, 246, .18);
-    color: #fff;
-}
-
 /* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
     .att-page .att-hero {

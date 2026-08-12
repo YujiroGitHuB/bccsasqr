@@ -31,4 +31,9 @@ $footerYear = trim($system['footer_year'] ?? '');
 if ($footerYear === '') {
     $footerYear = date('Y');
 }
-?>
+
+// No closing PHP tag on purpose: this file is included by the PDF
+// exports, and any stray byte after a closing tag reaches the browser
+// before the PDF does — FPDF then aborts with "Some data has already
+// been output". (Do not write the closing tag inside a comment here
+// either: PHP leaves PHP-mode at it even mid-comment.)

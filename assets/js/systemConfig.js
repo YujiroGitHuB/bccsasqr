@@ -63,6 +63,72 @@ document.addEventListener('DOMContentLoaded', () => {
         systemLogo.focus();
     });
 
+    // ─── Report letterhead ───────────────────────────────────────
+    // Same picker as the logo, plus a Remove: clearing it is a real
+    // choice here (it sends the PDF reports back to the two-logo
+    // layout), and a file input has no empty value to pick.
+    const reportHeader   = document.getElementById('reportHeader');
+    const headerPreview  = document.getElementById('headerPreview');
+    const headerFileName = document.getElementById('headerFileName');
+    const headerReset    = document.getElementById('headerReset');
+    const headerRemove   = document.getElementById('headerRemove');
+    const removeFlag     = document.getElementById('removeReportHeader');
+
+    if (reportHeader) {
+        const originalHeader      = headerPreview.innerHTML;
+        const originalHeaderEmpty = headerPreview.classList.contains('is-empty');
+        const hadHeader           = !originalHeaderEmpty;
+
+        const showOriginalHeader = () => {
+            headerPreview.innerHTML = originalHeader;
+            headerPreview.classList.toggle('is-empty', originalHeaderEmpty);
+            headerFileName.textContent = hadHeader
+                ? 'Keeping the current header'
+                : 'No header - reports use the two-logo layout';
+            headerFileName.classList.add('is-idle');
+            headerReset.hidden  = true;
+            headerRemove.hidden = !hadHeader;
+            removeFlag.value    = '';
+        };
+
+        reportHeader.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) { showOriginalHeader(); return; }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                headerPreview.classList.remove('is-empty');
+                headerPreview.innerHTML =
+                    `<img src="${event.target.result}" alt="New header preview">`;
+            };
+            reader.readAsDataURL(file);
+
+            headerFileName.textContent = file.name;
+            headerFileName.classList.remove('is-idle');
+            headerReset.hidden  = false;
+            headerRemove.hidden = true;
+            // Picking a file overrides a pending removal.
+            removeFlag.value = '';
+        });
+
+        headerReset.addEventListener('click', () => {
+            reportHeader.value = '';
+            showOriginalHeader();
+            reportHeader.focus();
+        });
+
+        headerRemove.addEventListener('click', () => {
+            reportHeader.value = '';
+            headerPreview.innerHTML = '<i class="bi bi-file-earmark-image" aria-hidden="true"></i>';
+            headerPreview.classList.add('is-empty');
+            headerFileName.textContent = 'Header will be removed on save';
+            headerFileName.classList.remove('is-idle');
+            headerRemove.hidden = true;
+            headerReset.hidden  = false;   // Undo puts it back
+            removeFlag.value    = '1';
+        });
+    }
+
     // 🔹 Handle Form Submission
     systemConfigForm.addEventListener('submit', (e) => {
         e.preventDefault();

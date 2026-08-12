@@ -1,187 +1,179 @@
 <?php
-require('../includes/fpdf/fpdf.php');
-include("../includes/db_connect.php");
+// ============================================================
+// Attendance report for one subject, section, and date.
+//
+// The page furniture (letterhead, title, footer, table headings,
+// stat cards) lives in includes/pdf_report.php and is shared with
+// export_absences_pdf.php — this file is the query and the rows.
+// ============================================================
+
+include __DIR__ . "/../includes/db_connect.php";
 session_start();
+include __DIR__ . "/../includes/systemConfig.php";
+require __DIR__ . '/../includes/pdf_report.php';
 
 date_default_timezone_set('Asia/Manila');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') exit;
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../index.php");
+    exit;
+}
 
 $full_section = $_POST['section'] ?? '';
 $subject      = $_POST['subject'] ?? '';
 $status       = $_POST['status']  ?? 'all';
 $date         = $_POST['date']    ?? date('Y-m-d');
-$user_id       = (int)$_SESSION['user_id'];
-$exported_by   = $_SESSION['user_name'] ?? $_SESSION['name'] ?? 'Unknown';
+$user_id      = (int) $_SESSION['user_id'];
+$exported_by  = $_SESSION['user_name'] ?? $_SESSION['name'] ?? 'Unknown';
 
-// ✅ FIXED: split "BSIT-1A" → course="BSIT", section="1A"
+// "BSIT-1A" → course="BSIT", section="1A"
 $parts   = explode('-', $full_section, 2);
 $course  = trim($parts[0] ?? '');
 $section = trim($parts[1] ?? $full_section);
 
-if ($status === 'present' || $status === 'all') {
-    // ✅ FIXED: attendance_tbl has separate course + section columns
+// ── Stats ─────────────────────────────────────────────────
+// The report used to end with a single "Total Present: N" line,
+// which says nothing about how big the class is. These three
+// numbers are what the count actually has to be read against.
+$stmt = $conn->prepare("SELECT COUNT(*) AS n FROM students_tbl WHERE course = ? AND section = ?");
+$stmt->bind_param("ss", $course, $section);
+$stmt->execute();
+$enrolled = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+$stmt->close();
+
+$stmt = $conn->prepare("
+    SELECT COUNT(DISTINCT student_no) AS n
+    FROM attendance_tbl
+    WHERE course = ? AND section = ? AND subject = ? AND user_id = ? AND DATE(`date`) = ?
+");
+$stmt->bind_param("sssis", $course, $section, $subject, $user_id, $date);
+$stmt->execute();
+$present_count = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+$stmt->close();
+
+$absent_count = max(0, $enrolled - $present_count);
+$rate         = $enrolled > 0 ? round(($present_count / $enrolled) * 100, 1) : 0.0;
+
+// ── Rows ──────────────────────────────────────────────────
+if ($status === 'absent') {
+    $sql = "
+        SELECT s.student_no, s.fullname, s.course, s.section
+        FROM students_tbl s
+        WHERE s.course = ? AND s.section = ?
+          AND s.student_no NOT IN (
+              SELECT student_no FROM attendance_tbl
+              WHERE course = ? AND section = ? AND subject = ? AND user_id = ? AND DATE(`date`) = ?
+          )
+        ORDER BY s.fullname ASC
+    ";
+    $report_title = 'Absent Students Report';
+    $filename     = "Absent_{$subject}_{$full_section}_" . date('Y-m-d', strtotime($date)) . ".pdf";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sssssis", $course, $section, $course, $section, $subject, $user_id, $date);
+} else {
     $sql = "
         SELECT date, student_no, name, course, section, subject, time_in
         FROM attendance_tbl
-        WHERE course = ? AND section = ?
-          AND subject  = ?
-          AND user_id  = ?
-          AND DATE(`date`) = ?
+        WHERE course = ? AND section = ? AND subject = ? AND user_id = ? AND DATE(`date`) = ?
         ORDER BY name ASC
     ";
-    $report_title = $status === 'present' ? "Present Students Report" : "Student Attendance Report";
+    $report_title = $status === 'present' ? 'Present Students Report' : 'Student Attendance Report';
     $prefix       = $status === 'present' ? 'Present' : 'Attendance';
     $filename     = "{$prefix}_{$subject}_{$full_section}_" . date('Y-m-d', strtotime($date)) . ".pdf";
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("sssis", $course, $section, $subject, $user_id, $date);
-
-} elseif ($status === 'absent') {
-    // ✅ FIXED: outer WHERE uses students_tbl.course + section
-    //           subquery uses attendance_tbl.course + section
-    $sql = "
-        SELECT s.student_no, s.fullname, s.course, s.section
-        FROM students_tbl s
-        WHERE s.course   = ?
-          AND s.section  = ?
-          AND s.student_no NOT IN (
-              SELECT student_no FROM attendance_tbl
-              WHERE course   = ?
-                AND section  = ?
-                AND subject  = ?
-                AND user_id  = ?
-                AND DATE(`date`) = ?
-          )
-        ORDER BY s.fullname ASC
-    ";
-    $report_title = "Absent Students Report";
-    $filename     = "Absent_{$subject}_{$full_section}_" . date('Y-m-d', strtotime($date)) . ".pdf";
-
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssis", $course, $section, $course, $section, $subject, $user_id, $date);
 }
 
 $stmt->execute();
 $result      = $stmt->get_result();
 $total_count = $result->num_rows;
 
-// ── PDF Class ─────────────────────────────────────────────
-class PDF extends FPDF
-{
-    private $reportTitle;
-    private $exportedBy = '';
-
-    function setReportTitle($title) { $this->reportTitle = $title; }
-
-    function Header()
-    {
-        $logo_left  = __DIR__ . '/../assets/images/bcc logo.png';
-        $logo_right = __DIR__ . '/../assets/images/scc-logo.png';
-        $logo_w = 22; $logo_h = 22; $top_y = 8;
-
-        if (file_exists($logo_left))  $this->Image($logo_left,  10, $top_y, $logo_w, $logo_h);
-        if (file_exists($logo_right)) $this->Image($logo_right, $this->GetPageWidth() - $logo_w - 10, $top_y, $logo_w, $logo_h);
-
-        $this->SetY($top_y);
-        $this->SetFont('Arial', 'B', 16);
-        $this->Cell(0, 10, 'Binalatongan Community College', 0, 1, 'C');
-
-        $this->SetFont('Arial', '', 12);
-        $this->Cell(0, 7, $this->reportTitle, 0, 1, 'C');
-
-        if ($this->GetY() < $top_y + $logo_h + 2) {
-            $this->SetY($top_y + $logo_h + 2);
-        }
-
-        $this->Ln(3);
-        $this->SetDrawColor(0, 0, 0);
-        $this->Line(10, $this->GetY(), 200, $this->GetY());
-        $this->Ln(5);
-    }
-
-    function Footer()
-    {
-        $this->SetY(-15);
-        $this->SetFont('Arial', 'I', 8);
-        $this->Cell(0, 10, 'Page ' . $this->PageNo() . '/{nb}', 0, 0, 'C');
-    }
-
-    function setExportedBy($name) { $this->exportedBy = $name; }
-
-    function AddSignature()
-    {
-        $this->SetY(-45);
-        $this->SetFont('Arial', '', 11);
-        $this->Cell(0, 6, '______________________________', 0, 1, 'R');
-        $this->SetFont('Arial', 'B', 11);
-        $this->Cell(0, 6, $this->exportedBy, 0, 1, 'R');
-        $this->SetFont('Arial', '', 10);
-        $this->Cell(0, 6, 'Prepared by', 0, 1, 'R');
-    }
-}
-
-$pdf = new PDF('P', 'mm', 'A4');
-$pdf->setReportTitle($report_title);
-$pdf->setExportedBy($exported_by);
+// ── Build ─────────────────────────────────────────────────
+$pdf = new ReportPDF('P', 'mm', 'A4');
+$pdf->loadBranding($system);
+$pdf->setReportTitle($report_title, date('l, F d, Y', strtotime($date)));
+$pdf->setPreparedBy($exported_by);
+$pdf->SetMargins(ReportPDF::MARGIN, 10, ReportPDF::MARGIN);
+$pdf->SetAutoPageBreak(true, 20);
 $pdf->AliasNbPages();
 $pdf->AddPage();
 
-// ── Report info ───────────────────────────────────────────
-$pdf->SetFont('Arial', '', 12);
-$pdf->Cell(0, 8, "Subject: $subject",                           0, 1, 'L');
-// ✅ FIXED: display full "BSIT-1A" not raw "1A"
-$pdf->Cell(0, 8, "Section: $full_section",                      0, 1, 'L');
-$pdf->Cell(0, 8, "Date: " . date('F d, Y', strtotime($date)),   0, 1, 'L');
-$pdf->Cell(0, 8, "Status: " . ucfirst($status),                 0, 1, 'L');
-$pdf->Ln(5);
+$pdf->MetaBar([
+    'Subject' => $subject !== '' ? $subject : '-',
+    'Section' => $full_section !== '' ? $full_section : '-',
+    'Date'    => date('F d, Y', strtotime($date)),
+]);
 
-// ── Table header ──────────────────────────────────────────
-$pdf->SetFont('Arial', 'B', 11);
-$pdf->SetFillColor(52, 73, 94);
-$pdf->SetTextColor(255, 255, 255);
+// The rate is coloured by how bad it is, so the reader does not have
+// to compare it against anything to know whether it needs attention.
+$rateTone = $rate >= 90 ? 'ok' : ($rate >= 75 ? 'warn' : 'bad');
+
+$pdf->StatCards([
+    'Enrolled'        => [(string) $enrolled, 'plain'],
+    'Present'         => [(string) $present_count, 'ok'],
+    'Absent'          => [(string) $absent_count, $absent_count > 0 ? 'bad' : 'plain'],
+    'Attendance Rate' => [$rate . '%', $rateTone],
+]);
+
+$pdf->BlockTitle($status === 'absent' ? 'Absent students' : 'Attendance records');
 
 if ($status === 'absent') {
-    $pdf->Cell(15, 10, '#',           1, 0, 'C', true);
-    $pdf->Cell(40, 10, 'Student No',  1, 0, 'C', true);
-    $pdf->Cell(70, 10, 'Name',        1, 0, 'C', true);
-    $pdf->Cell(55, 10, 'Course',      1, 1, 'C', true);
+    $pdf->setTableColumns([
+        [12, '#', 'C'], [34, 'Student No.', 'C'], [90, 'Name', 'L'],
+        [26, 'Course', 'C'], [28, 'Section', 'C'],
+    ]);
 } else {
-    $pdf->Cell(15, 10, '#',           1, 0, 'C', true);
-    $pdf->Cell(35, 10, 'Student No',  1, 0, 'C', true);
-    $pdf->Cell(60, 10, 'Name',        1, 0, 'C', true);
-    $pdf->Cell(35, 10, 'Course',      1, 0, 'C', true);
-    $pdf->Cell(35, 10, 'Time In',     1, 1, 'C', true);
+    $pdf->setTableColumns([
+        [12, '#', 'C'], [32, 'Student No.', 'C'], [76, 'Name', 'L'],
+        [24, 'Course', 'C'], [46, 'Time In', 'C'],
+    ]);
 }
 
-// ── Table rows ────────────────────────────────────────────
-$pdf->SetFont('Arial', '', 11);
-$pdf->SetTextColor(0, 0, 0);
-$pdf->SetFillColor(240, 240, 240);
+$pdf->TableHead();
+$pdf->BeginTableBody();
+
+$pdf->SetFont('Arial', '', 9);
 $fill = false;
 $i    = 1;
 
-while ($row = $result->fetch_assoc()) {
-    if ($status === 'absent') {
-        $pdf->Cell(15, 8, $i++,                             1, 0, 'C', $fill);
-        $pdf->Cell(40, 8, $row['student_no'],               1, 0, 'C', $fill);
-        $pdf->Cell(70, 8, utf8_decode($row['fullname']),    1, 0, 'L', $fill);
-        $pdf->Cell(55, 8, $row['course'],                   1, 1, 'C', $fill);
-    } else {
-        $pdf->Cell(15, 8, $i++,                             1, 0, 'C', $fill);
-        $pdf->Cell(35, 8, $row['student_no'],               1, 0, 'C', $fill);
-        $pdf->Cell(60, 8, utf8_decode($row['name']),        1, 0, 'L', $fill);
-        $pdf->Cell(35, 8, $row['course'],                   1, 0, 'C', $fill);
-        $pdf->Cell(35, 8, date('h:i A', strtotime($row['time_in'])), 1, 1, 'C', $fill);
+if ($total_count === 0) {
+    $pdf->EmptyRow($status === 'absent'
+        ? 'No absences recorded for this subject on this date.'
+        : 'No attendance was recorded for this subject on this date.');
+} else {
+    while ($row = $result->fetch_assoc()) {
+        $pdf->SetFillColor(247, 249, 251);
+
+        if ($status === 'absent') {
+            $pdf->Cell(12, 7.5, $i++,                                1, 0, 'C', $fill);
+            $pdf->Cell(34, 7.5, ReportPDF::txt($row['student_no']),  1, 0, 'C', $fill);
+            $pdf->Cell(90, 7.5, $pdf->fit($row['fullname'], 90),     1, 0, 'L', $fill);
+            $pdf->Cell(26, 7.5, ReportPDF::txt($row['course']),      1, 0, 'C', $fill);
+            $pdf->Cell(28, 7.5, ReportPDF::txt($row['section']),     1, 1, 'C', $fill);
+        } else {
+            $pdf->Cell(12, 7.5, $i++,                                1, 0, 'C', $fill);
+            $pdf->Cell(32, 7.5, ReportPDF::txt($row['student_no']),  1, 0, 'C', $fill);
+            $pdf->Cell(76, 7.5, $pdf->fit($row['name'], 76),         1, 0, 'L', $fill);
+            $pdf->Cell(24, 7.5, ReportPDF::txt($row['course']),      1, 0, 'C', $fill);
+            $pdf->Cell(46, 7.5, date('h:i A', strtotime($row['time_in'])), 1, 1, 'C', $fill);
+        }
+        $fill = !$fill;
     }
-    $fill = !$fill;
 }
 
-// ── Summary ───────────────────────────────────────────────
-$pdf->Ln(5);
-$pdf->SetFont('Arial', 'B', 12);
-$label = $status === 'absent' ? 'Absent' : 'Present';
-$pdf->Cell(0, 10, "Total {$label}: {$total_count}", 0, 1, 'R');
+$pdf->EndTableBody();
+
+// ── Total ─────────────────────────────────────────────────
+$pdf->SetFont('Arial', 'B', 9.5);
+$pdf->SetFillColor(238, 242, 246);
+$pdf->SetTextColor(17, 24, 39);
+$label = $status === 'absent' ? 'Total absent' : 'Total listed';
+$pdf->Cell(164, 8, ReportPDF::txt($label), 1, 0, 'R', true);
+$pdf->Cell(26,  8, (string) $total_count,   1, 1, 'C', true);
+$pdf->SetTextColor(0, 0, 0);
 
 $pdf->AddSignature();
 $pdf->Output('D', $filename);

@@ -361,6 +361,26 @@
     font-size: 1.7rem;
 }
 
+/* The report letterhead is a wide banner (roughly 7:1), not a square
+   mark. Side by side with the buttons it would be a few millimetres
+   tall and unreadable, so this variant stacks instead. */
+.cfg-logo.is-banner {
+    display: block;
+}
+
+.cfg-plate.is-banner {
+    width: 100%;
+    height: auto;
+    min-height: 62px;
+    margin-bottom: .85rem;
+    padding: 6px;
+}
+
+.cfg-plate.is-banner img {
+    width: 100%;
+    max-height: 130px;
+}
+
 .cfg-logo-side {
     position: relative;
     flex: 1 1 auto;

@@ -159,15 +159,6 @@ body {
     margin-left: 0;
   }
 
-  /* Export buttons: let them wrap rather than run off screen. */
-  .dt-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    float: none;
-    margin-bottom: 10px;
-  }
-
   /* ── Forms and filters ───────────────────────────────────── */
   /* A font under 16px in an input triggers auto-zoom on iOS. */
   input,
