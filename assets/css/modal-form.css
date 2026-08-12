@@ -509,6 +509,53 @@
     color: rgba(255, 255, 255, .6);
 }
 
+/* ─── Subject filter and per-subject breakdown ──────────── */
+
+/* Sits above the table, not in the header: it changes what the
+   table shows, so it belongs with the table. */
+.abs-filter {
+    margin-bottom: 1rem;
+}
+
+.abs-filter .form-label {
+    display: block;
+    margin-bottom: .35rem;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .4);
+}
+
+/* Which subjects a student missed, under their name. The overall
+   count says a student is missing class; this says which class —
+   secondary to the name, so it is smaller and dimmer. */
+.abs-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+    margin-top: .35rem;
+}
+
+.abs-subj {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .28rem;
+    padding: .12rem .45rem;
+    border-radius: 6px;
+    border: 1px solid rgba(245, 158, 11, .25);
+    background: rgba(245, 158, 11, .1);
+    font-size: .7rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, .55);
+    white-space: nowrap;
+}
+
+.abs-subj b {
+    color: #fcd34d;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Only one badge per row carries color: the absence count. That
    is the reason the list was opened. Amber → red → solid red by
    severity, matching warn/crit on the dashboard. */

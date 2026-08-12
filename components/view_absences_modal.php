@@ -32,6 +32,21 @@
                     <p>Counting missed class days for this section.</p>
                 </div>
 
+                <!-- Subject filter. Rebuilt from the response on every
+                     open, because which subjects a section has depends
+                     on the section (and, for an instructor, on what
+                     they teach). Sits outside #absencesContent so it
+                     stays visible when a filter returns nothing. -->
+                <div class="abs-filter" id="absencesFilterWrap" style="display: none;">
+                    <label for="absencesSubject" class="form-label">Subject</label>
+                    <div class="app-input">
+                        <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
+                        <select class="form-select" id="absencesSubject">
+                            <option value="">All subjects</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- The list -->
                 <div id="absencesContent" style="display: none;">
                     <div class="app-chips" id="absencesChips"></div>
@@ -79,6 +94,9 @@
                 <form id="exportAbsencesPdfForm" action="../exports/export_absences_pdf.php" method="POST">
                     <input type="hidden" name="section" id="exportSection">
                     <input type="hidden" name="min_absences" id="exportMinAbsences">
+                    <!-- Kept in step with the dropdown by view_absences.js,
+                         so the PDF matches what is on screen. -->
+                    <input type="hidden" name="subject" id="exportSubject">
                     <!-- The only primary action. It was red before — red is
                          reserved for destructive actions, and exporting is
                          not one. -->

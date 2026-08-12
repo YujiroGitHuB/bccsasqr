@@ -1,15 +1,18 @@
 <?php
 // ============================================================
 // Absence report: students in a section at or above an absence
-// threshold, with how much of the term they have missed.
+// threshold, with a per-subject breakdown.
 //
-// The page furniture is shared with export_pdf.php — see
+// Counting lives in includes/absences.php and is shared with
+// api/get_absences_data.php, so the modal and this PDF cannot drift
+// apart. Page furniture is shared with export_pdf.php — see
 // includes/pdf_report.php.
 // ============================================================
 
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
 include __DIR__ . "/../includes/systemConfig.php";
+require_once __DIR__ . '/../includes/absences.php';
 require __DIR__ . '/../includes/pdf_report.php';
 
 date_default_timezone_set('Asia/Manila');
@@ -20,11 +23,12 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id   = $_SESSION['user_id'];
-$role      = $_SESSION['role'];
+$role      = $_SESSION['role'] ?? '';
 $user_name = $_SESSION['user_name'] ?? $_SESSION['name'] ?? 'Unknown';
 
 $full_section = $_POST['section']      ?? '';
 $min_absences = isset($_POST['min_absences']) ? (int) $_POST['min_absences'] : 3;
+$subject      = trim($_POST['subject'] ?? '');
 
 if (empty($full_section)) {
     $_SESSION['error_message'] = "Section is required";
@@ -43,111 +47,45 @@ if (empty($course) || empty($section)) {
     exit;
 }
 
-// ── Access check (instructor only) ───────────────────────
-if ($role !== 'admin') {
-    $check_stmt = $conn->prepare("
-        SELECT COUNT(*) as cnt FROM instructor_section_tbl
-        WHERE instructor_id = ? AND course = ? AND section = ?
-    ");
-    $check_stmt->bind_param("iss", $user_id, $course, $section);
-    $check_stmt->execute();
-    $has_access = $check_stmt->get_result()->fetch_assoc()['cnt'] > 0;
-
-    if (!$has_access) {
-        $_SESSION['error_message'] = "Access denied";
-        header("Location: ../pages/dashboard.php");
-        exit;
-    }
+if (!absence_can_access($conn, $role, $user_id, $course, $section)) {
+    $_SESSION['error_message'] = "Access denied";
+    header("Location: ../pages/dashboard.php");
+    exit;
 }
 
-// ── Subject filter (instructor only) ────────────────────
-$subjects_filter = "";
-if ($role !== 'admin') {
-    $sq = $conn->prepare("
-        SELECT s.subject_name
-        FROM subjects_tbl s
-        INNER JOIN subject_instructors_tbl si ON s.id = si.subject_id
-        WHERE si.instructor_id = ?
-    ");
-    $sq->bind_param("i", $user_id);
-    $sq->execute();
-    $r = $sq->get_result();
+$allowed = ($role === 'admin') ? [] : absence_instructor_subjects($conn, $user_id);
 
-    $subject_names = [];
-    while ($row = $r->fetch_assoc()) {
-        $subject_names[] = "'" . $conn->real_escape_string($row['subject_name']) . "'";
-    }
-    if (!empty($subject_names)) {
-        $subjects_filter = "AND subject IN (" . implode(',', $subject_names) . ")";
-    }
+if ($subject !== '' && $role !== 'admin' && !in_array($subject, $allowed, true)) {
+    $_SESSION['error_message'] = "That subject is not assigned to you.";
+    header("Location: ../pages/dashboard.php");
+    exit;
 }
 
-// ── Total unique class dates ──────────────────────────────
-$stmt = $conn->prepare("
-    SELECT COUNT(DISTINCT DATE(date)) as total_classes
-    FROM attendance_tbl
-    WHERE course = ? AND section = ?
-    " . ($role === 'admin' ? '' : $subjects_filter) . "
-");
-$stmt->bind_param("ss", $course, $section);
-$stmt->execute();
-$total_classes = (int) $stmt->get_result()->fetch_assoc()['total_classes'];
-$stmt->close();
+$report = absence_report($conn, $course, $section, [
+    'allowed_subjects' => $allowed,
+    'subject'          => $subject,
+    'min_absences'     => $min_absences,
+    'scope_required'   => $role !== 'admin',
+]);
 
-// ── How big the section is ────────────────────────────────
-// Needed to say what share of the class is being flagged — the old
-// report printed a count with nothing to compare it against.
-$stmt = $conn->prepare("SELECT COUNT(*) AS n FROM students_tbl WHERE course = ? AND section = ?");
-$stmt->bind_param("ss", $course, $section);
-$stmt->execute();
-$section_size = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
-$stmt->close();
+$rows           = $report['students'];
+$total_sessions = $report['total_sessions'];
+$section_size   = $report['section_size'];
+$subjects       = $report['subjects'];
 
-// ── Students with absences >= min_absences ────────────────
-$inner_filter = $role === 'admin' ? '' : $subjects_filter;
-$students_query = "
-    SELECT
-        s.student_no,
-        s.fullname,
-        s.course,
-        s.section,
-        COALESCE(a.attended, 0)                     AS attended,
-        $total_classes                              AS total_classes,
-        ($total_classes - COALESCE(a.attended, 0))  AS absences
-    FROM students_tbl s
-    LEFT JOIN (
-        SELECT student_no, COUNT(DISTINCT DATE(date)) AS attended
-        FROM attendance_tbl
-        WHERE course = ? AND section = ?
-        $inner_filter
-        GROUP BY student_no
-    ) a ON s.student_no = a.student_no
-    WHERE s.course = ? AND s.section = ?
-    HAVING absences >= ?
-    ORDER BY absences DESC, s.fullname ASC
-";
-$stmt = $conn->prepare($students_query);
-$stmt->bind_param("ssssi", $course, $section, $course, $section, $min_absences);
-$stmt->execute();
-$result = $stmt->get_result();
+$listed  = count($rows);
+$at_risk = 0;
+$worst   = 0;
+$sum     = 0;
 
-// Buffered so the stat cards — which are drawn ABOVE the table — can
-// be computed from the same rows.
-$rows               = [];
-$total_absences_sum = 0;
-$at_risk            = 0;    // 5+ absences
-$worst              = 0;
-
-while ($row = $result->fetch_assoc()) {
-    $rows[] = $row;
-    $total_absences_sum += (int) $row['absences'];
-    if ((int) $row['absences'] >= 5) $at_risk++;
-    if ((int) $row['absences'] > $worst) $worst = (int) $row['absences'];
+foreach ($rows as $r) {
+    $sum += $r['absences'];
+    if ($r['absences'] >= 5) $at_risk++;
+    if ($r['absences'] > $worst) $worst = $r['absences'];
 }
 
-$listed       = count($rows);
-$avg_absences = $listed > 0 ? round($total_absences_sum / $listed, 1) : 0;
-$share        = $section_size > 0 ? round(($listed / $section_size) * 100, 1) : 0;
+$avg   = $listed > 0 ? round($sum / $listed, 1) : 0;
+$share = $section_size > 0 ? round(($listed / $section_size) * 100, 1) : 0;
 
 // ── Build ─────────────────────────────────────────────────
 $pdf = new ReportPDF('P', 'mm', 'A4');
@@ -160,19 +98,31 @@ $pdf->AliasNbPages();
 $pdf->AddPage();
 
 $pdf->MetaBar([
-    'Section'      => $full_section,
-    'Classes held' => (string) $total_classes,
-    'Threshold'    => $min_absences . ' absences or more',
+    'Section'        => $full_section,
+    'Subject'        => $subject !== '' ? $subject : 'All subjects (' . count($subjects) . ')',
+    'Sessions held'  => (string) $total_sessions,
 ]);
 
 $pdf->StatCards([
-    'Section Size'    => [(string) $section_size, 'plain'],
-    'Flagged'         => [(string) $listed, $listed > 0 ? 'warn' : 'ok'],
-    'At Risk (5+)'    => [(string) $at_risk, $at_risk > 0 ? 'bad' : 'ok'],
-    'Share of Class'  => [$share . '%', $share >= 25 ? 'bad' : ($share > 0 ? 'warn' : 'ok')],
+    'Section Size'   => [(string) $section_size, 'plain'],
+    'Flagged'        => [(string) $listed, $listed > 0 ? 'warn' : 'ok'],
+    'At Risk (5+)'   => [(string) $at_risk, $at_risk > 0 ? 'bad' : 'ok'],
+    'Share of Class' => [$share . '%', $share >= 25 ? 'bad' : ($share > 0 ? 'warn' : 'ok')],
 ]);
 
-$pdf->BlockTitle('Flagged students');
+// A session is one subject on one day. Spelling that out matters: the
+// numbers here are larger than the old report's for the same data,
+// and a reader who does not know why will assume one of them is wrong.
+$pdf->SetFont('Arial', 'I', 7.5);
+$pdf->SetTextColor(120, 128, 138);
+$pdf->MultiCell(0, 4, ReportPDF::txt(
+    'A session is one subject on one day. A student who attends one subject but misses another '
+    . 'on the same day is absent for that session.'
+), 0, 'L');
+$pdf->SetTextColor(0, 0, 0);
+$pdf->Ln(3);
+
+$pdf->BlockTitle($subject !== '' ? "Flagged students - {$subject}" : 'Flagged students (all subjects)');
 
 $pdf->setTableColumns([
     [10, '#', 'C'], [30, 'Student No.', 'C'], [68, 'Name', 'L'], [22, 'Course', 'C'],
@@ -188,14 +138,13 @@ if ($listed === 0) {
     $fill  = false;
 
     foreach ($rows as $row) {
-        $absences     = (int) $row['absences'];
-        $absence_rate = $total_classes > 0 ? round(($absences / $total_classes) * 100, 1) : 0;
+        $rate = $total_sessions > 0 ? round(($row['absences'] / $total_sessions) * 100, 1) : 0;
 
         $pdf->SetFillColor(247, 249, 251);
 
         // 5+ absences is the line the school acts on, so those rows
         // are red and bold rather than needing the number read.
-        if ($absences >= 5) {
+        if ($row['absences'] >= 5) {
             $pdf->SetTextColor(185, 28, 28);
             $pdf->SetFont('Arial', 'B', 9);
         } else {
@@ -203,38 +152,114 @@ if ($listed === 0) {
             $pdf->SetFont('Arial', '', 9);
         }
 
-        $pdf->Cell(10, 7.5, $count,                                  1, 0, 'C', $fill);
-        $pdf->Cell(30, 7.5, ReportPDF::txt($row['student_no']),      1, 0, 'C', $fill);
-        // After SetFont above, so the wider bold face used for the
-        // 5+ rows is what the width is measured against.
-        $pdf->Cell(68, 7.5, $pdf->fit($row['fullname'], 68),         1, 0, 'L', $fill);
-        $pdf->Cell(22, 7.5, ReportPDF::txt($row['course']),          1, 0, 'C', $fill);
-        $pdf->Cell(20, 7.5, (string) $row['attended'],               1, 0, 'C', $fill);
-        $pdf->Cell(20, 7.5, (string) $absences,                      1, 0, 'C', $fill);
-        $pdf->Cell(20, 7.5, $absence_rate . '%',                     1, 1, 'C', $fill);
+        $pdf->Cell(10, 7.5, $count,                             1, 0, 'C', $fill);
+        $pdf->Cell(30, 7.5, ReportPDF::txt($row['student_no']), 1, 0, 'C', $fill);
+        $pdf->Cell(68, 7.5, $pdf->fit($row['fullname'], 68),    1, 0, 'L', $fill);
+        $pdf->Cell(22, 7.5, ReportPDF::txt($row['course']),     1, 0, 'C', $fill);
+        $pdf->Cell(20, 7.5, (string) $row['attended'],          1, 0, 'C', $fill);
+        $pdf->Cell(20, 7.5, (string) $row['absences'],          1, 0, 'C', $fill);
+        $pdf->Cell(20, 7.5, $rate . '%',                        1, 1, 'C', $fill);
 
         $count++;
         $fill = !$fill;
     }
     $pdf->SetTextColor(0, 0, 0);
 }
-
 $pdf->EndTableBody();
+
+// ── Breakdown by subject ──────────────────────────────────
+// The point of the whole exercise: the overall count says a student
+// is missing class, this says WHICH class. Skipped when the report is
+// already about one subject, where it would just repeat the table.
+if ($subject === '' && count($subjects) > 1) {
+    $pdf->Ln(6);
+    $pdf->BlockTitle('Breakdown by subject');
+
+    $pdf->SetFont('Arial', 'I', 7.5);
+    $pdf->SetTextColor(120, 128, 138);
+    $pdf->MultiCell(0, 4, ReportPDF::txt(
+        'Where each flagged student above lost their sessions. A student may appear under more than one subject.'
+    ), 0, 'L');
+    $pdf->SetTextColor(0, 0, 0);
+
+    foreach ($subjects as $s) {
+        // Every flagged student with ANY absence in this subject —
+        // not only those over the threshold within it. The threshold
+        // is applied to the total, so a student flagged for 3 spread
+        // across two subjects (2 + 1) would otherwise appear in the
+        // table above and then nowhere below, leaving the reader
+        // unable to see where the 3 came from.
+        $inSubject = [];
+        foreach ($rows as $row) {
+            foreach ($row['breakdown'] as $b) {
+                if ($b['subject'] === $s['subject'] && $b['absences'] > 0) {
+                    $inSubject[] = [$row, $b];
+                }
+            }
+        }
+        usort($inSubject, fn($x, $y) => $y[1]['absences'] <=> $x[1]['absences']);
+
+        // Keep a heading with at least its first row.
+        if ($pdf->GetY() > $pdf->GetPageHeight() - 45) $pdf->AddPage();
+
+        $pdf->Ln(2);
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->SetTextColor(31, 122, 60);
+        $label = ($s['subject'] === '' ? '(no subject recorded)' : $s['subject'])
+               . '  -  ' . $s['sessions'] . ' session' . ($s['sessions'] === 1 ? '' : 's') . ' held';
+        $pdf->Cell(0, 6, ReportPDF::txt($label), 0, 1, 'L');
+        $pdf->SetTextColor(0, 0, 0);
+
+        $pdf->setTableColumns([
+            [10, '#', 'C'], [30, 'Student No.', 'C'], [90, 'Name', 'L'],
+            [30, 'Attended', 'C'], [30, 'Absent', 'C'],
+        ]);
+        $pdf->TableHead();
+        $pdf->BeginTableBody();
+
+        if (empty($inSubject)) {
+            $pdf->EmptyRow('None of the flagged students has missed this subject.');
+        } else {
+            $n = 1; $fill = false;
+            foreach ($inSubject as [$row, $b]) {
+                $pdf->SetFillColor(247, 249, 251);
+                if ($b['absences'] >= 5) {
+                    $pdf->SetTextColor(185, 28, 28);
+                    $pdf->SetFont('Arial', 'B', 9);
+                } else {
+                    $pdf->SetTextColor(0, 0, 0);
+                    $pdf->SetFont('Arial', '', 9);
+                }
+
+                $pdf->Cell(10, 7, $n++,                                 1, 0, 'C', $fill);
+                $pdf->Cell(30, 7, ReportPDF::txt($row['student_no']),   1, 0, 'C', $fill);
+                $pdf->Cell(90, 7, $pdf->fit($row['fullname'], 90),      1, 0, 'L', $fill);
+                $pdf->Cell(30, 7, $b['attended'] . ' / ' . $b['sessions'], 1, 0, 'C', $fill);
+                $pdf->Cell(30, 7, (string) $b['absences'],              1, 1, 'C', $fill);
+                $fill = !$fill;
+            }
+            $pdf->SetTextColor(0, 0, 0);
+        }
+        $pdf->EndTableBody();
+    }
+}
 
 // ── Summary ───────────────────────────────────────────────
 if ($listed > 0) {
+    if ($pdf->GetY() > $pdf->GetPageHeight() - 60) $pdf->AddPage();
+
     $pdf->Ln(5);
     $pdf->BlockTitle('Summary');
 
-    $pdf->SetFont('Arial', '', 9);
     $pdf->SetFillColor(248, 250, 252);
     $pdf->SetDrawColor(225, 229, 234);
 
     $lines = [
-        'Students flagged'  => "{$listed} of {$section_size} in the section ({$share}%)",
-        'Average absences'  => "{$avg_absences} of {$total_classes} classes",
-        'Highest absences'  => "{$worst} of {$total_classes} classes",
-        'At risk (5+)'      => "{$at_risk} student" . ($at_risk === 1 ? '' : 's'),
+        'Students flagged' => "{$listed} of {$section_size} in the section ({$share}%)",
+        'Average absences' => "{$avg} of {$total_sessions} sessions",
+        'Highest absences' => "{$worst} of {$total_sessions} sessions",
+        'At risk (5+)'     => "{$at_risk} student" . ($at_risk === 1 ? '' : 's'),
+        'Subjects covered' => $subject !== '' ? $subject : count($subjects) . ' subject' . (count($subjects) === 1 ? '' : 's'),
     ];
 
     foreach ($lines as $label => $value) {
@@ -243,12 +268,13 @@ if ($listed > 0) {
         $pdf->Cell(60, 7, ReportPDF::txt($label), 1, 0, 'L', true);
         $pdf->SetFont('Arial', 'B', 9);
         $pdf->SetTextColor(17, 24, 39);
-        $pdf->Cell(130, 7, ReportPDF::txt($value), 1, 1, 'L', true);
+        $pdf->Cell(130, 7, $pdf->fit($value, 130), 1, 1, 'L', true);
     }
     $pdf->SetTextColor(0, 0, 0);
 }
 
-$filename = "Absences_Report_{$full_section}_" . date('Y-m-d') . ".pdf";
+$slug     = $subject !== '' ? '_' . preg_replace('/[^A-Za-z0-9]+/', '', $subject) : '';
+$filename = "Absences_Report_{$full_section}{$slug}_" . date('Y-m-d') . ".pdf";
 
 $pdf->AddSignature();
 $pdf->Output('D', $filename);

@@ -254,12 +254,18 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
         $stu_where   = "CONCAT(course,'-',section) IN ($sections_in)";
     }
 
-    // BATCH 1 — active students + total class days per section
+    // BATCH 1 — active students + total SESSIONS per section
+    //
+    // A session is (subject, date), not a date. Counting distinct dates
+    // meant a student who attended one subject and skipped another on
+    // the same day was counted present for that day — see
+    // includes/absences.php. The "3+ absent" / "5+ absent" counts on
+    // the section cards were understated because of it.
     $b1 = $conn->query("
         SELECT
             CONCAT(course,'-',section) AS section,
-            COUNT(DISTINCT student_no)  AS active_students,
-            COUNT(DISTINCT DATE(date))  AS total_classes
+            COUNT(DISTINCT student_no)                        AS active_students,
+            COUNT(DISTINCT COALESCE(subject,''), DATE(date))  AS total_classes
         FROM attendance_tbl
         WHERE $att_where
         GROUP BY course, section
@@ -273,10 +279,13 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
         ];
     }
 
-    // BATCH 2a — attended days per student per section
+    // BATCH 2a — sessions attended per student per section
+    // Must use the same session definition as BATCH 1, or the
+    // subtraction in BATCH 2c compares two different units.
     $attended_map = [];
     $b2a = $conn->query("
-        SELECT CONCAT(course,'-',section) AS section, student_no, COUNT(DISTINCT DATE(date)) AS attended
+        SELECT CONCAT(course,'-',section) AS section, student_no,
+               COUNT(DISTINCT COALESCE(subject,''), DATE(date)) AS attended
         FROM attendance_tbl
         WHERE $att_where
         GROUP BY course, section, student_no

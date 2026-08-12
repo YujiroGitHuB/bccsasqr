@@ -1,163 +1,90 @@
 <?php
 /**
  * API: Get Absences Data
- * Returns list of students with specified minimum absences
+ *
+ * Students in a section at or above an absence threshold, counted by
+ * SESSION (subject + date) rather than by date — see
+ * includes/absences.php for why that distinction matters.
+ *
+ * POST: section, min_absences, subject (optional; '' = all subjects)
  */
 
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/absences.php";
+
+header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
-$user_id      = $_SESSION['user_id'];
-$role         = $_SESSION['role'];
+$user_id = $_SESSION['user_id'];
+$role    = $_SESSION['role'] ?? '';
 
-$full_section = isset($_POST['section'])      ? $_POST['section']      : '';
-$min_absences = isset($_POST['min_absences']) ? (int)$_POST['min_absences'] : 3;
+$full_section = $_POST['section'] ?? '';
+$min_absences = isset($_POST['min_absences']) ? (int) $_POST['min_absences'] : 3;
+$subject      = trim($_POST['subject'] ?? '');
 
 if (empty($full_section)) {
     echo json_encode(['success' => false, 'message' => 'Section is required']);
     exit;
 }
 
-// ✅ FIXED: split "BSIT-1A" → course="BSIT", section="1A"
+// "BSIT-1A" → course="BSIT", section="1A"
 $parts   = explode('-', $full_section, 2);
-$course  = $conn->real_escape_string($parts[0] ?? '');
-$section = $conn->real_escape_string($parts[1] ?? $full_section);
+$course  = trim($parts[0] ?? '');
+$section = trim($parts[1] ?? $full_section);
 
-// ── Access check (instructor only) ───────────────────────
-if ($role !== 'admin') {
-    // ✅ FIXED: check both course AND section
-    $check_stmt = $conn->prepare("
-        SELECT COUNT(*) as cnt
-        FROM instructor_section_tbl
-        WHERE instructor_id = ? AND course = ? AND section = ?
-    ");
-    $check_stmt->bind_param("iss", $user_id, $course, $section);
-    $check_stmt->execute();
-    $has_access = $check_stmt->get_result()->fetch_assoc()['cnt'] > 0;
-
-    if (!$has_access) {
-        echo json_encode(['success' => false, 'message' => 'Access denied']);
-        exit;
-    }
+if (!absence_can_access($conn, $role, $user_id, $course, $section)) {
+    echo json_encode(['success' => false, 'message' => 'Access denied']);
+    exit;
 }
 
-// ── Subject filter (instructor only) ────────────────────
-$subjects_filter = "";
-if ($role !== 'admin') {
-    $subjects_query = $conn->prepare("
-        SELECT s.subject_name
-        FROM subjects_tbl s
-        INNER JOIN subject_instructors_tbl si ON s.id = si.subject_id
-        WHERE si.instructor_id = ?
-    ");
-    $subjects_query->bind_param("i", $user_id);
-    $subjects_query->execute();
-    $result = $subjects_query->get_result();
+// Instructors only ever see their own subjects. An instructor asking
+// for a specific subject that is not theirs is refused rather than
+// silently widened.
+$allowed = ($role === 'admin') ? [] : absence_instructor_subjects($conn, $user_id);
 
-    $subject_names = [];
-    while ($row = $result->fetch_assoc()) {
-        $subject_names[] = "'" . $conn->real_escape_string($row['subject_name']) . "'";
-    }
-
-    if (!empty($subject_names)) {
-        $subjects_filter = "AND subject IN (" . implode(',', $subject_names) . ")";
-    }
+if ($subject !== '' && $role !== 'admin' && !in_array($subject, $allowed, true)) {
+    echo json_encode(['success' => false, 'message' => 'That subject is not assigned to you.']);
+    exit;
 }
 
-// ── Total unique class dates for this section ─────────────
-// ✅ FIXED: attendance_tbl has separate course + section columns
-if ($role === 'admin') {
-    $stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT DATE(date)) as total_classes
-        FROM attendance_tbl
-        WHERE course = ? AND section = ?
-    ");
-    $stmt->bind_param("ss", $course, $section);
-} else {
-    $stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT DATE(date)) as total_classes
-        FROM attendance_tbl
-        WHERE course = ? AND section = ?
-        $subjects_filter
-    ");
-    $stmt->bind_param("ss", $course, $section);
-}
-$stmt->execute();
-$total_classes = (int)$stmt->get_result()->fetch_assoc()['total_classes'];
-
-// ── Students with absences >= min_absences ────────────────
-// ✅ FIXED: all WHERE clauses use both course + section
-if ($role === 'admin') {
-    $students_query = "
-        SELECT
-            s.student_no,
-            s.fullname,
-            s.course,
-            COALESCE(a.attended, 0)             AS attended,
-            $total_classes                       AS total_classes,
-            ($total_classes - COALESCE(a.attended, 0)) AS absences
-        FROM students_tbl s
-        LEFT JOIN (
-            SELECT student_no, COUNT(DISTINCT DATE(date)) AS attended
-            FROM attendance_tbl
-            WHERE course = '$course' AND section = '$section'
-            GROUP BY student_no
-        ) a ON s.student_no = a.student_no
-        WHERE s.course = '$course' AND s.section = '$section'
-        HAVING absences >= ?
-        ORDER BY absences DESC, s.fullname ASC
-    ";
-    $stmt = $conn->prepare($students_query);
-    $stmt->bind_param("i", $min_absences);
-} else {
-    $students_query = "
-        SELECT
-            s.student_no,
-            s.fullname,
-            s.course,
-            COALESCE(a.attended, 0)             AS attended,
-            $total_classes                       AS total_classes,
-            ($total_classes - COALESCE(a.attended, 0)) AS absences
-        FROM students_tbl s
-        LEFT JOIN (
-            SELECT student_no, COUNT(DISTINCT DATE(date)) AS attended
-            FROM attendance_tbl
-            WHERE course = '$course' AND section = '$section'
-            $subjects_filter
-            GROUP BY student_no
-        ) a ON s.student_no = a.student_no
-        WHERE s.course = '$course' AND s.section = '$section'
-        HAVING absences >= ?
-        ORDER BY absences DESC, s.fullname ASC
-    ";
-    $stmt = $conn->prepare($students_query);
-    $stmt->bind_param("i", $min_absences);
-}
-
-$stmt->execute();
-$result = $stmt->get_result();
+$report = absence_report($conn, $course, $section, [
+    'allowed_subjects' => $allowed,
+    'subject'          => $subject,
+    'min_absences'     => $min_absences,
+    'scope_required'   => $role !== 'admin',
+]);
 
 $students = [];
-while ($row = $result->fetch_assoc()) {
+foreach ($report['students'] as $s) {
     $students[] = [
-        'student_no'    => $row['student_no'],
-        'name'          => $row['fullname'],
-        'course'        => $row['course'],
-        'attended'      => (int)$row['attended'],
-        'total_classes' => (int)$row['total_classes'],
-        'absences'      => (int)$row['absences'],
+        'student_no'     => $s['student_no'],
+        'name'           => $s['fullname'],
+        'course'         => $s['course'],
+        'attended'       => $s['attended'],
+        'total_sessions' => $s['total_sessions'],
+        'absences'       => $s['absences'],
+        // Only the subjects this student actually missed — the modal
+        // shows them under the name, and listing the clean ones there
+        // would bury the point.
+        'breakdown'      => array_values(array_filter(
+            $s['breakdown'],
+            fn($b) => $b['absences'] > 0
+        )),
     ];
 }
 
 echo json_encode([
-    'success'       => true,
-    'students'      => $students,
-    'total_classes' => $total_classes,
-    'section'       => $full_section,   // return full "BSIT-1A" for the frontend
-    'min_absences'  => $min_absences,
+    'success'        => true,
+    'students'       => $students,
+    'total_sessions' => $report['total_sessions'],
+    'subjects'       => $report['subjects'],
+    'section_size'   => $report['section_size'],
+    'section'        => $full_section,
+    'subject'        => $subject,
+    'min_absences'   => $min_absences,
 ]);
