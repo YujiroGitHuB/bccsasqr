@@ -330,6 +330,8 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
 <head>
     <?php include __DIR__ . "/../includes/header.php" ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/dashboard.css') ?>">
+    <!-- Anyo ng view_absences_modal.php (klase: .app-modal) -->
+    <link rel="stylesheet" href="<?= asset('../assets/css/modal-form.css') ?>">
 </head>
 
 <body>

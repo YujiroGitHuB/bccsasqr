@@ -348,6 +348,267 @@
 }
 
 /* ============================================================
+   DATA MODAL — talahanayan sa loob ng .app-modal
+
+   Para sa mga modal na NAGPAPAKITA at hindi tumatanggap ng sagot
+   (hal. view_absences_modal.php). Ginagamit nito ang parehong
+   kahon, ulo, at butones sa itaas; ito lang ang nagdadagdag ng
+   talahanayan, mga kahon ng estado, at paanan na `.modal-footer`.
+
+   Ang lumang listahan ng absent ay may sariling bokabularyo:
+
+     • ang pamagat ay NAKASULAT NANG DALAWANG BESES — sa ulo at sa
+       `alert-info` na kahon sa ibaba nito, salita por salita
+     • hilaw na `alert-info` ng Bootstrap — asul na wala sa mga
+       tuldik ng app, at nakatabi pa sa pulang icon ng ulo
+     • `table-dark` na default — kulay-abong ulo na walang
+       hierarchy laban sa mga hanay
+     • BERDENG tsek sa walang-laman na kalagayan; nakalaan ang
+       berde sa estadong Present, kaya nagmumukhang badge ng
+       estado ang isang mensaheng "wala akong nakita"
+     • dalawang mabigat na butones sa paanan: kulay-abong solid na
+       Close at PULANG solid na Export. Nakalaan ang pula sa
+       mapanira — hindi mapanira ang mag-export ng PDF, at
+       nanalo pa ito sa tingin laban sa mismong nilalaman.
+   ============================================================ */
+
+/* Ang tsart ng ulo ay sumusunod sa kulay ng pinindot na kard sa
+   dashboard (.dash-risk.warn / .dash-risk.crit) para malinaw na
+   iisang bagay ang pinagmulan at ang nabuksan. */
+.app-modal-icon.is-warn {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, .3);
+}
+
+.app-modal-icon.is-crit {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, .3);
+}
+
+/* ─── Paanan (tunay na .modal-footer) ────────────────────── */
+
+/* Ang .app-modal-footer sa itaas ay may negatibong margin dahil
+   nasa LOOB iyon ng <form> sa modal-body. Katutubong paanan ito,
+   kaya walang margin — pareho lang ang anyo. */
+.app-modal .modal-footer {
+    justify-content: flex-end;
+    gap: .6rem;
+    padding: 1rem 1.4rem;
+    border: 0;
+    border-top: 1px solid var(--am-border);
+    background: rgba(255, 255, 255, .02);
+}
+
+/* Ang Bootstrap ay naglalagay ng .5rem na margin sa bawat anak ng
+   .modal-footer — dinodoble nito ang `gap` sa itaas. */
+.app-modal .modal-footer>* {
+    margin: 0;
+}
+
+/* ─── Mga chip ng buod ───────────────────────────────────── */
+
+.app-modal .app-chips {
+    margin: 0 0 .9rem;
+}
+
+.app-chip.is-info {
+    background: var(--am-soft);
+    border: 1px solid var(--am-line);
+    color: var(--am-ink);
+}
+
+/* ─── Talahanayan ────────────────────────────────────────── */
+
+/* Ang kahon mismo ang nag-iiskrol, hindi ang modal-body: ang
+   `position: sticky` na ulo ay sumusukat sa pinakamalapit na
+   kahon na may overflow — kung nasa wrap ang overflow-x, iyon
+   ang magiging sukatan nito, at hindi ito dudikit habang ang
+   modal-body ang gumagalaw. Dito magkasama ang dalawang direksyon
+   sa iisang kahon, kaya tumatakbo ang ulo kasama ng laman. */
+.app-table-wrap {
+    max-height: 58vh;
+    border: 1px solid var(--am-border);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, .2);
+    overflow: auto;
+}
+
+.app-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: .86rem;
+    color: #e2e8f0;
+}
+
+/* Nakadikit ang ulo habang nag-iiskrol ang modal-body — mahaba
+   ang mga listahang ito, at walang saysay ang hilera ng bilang
+   kapag hindi na nakikita kung ano ang hanay. Kailangan ng
+   sariling background dahil lumulutang ito sa ibabaw ng laman. */
+.app-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: .7rem .9rem;
+    background: #191b21;
+    border-bottom: 1px solid var(--am-line);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--am-ink);
+    white-space: nowrap;
+}
+
+.app-table tbody td {
+    padding: .7rem .9rem;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+}
+
+.app-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.app-table tbody tr:hover td {
+    background: rgba(14, 165, 233, .06);
+}
+
+/* Ang bilang ng hanay ay pantulong lang sa pagbibilang, hindi
+   datos — kaya hindi ito dapat kasingtingkad ng pangalan. */
+.app-table .app-rank {
+    width: 2.5rem;
+    color: rgba(255, 255, 255, .3);
+    font-variant-numeric: tabular-nums;
+}
+
+.app-table .app-id {
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.app-table .app-num {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, .6);
+}
+
+/* Isang badge lang ang may kulay kada hanay: ang bilang ng liban.
+   Iyon ang dahilan kung bakit binuksan ang listahan. Amber →
+   pula → matingkad na pula ayon sa bigat, kapareho ng warn/crit
+   sa dashboard. */
+.app-count {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .3rem;
+    min-width: 4.6rem;
+    justify-content: center;
+    padding: .3rem .6rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.app-count small {
+    font-size: .68rem;
+    font-weight: 500;
+    opacity: .75;
+}
+
+.app-count.is-warn {
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .28);
+    color: #fcd34d;
+}
+
+.app-count.is-crit {
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .28);
+    color: #f87171;
+}
+
+.app-count.is-severe {
+    background: rgba(239, 68, 68, .9);
+    border: 1px solid rgba(239, 68, 68, .9);
+    color: #fff;
+}
+
+/* ─── Mga kalagayan (naglo-load / wala / mali) ───────────── */
+
+.app-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2.6rem 1rem;
+}
+
+/* Neutral ang walang-laman na kalagayan. Berdeng tsek ito dati —
+   pero ang berde ay Present/Active sa buong app, kaya mukhang
+   estado ng estudyante ang isang mensaheng tungkol sa RESULTA ng
+   paghahanap. */
+.app-state-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, .5);
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid var(--am-border);
+}
+
+.app-state-icon.is-bad {
+    color: #f87171;
+    background: rgba(239, 68, 68, .1);
+    border-color: rgba(239, 68, 68, .25);
+}
+
+.app-state h6 {
+    margin: .9rem 0 .3rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.app-state p {
+    margin: 0;
+    max-width: 34ch;
+    font-size: .84rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, .42);
+}
+
+.app-state .spinner-border {
+    width: 2.2rem;
+    height: 2.2rem;
+    color: var(--am-ink);
+}
+
+@media (max-width: 575.98px) {
+    .app-modal .modal-footer {
+        flex-direction: column-reverse;
+        padding: .9rem 1.1rem;
+    }
+
+    .app-modal .modal-footer .app-btn,
+    .app-modal .modal-footer form {
+        width: 100%;
+    }
+
+    /* Hindi kayang paliitin ang limang hanay sa telepono nang hindi
+       nagiging dalawang linya ang bawat pangalan — pahalang na
+       iskrol sa loob ng kahon, at hindi pagpiga. */
+    .app-table {
+        min-width: 30rem;
+    }
+}
+
+/* ============================================================
    SWEETALERT — pareho ng anyo ng .app-modal
 
    Opt-in sa pamamagitan ng customClass.popup = 'app-swal'. Ang mga
