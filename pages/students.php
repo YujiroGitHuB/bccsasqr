@@ -26,7 +26,7 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
 )['n'] ?? 0);
 ?>
 <!doctype html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 
 <head>
     <?php include __DIR__ . "/../includes/header.php" ?>

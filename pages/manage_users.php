@@ -34,7 +34,7 @@ try {
 $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
 ?>
 <!doctype html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
     <?php include __DIR__ . "/../includes/header.php"; ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">

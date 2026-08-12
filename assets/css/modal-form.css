@@ -3,13 +3,13 @@
 
    Follows the same language as the admin pages (see
    students-page.css): sky/cyan accent (#0ea5e9 → #06b6d4),
-   #16161a surfaces, rgba(255,255,255,.07) borders, an icon tile
+   var(--surface) surfaces, rgba(var(--tint), .07) borders, an icon tile
    in the header, and exactly ONE primary button.
 
    The old Add Student modal had its own vocabulary, found nowhere
    else in the app:
 
-     • a blue-violet gradient (#1a1a2e → #16213e) background
+     • a blue-violet gradient (var(--surface-2) → #16213e) background
      • a different blue (#0575e6 → #021b79) for the badge and button
      • the title was a PILL BADGE — the shape of a chip/status,
        not of a heading; it looked like a button you could press
@@ -34,11 +34,11 @@
     --am-line: rgba(14, 165, 233, .3);
     --am-ink: #7dd3fc;
 
-    --am-surface: #16161a;
-    --am-field: #0f0f13;
-    --am-border: rgba(255, 255, 255, .07);
-    --am-text: #f1f5f9;
-    --am-dim: rgba(255, 255, 255, .5);
+    --am-surface: var(--surface);
+    --am-field: var(--bg);
+    --am-border: rgba(var(--tint), .07);
+    --am-text: var(--ink-2);
+    --am-dim: rgba(var(--tint), .5);
 }
 
 /* ─── The box ────────────────────────────────────────────── */
@@ -89,7 +89,7 @@
     display: grid;
     place-items: center;
     font-size: 1.25rem;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--am), var(--am-deep));
     box-shadow: 0 8px 20px rgba(14, 165, 233, .35);
 }
@@ -105,13 +105,13 @@
     font-size: 1.15rem;
     font-weight: 700;
     letter-spacing: -.01em;
-    color: #fff;
+    color: var(--ink);
 }
 
 .app-modal-heading p {
     margin: 0;
     font-size: .82rem;
-    color: rgba(255, 255, 255, .42);
+    color: rgba(var(--tint), .42);
 }
 
 .app-modal .btn-close {
@@ -121,18 +121,38 @@
     margin: 0;
     padding: 0;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, .06);
+    background-color: rgba(var(--tint), .06);
     opacity: .8;
     transition: background-color .18s ease, opacity .18s ease;
 }
 
 .app-modal .btn-close:hover {
-    background-color: rgba(255, 255, 255, .14);
+    background-color: rgba(var(--tint), .14);
     opacity: 1;
 }
 
 .app-modal .btn-close:focus {
     box-shadow: 0 0 0 3px rgba(14, 165, 233, .3);
+}
+
+/* The markup carries Bootstrap's `.btn-close-white`, which hard-codes
+   an invert filter so the ✕ is white. On a white modal header that
+   makes it invisible — the dialog looked like it had no way out.
+   The filter is dropped here and re-applied only in dark, which is
+   the one theme that needs it. Changing the class in seven templates
+   would have done the same thing; this keeps it in one place. */
+.app-modal .btn-close.btn-close-white {
+    filter: none;
+}
+
+:root[data-theme="dark"] .app-modal .btn-close.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .app-modal .btn-close.btn-close-white {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
 }
 
 /* ─── Body ───────────────────────────────────────────────── */
@@ -156,7 +176,7 @@
     font-weight: 600;
     letter-spacing: .3px;
     /* Full-strength color, not `text-white-50`. */
-    color: #cbd5e1;
+    color: var(--ink-3);
 }
 
 /* One icon per field, inside the box. There were two before: one
@@ -192,7 +212,7 @@
     min-height: 48px;
     padding: .6rem .9rem .6rem 2.6rem;
     border-radius: 11px;
-    border: 1px solid #2a2a33;
+    border: 1px solid var(--surface-3);
     background-color: var(--am-field);
     color: var(--am-text);
     font-size: .92rem;
@@ -201,11 +221,11 @@
 }
 
 .app-input .form-control::placeholder {
-    color: rgba(255, 255, 255, .25);
+    color: rgba(var(--tint), .25);
 }
 
 /* `.form-control:focus` in main.css carries `!important` on the
-   background (leaving the old navy #1a1a2e behind), so it takes
+   background (leaving the old navy var(--surface-2) behind), so it takes
    `!important` here to win it back. */
 .app-input .form-control:focus,
 .app-input .form-select:focus {
@@ -232,14 +252,14 @@
    yet but an invitation. */
 .app-input .form-select:invalid,
 .app-input .form-select option[value=""] {
-    color: rgba(255, 255, 255, .35);
+    color: rgba(var(--tint), .35);
 }
 
 .app-hint {
     display: block;
     margin-top: .38rem;
     font-size: .75rem;
-    color: rgba(255, 255, 255, .38);
+    color: rgba(var(--tint), .38);
 }
 
 /* ─── Footer ─────────────────────────────────────────────── */
@@ -256,7 +276,7 @@
     margin: 1.4rem -1.4rem -1.3rem;
     padding: 1rem 1.4rem;
     border-top: 1px solid var(--am-border);
-    background: rgba(255, 255, 255, .02);
+    background: rgba(var(--tint), .02);
 }
 
 /* Not scoped to .app-modal — the SweetAlert dialogs below use it
@@ -279,7 +299,7 @@
 /* The only primary action. It used to be a full-width block with
    nothing beside it — no way back except the ✕. */
 .app-btn.primary {
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--am), var(--am-deep));
     box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
 }
@@ -297,7 +317,7 @@
 /* Destructive confirmation (e.g. "Remove photo") — the primary
    button is red, not sky. Same as `.app-swal.is-danger`. */
 .app-btn.danger {
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, #ef4444, #b91c1c);
     box-shadow: 0 6px 16px rgba(239, 68, 68, .3);
 }
@@ -314,14 +334,14 @@
 
 /* A quiet way back — visible, but not competing for attention. */
 .app-btn.ghost {
-    color: #cbd5e1;
-    background: rgba(255, 255, 255, .05);
-    border-color: rgba(255, 255, 255, .12);
+    color: var(--ink-3);
+    background: rgba(var(--tint), .05);
+    border-color: rgba(var(--tint), .12);
 }
 
 .app-btn.ghost:hover {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 .app-btn:focus-visible {
@@ -411,7 +431,7 @@
     padding: 1rem 1.4rem;
     border: 0;
     border-top: 1px solid var(--am-border);
-    background: rgba(255, 255, 255, .02);
+    background: rgba(var(--tint), .02);
 }
 
 /* Bootstrap puts a .5rem margin on every child of .modal-footer,
@@ -453,7 +473,7 @@
     border-collapse: separate;
     border-spacing: 0;
     font-size: .86rem;
-    color: #e2e8f0;
+    color: var(--ink-2);
 }
 
 /* The head stays put while the list scrolls — these lists run
@@ -465,7 +485,7 @@
     top: 0;
     z-index: 2;
     padding: .7rem .9rem;
-    background: #191b21;
+    background: var(--surface-2);
     border-bottom: 1px solid var(--am-line);
     font-size: .68rem;
     font-weight: 700;
@@ -478,7 +498,7 @@
 .app-table tbody td {
     padding: .7rem .9rem;
     vertical-align: middle;
-    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    border-bottom: 1px solid rgba(var(--tint), .05);
 }
 
 .app-table tbody tr:last-child td {
@@ -493,20 +513,20 @@
    be as loud as the name. */
 .app-table .app-rank {
     width: 2.5rem;
-    color: rgba(255, 255, 255, .3);
+    color: rgba(var(--tint), .3);
     font-variant-numeric: tabular-nums;
 }
 
 .app-table .app-id {
     font-weight: 600;
-    color: #fff;
+    color: var(--ink);
     white-space: nowrap;
 }
 
 .app-table .app-num {
     text-align: center;
     font-variant-numeric: tabular-nums;
-    color: rgba(255, 255, 255, .6);
+    color: rgba(var(--tint), .6);
 }
 
 /* ─── Subject filter and per-subject breakdown ──────────── */
@@ -524,7 +544,7 @@
     font-weight: 600;
     letter-spacing: .06em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .4);
+    color: rgba(var(--tint), .4);
 }
 
 /* Which subjects a student missed, under their name. The overall
@@ -547,7 +567,7 @@
     background: rgba(245, 158, 11, .1);
     font-size: .7rem;
     line-height: 1.5;
-    color: rgba(255, 255, 255, .55);
+    color: rgba(var(--tint), .55);
     white-space: nowrap;
 }
 
@@ -593,7 +613,7 @@
 .app-count.is-severe {
     background: rgba(239, 68, 68, .9);
     border: 1px solid rgba(239, 68, 68, .9);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 /* ─── States (loading / empty / error) ───────────────────── */
@@ -616,8 +636,8 @@
     display: grid;
     place-items: center;
     font-size: 1.5rem;
-    color: rgba(255, 255, 255, .5);
-    background: rgba(255, 255, 255, .05);
+    color: rgba(var(--tint), .5);
+    background: rgba(var(--tint), .05);
     border: 1px solid var(--am-border);
 }
 
@@ -631,7 +651,7 @@
     margin: .9rem 0 .3rem;
     font-size: 1rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--ink);
 }
 
 .app-state p {
@@ -639,7 +659,7 @@
     max-width: 34ch;
     font-size: .84rem;
     line-height: 1.55;
-    color: rgba(255, 255, 255, .42);
+    color: rgba(var(--tint), .42);
 }
 
 .app-state .spinner-border {
@@ -743,13 +763,13 @@
     font-size: 1.15rem;
     font-weight: 700;
     letter-spacing: -.01em;
-    color: #fff;
+    color: var(--ink);
 }
 
 .app-swal-head p {
     margin: 0;
     font-size: .82rem;
-    color: rgba(255, 255, 255, .42);
+    color: rgba(var(--tint), .42);
 }
 
 /* Color by meaning, not decoration. */
@@ -779,7 +799,7 @@
     margin-bottom: .9rem;
     border-radius: 11px;
     border: 1px solid var(--am-border);
-    background: rgba(255, 255, 255, .03);
+    background: rgba(var(--tint), .03);
 }
 
 .app-swal-file>i {
@@ -799,7 +819,7 @@
     display: block;
     font-size: .88rem;
     font-weight: 600;
-    color: #fff;
+    color: var(--ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -809,7 +829,7 @@
     display: block;
     margin-top: 2px;
     font-size: .75rem;
-    color: rgba(255, 255, 255, .4);
+    color: rgba(var(--tint), .4);
 }
 
 /* Tinted notice — the same as the admin badges. */
@@ -894,7 +914,7 @@
     padding: .6rem .8rem;
     font-size: .8rem;
     font-weight: 600;
-    color: #cbd5e1;
+    color: var(--ink-3);
     cursor: pointer;
 }
 
@@ -905,7 +925,7 @@
     padding: 0 .8rem .7rem 1.7rem;
     font-size: .78rem;
     line-height: 1.6;
-    color: rgba(255, 255, 255, .55);
+    color: rgba(var(--tint), .55);
 }
 
 /* ─── Buttons ────────────────────────────────────────────── */
@@ -918,7 +938,7 @@
     margin: 0;
     padding: 1rem 1.4rem;
     border-top: 1px solid var(--am-border);
-    background: rgba(255, 255, 255, .02);
+    background: rgba(var(--tint), .02);
 }
 
 /* No `.swal2-styled` in these selectors: importStudent.js sets
@@ -947,7 +967,7 @@
 }
 
 .app-swal .swal2-confirm {
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--am), var(--am-deep));
     box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
 }
@@ -959,14 +979,14 @@
 }
 
 .app-swal .swal2-cancel {
-    color: #cbd5e1;
-    background: rgba(255, 255, 255, .05);
-    border-color: rgba(255, 255, 255, .12);
+    color: var(--ink-3);
+    background: rgba(var(--tint), .05);
+    border-color: rgba(var(--tint), .12);
 }
 
 .app-swal .swal2-cancel:hover {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 .app-swal .swal2-confirm:focus-visible,

@@ -22,8 +22,8 @@
     --att-soft: rgba(139, 92, 246, .14);
     --att-line: rgba(139, 92, 246, .3);
     --att-ink: #c4b5fd;
-    --att-surface: #16161a;
-    --att-border: rgba(255, 255, 255, .07);
+    --att-surface: var(--surface);
+    --att-border: rgba(var(--tint), .07);
 }
 
 /* ─── Hero ────────────────────────────────────────────────── */
@@ -39,7 +39,7 @@
     border: 1px solid var(--att-border);
     background:
         radial-gradient(circle at 0% 0%, rgba(139, 92, 246, .16), transparent 55%),
-        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+        linear-gradient(135deg, rgba(var(--tint), .04), rgba(var(--tint), .015));
     overflow: hidden;
 }
 
@@ -60,7 +60,7 @@
     display: grid;
     place-items: center;
     font-size: 1.5rem;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--att), var(--att-deep));
     box-shadow: 0 8px 20px rgba(139, 92, 246, .35);
 }
@@ -75,13 +75,13 @@
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: -.02em;
-    color: #fff;
+    color: var(--ink);
 }
 
 .att-page .att-hero-text p {
     margin: 0;
     font-size: .85rem;
-    color: rgba(255, 255, 255, .45);
+    color: rgba(var(--tint), .45);
 }
 
 .att-page .att-chips {
@@ -127,18 +127,18 @@
     border-radius: 9px;
     font-size: .85rem;
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--ink-4);
     background: transparent;
     transition: background .18s ease, color .18s ease;
 }
 
 .att-page .nav-tabs .nav-link:hover {
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, .05);
+    color: var(--ink-2);
+    background: rgba(var(--tint), .05);
 }
 
 .att-page .nav-tabs .nav-link.active {
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--att), var(--att-deep));
     box-shadow: 0 4px 12px rgba(139, 92, 246, .3);
 }
@@ -154,7 +154,7 @@
     border-radius: 14px 14px 0 0;
     border: 1px solid var(--att-border);
     border-bottom: 0;
-    background: rgba(255, 255, 255, .02);
+    background: rgba(var(--tint), .02);
 }
 
 .att-page .att-toolbar-title {
@@ -163,7 +163,7 @@
     gap: .7rem;
     font-size: .95rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--ink-2);
 }
 
 .att-page .att-toolbar-title i {
@@ -211,7 +211,7 @@
 }
 
 .att-page .att-btn.primary {
-    color: #fff;
+    color: var(--on-accent);
     border: none;
     background: linear-gradient(135deg, var(--att), var(--att-deep));
     box-shadow: 0 6px 16px rgba(139, 92, 246, .28);
@@ -223,14 +223,14 @@
 }
 
 .att-page .att-btn.ghost {
-    color: #cbd5e1;
-    background: rgba(255, 255, 255, .05);
-    border: 1px solid rgba(255, 255, 255, .12);
+    color: var(--ink-3);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .12);
 }
 
 .att-page .att-btn.ghost:hover {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 .att-page .att-btn.danger {
@@ -260,8 +260,8 @@
     padding: .9rem 1rem;
     margin-bottom: 1rem;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(255, 255, 255, .02);
+    border: 1px solid rgba(var(--tint), .06);
+    background: rgba(var(--tint), .02);
 }
 
 /* The form owns the date window (a GET reload); the section filter
@@ -282,15 +282,15 @@
     font-weight: 600;
     letter-spacing: .3px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .4);
+    color: rgba(var(--tint), .4);
 }
 
 .att-page .att-filters .form-control,
 .att-page .att-filters .form-select {
-    background: #0f0f13;
-    border: 1px solid #2a2a33;
+    background: var(--bg);
+    border: 1px solid var(--surface-3);
     border-radius: 9px;
-    color: #f1f5f9;
+    color: var(--ink-2);
     font-size: .85rem;
     padding: .42rem .7rem;
     color-scheme: dark;
@@ -305,7 +305,7 @@
 
 .att-page .att-count {
     font-size: .8rem;
-    color: rgba(255, 255, 255, .4);
+    color: rgba(var(--tint), .4);
     padding-bottom: .45rem;
 }
 
@@ -327,7 +327,7 @@
     padding: .7rem .9rem;
     font-size: .85rem;
     vertical-align: middle;
-    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    border-bottom: 1px solid rgba(var(--tint), .05);
 }
 
 /* `table-striped` puts a background of its own on every other row —
@@ -335,7 +335,7 @@
 .att-page #example.table-striped>tbody>tr:nth-of-type(odd)>* {
     --bs-table-accent-bg: transparent;
     background-color: transparent;
-    color: #e2e8f0;
+    color: var(--ink-2);
 }
 
 .att-page #example tbody tr:hover td,
@@ -372,10 +372,10 @@
 /* ─── DataTables controls ─────────────────────────────────── */
 .att-page .dataTables_wrapper .dataTables_filter input,
 .att-page .dataTables_wrapper .dataTables_length select {
-    background: #0f0f13;
-    border: 1px solid #2a2a33;
+    background: var(--bg);
+    border: 1px solid var(--surface-3);
     border-radius: 9px;
-    color: #f1f5f9;
+    color: var(--ink-2);
     padding: .4rem .7rem;
     font-size: .85rem;
 }
@@ -391,13 +391,13 @@
 .att-page .dataTables_wrapper .dataTables_length,
 .att-page .dataTables_wrapper .dataTables_filter {
     font-size: .82rem;
-    color: rgba(255, 255, 255, .45);
+    color: rgba(var(--tint), .45);
 }
 
 .att-page .dataTables_wrapper .page-link {
-    background: rgba(255, 255, 255, .04);
-    border: 1px solid rgba(255, 255, 255, .08);
-    color: #cbd5e1;
+    background: rgba(var(--tint), .04);
+    border: 1px solid rgba(var(--tint), .08);
+    color: var(--ink-3);
     border-radius: 8px;
     margin: 0 2px;
     font-size: .82rem;
@@ -406,7 +406,7 @@
 .att-page .dataTables_wrapper .page-item.active .page-link {
     background: linear-gradient(135deg, var(--att), var(--att-deep));
     border-color: transparent;
-    color: #fff;
+    color: var(--on-accent);
 }
 
 /* ─── Responsive ──────────────────────────────────────────── */

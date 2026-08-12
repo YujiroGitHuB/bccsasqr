@@ -13,9 +13,9 @@
    ============================================================ */
 
 .dash-page {
-    --dash-surface: #16161a;
-    --dash-line: rgba(255, 255, 255, .07);
-    --dash-muted: rgba(255, 255, 255, .45);
+    --dash-surface: var(--surface);
+    --dash-line: rgba(var(--tint), .07);
+    --dash-muted: rgba(var(--tint), .45);
     --dash-accent: #667eea;
 }
 
@@ -32,7 +32,7 @@
     border: 1px solid var(--dash-line);
     background:
         radial-gradient(circle at 0% 0%, rgba(102, 126, 234, .16), transparent 55%),
-        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+        linear-gradient(135deg, rgba(var(--tint), .04), rgba(var(--tint), .015));
     overflow: hidden;
 }
 
@@ -53,7 +53,7 @@
     display: grid;
     place-items: center;
     font-size: 1.5rem;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, #667eea, #764ba2);
     box-shadow: 0 8px 20px rgba(102, 126, 234, .35);
 }
@@ -68,7 +68,7 @@
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: -.02em;
-    color: #fff;
+    color: var(--ink);
 }
 
 .dash-page .dash-hero-text p {
@@ -123,18 +123,18 @@
     border-radius: 9px;
     font-size: .83rem;
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--ink-4);
     text-decoration: none;
     transition: background .2s, color .2s;
 }
 
 .dash-page .dash-switch a:hover {
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, .05);
+    color: var(--ink-2);
+    background: rgba(var(--tint), .05);
 }
 
 .dash-page .dash-switch a.active {
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, #667eea, #764ba2);
     box-shadow: 0 4px 12px rgba(102, 126, 234, .3);
 }
@@ -153,7 +153,7 @@
     margin-bottom: 1.25rem;
     border-radius: 14px;
     border: 1px solid var(--dash-line);
-    background: rgba(255, 255, 255, .02);
+    background: rgba(var(--tint), .02);
 }
 
 .dash-page .dash-toolbar-title {
@@ -180,7 +180,7 @@
     margin: 0 0 1px;
     font-size: .98rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--ink-2);
 }
 
 .dash-page .dash-toolbar-title small {
@@ -201,8 +201,8 @@
     gap: .5rem;
     padding: .45rem .75rem;
     border-radius: 10px;
-    background: #0f0f13;
-    border: 1px solid #2a2a33;
+    background: var(--bg);
+    border: 1px solid var(--surface-3);
     transition: border-color .2s, box-shadow .2s;
 }
 
@@ -219,7 +219,7 @@
     background: transparent;
     border: 0;
     outline: none;
-    color: #f1f5f9;
+    color: var(--ink-2);
     font-size: .86rem;
     color-scheme: dark;
 }
@@ -229,16 +229,16 @@
     border-radius: 10px;
     font-size: .82rem;
     font-weight: 600;
-    color: #cbd5e1;
-    background: rgba(255, 255, 255, .05);
-    border: 1px solid rgba(255, 255, 255, .12);
+    color: var(--ink-3);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .12);
     cursor: pointer;
     transition: .2s;
 }
 
 .dash-page .dash-today:hover {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 .dash-page .dash-live {
@@ -294,7 +294,7 @@
     padding: 1.25rem 1.35rem;
     border-radius: 16px;
     border: 1px solid var(--dash-line);
-    background: linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+    background: linear-gradient(135deg, rgba(var(--tint), .04), rgba(var(--tint), .015));
     overflow: hidden;
 }
 
@@ -321,7 +321,7 @@
     display: grid;
     place-items: center;
     font-size: 1.15rem;
-    color: #fff;
+    color: var(--ink);
     background: var(--kpi, #667eea);
     flex-shrink: 0;
 }
@@ -331,7 +331,7 @@
     font-weight: 700;
     letter-spacing: 1.1px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .4);
+    color: rgba(var(--tint), .4);
     margin-bottom: .15rem;
 }
 
@@ -339,7 +339,7 @@
     font-size: 1.9rem;
     font-weight: 700;
     line-height: 1;
-    color: #fff;
+    color: var(--ink);
 }
 
 .dash-page .dash-kpi-foot {
@@ -353,14 +353,14 @@
 }
 
 .dash-page .dash-kpi-foot b {
-    color: #e2e8f0;
+    color: var(--ink-2);
     font-weight: 700;
 }
 
 .dash-page .dash-bar {
     height: 5px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, .07);
+    background: rgba(var(--tint), .07);
     overflow: hidden;
 }
 
@@ -393,7 +393,7 @@
     margin: 0 0 2px;
     font-size: .98rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--ink-2);
 }
 
 .dash-page .dash-trend-head small {
@@ -417,7 +417,7 @@
 /* ─── Table view (the chart's twin) ───────────────────────── */
 .dash-page .dash-table-view {
     margin-top: .9rem;
-    border-top: 1px solid rgba(255, 255, 255, .06);
+    border-top: 1px solid rgba(var(--tint), .06);
     padding-top: .7rem;
 }
 
@@ -454,14 +454,14 @@
     font-weight: 700;
     letter-spacing: .8px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .35);
-    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    color: rgba(var(--tint), .35);
+    border-bottom: 1px solid rgba(var(--tint), .07);
 }
 
 .dash-page .dash-table-view td {
     padding: .4rem .5rem;
-    color: #cbd5e1;
-    border-bottom: 1px solid rgba(255, 255, 255, .04);
+    color: var(--ink-3);
+    border-bottom: 1px solid rgba(var(--tint), .04);
 }
 
 /* An aligned column of figures — the one place tabular fits. */
@@ -481,7 +481,7 @@
     font-weight: 700;
     letter-spacing: 1.4px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .35);
+    color: rgba(var(--tint), .35);
 }
 
 .dash-page .dash-section-title::before {
@@ -498,7 +498,7 @@
     text-transform: none;
     font-weight: 600;
     font-size: .76rem;
-    color: rgba(255, 255, 255, .3);
+    color: rgba(var(--tint), .3);
 }
 
 /* ─── Year header ─────────────────────────────────────────── */
@@ -518,7 +518,7 @@
     margin: 0;
     font-size: .95rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--ink-2);
 }
 
 .dash-page .dash-year span {
@@ -542,7 +542,7 @@
 
 .dash-page .dash-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, .14);
+    border-color: rgba(var(--tint), .14);
     box-shadow: 0 14px 32px rgba(0, 0, 0, .45);
 }
 
@@ -574,7 +574,7 @@
 .dash-page .dash-card-head small {
     margin-left: auto;
     font-size: .74rem;
-    color: rgba(255, 255, 255, .32);
+    color: rgba(var(--tint), .32);
     white-space: nowrap;
 }
 
@@ -589,8 +589,8 @@
     padding: .55rem .4rem;
     border-radius: 10px;
     text-align: center;
-    background: rgba(255, 255, 255, .03);
-    border: 1px solid rgba(255, 255, 255, .05);
+    background: rgba(var(--tint), .03);
+    border: 1px solid rgba(var(--tint), .05);
 }
 
 .dash-page .dash-mini b {
@@ -598,13 +598,13 @@
     font-size: 1.15rem;
     font-weight: 700;
     line-height: 1.2;
-    color: #f1f5f9;
+    color: var(--ink-2);
 }
 
 .dash-page .dash-mini small {
     font-size: .68rem;
     letter-spacing: .3px;
-    color: rgba(255, 255, 255, .38);
+    color: rgba(var(--tint), .38);
 }
 
 .dash-page .dash-mini .ok b {
@@ -710,7 +710,7 @@
     background: rgba(16, 185, 129, .08);
     font-size: .86rem;
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--ink-2);
 }
 
 .dash-page .dash-subject-bar i {
@@ -743,7 +743,7 @@
     font-size: 1.5rem;
     font-weight: 700;
     line-height: 1.1;
-    color: #fff;
+    color: var(--ink);
 }
 
 .dash-page .dash-split small {
@@ -820,7 +820,7 @@
     align-items: center;
     gap: .85rem;
     padding: .8rem 1.1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    border-bottom: 1px solid rgba(var(--tint), .05);
 }
 
 .dash-page .dash-act-row:last-child {
@@ -828,7 +828,7 @@
 }
 
 .dash-page .dash-act-row:hover {
-    background: rgba(255, 255, 255, .02);
+    background: rgba(var(--tint), .02);
 }
 
 .dash-page .dash-act-avatar {
@@ -840,7 +840,7 @@
     place-items: center;
     font-size: .9rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
@@ -852,7 +852,7 @@
 .dash-page .dash-act-main strong {
     display: block;
     font-size: .9rem;
-    color: #f1f5f9;
+    color: var(--ink-2);
     margin-bottom: 2px;
 }
 
@@ -862,7 +862,7 @@
     gap: .4rem;
     flex-wrap: wrap;
     font-size: .76rem;
-    color: rgba(255, 255, 255, .38);
+    color: rgba(var(--tint), .38);
 }
 
 .dash-page .dash-act-meta .subj {
@@ -890,7 +890,7 @@
 .dash-page .dash-empty {
     text-align: center;
     padding: 2.75rem 1rem;
-    color: rgba(255, 255, 255, .3);
+    color: rgba(var(--tint), .3);
 }
 
 .dash-page .dash-empty i {
@@ -902,7 +902,7 @@
 
 .dash-page .dash-empty strong {
     display: block;
-    color: rgba(255, 255, 255, .6);
+    color: rgba(var(--tint), .6);
     font-size: .98rem;
     margin-bottom: .25rem;
 }

@@ -56,6 +56,17 @@ $__avatarUrl  = $__avatarFile !== '' && is_file($__avatarFile)
         <span><?php echo htmlspecialchars($systemAcronym ?? 'Home'); ?></span>
     </a>
 
+    <!-- Theme toggle. Sits beside the avatar rather than inside the
+         dropdown: it is a switch, not a destination, and burying a
+         one-click control behind a menu makes it a two-click one.
+         The icon is filled in by assets/js/theme.js once it knows
+         which theme is active — rendering one here would show the
+         wrong icon for a moment on every load. -->
+    <button class="tb-theme" id="themeToggle" type="button"
+            aria-label="Switch between light and dark" title="Switch theme">
+        <i class="bi" aria-hidden="true"></i>
+    </button>
+
     <div class="dropdown">
         <div class="profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
             <img src="<?php echo htmlspecialchars($__avatarUrl); ?>" alt="Profile">

@@ -21,10 +21,10 @@
     padding: 1.15rem 1.4rem;
     margin-bottom: 1.5rem;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, .07);
+    border: 1px solid rgba(var(--tint), .07);
     background:
         radial-gradient(circle at 0% 0%, rgba(59, 130, 246, .16), transparent 55%),
-        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+        linear-gradient(135deg, rgba(var(--tint), .04), rgba(var(--tint), .015));
     overflow: hidden;
 }
 
@@ -45,7 +45,7 @@
     display: grid;
     place-items: center;
     font-size: 1.5rem;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, #3b82f6, #8b5cf6);
     box-shadow: 0 8px 20px rgba(59, 130, 246, .35);
 }
@@ -60,13 +60,13 @@
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: -.02em;
-    color: #fff;
+    color: var(--ink);
 }
 
 .users-page .users-hero-text p {
     margin: 0;
     font-size: .85rem;
-    color: rgba(255, 255, 255, .45);
+    color: rgba(var(--tint), .45);
 }
 
 .users-page .btn-add-user {
@@ -79,7 +79,7 @@
     border-radius: 11px;
     font-size: .9rem;
     font-weight: 600;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, #3b82f6, #2563eb);
     box-shadow: 0 6px 16px rgba(59, 130, 246, .3);
     cursor: pointer;
@@ -159,14 +159,14 @@
 /* ─── DataTables controls ─────────────────────────────────── */
 .users-page .dataTables_wrapper .dataTables_info {
     font-size: .8rem;
-    color: rgba(255, 255, 255, .35);
+    color: rgba(var(--tint), .35);
     padding-left: .2rem;
 }
 
 .users-page .dataTables_wrapper .page-link {
-    background: rgba(255, 255, 255, .04);
-    border: 1px solid rgba(255, 255, 255, .08);
-    color: #cbd5e1;
+    background: rgba(var(--tint), .04);
+    border: 1px solid rgba(var(--tint), .08);
+    color: var(--ink-3);
     border-radius: 8px;
     margin: 0 2px;
     font-size: .82rem;
@@ -175,7 +175,7 @@
 .users-page .dataTables_wrapper .page-item.active .page-link {
     background: linear-gradient(135deg, #3b82f6, #2563eb);
     border-color: transparent;
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .users-page .dataTables_wrapper .page-item.disabled .page-link {
@@ -185,7 +185,7 @@
 .users-page .empty-state {
     text-align: center;
     padding: 2.5rem 1rem;
-    color: rgba(255, 255, 255, .3);
+    color: rgba(var(--tint), .3);
 }
 
 .users-page .empty-state i {
@@ -197,7 +197,7 @@
 
 .users-page .empty-state strong {
     display: block;
-    color: rgba(255, 255, 255, .6);
+    color: rgba(var(--tint), .6);
     font-size: .95rem;
     margin-bottom: .2rem;
 }
@@ -214,8 +214,8 @@
    ADD / EDIT USER MODAL
    ============================================================ */
 .user-modal {
-    background: #16161a;
-    border: 1px solid rgba(255, 255, 255, .08);
+    background: var(--surface);
+    border: 1px solid rgba(var(--tint), .08);
     border-radius: 18px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
     overflow: hidden;
@@ -226,7 +226,7 @@
     align-items: center;
     gap: .85rem;
     padding: 1.15rem 1.35rem;
-    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    border-bottom: 1px solid rgba(var(--tint), .07);
     background: linear-gradient(135deg, rgba(59, 130, 246, .1), transparent);
 }
 
@@ -238,7 +238,7 @@
     display: grid;
     place-items: center;
     font-size: 1.15rem;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, #3b82f6, #8b5cf6);
 }
 
@@ -246,12 +246,12 @@
     margin: 0;
     font-size: 1.05rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--ink-2);
 }
 
 .user-modal .modal-header small {
     font-size: .78rem;
-    color: rgba(255, 255, 255, .45);
+    color: rgba(var(--tint), .45);
 }
 
 .user-modal .modal-body {
@@ -264,13 +264,13 @@
     display: block;
     font-size: .82rem;
     font-weight: 600;
-    color: #cbd5e1;
+    color: var(--ink-3);
     margin-bottom: .45rem;
 }
 
 .user-modal .label-hint {
     font-weight: 500;
-    color: rgba(255, 255, 255, .35);
+    color: rgba(var(--tint), .35);
 }
 
 .user-modal .input-icon {
@@ -282,7 +282,7 @@
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #64748b;
+    color: var(--ink-4);
     pointer-events: none;
     transition: color .2s;
 }
@@ -290,22 +290,22 @@
 .user-modal .user-input {
     display: block;
     width: 100%;
-    background: #0f0f13;
-    border: 1px solid #2a2a33;
+    background: var(--bg);
+    border: 1px solid var(--surface-3);
     border-radius: 11px;
     padding: .72rem .9rem .72rem 42px;
     font-size: .92rem;
-    color: #f1f5f9;
+    color: var(--ink-2);
     transition: border-color .2s, box-shadow .2s, background .2s;
 }
 
 .user-modal .user-input::placeholder {
-    color: #4b5563;
+    color: var(--ink-5);
 }
 
 .user-modal .user-input:focus {
     outline: none;
-    background: #101018;
+    background: var(--bg);
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, .18);
 }
@@ -328,14 +328,14 @@
     border: 0;
     border-radius: 9px;
     background: transparent;
-    color: #64748b;
+    color: var(--ink-4);
     cursor: pointer;
     transition: .2s;
 }
 
 .user-modal .input-eye:hover {
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, .06);
+    color: var(--ink-2);
+    background: rgba(var(--tint), .06);
 }
 
 /* ─── Role picker ─────────────────────────────────────────── */
@@ -357,8 +357,8 @@
     display: block;
     padding: .75rem .85rem;
     border-radius: 12px;
-    border: 1px solid #2a2a33;
-    background: #0f0f13;
+    border: 1px solid var(--surface-3);
+    background: var(--bg);
     cursor: pointer;
     transition: border-color .2s, background .2s;
 }
@@ -371,7 +371,7 @@
 .user-modal .role-option b {
     display: block;
     font-size: .88rem;
-    color: #e2e8f0;
+    color: var(--ink-2);
     margin: .2rem 0 .1rem;
 }
 
@@ -379,7 +379,7 @@
     display: block;
     font-size: .72rem;
     line-height: 1.35;
-    color: rgba(255, 255, 255, .4);
+    color: rgba(var(--tint), .4);
 }
 
 .user-modal .role-option input:checked+span {
@@ -399,7 +399,7 @@
     gap: .4rem;
     margin-top: .5rem;
     font-size: .76rem;
-    color: rgba(255, 255, 255, .4);
+    color: rgba(var(--tint), .4);
 }
 
 .user-modal .field-error {
@@ -416,7 +416,7 @@
 /* ─── Footer ──────────────────────────────────────────────── */
 .user-modal .modal-footer {
     padding: 1rem 1.35rem;
-    border-top: 1px solid rgba(255, 255, 255, .07);
+    border-top: 1px solid rgba(var(--tint), .07);
     display: flex;
     justify-content: flex-end;
     gap: .6rem;
@@ -431,7 +431,7 @@
     border-radius: 11px;
     font-size: .9rem;
     font-weight: 600;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, #3b82f6, #2563eb);
     cursor: pointer;
     transition: transform .2s, box-shadow .2s, filter .2s;
@@ -453,16 +453,16 @@
     border-radius: 11px;
     font-size: .88rem;
     font-weight: 600;
-    color: #cbd5e1;
-    background: rgba(255, 255, 255, .05);
-    border: 1px solid rgba(255, 255, 255, .12);
+    color: var(--ink-3);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .12);
     cursor: pointer;
     transition: .2s;
 }
 
 .user-modal .btn-ghost:hover {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 /* ─── Responsive ──────────────────────────────────────────── */

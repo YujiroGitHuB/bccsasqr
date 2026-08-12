@@ -24,8 +24,8 @@
     max-width: 320px;
     padding: 8px;
     border-radius: 14px;
-    background: #16161a;
-    border: 1px solid rgba(255, 255, 255, .08);
+    background: var(--surface);
+    border: 1px solid rgba(var(--tint), .08);
     box-shadow: 0 18px 45px rgba(0, 0, 0, .55);
 }
 
@@ -52,8 +52,8 @@
     height: 46px;
     font-size: 1.05rem;
     font-weight: 700;
-    color: #fff;
-    border: 2px solid rgba(255, 255, 255, .12);
+    color: var(--ink);
+    border: 2px solid rgba(var(--tint), .12);
 }
 
 /* The green "online" dot — topBar.php already had a span for it,
@@ -66,7 +66,7 @@
     height: 12px;
     border-radius: 50%;
     background: #34d399;
-    border: 2px solid #16161a;
+    border: 2px solid var(--surface);
 }
 
 .topbar .tb-user-info {
@@ -77,7 +77,7 @@
     margin: 0 0 3px;
     font-size: .92rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--ink-2);
     /* One line only — a long name is truncated rather than stacked
        until the whole box grows taller. */
     white-space: nowrap;
@@ -103,7 +103,7 @@
 /* ─── Items ───────────────────────────────────────────────── */
 .topbar .dropdown-divider {
     margin: 6px 2px;
-    border-color: rgba(255, 255, 255, .08);
+    border-color: rgba(var(--tint), .08);
 }
 
 .topbar .dropdown-item {
@@ -114,7 +114,7 @@
     border-radius: 9px;
     font-size: .87rem;
     font-weight: 500;
-    color: #cbd5e1;
+    color: var(--ink-3);
     transition: background .18s ease, color .18s ease;
 }
 
@@ -122,7 +122,7 @@
     width: 18px;
     font-size: 1rem;
     text-align: center;
-    color: #94a3b8;
+    color: var(--ink-4);
     /* The markup's `me-2` is superseded by the gap above so every
        item is spaced identically. */
     margin-right: 0 !important;
@@ -132,7 +132,7 @@
 .topbar .dropdown-item:hover,
 .topbar .dropdown-item:focus {
     background: rgba(102, 126, 234, .16);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .topbar .dropdown-item:hover i {
@@ -167,11 +167,58 @@
 }
 
 .topbar .profile:hover {
-    background: rgba(255, 255, 255, .05);
+    background: rgba(var(--tint), .05);
 }
 
 .topbar .profile img {
-    border-color: rgba(255, 255, 255, .18);
+    border-color: rgba(var(--tint), .18);
+}
+
+/* ─── Theme toggle ────────────────────────────────────────────
+   Sits to the left of the avatar and borrows its shape, so the two
+   read as one cluster rather than a stray button. Quiet by default:
+   it is used once and then forgotten, and should not compete with
+   the avatar beside it. */
+.topbar .tb-theme {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-left: auto;
+    padding: 0;
+    border: 1px solid rgba(var(--tint), .12);
+    border-radius: 999px;
+    background: rgba(var(--tint), .04);
+    color: var(--ink-3);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.topbar .tb-theme:hover {
+    background: rgba(var(--tint), .1);
+    border-color: rgba(var(--tint), .2);
+    color: var(--ink);
+}
+
+.topbar .tb-theme:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* .topbar is `justify-content: space-between`, which with a fourth
+   child would spread the toggle into the middle of the bar. The auto
+   margin above pins it and the avatar together on the right; this is
+   the only gap between the two. */
+.topbar .tb-theme+.dropdown {
+    margin-left: .55rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .topbar .tb-theme {
+        transition: none;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -207,14 +254,14 @@
         flex: 1 1 auto;
         min-width: 0;
         padding: 0 .5rem;
-        color: #e2e8f0;
+        color: var(--ink-2);
         text-decoration: none;
         transition: opacity .18s ease;
     }
 
     .topbar .tb-brand:hover {
         opacity: .8;
-        color: #fff;
+        color: var(--ink);
     }
 
     /* The size tracks the viewport width instead of jumping at

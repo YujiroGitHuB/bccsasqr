@@ -14,7 +14,7 @@ $system = mysqli_fetch_assoc($systemQuery);
 $user_role = $_SESSION['role'];
 ?>
 <!doctype html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 
 <head>
     <title>Generate Attendance Links</title>

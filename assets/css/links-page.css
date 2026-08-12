@@ -16,8 +16,8 @@
     --lnk-soft: rgba(139, 92, 246, .14);
     --lnk-line: rgba(139, 92, 246, .3);
     --lnk-ink: #c4b5fd;
-    --lnk-surface: #16161a;
-    --lnk-border: rgba(255, 255, 255, .07);
+    --lnk-surface: var(--surface);
+    --lnk-border: rgba(var(--tint), .07);
 }
 
 /* ─── Hero ────────────────────────────────────────────────── */
@@ -33,7 +33,7 @@
     border: 1px solid var(--lnk-border);
     background:
         radial-gradient(circle at 0% 0%, rgba(139, 92, 246, .16), transparent 55%),
-        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+        linear-gradient(135deg, rgba(var(--tint), .04), rgba(var(--tint), .015));
     overflow: hidden;
 }
 
@@ -54,7 +54,7 @@
     display: grid;
     place-items: center;
     font-size: 1.5rem;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--lnk), var(--lnk-deep));
     box-shadow: 0 8px 20px rgba(139, 92, 246, .35);
 }
@@ -69,13 +69,13 @@
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: -.02em;
-    color: #fff;
+    color: var(--ink);
 }
 
 .link-page .lnk-hero-text p {
     margin: 0;
     font-size: .85rem;
-    color: rgba(255, 255, 255, .45);
+    color: rgba(var(--tint), .45);
 }
 
 .link-page .count-badge {
@@ -103,7 +103,7 @@
     margin-bottom: 1.25rem;
     border-radius: 14px;
     border: 1px solid var(--lnk-border);
-    background: rgba(255, 255, 255, .02);
+    background: rgba(var(--tint), .02);
 }
 
 .link-page .lnk-filters .search-wrap {
@@ -120,10 +120,10 @@
 
 .link-page .lnk-filters .form-control,
 .link-page .lnk-filters .form-select {
-    background: #0f0f13;
-    border: 1px solid #2a2a33;
+    background: var(--bg);
+    border: 1px solid var(--surface-3);
     border-radius: 10px !important;
-    color: #f1f5f9;
+    color: var(--ink-2);
     font-size: .87rem;
     padding: .5rem .8rem;
 }
@@ -140,7 +140,7 @@
 }
 
 .link-page .lnk-filters .form-control::placeholder {
-    color: #4b5563;
+    color: var(--ink-5);
 }
 
 .link-page .search-wrap .bi-search {
@@ -184,15 +184,15 @@
     font-family: monospace;
     font-size: .78rem;
     background: rgba(0, 0, 0, .35);
-    border: 1px solid rgba(255, 255, 255, .08);
+    border: 1px solid rgba(var(--tint), .08);
     border-radius: 9px;
     padding: 10px 12px;
-    color: #94a3b8;
+    color: var(--ink-4);
 }
 
 .link-page .instructor-badge {
-    background: rgba(255, 255, 255, .05);
-    border: 1px solid rgba(255, 255, 255, .08);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .08);
     border-radius: 999px;
     padding: 2px 10px;
     font-size: .76rem;
@@ -202,9 +202,9 @@
    and `bg-success` — solid blocks on a card where everything else
    is quiet. */
 .link-page .link-card .badge.bg-secondary {
-    background: rgba(255, 255, 255, .07) !important;
-    border: 1px solid rgba(255, 255, 255, .12);
-    color: #cbd5e1;
+    background: rgba(var(--tint), .07) !important;
+    border: 1px solid rgba(var(--tint), .12);
+    color: var(--ink-3);
     font-weight: 600;
     border-radius: 7px;
     padding: .3rem .6rem;
@@ -235,7 +235,7 @@
 .link-page .link-card .btn-primary {
     background: linear-gradient(135deg, var(--lnk), var(--lnk-deep));
     border: none;
-    color: #fff;
+    color: var(--on-accent);
     box-shadow: none;
 }
 
@@ -295,8 +295,8 @@
     padding: .9rem 1.1rem;
     border-radius: 12px;
     text-align: left;
-    background: rgba(255, 255, 255, .03);
-    border: 1px solid rgba(255, 255, 255, .07);
+    background: rgba(var(--tint), .03);
+    border: 1px solid rgba(var(--tint), .07);
 }
 
 .link-page .lnk-step .num {
@@ -307,7 +307,7 @@
 .lnk-qr-modal {
     border-radius: 16px !important;
     border: 1px solid var(--lnk-line) !important;
-    background: #16161a !important;
+    background: var(--surface) !important;
 }
 
 .lnk-qr-modal .modal-title i {
@@ -328,9 +328,9 @@
 }
 
 .lnk-qr-chip.plain {
-    color: #adb5bd;
-    background: rgba(255, 255, 255, .05);
-    border-color: rgba(255, 255, 255, .1);
+    color: var(--ink-4);
+    background: rgba(var(--tint), .05);
+    border-color: rgba(var(--tint), .1);
 }
 
 /* The QR plate is white — a camera needs that contrast to read it;
@@ -339,7 +339,7 @@
     display: inline-block;
     padding: 14px;
     border-radius: 14px;
-    background: #fff;
+    background: var(--plate);
     box-shadow: 0 0 30px rgba(139, 92, 246, .35);
 }
 
@@ -349,9 +349,9 @@
 }
 
 .lnk-qr-modal .btn-secondary {
-    background: rgba(255, 255, 255, .06);
-    border: 1px solid rgba(255, 255, 255, .12);
-    color: #cbd5e1;
+    background: rgba(var(--tint), .06);
+    border: 1px solid rgba(var(--tint), .12);
+    color: var(--ink-3);
 }
 
 /* ─── Responsive ──────────────────────────────────────────── */

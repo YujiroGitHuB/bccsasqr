@@ -2,6 +2,34 @@
  include __DIR__ . "/../includes/systemConfig.php";?>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Theme, resolved BEFORE any stylesheet loads.
+     Inline and blocking on purpose: read from an external file it
+     would run after the first paint, and every page would flash the
+     wrong colour before correcting itself.
+     `data-theme` drives assets/css/theme.css; `data-bs-theme` drives
+     Bootstrap's own components (form controls, dropdowns, tables),
+     which have no media-query mode of their own and must be told
+     explicitly. -->
+<script>
+    (function () {
+        try {
+            var saved = localStorage.getItem('bcc-theme');
+            var theme = (saved === 'light' || saved === 'dark')
+                ? saved
+                : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            var root = document.documentElement;
+            root.setAttribute('data-theme', theme);
+            root.setAttribute('data-bs-theme', theme);
+        } catch (e) {
+            // Private mode can throw on localStorage. Dark is what the
+            // app looked like before the theme existed.
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+        }
+    })();
+</script>
+<!-- Tokens first: every stylesheet below reads from them. -->
+<link rel="stylesheet" href="<?= asset('../assets/css/theme.css') ?>">
 <title><?php echo $systemName; ?></title>
 <link rel="icon" type="image/png" href="../<?php echo $systemLogo; ?>">
 <!-- DataTables Bootstrap 5 Theme -->

@@ -17,7 +17,7 @@ $system = mysqli_fetch_assoc($systemQuery);
 ?>
 
 <!doctype html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 
 <head>
     <?php include __DIR__ . "/../includes/header.php"; ?>

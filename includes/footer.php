@@ -1,3 +1,8 @@
+<?php require_once __DIR__ . '/asset.php'; ?>
+    <!-- The theme is already applied by the inline script in
+         header.php; this only wires the topbar toggle. Loaded here so
+         every page with a topbar gets it without its own script tag. -->
+    <script src="<?= asset('../assets/js/theme.js') ?>"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>

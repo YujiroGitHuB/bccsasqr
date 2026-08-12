@@ -29,7 +29,7 @@ $assignedTotal = (int) (mysqli_fetch_assoc(
 ?>
 
 <!doctype html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 
 <head>
     <?php include __DIR__ . "/../includes/header.php"; ?>
