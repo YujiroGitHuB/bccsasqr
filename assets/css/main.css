@@ -1,11 +1,22 @@
+/* Katutubong font stack — walang webfont, kaya walang
+   render-blocking na request at pareho ang hitsura offline.
+
+   Dating `'Times New Roman', Times, serif` ang nakasulat dito. Ang
+   `*` ay tumatama sa BAWAT elemento nang tuwiran, kaya hindi
+   kailanman umaabot ang `font-family` ng <body> sa kahit ano —
+   natatalo ito ng mana. Serif ang buong admin UI dahil doon,
+   gayong "Poppins, sans-serif" ang nakasaad sa ibaba (at hindi
+   naman naka-link kahit saan ang Poppins). Iyon din ang dahilan
+   kung bakit nagkakarga ng sariling webfont ang ilang page — para
+   lang makatakas dito. */
 * {
-  font-family: 'Times New Roman', Times, serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 }
 
 body {
   background-color: #0f172a;
   color: #e2e8f0;
-  font-family: "Poppins", sans-serif;
   overflow-x: hidden;
 }
 

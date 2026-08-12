@@ -297,6 +297,24 @@
     transform: translateY(0);
 }
 
+/* Mapanirang pagkumpirma (hal. "Alisin ang litrato") — pula ang
+   punong butones, hindi sky. Kapareho ng `.app-swal.is-danger`. */
+.app-btn.danger {
+    color: #fff;
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, .3);
+}
+
+.app-btn.danger:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 22px rgba(239, 68, 68, .4);
+}
+
+.app-btn.danger:active {
+    transform: translateY(0);
+}
+
 /* Tahimik na pag-atras — nakikita, pero hindi nakikipag-agawan. */
 .app-btn.ghost {
     color: #cbd5e1;

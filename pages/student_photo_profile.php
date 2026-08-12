@@ -81,22 +81,37 @@ $sectionStmt->close();
 
 <head>
     <?php include __DIR__ . "/../includes/header.php" ?>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <?php
+    // Tinanggal ang tatlong webfont (Syne / JetBrains Mono / Outfit) at
+    // ang pangalawang kopya ng Bootstrap Icons: katutubong font stack
+    // ang ginagamit ng lahat ng ibang page, at naka-link na ang mga
+    // icon sa includes/header.php.
+    ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/studPhotoPofile.css') ?>">
+    <!-- Anyo ng spDelModal (.app-modal) -->
+    <link rel="stylesheet" href="<?= asset('../assets/css/modal-form.css') ?>">
 </head>
 <body>
     <?php include __DIR__ . "/../components/sidebar.php"; ?>
     <div class="content sp" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <!-- Page Header -->
-        <div class="sp-header">
-            <div class="sp-header-left">
-                <h2 class="sp-title">Student <span>Photo</span> Profiles</h2>
-                <p class="sp-sub">Monitor and manage QR attendance photo uploads</p>
+        <!-- Hero — kaparehong hugis ng .stud-hero at .dash-hero -->
+        <div class="sp-hero">
+            <div class="sp-hero-icon"><i class="bi bi-person-badge-fill"></i></div>
+            <div class="sp-hero-text">
+                <h2>Student Photo Profiles</h2>
+                <p>The face shown to the scanner when a QR is checked in.</p>
+            </div>
+            <div class="sp-chips">
+                <span class="sp-chip">
+                    <i class="bi bi-people-fill"></i>
+                    <?= number_format($total_students) ?> student<?= $total_students === 1 ? '' : 's' ?>
+                </span>
+                <span class="sp-chip">
+                    <i class="bi bi-mortarboard"></i>
+                    <?= count($courses) ?> course<?= count($courses) === 1 ? '' : 's' ?>
+                </span>
             </div>
         </div>
 
@@ -105,32 +120,30 @@ $sectionStmt->close();
             <div class="sp-stat total">
                 <div class="sp-stat-icon"><i class="bi bi-people-fill"></i></div>
                 <div class="sp-stat-val"><?= number_format($total_students) ?></div>
-                <div class="sp-stat-lbl">Total Students</div>
+                <div class="sp-stat-lbl">Total students</div>
             </div>
             <div class="sp-stat has">
                 <div class="sp-stat-icon"><i class="bi bi-person-check-fill"></i></div>
                 <div class="sp-stat-val"><?= number_format($with_photo) ?></div>
-                <div class="sp-stat-lbl">With Photo</div>
+                <div class="sp-stat-lbl">With photo</div>
             </div>
             <div class="sp-stat missing">
                 <div class="sp-stat-icon"><i class="bi bi-person-x-fill"></i></div>
                 <div class="sp-stat-val"><?= number_format($without_photo) ?></div>
-                <div class="sp-stat-lbl">No Photo</div>
+                <div class="sp-stat-lbl">No photo yet</div>
             </div>
             <div class="sp-stat prog">
                 <div class="sp-prog-head">
-                    <div>
-                        <div class="sp-stat-icon" style="margin-bottom:.4rem;"><i class="bi bi-bar-chart-fill"></i></div>
-                        <div class="sp-prog-lbl">Photo Coverage</div>
-                    </div>
+                    <div class="sp-prog-lbl">Photo coverage</div>
                     <div class="sp-prog-pct"><?= $pct ?><small>%</small></div>
                 </div>
+                <!-- Ang lapad ay galing dito; walang base rule ang
+                     `.sp-fill` dati kaya laging bakante ang bar. -->
                 <div class="sp-track">
-                    <div class="sp-fill"></div>
+                    <div class="sp-fill" style="width: <?= $pct ?>%"></div>
                 </div>
                 <div class="sp-prog-sub">
-                    <span><?= number_format($with_photo) ?> uploaded</span>
-                    <span><?= number_format($without_photo) ?> remaining</span>
+                    <?= number_format($with_photo) ?> of <?= number_format($total_students) ?> students have uploaded a photo
                 </div>
             </div>
         </div>
@@ -138,25 +151,26 @@ $sectionStmt->close();
         <!-- Toolbar -->
         <div class="sp-toolbar">
             <div class="sp-srch">
-                <input type="text" id="spQ" placeholder="Search name or student no…" autocomplete="off">
-                <i class="bi bi-search sp-srch-ico"></i>
+                <input type="text" id="spQ" placeholder="Search name or student no…" autocomplete="off"
+                    aria-label="Search students by name or student number">
+                <i class="bi bi-search sp-srch-ico" aria-hidden="true"></i>
             </div>
-            <select class="sp-sel" id="spCourse">
+            <select class="sp-sel" id="spCourse" aria-label="Filter by course">
                 <option value="">All Courses</option>
                 <?php foreach ($courses as $c): ?>
                     <option value="<?= htmlspecialchars($c['course']) ?>"><?= htmlspecialchars($c['course']) ?></option>
                 <?php endforeach; ?>
             </select>
-            <select class="sp-sel" id="spSection">
+            <select class="sp-sel" id="spSection" aria-label="Filter by section">
                 <option value="">All Sections</option>
                 <?php foreach ($sections as $sec): ?>
                     <option value="<?= htmlspecialchars($sec['section']) ?>"><?= htmlspecialchars($sec['section']) ?></option>
                 <?php endforeach; ?>
             </select>
-            <div class="sp-pills">
-                <button class="sp-pill on" data-f="all"><i class="bi bi-grid-3x3-gap-fill"></i> All</button>
-                <button class="sp-pill g" data-f="with"><i class="bi bi-check-circle-fill"></i> With</button>
-                <button class="sp-pill a" data-f="without"><i class="bi bi-exclamation-circle-fill"></i> None</button>
+            <div class="sp-pills" role="group" aria-label="Filter by photo status">
+                <button type="button" class="sp-pill on" data-f="all"><i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i> All</button>
+                <button type="button" class="sp-pill g" data-f="with"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> With photo</button>
+                <button type="button" class="sp-pill a" data-f="without"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i> Missing</button>
             </div>
         </div>
 
@@ -181,35 +195,40 @@ $sectionStmt->close();
         <div class="sp-grid" id="spGrid"></div>
 
         <!-- Load more -->
-        <div class="sp-more-wrap" style="text-align:center; margin-top:1.5rem;">
-            <button id="spMore" class="btn" style="display:none;">
+        <div class="sp-more-wrap">
+            <button id="spMore" class="sp-more" style="display:none;">
                 <i class="bi bi-arrow-down-circle"></i> Load more
             </button>
         </div>
     </div>
 
-    <!-- Delete Modal -->
-    <div class="modal fade" id="spDelModal" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered">
+    <!-- Delete Modal
+         Anyo: assets/css/modal-form.css (.app-modal). Dating may
+         sariling inline na estilo bawat elemento — kasama ang isang
+         'Syne' na ulo at dalawang butoneng magkasinglaki, kaya
+         magkapantay ang timbang ng Cancel at ng Remove. -->
+    <div class="modal fade app-modal" id="spDelModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-body text-center p-4">
-                    <div class="sp-del-icon">
-                        <i class="bi bi-trash3-fill"></i>
+                <div class="modal-header">
+                    <div class="app-modal-icon is-crit"><i class="bi bi-trash3-fill"></i></div>
+                    <div class="app-modal-heading">
+                        <h5 class="modal-title">Remove this photo?</h5>
+                        <p>The student can upload a new one anytime.</p>
                     </div>
-                    <h6 style="font-family:'Syne',sans-serif;font-weight:800;margin-bottom:.35rem;font-size:.95rem;letter-spacing:-.02em;">
-                        Remove Photo?
-                    </h6>
-                    <p id="spDelMsg" style="font-size:.8rem;color:#718096;margin-bottom:1.3rem;line-height:1.6;"></p>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm flex-fill" data-bs-dismiss="modal"
-                            style="background:#131c2b;border:1px solid rgba(255,255,255,.08);color:#a0aec0;font-size:.82rem;">
-                            Cancel
-                        </button>
-                        <button class="btn btn-sm btn-danger flex-fill" id="spDelOk"
-                            style="font-size:.82rem;font-weight:600;">
-                            <i class="bi bi-trash3"></i> Remove
-                        </button>
-                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="sp-del-msg">
+                        This clears the photo on file for <strong id="spDelName"></strong>.
+                        Attendance records are not affected.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="app-btn ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="app-btn danger" id="spDelOk">
+                        <i class="bi bi-trash3" aria-hidden="true"></i> Remove photo
+                    </button>
                 </div>
             </div>
         </div>

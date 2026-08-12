@@ -107,7 +107,7 @@ async function load(reset) {
 
         cnt.textContent = total;
         tag.innerHTML = filt !== 'all'
-            ? `<span class="sp-tag"><i class="bi bi-funnel-fill"></i> ${filt === 'with' ? 'With Photo' : 'No Photo'}</span>`
+            ? `<span class="sp-tag"><i class="bi bi-funnel-fill"></i> ${filt === 'with' ? 'With photo' : 'Missing photo'}</span>`
             : '';
 
         if (total === 0) grid.innerHTML = EMPTY_HTML;
@@ -164,8 +164,9 @@ const modal = new bootstrap.Modal(document.getElementById('spDelModal'));
 
 function askDelete(id, name) {
     pid = id;
-    document.getElementById('spDelMsg').textContent =
-        `Remove photo for "${name}"? They can re-upload anytime.`;
+    // Ang tanong at ang paalala ("can re-upload anytime") ay nasa ulo
+    // na ng modal — ang pangalan lang ang nagbabago kada pagbukas.
+    document.getElementById('spDelName').textContent = name;
     modal.show();
 }
 
@@ -210,7 +211,7 @@ document.getElementById('spDelOk').addEventListener('click', async function () {
     } catch { alert('Network error.'); }
     finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-trash3"></i> Remove';
+        btn.innerHTML = '<i class="bi bi-trash3"></i> Remove photo';
         pid = null;
     }
 });
@@ -223,7 +224,7 @@ document.getElementById('spDelOk').addEventListener('click', async function () {
 #spLightbox.show{display:flex}
 #spLightbox .sp-lb-fig{margin:0;text-align:center;max-width:92vw;animation:spLbIn .18s ease}
 #spLightbox img{max-width:92vw;max-height:82vh;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.6);cursor:default;object-fit:contain}
-#spLightbox figcaption{margin-top:14px;color:#e2e8f0;font-family:'Syne',sans-serif;font-weight:600;font-size:1rem;letter-spacing:-.01em}
+#spLightbox figcaption{margin-top:14px;color:#e2e8f0;font-weight:600;font-size:1rem;letter-spacing:-.01em}
 #spLightbox .sp-lb-close{position:absolute;top:18px;right:22px;width:44px;height:44px;border:none;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:1.8rem;line-height:1;cursor:pointer;transition:background .18s}
 #spLightbox .sp-lb-close:hover{background:rgba(255,255,255,.22)}
 @keyframes spLbIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
