@@ -16,9 +16,9 @@ $(document).ready(function () {
             }
         });
     }
-    // Ang pag-filter ayon sa petsa ay nasa From/To na form ng attendance.php.
-    // Server-side na iyon ngayon — hindi na lang itinatago ang rows, hindi na
-    // talaga kinukuha sa database. Itakda ang From = To para sa isang araw.
+    // Filtering by date lives in attendance.php's From/To form. That is
+    // server-side now — the rows are not merely hidden, they are never
+    // fetched from the database. Set From = To for a single day.
 
     // Filter by Section (exact match)
     $('#filterSection').on('change', function () {
@@ -33,8 +33,8 @@ $(document).ready(function () {
         table.column(6).search(regex, true, false).draw();
     });
     // Optional reset button (add a #resetFilters button in your HTML)
-    // Nililinis lang nito ang mga filter sa loob ng naka-load na window.
-    // Para baguhin ang window mismo, gamitin ang From/To o ang "Last 30 days".
+    // This only clears the filters within the loaded window. To change
+    // the window itself, use From/To or "Last 30 days".
     $('#resetFilters').on('click', function () {
         $('#filterSection').val('');
         table.search('').columns().search('').draw();

@@ -43,7 +43,7 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curlError = curl_error($ch);
 curl_close($ch);
 
-// Kung may cURL error
+// If there was a cURL error
 if ($curlError) {
     http_response_code(500);
     echo json_encode(['error' => 'Connection failed: ' . $curlError]);

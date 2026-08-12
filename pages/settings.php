@@ -53,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['attendance_lock_statu
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['require_photo_status'])) {
     $newStatus = $_POST['require_photo_status'] === '1' ? '1' : '0';
 
-    // May UNIQUE KEY ang setting_key, kaya isang statement lang ang
-    // kailangan — mag-i-insert kung wala pa, mag-a-update kung meron na.
+    // setting_key has a UNIQUE KEY, so one statement is enough — it
+    // inserts when absent and updates when present.
     $stmt = $conn->prepare("
         INSERT INTO attendance_settings (setting_key, setting_value, updated_at)
         VALUES ('require_student_photo', ?, NOW())
@@ -84,17 +84,17 @@ if ($attendanceResult && mysqli_num_rows($attendanceResult) > 0) {
 }
 $isAttendanceLocked = ($attendanceLocked === 1);
 
-// Get student photo requirement status (naka-OFF ang default kapag
-// wala pang row — tingnan ang migration para sa dahilan)
+// Get student photo requirement status (defaults to OFF when there is
+// no row yet — see the migration for why)
 $photoReqResult = mysqli_query($conn, "SELECT setting_value FROM attendance_settings WHERE setting_key = 'require_student_photo'");
 $isPhotoRequired = false;
 if ($photoReqResult && mysqli_num_rows($photoReqResult) > 0) {
     $isPhotoRequired = (mysqli_fetch_assoc($photoReqResult)['setting_value'] === '1');
 }
 
-// Ilan ang maaapektuhan kapag binuksan ito — mahalagang makita ng
-// admin bago pindutin, dahil hindi makakapag-attendance ang mga
-// estudyanteng walang photo.
+// How many students this affects when turned on — the admin needs to
+// see it before pressing, because students with no photo will not be
+// able to record attendance.
 $photoStats = mysqli_query($conn, "
     SELECT COUNT(*) AS total,
            SUM(CASE WHEN p.photo_path IS NULL OR p.photo_path = '' THEN 1 ELSE 0 END) AS missing
@@ -123,9 +123,9 @@ $systemLogo = $system['logo'] ?? '';
 <head>
     <?php include __DIR__ . "/../includes/header.php"; ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">
-    <!-- Bago ang settings-page.css: doon nakasulat ang tagapili ng logo
-         (.cfg-*) at kailangan nitong manalo laban sa mga panuntunan ng
-         .app-modal kapag pantay ang specificity. -->
+    <!-- settings-page.css comes after: the logo picker (.cfg-*) is
+         written there and has to beat the .app-modal rules when the
+         specificity is equal. -->
     <link rel="stylesheet" href="<?= asset('../assets/css/modal-form.css') ?>">
     <link rel="stylesheet" href="<?= asset('../assets/css/settings-page.css') ?>">
 </head>
@@ -295,9 +295,9 @@ $systemLogo = $system['logo'] ?? '';
                         </p>
 
                         <?php if ($photoMissing > 0): ?>
-                            <!-- Ang id ay binabasa ng requirePhoto.js para sa teksto ng
-                                 kumpirmasyon — dating hinahalungkat nito ang DOM mula sa
-                                 icon ng babala pataas. -->
+                            <!-- requirePhoto.js reads this id for the confirmation
+                                 text — it used to walk up the DOM from the warning
+                                 icon. -->
                             <div class="set-warn <?= $isPhotoRequired ? 'danger' : '' ?>" id="photoWarning">
                                 <i class="bi bi-exclamation-triangle-fill"></i>
                                 <span>

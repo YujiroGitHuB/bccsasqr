@@ -1,13 +1,13 @@
 // ============================================================
 // SIDEBAR TOGGLE
 //
-// Magkaibang kahulugan ang buton depende sa laki ng screen:
-//   desktop — paliitin/palakihin (250px <-> 80px), gaya ng dati
-//   mobile  — ilabas/ipasok (off-canvas), dahil sa 390px na screen
-//             ay 140px na lang ang matitira sa content kung mananatili
-//             ang sidebar sa tabi.
+// The button means different things depending on screen size:
+//   desktop — shrink/expand (250px <-> 80px), as before
+//   mobile  — slide out/in (off-canvas), because on a 390px screen
+//             only 140px would be left for the content if the sidebar
+//             stayed alongside.
 //
-// Tugma ang 992px sa breakpoint ng mobile.css.
+// The 992px matches mobile.css's breakpoint.
 // ============================================================
 
 const SIDEBAR_MOBILE_QUERY = '(max-width: 992px)';
@@ -19,8 +19,7 @@ function isMobileLayout() {
 function getSidebarBackdrop() {
     let backdrop = document.getElementById('sidebarBackdrop');
     if (!backdrop) {
-        // Ginagawa sa JS para hindi na kailangang baguhin ang markup
-        // ng bawat page.
+        // Done in JS so every page's markup does not have to change.
         backdrop = document.createElement('button');
         backdrop.id = 'sidebarBackdrop';
         backdrop.className = 'sidebar-backdrop';
@@ -55,13 +54,13 @@ function toggleSidebar() {
     if (content) content.classList.toggle('full');
 }
 
-// Kapag pumili ng link, isara ang sidebar — kung hindi, mananatiling
-// nakaharang ang overlay habang naglo-load ang bagong page.
+// Close the sidebar when a link is chosen — otherwise the overlay
+// stays in the way while the new page loads.
 document.addEventListener('click', function (e) {
     if (!isMobileLayout()) return;
     const link = e.target.closest('#sidebar .nav-link');
-    // Ang mga dropdown toggle ay nagbubukas ng submenu, hindi
-    // naglilipat ng page — huwag isara para sa mga iyon.
+    // Dropdown toggles open a submenu rather than navigating — do not
+    // close for those.
     if (link && !link.hasAttribute('data-bs-toggle')) {
         closeSidebarMobile();
     }
@@ -72,8 +71,8 @@ document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && isMobileLayout()) closeSidebarMobile();
 });
 
-// Kapag pinaikot ang telepono o nag-resize papuntang desktop, linisin
-// ang mobile-only na estado para hindi maiwang nakasara ang overlay.
+// When the phone is rotated or resized up to desktop, clear the
+// mobile-only state so the overlay is not left stuck in place.
 window.addEventListener('resize', function () {
     if (!isMobileLayout()) closeSidebarMobile();
 });

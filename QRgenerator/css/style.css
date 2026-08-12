@@ -1,25 +1,23 @@
 /* ============================================================
-   QR CODE GENERATOR — pahina ng estudyante
+   QR CODE GENERATOR — the student-facing page
 
-   Isinusunod na nito ang wika ng mga admin page (tingnan ang
-   students-page.css): sky/cyan na tuldik (#0ea5e9 → #06b6d4),
-   madilim na ibabaw (#16161a), hero na may guhit sa itaas, at
-   mga chip na bilog. Iisang produkto na ang nakikita ng
-   estudyante at ng tauhan.
+   Now speaks the same language as the admin pages (see
+   students-page.css): sky/cyan accent (#0ea5e9 → #06b6d4), dark
+   surfaces (#16161a), a hero with a rule on top, and round chips.
+   Students and staff now see one product.
 
-   Ang dating anyo ay may sariling bokabularyo na hiwalay sa buong
-   app: tatlong magkaibang tipo ng letra sa isang tanawin (Times
-   New Roman sa katawan, Poppins sa butones, Fira Code sa input),
-   at dalawang magkaagaw na pamilya ng kulay (sky #38bdf8 laban sa
-   neon na cyan #00f2ea + lila #a855f7 ng "holo" na input).
+   The old look had its own vocabulary, separate from the whole
+   app: three different typefaces in one view (Times New Roman for
+   the body, Poppins on the buttons, Fira Code in the inputs), and
+   two competing color families (sky #38bdf8 against the neon cyan
+   #00f2ea + violet #a855f7 of the "holo" input).
 
-   ANG NAKALAAN NA KULAY — huwag gamiting palamuti:
-     berde  #10b981 → na-verify / tagumpay
-     amber  #f59e0b → babala, problema sa koneksiyon
-     pula   #ef4444 → mali ang pormat, walang talaan
-   Ang sky ay pagkakakilanlan lang ng pahina; wala itong ibig
-   sabihing estado, kaya hindi ito nakikipag-agawan sa mga nasa
-   itaas.
+   THE RESERVED COLORS — never use as decoration:
+     green  #10b981 → verified / success
+     amber  #f59e0b → warning, connection trouble
+     red    #ef4444 → bad format, no record found
+   Sky is only the page's identity; it carries no status meaning,
+   so it does not compete with the three above.
    ============================================================ */
 
 .qr-page {
@@ -48,9 +46,9 @@
     --radius-sm: 10px;
 }
 
-/* Isang tipo ng letra para sa buong pahina. Native stack — walang
-   hinihintay na webfont mula sa CDN, kaya walang kisap ng
-   walang-letrang teksto sa mabagal na koneksiyon. */
+/* One typeface for the whole page. Native stack — no webfont to
+   wait on from a CDN, so no flash of unstyled text on a slow
+   connection. */
 .qr-page,
 .qr-page input,
 .qr-page button,
@@ -88,8 +86,8 @@ body.qr-page {
     overflow-y: auto;
 }
 
-/* Ang particles ay dekorasyon lang — nasa likod ng lahat, at
-   katugma ng kulay ng katawan para walang tahi sa gilid. */
+/* The particles are decoration only — behind everything, matching
+   the body color so there is no seam at the edge. */
 #particles-js {
     position: fixed;
     inset: 0;
@@ -214,7 +212,7 @@ body.qr-page {
     white-space: nowrap;
 }
 
-/* ─── Mga panel ───────────────────────────────────────────── */
+/* ─── Panels ──────────────────────────────────────────────── */
 
 .left-panel,
 .right-panel {
@@ -251,7 +249,7 @@ body.qr-page {
     font-size: .95rem;
 }
 
-/* ─── Tulong / mga tagubilin ──────────────────────────────── */
+/* ─── Help / instructions ─────────────────────────────────── */
 
 .instructions-container {
     margin-bottom: 1.1rem;
@@ -349,11 +347,11 @@ body.qr-page {
     color: var(--text-faint);
 }
 
-/* Naka-saklaw sa .qr-shell, hindi sa .qr-page — ang chat widget
-   (assistant.php + widget.css) ay puting bahagi na nasa labas ng
-   card. Ang panuntunang `.qr-page input[type=text]` ay tatalo sa
-   `.chat-input` sa specificity at gagawing madilim ang kahon ng
-   pagsusulat sa loob ng puting widget. */
+/* Scoped to .qr-shell rather than .qr-page — the chat widget
+   (assistant.php + widget.css) is a white surface that lives
+   outside the card. A `.qr-page input[type=text]` rule would beat
+   `.chat-input` on specificity and turn the typing box inside the
+   white widget dark. */
 .qr-shell input[type="text"] {
     display: block;
     width: 100%;
@@ -377,8 +375,8 @@ body.qr-page {
     box-shadow: 0 0 0 3px rgba(14, 165, 233, .18);
 }
 
-/* Ang tanging patlang na tinitipa. Bahagyang mas malaki kaysa sa
-   mga naka-lock sa ibaba — iisa lang ang tanong ng pahinang ito. */
+/* The only field you type into. Slightly larger than the locked
+   ones below — this page asks exactly one question. */
 .qr-field-primary input[type="text"] {
     min-height: 54px;
     font-size: 1.1rem;
@@ -386,9 +384,9 @@ body.qr-page {
     letter-spacing: .06em;
 }
 
-/* Estado ng patlang. Palitan ang klase, huwag ang inline na estilo
-   — ang JS dati ay nagtatakda ng `style.border` nang diretso, kaya
-   hindi na ito kayang bawiin ng CSS. */
+/* Field status. Swap the class, never the inline style — the JS
+   used to set `style.border` directly, which CSS can no longer
+   win back. */
 .qr-field.is-ok input[type="text"] {
     border-color: rgba(16, 185, 129, .55);
 }
@@ -405,10 +403,10 @@ body.qr-page {
     border-color: var(--qr-line);
 }
 
-/* ── Mga naka-lock na patlang ──
-   Awtomatikong pinupuno mula sa talaan. Dati, kamukhang-kamukha
-   ang mga ito ng tinitipahang patlang — hindi mo malalamang hindi
-   mo pala kayang baguhin hangga't hindi mo sinusubukan. */
+/* ── Locked fields ──
+   Filled in automatically from the record. They used to look
+   exactly like the field you type into — you could not tell they
+   were read-only until you tried. */
 .locked-fields {
     display: grid;
     gap: .6rem;
@@ -420,8 +418,8 @@ body.qr-page {
     transition: border-color .25s ease, background .25s ease;
 }
 
-/* Kapag na-verify, tumitigas ang kahon at nagiging berde ang
-   gilid — nakikita mo agad na totoo na ang laman. */
+/* Once verified the box firms up and the edge turns green — you
+   can see at a glance that the contents are real. */
 .locked-fields.is-filled {
     border-style: solid;
     border-color: rgba(16, 185, 129, .28);
@@ -452,12 +450,11 @@ body.qr-page {
     font-weight: 600;
     color: #fff;
     cursor: default;
-    /* Hindi kayang mag-wrap ng <input>, at hindi ito maaaring
-       gawing <div> — dito nagsusulat ng `.value` ang
-       fetch_students.js. Kung putulin ang mahabang pangalan sa
-       makipot na telepono, hayaang makita ang tuldok-tuldok sa
-       halip na tahimik na maputol. Nagtatakda rin ng `title` ang
-       JS para makuha ang buong teksto. */
+    /* An <input> cannot wrap, and it cannot become a <div> — this is
+       where fetch_students.js writes `.value`. When a long name is
+       cut off on a narrow phone, show the ellipsis rather than
+       clipping silently. The JS also sets `title` so the full text
+       is still reachable. */
     text-overflow: ellipsis;
 }
 
@@ -471,11 +468,10 @@ body.qr-page {
     min-width: 0;
 }
 
-/* Ang padlock ang nagsasabing "hindi ito para sa iyo" nang hindi
-   na kailangang subukan pa. Tunay na elemento ito at hindi
-   `content: "\f47b"` — hindi tayo umaasa sa isang codepoint ng
-   font na maaaring lumipat sa susunod na bersiyon ng Bootstrap
-   Icons. */
+/* The padlock says "this one is not yours to edit" without you
+   having to try. It is a real element rather than
+   `content: "\f47b"` — no relying on a font codepoint that could
+   move in the next version of Bootstrap Icons. */
 .locked-icon {
     position: absolute;
     left: .55rem;
@@ -492,11 +488,10 @@ body.qr-page {
     color: var(--ok-ink);
 }
 
-/* ─── Mensahe ng estado ───────────────────────────────────── */
-/* Dating ipininta ng JS ang mga ito ng maliliwanag na pastel
-   (#fee2e2, #dcfce7) — kulay pang-puting pahina, na kumikislap
-   sa madilim na porma. Tinted na kahon na lang ngayon, katugma ng
-   mga badge sa admin. */
+/* ─── Status message ──────────────────────────────────────── */
+/* The JS used to paint these bright pastels (#fee2e2, #dcfce7) —
+   colors meant for a white page, glaring against a dark form.
+   Tinted boxes now, matching the admin badges. */
 
 .qr-status {
     display: none;
@@ -591,8 +586,8 @@ body.qr-page {
     margin: 0;
 }
 
-/* 20px at may sariling padding sa label — madaling matapik sa
-   telepono, hindi lang ang maliit na kahon. */
+/* 20px with padding on the label itself — easy to tap on a phone,
+   not just the small box. */
 .terms-check input[type="checkbox"] {
     width: 20px;
     height: 20px;
@@ -602,9 +597,9 @@ body.qr-page {
     accent-color: var(--qr);
 }
 
-/* Link ito, hindi buton — kaya kailangang bawiin ang mobile rule
-   na `button { width: 100% }` na nagtutulak sa kaniya sa sariling
-   linya at nagse-center ng teksto sa telepono. */
+/* This is a link, not a button — so it has to undo the mobile rule
+   `button { width: 100% }`, which would push it onto its own line
+   and center the text on a phone. */
 .terms-link {
     background: none;
     border: none;
@@ -710,8 +705,8 @@ body.qr-page {
     background: rgba(255, 255, 255, .12);
 }
 
-/* Ang teksto ang tanging bahaging nag-i-scroll — nananatiling
-   nakikita ang header at ang mga button. */
+/* Only the text scrolls — the header and the buttons stay in
+   view. */
 .terms-modal-body {
     padding: 16px 18px;
     overflow-y: auto;
@@ -777,16 +772,16 @@ body.qr-page {
     filter: brightness(1.08);
 }
 
-/* ─── Punong butones: Generate ────────────────────────────── */
-/* Isang punong aksyon lang ang pahina. Kagaya ng .stud-btn.primary
-   sa admin: gradient, banayad na anino, walang palabas.
+/* ─── Primary button: Generate ────────────────────────────── */
+/* The page has exactly one primary action. Like .stud-btn.primary
+   on the admin side: gradient, soft shadow, no theatrics.
 
-   Nananatili ang mga .btn-letter na span dahil doon nagsusulat ang
-   fetch_students.js at terms.js kapag pinapalitan ang teksto
-   ("Verify First" → "Agree First" → "Generate"). Aksesibilidad:
-   naka-aria-hidden ang mga titik at ang buong butones ang may
-   aria-label, kung hindi ay baybayin ito ng screen reader nang
-   isa-isang letra. */
+   The .btn-letter spans stay because that is where
+   fetch_students.js and terms.js write when they swap the label
+   ("Verify First" → "Agree First" → "Generate"). Accessibility:
+   the letters are aria-hidden and the button as a whole carries
+   the aria-label, otherwise a screen reader spells it out one
+   letter at a time. */
 
 .btn-wrapper {
     position: relative;
@@ -825,8 +820,8 @@ body.qr-page {
     transform: translateY(0);
 }
 
-/* Hindi pa handa — patag, kulay-abo, at malinaw na hindi
-   matatapik. Sinasabi ng teksto kung ano ang kulang. */
+/* Not ready yet — flat, grey, and clearly not tappable. The label
+   says what is missing. */
 .qr-shell .btn:disabled {
     background: rgba(255, 255, 255, .05);
     border: 1px solid var(--border);
@@ -858,7 +853,7 @@ body.qr-page {
     min-height: 1.2em;
 }
 
-/* Magkapatong ang dalawa; .txt-2 ang estado habang nagpoproseso. */
+/* The two are stacked; .txt-2 is the state shown while working. */
 .txt-1,
 .txt-2 {
     display: flex;
@@ -878,11 +873,11 @@ body.qr-page {
     white-space: pre;
 }
 
-/* ─── Kanang panel: QR ────────────────────────────────────── */
+/* ─── Right panel: QR ─────────────────────────────────────── */
 
-/* Walang laman ang kanang kalahati noon hanggang sa mag-generate
-   ka — mukhang kalahating na-load ang pahina pagdating mo. Ito ang
-   naghihintay doon. */
+/* The right half used to be empty until you generated something —
+   the page looked half-loaded when you arrived. This is what waits
+   there instead. */
 .qr-placeholder {
     display: flex;
     flex-direction: column;
@@ -890,9 +885,9 @@ body.qr-page {
     justify-content: center;
     gap: .6rem;
     width: 100%;
-    /* Pinupuno ang natitirang taas ng hanay. Kung `min-height` lang,
-       may malaking butas sa ilalim nito kapag mas mahaba ang porma
-       sa kaliwa kaysa sa naghihintay na estado. */
+    /* Fills the remaining height of the column. With only
+       `min-height` there is a large gap beneath it whenever the form
+       on the left is taller than the waiting state. */
     flex: 1 1 auto;
     min-height: 300px;
     padding: 1.5rem;
@@ -959,18 +954,17 @@ body.qr-page {
     line-height: 0;
 }
 
-/* Huwag magtakda ng `display` dito. Ang qrcodejs ay gumagawa ng
-   canvas AT ng img: pagkatapos ng makeImage(), itinatago nito ang
-   canvas at ipinapakita ang img. Ang pagpilit ng `display: block`
-   sa dalawa ay magpapakita ng dalawang magkapatong na QR. */
+/* Do not set `display` here. qrcodejs builds BOTH a canvas and an
+   img: after makeImage() it hides the canvas and shows the img.
+   Forcing `display: block` on both renders two overlapping QRs. */
 #qrcode img,
 #qrcode canvas {
     max-width: 100%;
     height: auto;
 }
 
-/* Ang mga detalye ay itinatakda ng scriptv2.js bilang isang tuloy
-   -tuloy na teksto na may `\n`, kaya `pre-line` pa rin ito. */
+/* scriptv2.js sets the details as one continuous string with `\n`
+   in it, which is why this stays `pre-line`. */
 #qrText {
     margin: .9rem 0 0;
     padding: .75rem .85rem;
@@ -1004,9 +998,9 @@ body.qr-page {
     transition: background .18s ease, color .18s ease, transform .18s ease;
 }
 
-/* Pangalawang aksyon ito, hindi pangunahin — nagiging tinted lang
-   kapag hinover, hindi buong gradient. Ang Generate lang ang may
-   karapatan sa gradient. */
+/* This is a secondary action, not the primary one — it only picks
+   up a tint on hover, never the full gradient. Generate is the
+   only thing entitled to the gradient. */
 .download-btn:hover:not(:disabled) {
     background: var(--qr-soft);
     border-color: var(--qr-line);
@@ -1057,11 +1051,11 @@ body.qr-page {
     text-decoration: underline;
 }
 
-/* ─── Aksesibilidad ───────────────────────────────────────── */
+/* ─── Accessibility ───────────────────────────────────────── */
 
-/* Nakikitang singsing para sa mga gumagamit ng keyboard. Walang
-   ganito noon — ang glow lang ng input ang tanging palatandaan,
-   at wala talaga ang mga butones. */
+/* A visible ring for keyboard users. There was none before — the
+   input's glow was the only cue, and the buttons had nothing at
+   all. */
 .qr-page :focus-visible {
     outline: 2px solid var(--qr-ink);
     outline-offset: 2px;
@@ -1108,20 +1102,20 @@ body.qr-page {
         max-width: 560px;
     }
 
-    /* Isang hanay na ang hero kapag makipot. Ginagawa itong tunay
-       na column sa halip na umasa sa pagbalot ng flex — sa gayon,
-       tiyak na nasa sariling hilera ang logo at hindi nakadepende
-       sa haba ng pamagat kung saan ito mapuputol. */
+    /* The hero becomes a single column when narrow. Made a real
+       column rather than relying on flex wrapping — that way the
+       logo is guaranteed its own row instead of breaking wherever
+       the title length happens to put it. */
     .qr-hero {
         flex-direction: column;
         align-items: stretch;
         gap: .85rem;
     }
 
-    /* Nakasentro ang buong hero kapag makipot: logo, pamagat,
-       subtitle, at mga chip. Kapag ang logo lang ang nasa gitna at
-       nasa kaliwa ang lahat ng iba, mukhang aksidente — dapat
-       iisang hanay ang sinusundan nilang lahat. */
+    /* The whole hero centers when narrow: logo, title, subtitle and
+       chips. With only the logo centered and everything else left
+       aligned it looks like an accident — they should all follow one
+       axis. */
     .qr-hero-icon {
         align-self: center;
     }
@@ -1164,8 +1158,8 @@ body.qr-page {
         padding: .9rem;
     }
 
-    /* Isang hanay sa telepono — masikip ang 5.5rem na label sa
-       tabi ng mahabang pangalan. */
+    /* One column on a phone — a 5.5rem label next to a long name is
+       too tight. */
     .locked-row {
         grid-template-columns: minmax(0, 1fr);
         gap: .2rem;

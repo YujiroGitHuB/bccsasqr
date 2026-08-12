@@ -1,13 +1,12 @@
 const toggle = document.getElementById('holo-toggle');
 const lockStatusInput = document.getElementById('lock_status');
 
-// Sa settings.php lang nakatira ang toggle na ito, pero WALO ang page
-// na naglo-load ng lock.js (backup, generate_attendance_link,
-// manage_subject, manage_users, profile, student_subjects, ...). Sa
-// pito sa kanila ay `null` ang `toggle`, kaya "Cannot read properties
-// of null" agad ang ibinabato at humihinto ang buong file. Hindi ito
-// nakikita ng gumagamit — pero anumang idagdag dito sa hinaharap ay
-// hindi tatakbo sa mga page na iyon.
+// This toggle only lives on settings.php, but EIGHT pages load
+// lock.js (backup, generate_attendance_link, manage_subject,
+// manage_users, profile, student_subjects, ...). On seven of them
+// `toggle` is `null`, so "Cannot read properties of null" is thrown
+// immediately and the whole file stops. The user never sees it — but
+// anything added here in future would not run on those pages.
 if (toggle && lockStatusInput) {
 
 toggle.addEventListener('change', () => {
@@ -38,9 +37,8 @@ toggle.addEventListener('change', () => {
             });
 
 
-            // Sa id na, hindi na sa UNANG `.status-text` sa page —
-            // nasisira iyon sa sandaling magbago ang pagkakasunod-sunod
-            // ng mga hanay.
+            // By id now, not the FIRST `.status-text` on the page —
+            // that breaks the moment the row order changes.
             const statusText = document.getElementById('pageLockStatus');
             if (statusText) {
                 const locked = newStatus === 'true';

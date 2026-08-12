@@ -1,13 +1,13 @@
 <?php
-// Ang avatar ay galing sa session (itinatakda ng login at ng
-// crud/updateProfile.php). Kapag walang larawan — o luma pa ang
-// session dahil hindi pa ulit nag-login mula nang idagdag ang
-// feature — ang dating generic na icon ang ipinapakita.
+// The avatar comes from the session (set by login and by
+// crud/updateProfile.php). With no photo — or with a stale session,
+// because the user has not signed in again since the feature was
+// added — the old generic icon is shown.
 //
-// Kapag wala pa talaga ang susi (face login, o session na naunang
-// buksan kaysa sa feature na ito), isang beses lang tayo magtatanong
-// sa DB at ita-tago na sa session — mahal ang bawat query sa remote
-// na database, at bawat page ay may topbar.
+// When the key is genuinely absent (face login, or a session opened
+// before this feature existed), the DB is asked once and the result
+// cached in the session — every query against a remote database is
+// expensive, and every page has a topbar.
 if (!array_key_exists('user_avatar', $_SESSION) && !empty($_SESSION['user_id'])) {
     $_SESSION['user_avatar'] = null;
     if (isset($conn) && $conn instanceof mysqli) {
@@ -18,8 +18,9 @@ if (!array_key_exists('user_avatar', $_SESSION) && !empty($_SESSION['user_id']))
             $_SESSION['user_avatar'] = $__q->get_result()->fetch_assoc()['avatar'] ?? null;
             $__q->close();
         } catch (Throwable $e) {
-            // Wala pang `avatar` column — hindi pa napapatakbo ang
-            // migrations/2026-08-10_add_user_avatar.sql. Icon muna.
+            // No `avatar` column yet —
+            // migrations/2026-08-10_add_user_avatar.sql has not been
+            // run. Fall back to the icon.
         }
     }
 }
@@ -34,23 +35,23 @@ $__avatarUrl  = $__avatarFile !== '' && is_file($__avatarFile)
 <div class="topbar">
     <button class="toggle-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
 
-    <!-- Brand — nakikita lang kapag off-canvas na ang sidebar (≤992px).
-         Sa ganoong lapad ay nakatago ang buong sidebar, kaya wala nang
-         kahit anong nagsasabi kung anong sistema ito; walang laman ang
-         gitna ng topbar mula sa hamburger hanggang sa avatar.
+    <!-- Brand — only visible once the sidebar goes off-canvas (≤992px).
+         At those widths the whole sidebar is hidden, so nothing says
+         which system this is; the middle of the topbar is empty from
+         the hamburger across to the avatar.
 
-         Sa desktop ay nananatili itong nakatago — nasa sidebar na ang
-         logo at pangalan doon, at magiging ulit lang ito.
+         It stays hidden on desktop — the logo and name are already in
+         the sidebar there, and this would only repeat them.
 
-         Acronym lang ang ipinapakita rito — walang logo. Dalawang
-         magkatabing bilog na larawan ang lalabas kung may logo (ang
-         brand at ang avatar), at hindi naman nagsasabi ng pangalan ng
-         sistema ang isang maliit na bilog. Ang teksto ang nagsasabi.
+         Only the acronym is shown here — no logo. A logo would put two
+         round images side by side (the brand and the avatar), and a
+         small circle does not tell you the system's name. The text
+         does.
 
-         Ang `$systemAcronym` ay galing sa includes/systemConfig.php, na
-         isinasama ng includes/header.php sa bawat page na may topbar.
-         May fallback pa rin kung sakaling isama ito kung saan wala ang
-         header. -->
+         `$systemAcronym` comes from includes/systemConfig.php, which
+         includes/header.php pulls into every page that has a topbar.
+         The fallback is there in case this is included somewhere the
+         header is not. -->
     <a class="tb-brand" href="../pages/dashboard.php">
         <span><?php echo htmlspecialchars($systemAcronym ?? 'Home'); ?></span>
     </a>
@@ -63,10 +64,10 @@ $__avatarUrl  = $__avatarFile !== '' && is_file($__avatarFile)
         <ul class="dropdown-menu dropdown-menu-end mt-2">
             <!-- User Info Header -->
             <li class="user-dropdown-header">
-                <!-- `.tb-avatar` at hindi `.user-avatar`: may sariling
-                     `.user-avatar { width: 32px }` ang management-pages.css
-                     para sa mga hanay ng talahanayan, at naaabot nito ang
-                     kahon na ito sa bawat page na naglo-load niyon. -->
+                <!-- `.tb-avatar`, not `.user-avatar`: management-pages.css
+                     has its own `.user-avatar { width: 32px }` for table
+                     rows, and it reaches this box on every page that
+                     loads it. -->
                 <div class="tb-user">
                     <div class="tb-avatar">
                         <div class="avatar-circle">

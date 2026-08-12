@@ -11,10 +11,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <?php
-  // Walang webfont: katutubong font stack ang ginagamit ng buong app
-  // (tingnan ang assets/css/main.css). Dating DM Sans + DM Serif
-  // Display ang naka-link dito — dalawang render-blocking na request
-  // para sa isang hitsurang wala sa kahit saang ibang page.
+  // No webfonts: the whole app uses the native font stack (see
+  // assets/css/main.css). DM Sans + DM Serif Display used to be linked
+  // here — two render-blocking requests for a look that exists on no
+  // other page.
   ?>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -40,8 +40,8 @@
   <!-- ── PAGE HEADER ─────────────────────────────────────── -->
   <header class="page-header">
     <img src="../assets/images/bcc logo.png" alt="BCC Logo" class="header-logo">
-    <!-- Isang kulay. Ang "Photo" ay nakasulat dati sa isang italic
-         na serif (DM Serif Display) sa loob ng isang <span>. -->
+    <!-- One color. "Photo" used to be set in an italic serif
+         (DM Serif Display) inside a <span>. -->
     <h1>Upload Your Photo</h1>
     <p class="page-subtitle">Your face will appear on the scanner screen every time you scan your QR code for attendance.</p>
   </header>
@@ -182,8 +182,8 @@
           <button class="btn btn-ghost" onclick="resetCrop()">
             <i class="bi bi-arrow-counterclockwise"></i> Change Photo
           </button>
-          <!-- Punong aksyon ng hakbang 2 — dating `btn-success` kaya
-               berde, kaagaw ng tunay na berdeng "Verified" na badge. -->
+          <!-- Step 2's primary action — it was `btn-success` before, so
+               green, competing with the real green "Verified" badge. -->
           <button class="btn btn-primary" id="btnSave" onclick="savePhoto()">
             <i class="bi bi-check-lg"></i> Use This Photo
           </button>

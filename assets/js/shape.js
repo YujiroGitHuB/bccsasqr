@@ -1,4 +1,4 @@
-// Mas kaunting particles sa maliliit na screen para mas magaan sa mobile
+// Fewer particles on small screens to keep it light on mobile
 var isSmallScreen = window.matchMedia("(max-width: 576px)").matches;
 var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 

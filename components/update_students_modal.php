@@ -5,16 +5,16 @@ $result_edit = mysqli_query($conn, $query_edit);
 ?>
 
 <!-- Edit Student Modal
-     Ang anyo ay nasa assets/css/modal-form.css (klase: .app-modal) —
-     pareho ng Add Student. Ang mga id at `name` ay hindi dapat
-     baguhin: sila ang binabasa ng assets/js/editStudent.js at ng
+     Styling lives in assets/css/modal-form.css (class: .app-modal) —
+     the same as Add Student. The ids and `name`s must not change:
+     they are what assets/js/editStudent.js reads, along with
      crud/update_students.php.
 
-     Berde ang buong modal na ito dati (#10a824 → #0b5e15 sa badge,
-     #28a745 sa mga gilid ng patlang). Ang berde ay nakalaan sa
-     ESTADO sa buong app — Active, Present — kaya nakikipag-agawan
-     ito sa mga tunay na badge sa talahanayan sa likod. Ang icon at
-     ang pamagat ang nagsasabing "pag-edit ito", hindi ang kulay. -->
+     This whole modal used to be green (#10a824 → #0b5e15 on the
+     badge, #28a745 on the field borders). Green is reserved for
+     STATUS across the app — Active, Present — so it competed with
+     the real badges in the table behind it. The icon and the title
+     say "this is an edit", not the color. -->
 <div class="modal fade app-modal" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -46,10 +46,10 @@ $result_edit = mysqli_query($conn, $query_edit);
                                 aria-describedby="edit_student_no_hint"
                                 required>
                         </div>
-                        <!-- Ang pormat ay itinutugma sa sinusuri ng QR generator
-                             (`\d{3}-\d{3,4}` sa QRgenerator/js/fetch_students.js) —
-                             kung masira ito rito, hindi na makakagawa ng QR ang
-                             estudyante. -->
+                        <!-- The format matches what the QR generator checks
+                             (`\d{3}-\d{3,4}` in QRgenerator/js/fetch_students.js) —
+                             break it here and the student can no longer generate
+                             a QR. -->
                         <span class="app-hint" id="edit_student_no_hint">Format: YEAR-Registration No. — e.g. 019-464 or 025-1023</span>
                     </div>
 
@@ -106,8 +106,8 @@ $result_edit = mysqli_query($conn, $query_edit);
                         </div>
                     </div>
 
-                    <!-- Nasa loob ng <form> ang paanan para manatiling katutubo
-                         ang pagsumite ng Save. -->
+                    <!-- The footer sits inside the <form> so Save submits
+                         natively. -->
                     <div class="app-modal-footer">
                         <button type="button" class="app-btn ghost" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="app-btn primary">

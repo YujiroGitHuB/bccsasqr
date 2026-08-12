@@ -62,7 +62,7 @@ const BrowserDetector = (function() {
             html: `
                 <div style="text-align: center; color: #cbd5e1;">
                     <p style="margin: 0; font-size: 16px; color: #564ade;">
-                        I-paste ang URL sa Chrome browser
+                        Paste the URL into the Chrome browser
                     </p>
                     <p style="margin: 10px 0 0 0; font-size: 14px; color: #94a3b8;">
                         Redirecting<span class="dots"></span>
@@ -156,7 +156,7 @@ const BrowserDetector = (function() {
                             <span style="color: #4a5bde;">${browserName} In-App Browser</span>
                         </p>
                         <p style="margin: 10px 0 0 0; color: #cbd5e1; font-size: 14px;">
-                            Para sa better experience at full functionality, buksan sa <strong style="color: #4a4ade;">Chrome Browser</strong>.
+                            For a better experience and full functionality, open this in <strong style="color: #4a4ade;">Chrome Browser</strong>.
                         </p>
                     </div>
                     
@@ -166,21 +166,21 @@ const BrowserDetector = (function() {
                                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                                 <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
                             </svg>
-                            Paano mag-open sa Chrome:
+                            How to open in Chrome:
                         </p>
                         <ol style="padding-left: 20px; margin: 0; color: #cbd5e1; line-height: 1.8;">
                             <li style="margin-bottom: 8px;">
-                                I-click ang <strong style="color: #544ade;">3 dots (⋮)</strong> sa upper right corner
+                                Tap the <strong style="color: #544ade;">3 dots (⋮)</strong> in the upper right corner
                             </li>
                             <li style="margin-bottom: 8px;">
-                                Piliin ang <strong style="color: #604ade;">"Open in Chrome"</strong> o <strong style="color: #6a4ade;">"Open in Browser"</strong>
+                                Choose <strong style="color: #604ade;">"Open in Chrome"</strong> or <strong style="color: #6a4ade;">"Open in Browser"</strong>
                             </li>
                         </ol>
                     </div>
                     
                     <div style="text-align: center; padding: 12px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 8px; border: 1px dashed #475569;">
                         <p style="margin: 0; color: #94a3b8; font-size: 13px; font-style: italic;">
-                            Or i-click ang button sa baba para i-copy ang URL
+                            Or tap the button below to copy the URL
                         </p>
                     </div>
                 </div>

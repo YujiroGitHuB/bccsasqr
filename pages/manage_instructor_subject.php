@@ -36,8 +36,8 @@ $systemName = $system['system_name'] ?? '';
 $systemAcronym = $system['system_acronym'] ?? '';
 $systemLogo = $system['logo'] ?? '';
 
-// Para sa hero chips at sa badge ng card header — isang query kada
-// bilang lang, ginagamit sa dalawang lugar.
+// For the hero chips and the card header badge — one query per count,
+// used in two places.
 $assignmentTotal = (int) (mysqli_fetch_assoc(
     mysqli_query($conn, "SELECT COUNT(*) as total FROM subject_instructors_tbl")
 )['total'] ?? 0);
@@ -179,8 +179,8 @@ $unassignedTotal = (int) (mysqli_fetch_assoc(
                                         ORDER BY s.subject_code ASC
                                     ");
 
-                                    // Ang mensahe kapag walang laman ay hawak ng
-                                    // DataTables (assets/js/datatables.js).
+                                    // The empty message is owned by DataTables
+                                    // (assets/js/datatables.js).
                                     if (mysqli_num_rows($assignments) > 0) {
                                         $i = 1;
                                         while ($row = mysqli_fetch_assoc($assignments)) {

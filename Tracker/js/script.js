@@ -6,16 +6,15 @@ const resultsContainer = document.getElementById('resultsContainer');
 const messageContainer = document.getElementById('messageContainer');
 const placeholder = document.getElementById('trkPlaceholder');
 
-// Klase sa wrapper, hindi `style.display` sa bawat span — ang inline
-// na estilo ay hindi na kayang bawiin ng CSS, kaya hindi na maitatago
-// ang "Type to search" sa makipot na telepono.
+// A class on the wrapper, not `style.display` on each span — CSS
+// cannot win back an inline style, which would leave "Type to search"
+// impossible to hide on a narrow phone.
 function setChecking(isChecking) {
     searchWrapper.classList.toggle('is-checking', isChecking);
 }
 
-// Ang naghihintay na estado ay para lang sa bago pa ang unang
-// paghahanap; kapag may nakikita ka nang resulta, wala na itong
-// sinasabi.
+// The waiting state is only for before the first search; once you can
+// see results it has nothing left to say.
 function setPlaceholder(visible) {
     if (placeholder) {
         placeholder.classList.toggle('hidden', !visible);

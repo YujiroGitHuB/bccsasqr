@@ -1,18 +1,17 @@
 // ============================================================
-// Import ng estudyante mula sa CSV/XLS
+// Student import from CSV/XLS
 //
-// Ang anyo ng mga dialog ay nasa assets/css/modal-form.css
-// (klase: .app-swal) — pareho ng .app-modal, kaya iisa ang mukha
-// ng buong daloy ng Students page.
+// The dialogs' styling lives in assets/css/modal-form.css (class:
+// .app-swal) — the same as .app-modal, so the whole Students page
+// flow has one face.
 // ============================================================
 
-// Ang pangalan ng file at ang mga mensahe ng error ay pumapasok sa
-// `html:` ng SweetAlert, na innerHTML. Parehong galing ito sa
-// labas: pinipili ng gumagamit ang pangalan ng file, at ang mga
-// error ay may lamang student number na hinango mismo sa
-// ini-upload na spreadsheet (tingnan ang crud/import_students.php:51).
-// Kung walang escape, ang isang cell na naglalaman ng markup ay
-// tatakbo sa browser ng admin.
+// The file name and the error messages go into SweetAlert's `html:`,
+// which is innerHTML. Both come from outside: the user picks the file
+// name, and the errors contain student numbers taken straight out of
+// the uploaded spreadsheet (see crud/import_students.php:51). Without
+// escaping, a cell containing markup would run in the admin's
+// browser.
 function esc(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({
         '&': '&amp;',
@@ -23,7 +22,7 @@ function esc(value) {
     })[c]);
 }
 
-// Ibinabahagi ng lahat ng dialog sa daloy na ito.
+// Shared by every dialog in this flow.
 const SWAL_APP = {
     background: '#16161a',
     color: '#f1f5f9',
@@ -186,8 +185,8 @@ function uploadFile(file, course, section, fileType) {
             if (data.success) {
                 let errorHtml = '';
                 if (data.errors && data.errors.length > 0) {
-                    // Nakatiklop bilang default — ang bilang ang unang
-                    // kailangang makita, hindi ang mahabang talaan.
+                    // Collapsed by default — the counts are what needs to
+                    // be seen first, not the long list.
                     errorHtml = `
                         <details class="app-errors">
                             <summary>${data.errors.length} row${data.errors.length === 1 ? '' : 's'} need attention</summary>

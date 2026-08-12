@@ -17,7 +17,7 @@ $systemName    = $system['system_name']    ?? '';
 $systemAcronym = $system['system_acronym'] ?? '';
 $systemLogo    = $system['logo']           ?? '';
 
-// Hero chips + badge sa card header — isang query kada bilang.
+// Hero chips + the card header badge — one query per count.
 $assignmentTotal = (int) (mysqli_fetch_assoc(
     mysqli_query($conn, "SELECT COUNT(*) as total FROM instructor_section_tbl")
 )['total'] ?? 0);
@@ -67,9 +67,9 @@ $allSections = (int) (mysqli_fetch_assoc(
 
         <div class="row">
             <!-- LEFT PANEL: ASSIGN FORM -->
-            <!-- Walang acad-sticky dito: mataas ang form (checkbox grid
-                 ng mga section), kaya hindi na kasya sa screen kapag
-                 idinikit sa itaas. -->
+            <!-- No acad-sticky here: the form is tall (a checkbox grid
+                 of sections), so pinning it to the top would not fit on
+                 screen. -->
             <div class="col-lg-4 col-md-12 mb-4">
                 <div class="card-custom">
                     <div class="card-header-custom">
@@ -156,7 +156,7 @@ $allSections = (int) (mysqli_fetch_assoc(
                                     <div id="sectionCheckboxes" class="sections-grid">
                                         <?php
                                         // ✅ UPDATED: Get full_section = CONCAT(course, '-', section)
-                                        // Grouped by course para mas organized
+                                        // Grouped by course to keep it organised
                                         $sections_q = mysqli_query($conn, "
                                             SELECT DISTINCT course, section,
                                                    CONCAT(course, '-', section) as full_section
@@ -314,8 +314,8 @@ $allSections = (int) (mysqli_fetch_assoc(
                                         ORDER BY si.section ASC
                                     ");
 
-                                    // Ang mensahe kapag walang laman ay hawak ng
-                                    // DataTables (assets/js/datatables.js).
+                                    // The empty message is owned by DataTables
+                                    // (assets/js/datatables.js).
                                     if (mysqli_num_rows($assignments) > 0):
                                         $i = 1;
                                         while ($row = mysqli_fetch_assoc($assignments)):

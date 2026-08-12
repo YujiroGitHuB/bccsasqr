@@ -1,5 +1,5 @@
 body {
-    font-family:'Times New Roman', Times, serif;
+    font-family: inherit;
 }
 
 .toggle-container {
@@ -577,10 +577,10 @@ body {
     padding: 20px;
 }
 
-/* May sariling gutter padding na ang `.col-*` ng Bootstrap sa loob ng
-   .row, kaya doble ang espasyo. Sa desktop ay hindi halata, pero sa
-   375px na telepono ay 40px agad ang nauubos dito lang — kaya
-   inaalis natin ito sa maliliit na screen. */
+/* Bootstrap's `.col-*` already carries gutter padding inside a .row,
+   so the space is doubled. It goes unnoticed on desktop, but on a
+   375px phone it eats 40px on its own — so it is removed on small
+   screens. */
 @media (max-width: 768px) {
     .content .row {
         padding: 0;

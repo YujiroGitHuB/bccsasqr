@@ -30,9 +30,9 @@ attendanceToggle.addEventListener('change', () => {
                 color: '#e2e8f0'
             });
 
-            // Dating `.settings-card:nth-child(2) .status-text` —
-            // nakasalalay sa posisyon ng card, kaya tahimik na maling
-            // hanay ang ina-update kapag may naunang naidagdag.
+            // This was `.settings-card:nth-child(2) .status-text` —
+            // dependent on the card's position, so it silently updated
+            // the wrong row once anything was added before it.
             const statusText = document.getElementById('attendanceLockStatus');
             if (statusText) {
                 const locked = newStatus === '1';

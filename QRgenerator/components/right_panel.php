@@ -1,10 +1,10 @@
 <div class="right-panel">
     <h2 class="panel-title"><i class="bi bi-qr-code"></i> Your QR Code</h2>
 
-    <!-- Ang naghihintay na estado. Dating wala talagang laman ang
-         kanang kalahati hanggang sa mag-generate ka — parang
-         kalahating na-load ang pahina pagdating mo. Itinatago ito
-         ng scriptv2.js kapag may QR na. -->
+    <!-- The waiting state. The right half used to be completely empty
+         until you generated something — the page looked half-loaded
+         when you arrived. scriptv2.js hides this once there is a
+         QR. -->
     <div class="qr-placeholder" id="qrPlaceholder">
         <i class="bi bi-qr-code"></i>
         <span class="qr-placeholder-title">Nothing to show yet</span>

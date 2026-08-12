@@ -164,8 +164,8 @@ const modal = new bootstrap.Modal(document.getElementById('spDelModal'));
 
 function askDelete(id, name) {
     pid = id;
-    // Ang tanong at ang paalala ("can re-upload anytime") ay nasa ulo
-    // na ng modal — ang pangalan lang ang nagbabago kada pagbukas.
+    // The question and the reassurance ("can re-upload anytime") live
+    // in the modal header — only the name changes per open.
     document.getElementById('spDelName').textContent = name;
     modal.show();
 }

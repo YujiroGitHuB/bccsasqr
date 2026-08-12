@@ -4,11 +4,11 @@
     <!-- Collapsible Instructions -->
     <?php include __DIR__ . "/instruction_collapse.php" ?>
 
-    <!-- Ang tanging patlang na tinitipa -->
+    <!-- The only typed field -->
     <?php include __DIR__ . "/glitch_input.php" ?>
 
-    <!-- Mula sa talaan, hindi tinitipa. Ang `is-filled` ay
-         idinaragdag ng fetch_students.js kapag na-verify na. -->
+    <!-- From the record, not typed. fetch_students.js adds `is-filled`
+         once verification succeeds. -->
     <div class="locked-fields" id="lockedFields">
         <div class="locked-row">
             <label class="field-label" for="studentName">Name</label>
@@ -35,8 +35,8 @@
         </div>
     </div>
 
-    <!-- Terms and Conditions — kailangang tanggapin bago mabuksan
-         ang Generate. Tingnan ang includes/terms.php para sa teksto. -->
+    <!-- Terms and Conditions — must be accepted before Generate
+         unlocks. See includes/terms.php for the text. -->
     <div class="terms-agree" id="termsAgree">
         <label class="terms-check">
             <input type="checkbox" id="agreeTerms">

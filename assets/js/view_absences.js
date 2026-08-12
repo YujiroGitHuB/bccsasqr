@@ -2,15 +2,15 @@
  * View Absences Modal Handler
  * Displays students with specified number of absences
  *
- * Anyo: assets/css/modal-form.css (.app-modal + seksyong DATA MODAL).
+ * Styling: assets/css/modal-form.css (.app-modal + the DATA MODAL section).
  */
 
 function viewAbsences(section, minAbsences) {
-    // Lahat ng hanap ay saklaw ng modal. Ang lumang code ay gumagamit
-    // ng `document.querySelector('.table-responsive')` — pandaigdig
-    // iyon, at may ganoon ding kahon ang view_attendance at ang
-    // userManagementModal sa parehong page, kaya ang UNANG nakita ang
-    // itinatago at hindi palaging ang sa modal na ito.
+    // Every lookup is scoped to the modal. The old code used
+    // `document.querySelector('.table-responsive')` — that is global,
+    // and view_attendance and userManagementModal have a box like that
+    // on the same page, so it hid the FIRST one it found, which was
+    // not always this modal's.
     const modal = document.getElementById('viewAbsencesModal');
     const $ = (id) => modal.querySelector('#' + id);
 
@@ -22,32 +22,32 @@ function viewAbsences(section, minAbsences) {
 
     const isCritical = minAbsences >= 5;
 
-    // ─── Ulo ────────────────────────────────────────────────
+    // ─── Header ─────────────────────────────────────────────
     $('absencesModalTitle').textContent = `Students with ${minAbsences}+ Absences`;
     $('absencesModalSubtitle').textContent =
         `${section} · missed ${minAbsences} or more class days`;
 
-    // Sinusundan ang kulay ng pinindot na kard sa dashboard
-    // (.dash-risk.warn para sa 3+, .crit para sa 5+).
+    // Follows the color of the dashboard card that was clicked
+    // (.dash-risk.warn for 3+, .crit for 5+).
     $('absencesModalIcon').className = 'app-modal-icon ' + (isCritical ? 'is-crit' : 'is-warn');
 
     $('absencesEmptyDesc').textContent =
         `No student in ${section} has missed ${minAbsences} or more classes.`;
 
-    // ─── Porma ng export ────────────────────────────────────
+    // ─── Export form ────────────────────────────────────────
     $('exportSection').value = section;
     $('exportMinAbsences').value = minAbsences;
 
-    // ─── Simulang kalagayan ─────────────────────────────────
+    // ─── Initial state ──────────────────────────────────────
     loading.style.display = 'flex';
     content.style.display = 'none';
     empty.style.display = 'none';
     error.style.display = 'none';
     exportForm.style.display = 'none';
 
-    // `getOrCreateInstance` at hindi `new` — muling ginagamit ang
-    // instance sa bawat pagbukas sa halip na mag-iwan ng bago kada
-    // pindot sa mga kard ng seksyon.
+    // `getOrCreateInstance` rather than `new` — reuses the instance on
+    // every open instead of leaving a new one behind on each click of
+    // the section cards.
     bootstrap.Modal.getOrCreateInstance(modal).show();
 
     fetch('../api/get_absences_data.php', {
@@ -74,7 +74,7 @@ function viewAbsences(section, minAbsences) {
                 return;
             }
 
-            // ─── Buod ───────────────────────────────────────
+            // ─── Summary ────────────────────────────────────
             const totalClasses = Number(data.total_classes) || 0;
             $('absencesChips').innerHTML = `
                 <span class="app-chip is-info">
@@ -87,7 +87,7 @@ function viewAbsences(section, minAbsences) {
                 </span>
             `;
 
-            // ─── Mga hanay ──────────────────────────────────
+            // ─── Rows ───────────────────────────────────────
             const tbody = $('absencesTableBody');
             tbody.innerHTML = '';
 
@@ -95,14 +95,14 @@ function viewAbsences(section, minAbsences) {
                 const total = Number(student.total_classes) || 0;
                 const absences = Number(student.absences) || 0;
 
-                // Kapag wala pang naitalang klase ay `0 / 0` ang bahagdan —
-                // "NaN%" ang lumalabas dati sa badge ng bagong seksyon.
+                // With no classes recorded yet the rate is `0 / 0` —
+                // a new section used to show "NaN%" in the badge.
                 const rate = total > 0 ? Math.round((absences / total) * 100) : null;
 
-                // Ang lumang tatlong antas ay hindi kailanman umabot sa
-                // pinakamabigat: nauuna ang `>= 5` bago ang `>= 7`, kaya
-                // patay ang huling sanga — at `bg-dark` pa ito, halos
-                // hindi makita sa madilim na talahanayan.
+                // The old three tiers never reached the heaviest one:
+                // `>= 5` was tested before `>= 7`, so the last branch
+                // was dead — and it was `bg-dark`, nearly invisible on
+                // a dark table.
                 let level = 'is-warn';
                 if (absences >= 7) {
                     level = 'is-severe';

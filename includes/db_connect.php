@@ -1,16 +1,16 @@
 <?php
 // ============================================================
-// Isang koneksyon lang kada request.
+// One connection per request.
 //
-// Ang file na ito ay ini-include ng maraming lugar (dashboard.php,
-// check_user_status.php, components/view_attendance.php, ...). Dahil
-// `include` ito at hindi `include_once`, dating gumagawa ng BAGONG
-// mysqli ang bawat pag-include — tatlong TCP + auth handshake kada
-// page load ng dashboard.
+// This file is included from many places (dashboard.php,
+// check_user_status.php, components/view_attendance.php, ...). Because
+// it is `include` and not `include_once`, every inclusion used to
+// create a NEW mysqli — three TCP + auth handshakes per
+// dashboard page load.
 //
-// Sa remote database (sql108.infinityfree.com) ang connection setup
-// ang pinakamahal na bahagi ng isang page — mas mahal pa kaysa sa
-// mismong query. Isang beses na lang tayo kumakabit at ibinabahagi.
+// Against a remote database (sql108.infinityfree.com) the connection
+// setup is the most expensive part of a page — more expensive than
+// the queries themselves. Now it connects once and shares.
 // ============================================================
 if (isset($GLOBALS['__bcc_conn']) && $GLOBALS['__bcc_conn'] instanceof mysqli) {
     $conn = $GLOBALS['__bcc_conn'];
@@ -36,7 +36,7 @@ try {
     //FIX: Support special characters like ñ, é, etc.
     $conn->set_charset("utf8mb4");
 
-    // Itago para magamit muli ng susunod na include sa parehong request.
+    // Stash it so the next include in the same request reuses it.
     $GLOBALS['__bcc_conn'] = $conn;
 
 } catch (Exception $e) {

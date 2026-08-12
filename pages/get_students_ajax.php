@@ -2,15 +2,13 @@
 // ============================================================
 // STUDENTS LIST — AJAX endpoint
 //
-// Bakit: dating ini-render ng students.php ang bawat estudyante
-// bilang HTML row. Sa 474 na estudyante ay 253 KB iyon; sa 1,762
-// (laki ng dev DB) ay 3.5 MB. Ang parehong data bilang JSON ay
-// 67 KB — humigit-kumulang 74% na mas magaan — at DataTables na
-// ang bahalang gumawa ng DOM para sa kasalukuyang page lang.
+// Why: students.php used to render every student as an HTML row. At
+// 474 students that is 253 KB; at 1,762 (the size of the dev DB) it
+// is 3.5 MB. The same data as JSON is 67 KB — roughly 74% lighter —
+// and DataTables builds the DOM for the current page only.
 //
-// Sinadyang WALANG cache: nagbabago ang roster tuwing may add,
-// edit, delete, o CSV import. Mas masama ang lumang listahan
-// kaysa sa isang query.
+// Deliberately NO cache: the roster changes on every add, edit,
+// delete, or CSV import. A stale list is worse than one query.
 // ============================================================
 
 ob_start();

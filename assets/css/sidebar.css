@@ -1,31 +1,31 @@
 /* ============================================================
    SIDEBAR
 
-   Ikinakarga PAGKATAPOS ng main.css at BAGO ang mobile.css, kaya
-   nananaig ito sa mga lumang panuntunan sa main.css habang buo pa
-   rin ang off-canvas na ayos sa telepono.
+   Loaded AFTER main.css and BEFORE mobile.css, so it overrides the
+   older rules in main.css while leaving the off-canvas phone layout
+   intact.
 
-   Ang inaayos dito:
-   · Puti/light-theme na labi sa madilim na rail — ang patayong
-     linya ng submenu ay #dee2e6 at ang tuldok ay may 2px na PUTING
-     singsing; ang track ng scrollbar ay #f1f1f1 (isang mapusyaw na
-     guhit sa gilid ng madilim na sidebar).
-   · Nagbabagong hugis kapag hi-nover: 10px ang radius ng .nav-link
-     pero 5px ang hover at active — kumikirot ang sulok kapag
-     dumaan ang mouse.
-   · `transform: translateX(5px)` sa hover — gumagalaw ang buong
-     hanay, at ang sidebar ay `overflow-x: hidden`.
-   · Mahina ang active state: patag na #384456, walang accent, kaya
-     mahirap agad makita kung nasaan ka sa anim na grupo.
-   · Ang footer ay sumusunod lang sa huling item sa halip na
-     nakadikit sa ilalim.
+   What it fixes:
+   · White / light-theme leftovers on a dark rail — the submenu's
+     vertical line was #dee2e6 and its dot had a 2px WHITE ring; the
+     scrollbar track was #f1f1f1 (a pale stripe down the edge of a
+     dark sidebar).
+   · A shape that changed on hover: .nav-link had a 10px radius but
+     hover and active had 5px — the corners twitched as the mouse
+     passed over.
+   · `transform: translateX(5px)` on hover — the whole row moved,
+     inside a sidebar that is `overflow-x: hidden`.
+   · A weak active state: flat #384456 with no accent, so it was
+     hard to tell at a glance where you were among six groups.
+   · The footer simply followed the last item instead of sitting at
+     the bottom.
    ============================================================ */
 
-/* ─── Kulay ng rail ───────────────────────────────────────────
-   Kaparehong pamilya ng indigo (#667eea) ng mga accent at button,
-   dinala lang sa napakadilim na hakbang para manatiling madaling
-   basahin ang teksto sa ibabaw nito. Sa isang variable nakatakda
-   ang buong hitsura — dito lang palitan kung gusto ng ibang lakas. */
+/* ─── Rail color ──────────────────────────────────────────────
+   The same indigo family (#667eea) as the accents and buttons, just
+   taken to a very dark step so text stays easy to read on top of
+   it. The whole look is set by one variable — change it here if a
+   different strength is wanted. */
 :root {
     --sb-bg: linear-gradient(180deg, #1c1e3a 0%, #141530 55%, #101127 100%);
     --sb-line: rgba(165, 180, 252, .1);
@@ -34,8 +34,8 @@
 }
 
 .sidebar {
-    /* Kailangan ng flex column para maitulak ng footer ang sarili
-       sa ilalim gamit ang `margin-top: auto`. */
+    /* A flex column is what lets the footer push itself to the
+       bottom with `margin-top: auto`. */
     display: flex;
     flex-direction: column;
     background: var(--sb-bg);
@@ -43,21 +43,20 @@
     box-shadow: 2px 0 18px rgba(0, 0, 0, .4);
 }
 
-/* HUWAG alisin: nakatakda sa 100vh ang taas ng sidebar, kaya sa isang
-   flex column ay pinipiga ng flex-shrink ang mga item kapag mas mahaba
-   ang menu kaysa sa screen — bago pa man umandar ang overflow-y scroll.
-   Karaniwang pinipigilan ito ng `min-height: auto`, PERO hindi kapag
-   `overflow: hidden` ang item: nagiging zero ang awtomatikong minimum.
-   Iyon ang tanging item na may `overflow: hidden` dito — ang
-   .sidebar-label — kaya ang mga pamagat ng grupo lang ang nasasakal at
-   naputol ("MAIN" na kalahati ng letra lang ang kita) habang mukhang
-   ayos ang mga nav link. */
+/* DO NOT remove: the sidebar's height is fixed at 100vh, so in a flex
+   column flex-shrink squeezes the items whenever the menu is taller
+   than the screen — before the overflow-y scroll ever kicks in.
+   `min-height: auto` normally prevents that, EXCEPT when the item is
+   `overflow: hidden`: then the automatic minimum becomes zero. That
+   is the only item here with `overflow: hidden` — .sidebar-label — so
+   only the group titles got crushed and clipped ("MAIN" showing half
+   a letter) while the nav links looked fine. */
 .sidebar>* {
     flex-shrink: 0;
 }
 
-/* Madilim na scrollbar — hindi na ang #f1f1f1 na track na
-   nagmumukhang puting guhit sa gilid ng rail. */
+/* A dark scrollbar — no longer the #f1f1f1 track that read as a
+   white stripe down the edge of the rail. */
 .sidebar::-webkit-scrollbar {
     width: 5px;
 }
@@ -98,8 +97,8 @@
 .sidebar-label {
     display: block;
     font-size: .63rem;
-    /* Tahasang line-height para matiyak ang taas ng kahon kahit
-       anong default ang minana nito. */
+    /* An explicit line-height pins the box height whatever default
+       it would otherwise inherit. */
     line-height: 1.5;
     font-weight: 700;
     letter-spacing: 1.6px;
@@ -110,8 +109,8 @@
     overflow: hidden;
 }
 
-/* Kapag naka-collapse, guhit na lang ang pamagat — walang lugar
-   para sa teksto sa 80px na rail. */
+/* When collapsed the title becomes just a rule — there is no room
+   for text on an 80px rail. */
 .sidebar.collapsed .sidebar-label {
     font-size: 0;
     padding: .5rem .9rem;
@@ -130,8 +129,8 @@
     font-weight: 500;
     color: #94a3b8;
     text-decoration: none;
-    /* Kulay at background lang ang nagbabago — walang paggalaw ng
-       posisyon, na nagdudulot ng pagkurap sa gilid ng sidebar. */
+    /* Only color and background change — no shift in position,
+       which is what caused the flicker at the sidebar's edge. */
     transition: background .18s ease, color .18s ease;
 }
 
@@ -148,7 +147,7 @@
     background: rgba(255, 255, 255, .05);
     color: #e2e8f0;
     border-radius: 10px;
-    /* Kinakansela ang translateX(5px) ng main.css. */
+    /* Cancels main.css's translateX(5px). */
     transform: none;
 }
 
@@ -156,9 +155,9 @@
     color: #a5b4fc;
 }
 
-/* Ang aktibong pahina ay may accent bar sa kaliwa — ang laman ng
-   sidebar ay anim na grupo, kaya kailangang makita agad ang
-   kinaroroonan mo nang hindi binabasa lahat. */
+/* The active page gets an accent bar on the left — the sidebar
+   holds six groups, so where you are has to be visible without
+   reading all of them. */
 .nav-link.active,
 .dropdown-toggle.active {
     background: var(--sb-active-bg);
@@ -178,7 +177,7 @@
     margin-left: 26px;
 }
 
-/* Dating #dee2e6 — mapusyaw na linya sa madilim na rail. */
+/* Was #dee2e6 — a pale line on a dark rail. */
 .nav-item.dropdown .collapse::before {
     background: rgba(255, 255, 255, .09);
     width: 1px;
@@ -192,9 +191,9 @@
     color: #8b98ab;
 }
 
-/* Ang tuldok na may PUTING singsing ay pinalitan ng maikling
-   segment sa mismong linya: patay ito kapag hindi aktibo at
-   nagniningas kapag aktibo — hindi na dagdag na tuldok na ink. */
+/* The dot with the WHITE ring was replaced by a short segment on
+   the line itself: dim when inactive, lit when active — no longer
+   an extra spot of ink. */
 .submenu-item::before {
     left: -1px;
     width: 2px;
@@ -239,15 +238,15 @@
     transition: transform .2s ease;
 }
 
-/* Ang klaseng `.expanded` ay itinatakda ng script sa sidebar.php
-   kapag binuksan ang isang grupo — hindi maaasahan ang sariling
-   `.collapsed` ng Bootstrap dito dahil ang unang estado ay
-   itinatakda nang diretso sa classList. */
+/* The `.expanded` class is set by the script in sidebar.php when a
+   group is opened — Bootstrap's own `.collapsed` cannot be relied on
+   here because the initial state is written straight into the
+   classList. */
 .dropdown-toggle.expanded::after {
     transform: rotate(180deg);
 }
 
-/* ─── Naka-collapse na rail (80px) ────────────────────────── */
+/* ─── Collapsed rail (80px) ───────────────────────────────── */
 .sidebar.collapsed .nav-link {
     justify-content: center;
     padding: 11px 0;
@@ -259,10 +258,10 @@
     margin-right: 0;
 }
 
-/* May `ps-3` (Bootstrap: padding-left 1rem !important) ang mga
-   collapse div sa sidebar.php. Sa 80px na rail ay itinutulak nito
-   ang mga submenu icon nang 16px pakanan — hindi na sila nakahanay
-   sa mga pangunahing icon at parang natabig ang hanay. */
+/* The collapse divs in sidebar.php carry `ps-3` (Bootstrap:
+   padding-left 1rem !important). On an 80px rail that pushes the
+   submenu icons 16px to the right — they stop lining up with the
+   main icons and the column looks knocked askew. */
 .sidebar.collapsed .nav-item.dropdown .collapse {
     padding-left: 0 !important;
 }
@@ -272,12 +271,11 @@
     padding: 8px 0 !important;
 }
 
-/* Ang tooltip na `::after` ng main.css ay HINDI kailanman
-   nakikita: ang .sidebar ay `overflow-x: hidden`, kaya naputol
-   ito sa gilid ng 80px na rail. Isang naka-fixed na elemento sa
-   <body> ang kapalit (tingnan ang sidebar.php) — nakakalabas iyon
-   sa clip. Pinapatay natin ang lumang bersyon para walang dobleng
-   tooltip kapag umepekto ito sa ibang browser. */
+/* main.css's `::after` tooltip is NEVER visible: .sidebar is
+   `overflow-x: hidden`, so it gets clipped at the edge of the 80px
+   rail. A fixed element on <body> replaces it (see sidebar.php) —
+   that one escapes the clip. The old version is switched off here so
+   no browser ends up showing two tooltips. */
 .sidebar.collapsed .nav-link:hover::after {
     content: none;
 }
@@ -305,9 +303,9 @@
 }
 
 /* ─── Footer ──────────────────────────────────────────────── */
-/* `!important` dahil may sariling inline na `margin-top: 30px` ang
-   components/footer.php — hindi puwedeng baguhin doon dahil anim
-   pang ibang page ang gumagamit ng parehong file. */
+/* `!important` because components/footer.php carries its own inline
+   `margin-top: 30px` — which cannot be changed there, since six
+   other pages use the same file. */
 .sidebar footer {
     margin-top: auto !important;
     padding: 16px 14px !important;

@@ -1,8 +1,8 @@
 // ============================================================
 //  PROFILE SETTINGS
-//  Isang form lang ang ipinapadala: pangalan, email, password, at
-//  ang avatar file — kaya iisang "Save Changes" ang kailangan
-//  pindutin at hindi maghihiwalay ang state kapag may nabigo.
+//  One form is submitted: name, email, password, and the avatar
+//  file — so there is a single "Save Changes" to press, and the
+//  state cannot diverge when something fails.
 // ============================================================
 
 (function () {
@@ -27,10 +27,10 @@
     const ALLOWED    = ["image/jpeg", "image/png", "image/webp"];
     const MIN_PW_LEN = 8;
 
-    // Panimulang itsura — ibinabalik ito ng Reset.
+    // The starting appearance — this is what Reset restores.
     const initialSrc = avatarImg ? (avatarImg.getAttribute("src") || "") : "";
 
-    let objectUrl = null; // preview URL na kailangang bawiin para hindi mag-leak
+    let objectUrl = null; // preview URL that must be revoked to avoid a leak
 
     const toast = (icon, title) =>
         Swal.fire({
@@ -57,7 +57,7 @@
         if (src) {
             avatarImg.src = src;
         } else {
-            avatarImg.removeAttribute("src"); // hindi `src=""` — page URL ang hihilahin niyan
+            avatarImg.removeAttribute("src"); // not `src=""` — that would fetch the page URL
         }
         avatarBlock.classList.toggle("has-photo", !!src);
         if (removeBtn) removeBtn.disabled = !src;
@@ -80,8 +80,8 @@
             const file = this.files && this.files[0];
             if (!file) return;
 
-            // Sinusuri rin ito sa server — dito lang para hindi pa
-            // mag-upload ng 5MB bago malamang tanggi pala.
+            // The server checks this too — done here only to avoid
+            // uploading 5MB before finding out it is rejected.
             if (!ALLOWED.includes(file.type)) {
                 toast("warning", "Only JPG, PNG, or WEBP images are allowed.");
                 this.value = "";
@@ -97,7 +97,7 @@
             releaseObjectUrl();
             objectUrl = URL.createObjectURL(file);
             setPreview(objectUrl);
-            if (removeFlag) removeFlag.value = "0"; // kinakansela ang naunang "remove"
+            if (removeFlag) removeFlag.value = "0"; // cancels an earlier "remove"
         });
     }
 
@@ -125,7 +125,7 @@
     if (confirmEl) confirmEl.addEventListener("input", () => showError(""));
     if (passwordEl) passwordEl.addEventListener("input", () => showError(""));
 
-    // ── Reset: ibalik ang panimulang avatar, hindi lang ang text ──
+    // ── Reset: restore the starting avatar, not just the text ──
     form.addEventListener("reset", function () {
         releaseObjectUrl();
         if (removeFlag) removeFlag.value = "0";
@@ -173,14 +173,14 @@
 
                 if (data.status !== "success") return;
 
-                // Linisin ang password fields — walang dahilan para
-                // manatili ang plaintext sa DOM matapos i-save.
+                // Clear the password fields — there is no reason for
+                // plaintext to sit in the DOM after saving.
                 if (passwordEl) passwordEl.value = "";
                 if (confirmEl) confirmEl.value = "";
                 if (avatarInput) avatarInput.value = "";
                 if (removeFlag) removeFlag.value = "0";
 
-                // Isabay ang topbar para hindi kailangang mag-refresh.
+                // Update the topbar alongside so no refresh is needed.
                 const topbarImg  = document.querySelector(".topbar .profile img");
                 const topbarName = document.querySelector(".topbar .profile-name");
                 const nameLabel  = document.getElementById("profileNameLabel");

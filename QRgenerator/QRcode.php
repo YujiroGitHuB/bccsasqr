@@ -26,10 +26,10 @@ if ($locked) {
   <div id="particles-js"></div>
 
   <div class="qr-shell">
-    <!-- Hero — kapareho ng anyo ng mga admin page (.stud-hero):
-         guhit na gradient sa itaas, tile na icon, pamagat, at mga
-         chip. Dating nakatago ang pamagat sa loob ng isang <h2> na
-         may inline na flex at isang GIF mula sa CDN ng flaticon. -->
+    <!-- Hero — the same shape as the admin pages (.stud-hero): a
+         gradient rule on top, an icon tile, the title, and chips. The
+         title used to be buried inside an <h2> with inline flex and a
+         GIF from the flaticon CDN. -->
     <header class="qr-hero">
       <div class="qr-hero-icon">
         <img src="../<?php echo $systemLogo; ?>" alt="" width="34" height="34">
@@ -62,8 +62,8 @@ if ($locked) {
   <script src="<?= asset('../assets/js/tts.js') ?>"></script>
   <script src="<?= asset('js/scriptv2.js') ?>"></script>
   <script src="<?= asset('js/fetch_students.js') ?>"></script>
-  <!-- Dapat kasunod ng fetch_students.js — binabalot nito ang
-       enable/disable ng Generate button -->
+  <!-- Must come after fetch_students.js — it wraps the Generate
+       button's enable/disable -->
   <script src="<?= asset('js/terms.js') ?>"></script>
   <script src="<?= asset('js/instruction.js') ?>"></script>
   <script src="<?= asset('../assets/js/detection.js') ?>"></script>

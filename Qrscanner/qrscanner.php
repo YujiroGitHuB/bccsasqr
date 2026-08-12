@@ -81,9 +81,9 @@ if (count($subjects) === 0 && $role !== 'admin') {
 <head>
     <?php include __DIR__ . "/../includes/headerQrScanner.php"; ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Nasa Qrscanner/css/style.css na ang mga estilo ng page na ito
-         (tingnan ang "QR SCANNER PAGE" na seksyon doon). Wala talagang
-         assets/css/qr-scanner.css — 404 lang ito kada page load. -->
+    <!-- This page's styles live in Qrscanner/css/style.css (see the
+         "QR SCANNER PAGE" section there). assets/css/qr-scanner.css
+         never existed — it was a 404 on every page load. -->
 </head>
 
 <body>
@@ -123,13 +123,13 @@ if (count($subjects) === 0 && $role !== 'admin') {
         </div>
 
     </div>
-    <!-- Ang pamagat ay galing na sa Settings ($systemAcronym) sa halip
-         na nakasulat na "BCC SASQR" — isang lugar na lang ang pinagmumulan
-         ng pangalan ng sistema.
+    <!-- The title now comes from Settings ($systemAcronym) instead of a
+         hardcoded "BCC SASQR" — one source for the system's name.
 
-         Tinanggal ang dalawang GIF mula sa flaticon CDN (isa rito, isa sa
-         #leftPanel): dekorasyon lamang sila, panlabas na request bawat
-         page load, at wala sa bokabularyo ng natitirang bahagi ng app. -->
+         Two GIFs from the flaticon CDN were removed (one here, one in
+         #leftPanel): they were decoration only, an external request on
+         every page load, and outside the vocabulary of the rest of the
+         app. -->
     <header>
         <div class="scan-head">
             <img src="../<?php echo htmlspecialchars($systemLogo); ?>"
@@ -142,8 +142,8 @@ if (count($subjects) === 0 && $role !== 'admin') {
                 <p>QR attendance capture</p>
             </div>
 
-            <!-- Wala talagang paraang bumalik sa app mula rito noon
-                 maliban sa back button ng browser. -->
+            <!-- There was no way back into the app from here except the
+                 browser's back button. -->
             <a class="scan-head-back" href="../pages/dashboard.php">
                 <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>
                 <span>Dashboard</span>
@@ -158,8 +158,8 @@ if (count($subjects) === 0 && $role !== 'admin') {
             <!-- Subject Selection -->
             <div class="subject-selection">
 
-                <!-- Compact na kapalit ng buong subject picker habang
-                     nag-i-scan sa telepono. Nakatago sa desktop. -->
+                <!-- A compact stand-in for the full subject picker while
+                     scanning on a phone. Hidden on desktop. -->
                 <div class="scan-chip" id="scanChip">
                     <i class="bi bi-camera-video-fill"></i>
                     <span class="scan-chip-subject" id="scanChipSubject"></span>
@@ -168,10 +168,10 @@ if (count($subjects) === 0 && $role !== 'admin') {
                     </button>
                 </div>
 
-                <!-- Sinong nakatayo sa likod ng camera. Dating apat na
-                     halaga sa dalawang linyang pinaghihiwalay ng "|" —
-                     hanay na ngayon: mukha sa kaliwa, pangalan at chip
-                     ng papel sa kanan. -->
+                <!-- Who is standing behind the camera. This used to be
+                     four values across two lines separated by "|" — it
+                     is a row now: face on the left, name and role chip
+                     on the right. -->
                 <div class="instructor-info">
                     <div class="instructor-avatar">
                         <i class="bi bi-person-fill" aria-hidden="true"></i>

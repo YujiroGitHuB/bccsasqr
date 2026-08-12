@@ -1,31 +1,29 @@
 /* ============================================================
    STUDENT PHOTO UPLOAD
 
-   Ito ang tanging page na nakikita ng mismong estudyante, pero
-   iisang produkto pa rin ito — kaya kaparehong wika ng mga admin
-   page (tingnan ang assets/css/students-page.css at
-   assets/css/modal-form.css): sky/cyan na tuldik (#0ea5e9 →
-   #06b6d4), ibabaw na #16161a, hangganang rgba(255,255,255,.07),
-   3px na gradient sa itaas ng card, at IISANG punong butones kada
-   hakbang.
+   This is the only page a student sees directly, but it is still
+   the same product — so it speaks the same language as the admin
+   pages (see assets/css/students-page.css and
+   assets/css/modal-form.css): sky/cyan accent (#0ea5e9 → #06b6d4),
+   #16161a surfaces, rgba(255,255,255,.07) borders, a 3px gradient
+   on top of the card, and exactly ONE primary button per step.
 
-   Ang lumang bersyon ay may sariling identidad:
+   The old version had its own identity:
 
-     • dalawang webfont — DM Sans para sa katawan at DM Serif
-       Display (italic) para sa "Photo" sa pamagat. Walang serif
-       na pamagat kahit saan sa app, at katutubong font stack ang
-       ginagamit ng lahat ng ibang page.
-     • paleta ng GitHub: #0d1117 na base, #58a6ff na asul, #3fb950
-       na berde, #30363d na hangganan — magkaiba ng lahi sa sky ng
-       mga admin page.
-     • TATLONG radial gradient sa likod ng body — asul, berde, at
-       asul ulit.
-     • BERDE ang "Use This Photo" na butones. Nakalaan ang berde
-       sa ESTADO (Verified, Present, tagumpay) — dito ay punong
-       aksyon lang ito ng hakbang 2, kaya kaagaw nito ang tunay na
-       berdeng "Verified" na badge sa itaas mismo nito.
-     • lila-indigo (#667eea) at rosas-pula (#f5576c) ang flashlight
-       — dalawang kulay na wala sa page na ito kahit saan.
+     • two webfonts — DM Sans for the body and DM Serif Display
+       (italic) for the word "Photo" in the title. There is no serif
+       heading anywhere else in the app, and every other page uses
+       the native font stack.
+     • a GitHub palette: #0d1117 base, #58a6ff blue, #3fb950 green,
+       #30363d borders — a different family from the admin sky.
+     • THREE radial gradients behind the body — blue, green, and
+       blue again.
+     • the "Use This Photo" button was GREEN. Green is reserved for
+       STATUS (Verified, Present, success) — here it is only the
+       primary action of step 2, so it competed with the genuinely
+       green "Verified" badge directly above it.
+     • the flashlight was indigo-violet (#667eea) and pink-red
+       (#f5576c) — two colors that appear nowhere else on the page.
    ============================================================ */
 
 :root {
@@ -46,7 +44,7 @@
     --text-2: rgba(255, 255, 255, .5);
     --text-3: rgba(255, 255, 255, .3);
 
-    /* Kulay ng estado — hindi palamuti. */
+    /* Status colors — not decoration. */
     --ok: #10b981;
     --ok-ink: #34d399;
     --warn: #f59e0b;
@@ -69,8 +67,8 @@
     padding: 0
 }
 
-/* Isang mahinang sky na sinag mula sa itaas — kapareho ng
-   radial sa .stud-hero. Tatlo ito dati (asul, berde, asul). */
+/* One faint sky glow from the top — the same radial as
+   .stud-hero. There were three before (blue, green, blue). */
 body {
     background: var(--bg);
     background-image:
@@ -102,7 +100,7 @@ body {
     margin-bottom: .85rem;
 }
 
-/* Isang kulay, walang italic na serif na salita sa gitna. */
+/* One color, no italic serif word in the middle. */
 h1 {
     font-size: 1.6rem;
     font-weight: 700;
@@ -176,8 +174,8 @@ h1 {
     box-shadow: 0 0 0 4px var(--sp-soft);
 }
 
-/* Natapos na: mas mahina kaysa sa kasalukuyan, pero hindi na
-   patay — makikita mo kung gaano ka kalayo na. */
+/* Done: quieter than the current step, but not dead — you can
+   see how far along you are. */
 .step-item.done .step-num {
     color: var(--sp-ink);
     background: var(--sp-soft);
@@ -215,8 +213,8 @@ h1 {
     animation: fadeUp .5s .15s ease both;
 }
 
-/* Ang guhit ng tuldik — kapareho ng .app-modal at ng .stud-hero,
-   kaya kapamilya ng admin ang page na ito. */
+/* The accent rule — the same one as .app-modal and .stud-hero, so
+   this page reads as family with the admin side. */
 .card::before {
     content: '';
     position: absolute;
@@ -272,7 +270,7 @@ h1 {
     font-size: .78rem;
     font-weight: 600;
     letter-spacing: .3px;
-    /* Buong lakas ng kulay — nabasa dapat ang label. */
+    /* Full-strength color — a label has to be readable. */
     color: #cbd5e1;
 }
 
@@ -358,9 +356,9 @@ input[type=text]::placeholder {
     filter: none;
 }
 
-/* Ang tanging punong aksyon kada hakbang. Ginagamit ito ng
-   "Verify Identity" at ng "Use This Photo" — dating berde ang
-   pangalawa, kaagaw ng tunay na berdeng "Verified" na badge. */
+/* The one primary action per step. Used by "Verify Identity" and
+   by "Use This Photo" — the second used to be green, competing
+   with the genuinely green "Verified" badge. */
 .btn-primary {
     color: #fff;
     background: linear-gradient(135deg, var(--sp), var(--sp-deep));
@@ -377,7 +375,7 @@ input[type=text]::placeholder {
     transform: translateY(0);
 }
 
-/* Tahimik na pag-atras — nakikita, pero hindi nakikipag-agawan. */
+/* A quiet way back — visible, but not competing for attention. */
 .btn-ghost,
 .btn-done {
     color: #cbd5e1;
@@ -401,7 +399,7 @@ input[type=text]::placeholder {
     gap: .7rem;
 }
 
-/* Mas malaki ang punong aksyon kaysa sa "Change Photo". */
+/* The primary action is wider than "Change Photo". */
 .btn-row .btn-ghost {
     flex: 1;
 }
@@ -448,7 +446,7 @@ input[type=text]::placeholder {
     color: var(--text-2);
 }
 
-/* Berde dito ay TUNAY na estado: napatunayan na kung sino ka. */
+/* Green here is a REAL status: your identity has been proven. */
 .v-badge {
     margin-left: auto;
     display: inline-flex;
@@ -464,8 +462,8 @@ input[type=text]::placeholder {
 }
 
 /* ── SOURCE TABS ────────────────────────────────────────── */
-/* Segmented control, kapareho ng .dash-switch. Solidong asul na
-   bloke ito dati — kasingtingkad ng punong butones sa ibaba. */
+/* Segmented control, the same as .dash-switch. This used to be a
+   solid blue block — as loud as the primary button below it. */
 .src-tabs {
     display: flex;
     gap: 4px;
@@ -581,7 +579,7 @@ input[type=text]::placeholder {
     height: 100%;
     object-fit: cover;
     display: block;
-    /* Salamin — ganito ka nakasanayang tingnan ang sarili mo. */
+    /* Mirrored — this is how you are used to seeing yourself. */
     transform: scaleX(-1);
 }
 
@@ -656,7 +654,7 @@ input[type=text]::placeholder {
     cursor: not-allowed;
 }
 
-/* Ang punong aksyon ng kamera. */
+/* The camera's primary action. */
 .btn-capture {
     flex: 2;
     padding: .72rem 1rem;
@@ -703,10 +701,10 @@ input[type=text]::placeholder {
 }
 
 /* ── FLASHLIGHT ─────────────────────────────────────────── */
-/* Patay: tahimik na ghost, gaya ng ibang pangalawang butones.
-   Buhay: AMBER — estado iyon (may nakabukas na ilaw), at iyon din
-   ang kulay ng mismong liwanag. Lila-indigo ito dati kapag patay
-   at rosas-pula kapag buhay; wala ang dalawang iyon sa page. */
+/* Off: a quiet ghost, like the other secondary buttons.
+   On: AMBER — that is a status (a light is running), and it is
+   also the color of the light itself. It used to be indigo-violet
+   when off and pink-red when on; neither exists on this page. */
 .flashlight-toggle {
     width: 100%;
     padding: .72rem 1rem;
@@ -764,7 +762,7 @@ input[type=text]::placeholder {
     max-width: 100%;
 }
 
-/* Kaparehong anyo ng .app-note.is-info sa modal-form.css. */
+/* The same shape as .app-note.is-info in modal-form.css. */
 .crop-tip {
     display: flex;
     align-items: flex-start;
@@ -826,7 +824,7 @@ input[type=text]::placeholder {
     padding: .5rem 0 .25rem;
 }
 
-/* Berde: tagumpay — tunay na estado, hindi palamuti. */
+/* Green: success — a real status, not decoration. */
 .success-photo-ring {
     width: 110px;
     height: 110px;
@@ -981,7 +979,7 @@ input[type=text]::placeholder {
     display: block;
 }
 
-/* Walang Georgia — katutubong stack tulad ng buong page. */
+/* No Georgia — the native stack, like the rest of the page. */
 .di-photo-placeholder {
     width: 100%;
     height: 100%;
@@ -1069,9 +1067,9 @@ input[type=text]::placeholder {
     transform: scaleX(0);
 }
 
-/* ── ISLAND — MGA KULAY NG ESTADO ───────────────────────── */
+/* ── ISLAND — STATUS COLORS ─────────────────────────────── */
 
-/* Mali (pula) */
+/* Error (red) */
 .d-island.type-error .di-sub,
 .d-island.type-error .di-check {
     color: var(--bad-ink);
@@ -1095,7 +1093,7 @@ input[type=text]::placeholder {
     font-size: 1.3rem;
 }
 
-/* Babala (amber) */
+/* Warning (amber) */
 .d-island.type-warning .di-sub,
 .d-island.type-warning .di-check {
     color: var(--warn-ink);
@@ -1120,7 +1118,7 @@ input[type=text]::placeholder {
     font-size: 1.3rem;
 }
 
-/* Tagumpay (berde) — siya ang default sa itaas. */
+/* Success (green) — this is the default set above. */
 .d-island.type-success .di-sub,
 .d-island.type-success .di-check,
 .d-island.type-success .di-photo-placeholder {
@@ -1149,7 +1147,7 @@ input[type=text]::placeholder {
     display: block;
 }
 
-/* ── TELEPONO ───────────────────────────────────────────── */
+/* ── PHONE ──────────────────────────────────────────────── */
 @media (max-width: 480px) {
     body {
         padding: 1.75rem 1rem 2.5rem;
@@ -1164,8 +1162,8 @@ input[type=text]::placeholder {
     }
 }
 
-/* Hindi lahat ay gustong may gumagalaw sa screen. Ang gumagana
-   pa ring pahiwatig ay ang KULAY at ang teksto, hindi ang paggalaw. */
+/* Not everyone wants things moving on screen. The cues that still
+   work are COLOR and text, not motion. */
 @media (prefers-reduced-motion: reduce) {
 
     .page-header,

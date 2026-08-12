@@ -21,9 +21,9 @@ $disabled = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FRO
 $total    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM users"))['count'];
 $admins   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM users WHERE role = 'admin'"))['count'];
 
-// Ang `avatar` column ay galing sa migrations/2026-08-10_add_user_avatar.sql.
-// Hindi pa ito nakapasok sa lahat ng server, kaya tinatanong muna bago
-// isama sa SELECT — kung hindi, mag-e-error ang buong page.
+// The `avatar` column comes from migrations/2026-08-10_add_user_avatar.sql.
+// It has not reached every server yet, so it is checked before being
+// added to the SELECT — otherwise the whole page errors out.
 $hasAvatarColumn = false;
 try {
     $col = $conn->query("SHOW COLUMNS FROM users LIKE 'avatar'");
@@ -226,9 +226,9 @@ $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
     <!-- ════════════════════════════════════════════════════════
          ADD / EDIT USER
 
-         Iisang modal ang ginagamit ng dalawa: pareho ang mga field,
-         ang password lang ang naiiba (kailangan sa bago, opsyonal sa
-         pag-edit). Isang markup na lang ang inaalagaan.
+         Both share one modal: the fields are the same, only the
+         password differs (required when new, optional when editing).
+         That leaves one piece of markup to maintain.
          ════════════════════════════════════════════════════════ -->
     <div class="modal fade" id="userFormModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">

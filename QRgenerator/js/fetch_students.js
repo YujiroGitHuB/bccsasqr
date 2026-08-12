@@ -1,16 +1,14 @@
 // ============================================================
-// Paghahanap ng talaan ng estudyante
+// Student record lookup
 //
-// Ang mensahe ng estado ay ginagawa dati rito sa JS at ipininta ng
-// inline na estilo — at pastel pang-puting-pahina ang mga kulay
-// (#fee2e2, #dcfce7, #fef9c3) sa ibabaw ng madilim na porma.
-// Nasa HTML na ngayon ang kahon (#studentStatus sa glitch_input.php)
-// at klase na lang ang ipinapalit dito; nasa style.css ang kulay,
-// katugma ng mga badge sa admin.
+// The status message used to be built here in JS and painted with
+// inline styles — in white-page pastels (#fee2e2, #dcfce7, #fef9c3)
+// on top of a dark form. The box now lives in the HTML
+// (#studentStatus in glitch_input.php) and only its class is swapped
+// here; the colors are in style.css, matching the admin badges.
 //
-// Ganoon din ang gilid ng patlang: dating `input.style.border` na
-// itinatakda nang diretso — hindi na iyon kayang bawiin ng CSS
-// kahit kailan.
+// The same goes for the field's border: it used to be set directly
+// as `input.style.border` — which CSS can never win back.
 // ============================================================
 
 const studentNoInput = document.getElementById("studentNo");
@@ -26,12 +24,12 @@ const message = document.getElementById("studentStatus");
 let typingTimer;
 const doneTypingInterval = 500;
 
-// Ang pinakamaikling panahong nakikita ang "Checking…" bago ito
-// mapalitan. Dati, may hardcoded na 2,000ms na `setTimeout` bago
-// pa man magsimula ang fetch — dagdag pa sa 500ms na debounce,
-// halos dalawa't kalahating segundo ng paghihintay na wala namang
-// ginagawa. Ang totoong tawag ay agad nang umaalis ngayon; ito ay
-// para lang hindi kumisap ang spinner sa mabilis na koneksiyon.
+// The shortest time "Checking…" stays visible before it is replaced.
+// There used to be a hardcoded 2,000ms `setTimeout` before the fetch
+// even started — on top of the 500ms debounce, nearly two and a half
+// seconds of waiting for nothing. The real call leaves immediately
+// now; this only keeps the spinner from flashing on a fast
+// connection.
 const minSpinnerMs = 350;
 
 studentNoInput.addEventListener("input", function () {
@@ -71,8 +69,8 @@ function validateAndFetchStudent() {
 
     const startedAt = Date.now();
 
-    // Panatilihing nakikita ang spinner nang hindi bababa sa
-    // minSpinnerMs para hindi ito kumisap lang.
+    // Keep the spinner visible for at least minSpinnerMs so it does
+    // not merely flash.
     const settle = (fn) => {
         const elapsed = Date.now() - startedAt;
         setTimeout(fn, Math.max(0, minSpinnerMs - elapsed));
@@ -132,8 +130,8 @@ function setFieldState(state) {
     studentNoField.className = `qr-field qr-field-primary ${state}`.trim();
 }
 
-// Ang `title` ang nagpapakita ng buong halaga kapag masikip ang
-// patlang — naputol ang mahahabang pangalan sa telepono.
+// `title` exposes the full value when the field is tight — long
+// names get truncated on a phone.
 function setLocked(field, value) {
     field.value = value ?? "";
     field.title = value ?? "";
@@ -155,9 +153,9 @@ function setButtonText(text1, text2) {
     btnText1.innerHTML = "";
     btnText2.innerHTML = "";
 
-    // Non-breaking space ang espasyo — inline-block ang .btn-letter
-    // kaya nagco-collapse ang ordinaryong space at nagdidikit ang
-    // dalawang salita ("VerifyFirst").
+    // The space is a non-breaking space — .btn-letter is inline-block,
+    // so an ordinary space collapses and the two words run together
+    // ("VerifyFirst").
     const letter = (char) => (char === " " ? " " : char);
 
     // Add new letters for text1
@@ -176,10 +174,9 @@ function setButtonText(text1, text2) {
         btnText2.appendChild(span);
     }
 
-    // Naka-aria-hidden ang mga titik (tingnan ang button_generate.php)
-    // kaya ang butones mismo ang kailangang magdala ng pangalan —
-    // kung hindi, babaybayin ito ng screen reader nang tig-iisang
-    // letra.
+    // The letters are aria-hidden (see button_generate.php), so the
+    // button itself has to carry the name — otherwise a screen reader
+    // spells it out one letter at a time.
     generateBtn.setAttribute("aria-label", text1);
 }
 

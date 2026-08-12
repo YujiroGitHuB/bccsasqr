@@ -1,15 +1,14 @@
 /* ============================================================
    MANAGE USERS
 
-   Ang naunang bersyon ng file na ito ay para sa lumang modal
-   (`.filter-section`, `.table-container`, `.stats-card`) na wala
-   nang gumagamit — at nag-o-override pa ito ng mga pangkalahatang
-   `.badge` at `.btn-sm` na hindi naman sa page na ito nakatira.
-   Pinalitan ito ng mga estilong tumutugma sa aktuwal na markup.
+   The earlier version of this file targeted the old modal
+   (`.filter-section`, `.table-container`, `.stats-card`) that
+   nothing uses any more — and it also overrode global `.badge` and
+   `.btn-sm` rules that do not even live on this page. Replaced with
+   styles that match the actual markup.
 
-   Nakasandal sa management-pages.css (stat-card, filter-bar,
-   table-card, role/status badge) — ang mga karagdagan lang ang
-   nasa file na ito.
+   Leans on management-pages.css (stat-card, filter-bar, table-card,
+   role/status badges) — only the additions live in this file.
    ============================================================ */
 
 /* ─── Hero header ─────────────────────────────────────────── */
@@ -110,9 +109,9 @@
     }
 }
 
-/* ─── Avatar sa table ─────────────────────────────────────── */
-/* May tunay nang larawan ang mga account (users.avatar) — ang
-   letra ay fallback na lang kapag wala pang na-upload. */
+/* ─── Avatar in the table ─────────────────────────────────── */
+/* Accounts have real photos now (users.avatar) — the letter is only
+   a fallback until one is uploaded. */
 .users-page .user-avatar {
     overflow: hidden;
 }
@@ -128,7 +127,7 @@
     vertical-align: middle;
 }
 
-/* ─── Mga aksyon sa hanay ─────────────────────────────────── */
+/* ─── Row actions ─────────────────────────────────────────── */
 .users-page .row-actions {
     display: inline-flex;
     align-items: center;
@@ -157,7 +156,7 @@
     color: #93c5fd;
 }
 
-/* ─── Mga kontrol ng DataTables ───────────────────────────── */
+/* ─── DataTables controls ─────────────────────────────────── */
 .users-page .dataTables_wrapper .dataTables_info {
     font-size: .8rem;
     color: rgba(255, 255, 255, .35);
@@ -340,8 +339,8 @@
 }
 
 /* ─── Role picker ─────────────────────────────────────────── */
-/* Radio na may paliwanag sa halip na <select>: ang pagkakaiba ng
-   admin at instructor ay hindi halata sa pangalan lang. */
+/* Radios with a description rather than a <select>: the difference
+   between admin and instructor is not obvious from the name alone. */
 .user-modal .role-picker {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -483,8 +482,8 @@
         font-size: 1.15rem;
     }
 
-    /* Buong lapad ang Add User sa telepono — hindi na siya
-       sumisiksik sa tabi ng pamagat. */
+    /* Add User runs full width on a phone — it no longer squeezes in
+       beside the title. */
     .users-page .btn-add-user {
         width: 100%;
         justify-content: center;

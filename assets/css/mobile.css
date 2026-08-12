@@ -1,19 +1,18 @@
 /* ============================================================
    MOBILE / TABLET LAYOUT
-   Ikinakarga pagkatapos ng main.css, kaya ito ang mananaig.
+   Loaded after main.css, so this is what wins.
 
-   Ang problema: ang .sidebar ay `position: fixed; width: 250px`
-   nang walang anumang media query, at ang .content ay may
-   `margin-left: 250px`. Sa 390px na telepono ay 140px na lang ang
-   natitira sa content — hindi na magamit. Kahit "collapsed" (80px)
-   ay 310px pa rin.
+   The problem: .sidebar is `position: fixed; width: 250px` with no
+   media query at all, and .content carries `margin-left: 250px`. On
+   a 390px phone that leaves the content 140px — unusable. Even
+   "collapsed" (80px) still costs 310px.
 
-   Ang lunas: sa mobile ay ganap na inilalabas ng screen ang
-   sidebar, at buong lapad ang content. Ang hamburger ay
-   nagpapasok nito bilang overlay na may backdrop.
+   The fix: on mobile the sidebar is moved fully off screen and the
+   content runs full width. The hamburger brings it back as an
+   overlay with a backdrop.
    ============================================================ */
 
-/* Walang page na dapat mag-scroll nang pahalang. */
+/* No page should ever scroll sideways. */
 html,
 body {
   max-width: 100%;
@@ -31,16 +30,16 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    z-index: 1045;               /* higit sa backdrop, mas mababa sa modal */
+    z-index: 1045;               /* above the backdrop, below a modal */
   }
 
   .sidebar.mobile-open {
     transform: translateX(0);
   }
 
-  /* Sa mobile, ang toggle ay bukas/sara — hindi pampaliit. Kaya
-     kinakansela natin ang narrow-mode ng .collapsed at ibinabalik
-     ang mga label; kung hindi, mga icon lang ang lalabas. */
+  /* On mobile the toggle means open/closed, not narrow/wide. So
+     .collapsed's narrow mode is cancelled and the labels are put
+     back; otherwise only icons would show. */
   .sidebar.collapsed {
     width: 260px;
     max-width: 82vw;
@@ -62,12 +61,12 @@ body {
     height: 70px;
   }
 
-  /* Walang hover tooltip sa touch — nakaharang lang ito. */
+  /* No hover tooltip on touch — it only gets in the way. */
   .sidebar.collapsed .nav-link:hover::after {
     content: none;
   }
 
-  /* ── Content: buong lapad ────────────────────────────────── */
+  /* ── Content: full width ─────────────────────────────────── */
   .content,
   .content.full {
     margin-left: 0;
@@ -75,7 +74,7 @@ body {
     font-size: 0.95rem;
   }
 
-  /* ── Backdrop kapag bukas ang sidebar ────────────────────── */
+  /* ── Backdrop while the sidebar is open ──────────────────── */
   .sidebar-backdrop {
     position: fixed;
     inset: 0;
@@ -93,7 +92,7 @@ body {
     pointer-events: auto;
   }
 
-  /* Huwag payagang mag-scroll ang page sa likod ng bukas na sidebar. */
+  /* Do not let the page scroll behind an open sidebar. */
   body.sidebar-open {
     overflow: hidden;
   }
@@ -104,15 +103,15 @@ body {
     margin-bottom: 14px;
   }
 
-  /* Sapat na laki para sa daliri (≥44px ayon sa touch guidelines). */
+  /* Big enough for a finger (≥44px per the touch guidelines). */
   .toggle-btn {
     min-width: 44px;
     min-height: 44px;
   }
 
-  /* ── Mga talahanayan ─────────────────────────────────────── */
-  /* Ang DataTables ay ~1113px ang lapad. Dapat ito mag-scroll sa
-     loob ng sariling kahon, hindi itulak ang buong page. */
+  /* ── Tables ──────────────────────────────────────────────── */
+  /* DataTables is ~1113px wide. It should scroll inside its own box
+     rather than push the whole page sideways. */
   .table-responsive,
   .dataTables_wrapper {
     width: 100%;
@@ -121,19 +120,19 @@ body {
   }
 
   .card {
-    /* Sa main.css ay `scroll` ito, kaya laging may scrollbar kahit
-       hindi kailangan. `auto` ang tama. */
+    /* main.css sets this to `scroll`, so a scrollbar is always drawn
+       whether or not it is needed. `auto` is correct. */
     overflow-x: auto;
   }
 
-  /* Huwag pilitin ang mga cell na sumiksik hanggang mabasag. */
+  /* Do not force the cells to squeeze until they break. */
   table.dataTable td,
   table.dataTable th {
     white-space: nowrap;
   }
 
-  /* Ang search box at length menu ng DataTables ay magkapatong sa
-     makipot na screen — patungin sila nang pahaba. */
+  /* DataTables' search box and length menu overlap on a narrow
+     screen — stack them instead. */
   .dataTables_wrapper .dataTables_filter,
   .dataTables_wrapper .dataTables_length {
     float: none;
@@ -141,10 +140,11 @@ body {
     margin-bottom: 8px;
   }
 
-  /* Ang input ay nasa loob ng <label> na may teksto pang "Search:".
-     Sa `width: 100%` ay sinusukat ito laban sa buong label, kaya ang
-     lapad ng "Search:" ang sobra — lumalabas ang kahon sa gilid ng
-     card. Sa flex, kinukuha na lang nito ang natitirang espasyo. */
+  /* The input lives inside a <label> that also holds the text
+     "Search:". With `width: 100%` it measures against the whole
+     label, so it overshoots by the width of "Search:" — the box
+     spills past the edge of the card. With flex it simply takes the
+     space that is left. */
   .dataTables_wrapper .dataTables_filter label {
     display: flex;
     align-items: center;
@@ -159,7 +159,7 @@ body {
     margin-left: 0;
   }
 
-  /* Mga export button: hayaang mag-wrap kaysa lumabas ng screen. */
+  /* Export buttons: let them wrap rather than run off screen. */
   .dt-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -168,8 +168,8 @@ body {
     margin-bottom: 10px;
   }
 
-  /* ── Mga form at filter ──────────────────────────────────── */
-  /* Ang <16px na font sa input ay nagdudulot ng auto-zoom sa iOS. */
+  /* ── Forms and filters ───────────────────────────────────── */
+  /* A font under 16px in an input triggers auto-zoom on iOS. */
   input,
   select,
   textarea,
@@ -178,7 +178,7 @@ body {
     font-size: 16px;
   }
 
-  /* Ang mga filter row ay mag-stack sa halip na magsiksikan. */
+  /* Filter rows stack instead of cramming together. */
   .content form.d-flex,
   .content .d-flex.align-items-end {
     gap: 10px !important;
@@ -214,18 +214,18 @@ body {
 }
 
 /* ============================================================
-   MGA DEVICE NA WALANG HOVER (touch)
+   DEVICES WITHOUT HOVER (touch)
 
-   Sa main.css ay `max-width: 0; opacity: 0` ang .btn-icon .btn-text,
-   at lumalabas lang sa :hover. Walang hover sa touch screen, kaya
-   HINDING-HINDI lumalabas ang mga label na iyon sa telepono.
+   In main.css, .btn-icon .btn-text is `max-width: 0; opacity: 0` and
+   only appears on :hover. There is no hover on a touch screen, so
+   those labels NEVER appear on a phone.
 
-   Sa attendance ay magkatabi ang "Delete Selected" at "Delete All",
-   pareho silang pulang trash icon — walang label, magkamukha sila,
-   at parehong mapanira. Palaging ipakita ang label kapag walang hover.
+   On the attendance page "Delete Selected" and "Delete All" sit side
+   by side, both red trash icons — no label, identical looking, and
+   both destructive. Always show the label where there is no hover.
 
-   Ginagamit ang (hover: none) sa halip na sukat ng screen dahil ang
-   tanong ay "kaya bang mag-hover", hindi "gaano kalapad".
+   This uses (hover: none) rather than a screen size because the
+   question is "can it hover", not "how wide is it".
    ============================================================ */
 @media (hover: none) {
   .btn-icon .btn-text {

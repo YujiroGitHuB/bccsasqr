@@ -1,23 +1,21 @@
 /* ============================================================
-   QR SCANNER — anyo ng page
+   QR SCANNER — page styling
 
-   Isinasunod nito ang page sa wika ng mga admin page (tingnan ang
-   assets/css/students-page.css at modal-form.css): sky/cyan na
-   tuldik (#0ea5e9 → #06b6d4), ibabaw na #16161a, hangganang
-   rgba(255,255,255,.07), 3px na gradient sa itaas ng bawat panel,
-   at mga pill chip.
+   Puts this page in the same language as the admin pages (see
+   assets/css/students-page.css and modal-form.css): sky/cyan accent
+   (#0ea5e9 → #06b6d4), #16161a surfaces, rgba(255,255,255,.07)
+   borders, a 3px gradient on top of each panel, and pill chips.
 
-   Ang dating anyo ay may sariling bokabularyo na wala kahit saan
-   sa app: navy na #071029 / #0f1a3a / #060f35 na mga ibabaw,
-   DALAWANG magkaibang asul (sky #38bdf8 sa teksto at blue #3b82f6
-   sa scanner frame) sa iisang screen,
-   at 2px na buong-paikot na sky na hangganan sa subject picker na
-   kasingtingkad ng camera mismo.
+   The old look had its own vocabulary, found nowhere else in the
+   app: navy #071029 / #0f1a3a / #060f35 surfaces, TWO different
+   blues on one screen (sky #38bdf8 in the text and blue #3b82f6 on
+   the scanner frame), and a 2px sky border running the whole way
+   around the subject picker, as loud as the camera itself.
 
-   HINDI binabago ang `font-family`: `* { font-family: 'Times New
-   Roman' }` ang nasa unang linya ng assets/css/main.css, kaya
-   serif ang TOTOONG sulat ng buong app — ang pagpapalit dito lang
-   ang siyang lilikha ng pagkakaiba, hindi ang pag-iwan.
+   The font is the app's native stack. This file used to pin
+   'Times New Roman' to match the `*` rule that once sat at the top
+   of assets/css/main.css; that rule is gone, so pinning it here
+   would now make this the only serif page.
    ============================================================ */
 
 body {
@@ -34,7 +32,8 @@ body {
     --scan-text: #f1f5f9;
     --scan-dim: rgba(255, 255, 255, .45);
 
-    font-family: 'Times New Roman', Times, serif;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "Noto Sans", sans-serif;
     background: var(--scan-bg);
     background-attachment: fixed;
     background-size: cover;
@@ -65,8 +64,8 @@ header {
     box-shadow: 0 4px 20px rgba(0, 0, 0, .45);
 }
 
-/* Ang guhit ng tuldik sa itaas — kapareho ng .stud-hero::before at
-   ng .app-modal, kaya kapamilya ng natitirang app ang page na ito. */
+/* The accent rule on top — the same one as .stud-hero::before and
+   .app-modal, so this page reads as family with the rest of the app. */
 header::before {
     content: '';
     position: absolute;
@@ -76,9 +75,9 @@ header::before {
     box-shadow: 0 0 12px rgba(14, 165, 233, .6);
 }
 
-/* Hanay at hindi naka-center: logo, pamagat, at balikan. Dating
-   isang naka-center na linya ang lahat — walang mapagkakakilanlang
-   pangunahin dahil pantay-pantay lahat ng bagay sa gitna. */
+/* A row, not centered: logo, title, and a way back. Everything used
+   to sit on one centered line — nothing read as primary because
+   centering gave every item the same weight. */
 .scan-head {
     display: flex;
     align-items: center;
@@ -98,9 +97,8 @@ header .header-title {
     margin: 0;
     color: #fff;
     text-align: left;
-    /* Dating `clamp(.625rem, …)` — 10px ang ibaba niyon, mas maliit
-       pa kaysa sa katawan ng teksto, kaya halos hindi mabasa ang
-       pamagat sa telepono. */
+    /* This was `clamp(.625rem, …)` — a 10px floor, smaller than the
+       body text, so the title was barely readable on a phone. */
     font-size: clamp(1rem, .82rem + .85vw, 1.4rem);
     font-weight: 700;
     letter-spacing: -.01em;
@@ -115,8 +113,8 @@ header .header-title {
     color: rgba(255, 255, 255, .42);
 }
 
-/* Tahimik na pag-alis — nakikita, pero hindi nakikipag-agawan sa
-   camera na siyang tunay na trabaho ng page. */
+/* A quiet way out — visible, but not competing with the camera,
+   which is the page's actual job. */
 .scan-head-back {
     flex-shrink: 0;
     display: inline-flex;
@@ -139,9 +137,9 @@ header .header-title {
     color: #fff;
 }
 
-/* Sa telepono ay ang pamagat ang nangangailangan ng lapad —
-   sapat na ang icon ng butones, at ang paliwanag sa ilalim ng
-   pamagat ang unang nawawala. */
+/* On a phone the title is what needs the width — the button's icon
+   is enough on its own, and the line under the title is the first
+   thing to go. */
 @media (max-width: 640px) {
 
     .scan-head-text p,
@@ -154,10 +152,10 @@ header .header-title {
     }
 }
 
-/* Puting plate sa likod ng uploaded na logo. Madilim ang header, at
-   karaniwang madilim din ang tinta ng logo ng paaralan — nalulusaw ito
-   kapag walang sariling background. Tugma ito sa .logo-img sa
-   assets/css/main.css (sidebar). */
+/* A white plate behind the uploaded logo. The header is dark, and
+   school logos are usually dark ink too — they dissolve without a
+   background of their own. This matches .logo-img in
+   assets/css/main.css (the sidebar). */
 .brand-logo {
     border-radius: 50%;
     background: #fff;
@@ -185,7 +183,7 @@ h3 {
     text-align: center;
 }
 
-/* ── Mga panel ──────────────────────────────────────────── */
+/* ── Panels ─────────────────────────────────────────────── */
 
 #leftPanel,
 #attendance {
@@ -199,8 +197,8 @@ h3 {
     overflow-x: auto;
 }
 
-/* Ang parehong 3px na guhit ng header — nagsasabing iisang pamilya
-   ang mga kahon sa page. */
+/* The same 3px rule as the header — it says the boxes on this page
+   belong to one family. */
 #leftPanel::before,
 #attendance::before {
     content: '';
@@ -223,8 +221,8 @@ h3 {
     height: fit-content;
 }
 
-/* Icon at teksto sa iisang linya — dati ay isang GIF, tapos `<br>`,
-   tapos ang pamagat: tatlong hakbang para sa isang pamagat. */
+/* Icon and text on one line — it used to be a GIF, then a `<br>`,
+   then the title: three steps for a single heading. */
 #attendance h3 {
     display: flex;
     align-items: center;
@@ -367,9 +365,9 @@ tr:hover td {
 
     #video {
         border-width: 2px;
-        /* Dating 90%: mas makitid ang video kaysa sa .overlay (inset: 0
-           ng container), kaya hindi tugma ang scanner frame sa tunay
-           na nakikita ng camera. */
+        /* This was 90%: the video was narrower than the .overlay
+           (inset: 0 of the container), so the scanner frame did not
+           line up with what the camera actually sees. */
         width: 100%;
     }
 
@@ -388,9 +386,9 @@ tr:hover td {
     align-items: center;
     margin: 0 auto;
     width: 100%;
-    /* Kailangan ito: may `padding: 0 10px` ang container sa mobile.
-       Kung content-box, magiging 100% + 20px ang tunay na lapad kaya
-       lumalabas ito sa #leftPanel at nagkaka-horizontal scroll. */
+    /* Required: the container carries `padding: 0 10px` on mobile.
+       With content-box the real width becomes 100% + 20px, so it
+       spills out of #leftPanel and the page scrolls sideways. */
     box-sizing: border-box;
     max-width: 480px;
     border-radius: 25px;
@@ -620,9 +618,9 @@ tr:hover td {
 }
 
 
-/* Ang kard ng resulta. Dating `linear-gradient(135deg, #060f35,
-   #040237)` — halos lilang navy na wala kahit saan sa app, at
-   `rgba(102, 126, 234, .1)` na glow na ikaapat na asul sa page. */
+/* The result card. It used to be `linear-gradient(135deg, #060f35,
+   #040237)` — an almost-violet navy found nowhere in the app — plus
+   an `rgba(102, 126, 234, .1)` glow, a fourth blue on the page. */
 #result.card {
     margin-top: 15px;
     padding: 16px 18px;
@@ -637,9 +635,9 @@ tr:hover td {
     transition: border-color .3s ease;
 }
 
-/* Etiketa lang ito ng patlang, hindi pamagat — 18px at
-   `letter-spacing: 1.5px` ang dati, kaya mas malaki pa ito kaysa sa
-   mismong sagot sa ilalim nito. */
+/* This is a field label, not a heading — it was 18px with
+   `letter-spacing: 1.5px`, which made it larger than the answer
+   sitting underneath it. */
 #result.card strong {
     display: block;
     font-size: .72rem;
@@ -650,11 +648,10 @@ tr:hover td {
     margin-bottom: 6px;
 }
 
-/* Tinanggal ang laging-BERDENG kumukurap na tuldok sa harap ng
-   "Status": berde ang ibig sabihin ay naitala na — pero kumukurap
-   ito kahit "Waiting..." pa lang at kahit bigo ang huling scan.
-   Ang mismong teksto ng resulta na ang may kulay (itinatakda ito ng
-   Qrscanner/js/scriptV3.js). */
+/* Removed the always-GREEN blinking dot in front of "Status": green
+   means recorded — but it blinked even at "Waiting..." and even when
+   the last scan failed. The result text itself carries the color
+   (set by Qrscanner/js/scriptV3.js). */
 
 @keyframes statusBlink {
 
@@ -668,9 +665,9 @@ tr:hover td {
     }
 }
 
-/* `.15` na puti ang dati — sa dating halos-itim na navy ay tahimik
-   iyon, pero sa bagong #16161a ay mas maliwanag ang kahon kaysa sa
-   panel na naglalaman nito. */
+/* This was `.15` white — quiet against the old near-black navy, but
+   on the new #16161a it made the box brighter than the panel holding
+   it. */
 #qrResult {
     display: block;
     font-size: 15px;
@@ -706,10 +703,10 @@ tr:hover td {
     #scannerContainer {
         max-width: 100%;
         margin: 0 auto;
-        /* Walang padding: ang .overlay ay inset: 0 ng container, kaya
-           kapag may padding, lumalampas ang madilim na overlay sa
-           gilid ng video at hindi tugma ang frame. May sariling
-           padding na ang #leftPanel. */
+        /* No padding: the .overlay is inset: 0 of the container, so
+           with padding the dark overlay runs past the edge of the
+           video and the frame no longer lines up. #leftPanel already
+           has padding of its own. */
         padding: 0;
         border-radius: 20px;
     }
@@ -905,10 +902,10 @@ tr:hover td {
 
 /* ── Subject picker ─────────────────────────────────────── */
 
-/* Dating `border: 2px solid #38bdf8` sa buong paikot — isang
-   makapal na sky na kahon na kasingtingkad ng camera sa ilalim
-   nito, kaya dalawang bagay ang sabay na sumisigaw. Ang tuldik ay
-   nasa focus ring at sa status na lang ngayon. */
+/* This was `border: 2px solid #38bdf8` running the whole way around
+   — a thick sky box as loud as the camera below it, so two things
+   shouted at once. The accent now lives only in the focus ring and
+   the status line. */
 .subject-selection {
     background: rgba(255, 255, 255, .03);
     padding: 16px;
@@ -932,7 +929,7 @@ tr:hover td {
     color: var(--scan-ink);
 }
 
-/* Isang icon sa loob ng kahon — pareho ng .app-input sa
+/* One icon inside the box — the same as .app-input in
    assets/css/modal-form.css. */
 .scan-field {
     position: relative;
@@ -1034,9 +1031,9 @@ tr:hover td {
     margin-top: .3rem;
 }
 
-/* Dating apat na halagang pinaghihiwalay ng "|" sa dalawang linya.
-   Chip bawat isa: nababasa nang hiwalay at hindi na kailangang
-   hanapin kung saan nagsisimula ang susunod. */
+/* This used to be four values separated by "|" across two lines.
+   One chip each: they read separately, and you no longer have to
+   hunt for where the next one starts. */
 .scan-chip-tag {
     display: inline-flex;
     align-items: center;
@@ -1050,8 +1047,8 @@ tr:hover td {
     white-space: nowrap;
 }
 
-/* Karagdagang detalye lang (ID, bilang) — hindi ito estado, kaya
-   walang kulay. */
+/* Supporting detail only (id, counts) — this is not a status, so it
+   carries no color. */
 .scan-chip-tag.is-quiet {
     border-color: rgba(255, 255, 255, .1);
     background: rgba(255, 255, 255, .04);
@@ -1060,9 +1057,10 @@ tr:hover td {
 
 /* ── Status ─────────────────────────────────────────────── */
 
-/* Dating PULA ang "Please select a subject first". Hindi naman
-   iyon kamalian — panuto ito, at nakalaan ang pula sa estado
-   (Absent / bigo). Tahimik na ngayon hangga't hindi pa handa. */
+/* "Please select a subject first" used to be RED. That is not an
+   error — it is an instruction, and red is reserved for status
+   (Absent / failure). It stays quiet now until the scanner is
+   ready. */
 .scanner-status {
     display: flex;
     align-items: center;
@@ -1089,7 +1087,7 @@ tr:hover td {
     flex-shrink: 0;
 }
 
-/* Berde = tunay na estado: bukas na ang camera at tumatanggap. */
+/* Green = a real status: the camera is open and accepting scans. */
 .scanner-status.active {
     border-color: rgba(16, 185, 129, .3);
     background: rgba(16, 185, 129, .12);
@@ -1109,8 +1107,8 @@ tr:hover td {
 .no-subjects-body {
     background: var(--scan-bg);
     color: white;
-    /* Dating `'Segoe UI', …` — pangatlong sulat sa iisang page
-       (serif ang body, Georgia ang mga inisyal). Iisa na lang. */
+    /* This was `'Segoe UI', …` — a third typeface on one page (the
+       body was serif, the initials Georgia). Just one now. */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1130,7 +1128,7 @@ tr:hover td {
     text-align: center;
     border: 1px solid var(--scan-border);
     box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
-    /* Walang hangganan ang lapad noon kaya umaapaw sa telepono */
+    /* The width had no limit before, so it overflowed on phones */
     box-sizing: border-box;
     width: 100%;
     max-width: 420px;
@@ -1138,7 +1136,7 @@ tr:hover td {
     overflow: hidden;
 }
 
-/* Ang parehong 3px na guhit ng ibang panel ng app. */
+/* The same 3px rule as the other panels in the app. */
 .message-box::before {
     content: '';
     position: absolute;
@@ -1190,8 +1188,8 @@ tr:hover td {
     color: rgba(255, 255, 255, .45) !important;
 }
 
-/* Dating puting sulat sa ibabaw ng #38bdf8 — mababa ang kontrast
-   (2.3:1). Gradient at parehong hugis ng .app-btn.primary sa
+/* This was white text on #38bdf8 — low contrast (2.3:1). Now the
+   gradient and the same shape as .app-btn.primary in
    assets/css/modal-form.css. */
 .btn {
     display: inline-flex;
@@ -1269,7 +1267,7 @@ tr:hover td {
     font-size: 1.3rem;
     font-weight: 800;
     color: var(--scan-ink);
-    /* Dating Georgia — pang-apat na sulat sa page. Minamana na lang. */
+    /* This was Georgia — a fourth typeface on the page. Inherited now. */
 }
 
 .avatar-check {
@@ -1321,8 +1319,8 @@ tr:hover td {
     display: inline-block;
 }
 
-/* Naitala ang attendance, pero walang photo na maikukumpara sa
-   harap ng instructor — dilaw para agad mapansin. */
+/* Attendance was recorded, but there is no photo for the instructor
+   to check the face against — yellow so it is noticed at once. */
 .student-subject-badge.no-photo {
     color: #facc15;
     background: rgba(250, 204, 21, .12);
@@ -1353,9 +1351,8 @@ tr:hover td {
 }
 
 /* ── Attendance List GIF ────────────────────────────────── */
-/* Tinanggal ang `.attendance-gif` — wala nang GIF sa pamagat ng
-   talaan, isang `.bi-card-checklist` na lang (tingnan ang
-   `#attendance h3` sa itaas). */
+/* `.attendance-gif` was removed — the list heading no longer has a
+   GIF, just a `.bi-card-checklist` (see `#attendance h3` above). */
 
 /* ── Admin badge / Role colors ──────────────────────────── */
 .role-admin {
@@ -1432,7 +1429,7 @@ tr:hover td {
     font-size: 2rem;
     font-weight: 800;
     color: var(--scan-ink);
-    /* Minamana ang sulat — tingnan ang .avatar-initials sa itaas. */
+    /* Typeface inherited — see .avatar-initials above. */
 }
 
 .di-avatar-check {
@@ -1587,14 +1584,13 @@ tr:hover td {
 }
 /* ============================================================
    MOBILE
-   Ang #leftPanel at #attendance ay may min-width: 340px at
-   padding: 20px kada gilid, at walang box-sizing: border-box sa
-   file na ito — kaya 380px+ ang tunay na lapad at umaapaw sa
-   390px na telepono.
+   #leftPanel and #attendance carry min-width: 340px plus 20px of
+   padding on each side, and this file sets no box-sizing:
+   border-box — so the real width is 380px+ and it overflows a
+   390px phone.
 
-   May sariling header ang page na ito (headerQrScanner.php), kaya
-   hindi nito nakukuha ang assets/css/mobile.css. Dito na natin
-   ilalagay ang lunas.
+   This page has its own header (headerQrScanner.php), so it never
+   picks up assets/css/mobile.css. The fix goes here instead.
    ============================================================ */
 @media (max-width: 576px) {
 
@@ -1607,9 +1603,9 @@ tr:hover td {
         padding: 14px;
     }
 
-    /* Hayaang mag-scroll ang talaan sa loob ng kahon nito. Kailangan
-       ito bago pa mag-init ang DataTables — hubad pa ang <table> sa
-       puntong iyon at wala pang .dataTables_wrapper na bumabalot. */
+    /* Let the list scroll inside its own box. This has to hold
+       before DataTables initialises — the <table> is still bare at
+       that point, with no .dataTables_wrapper around it. */
     #attendance {
         overflow-x: auto;
     }
@@ -1620,8 +1616,8 @@ tr:hover td {
         max-width: 100%;
     }
 
-    /* Mas malapad ang talahanayan kaysa sa screen — dapat mag-scroll
-       sa loob ng sariling kahon, hindi itulak ang buong page. */
+    /* The table is wider than the screen — it should scroll inside
+       its own box, not push the whole page sideways. */
     .dataTables_wrapper {
         width: 100%;
         overflow-x: auto;
@@ -1633,18 +1629,18 @@ tr:hover td {
    MOBILE — karagdagang ayos
    ============================================================ */
 
-/* Hindi ganap ang 100vh sa mobile: hindi kasama ang taas ng
-   address bar, kaya may nawawalang bahagi sa ibaba. */
+/* 100vh is not the whole story on mobile: it excludes the height of
+   the address bar, so a strip goes missing at the bottom. */
 body {
     min-height: 100dvh;
 }
 
 @media (max-width: 768px) {
 
-    /* Dating `position: fixed` ang header at `margin-top: 80px` ang
-       main. Pero 66px lang ang header sa telepono, kaya may butas.
-       Sa sticky, kasama na ang header sa daloy — hindi na kailangan
-       ng hulaan na offset. */
+    /* The header used to be `position: fixed` with `margin-top: 80px`
+       on main. But the header is only 66px on a phone, so a gap was
+       left. With sticky the header stays in the flow — no guessed
+       offset needed. */
     header {
         position: sticky;
         top: 0;
@@ -1658,7 +1654,7 @@ body {
         padding-right: max(10px, env(safe-area-inset-right));
     }
 
-    /* Mas malapit sa gilid ang notification island sa telepono */
+    /* The notification island sits closer to the edge on a phone */
     #di-outer {
         top: max(10px, env(safe-area-inset-top));
         width: 100%;
@@ -1679,9 +1675,9 @@ body {
 
 @media (max-width: 576px) {
 
-    /* 16px ang pinakamaliit na hindi nagpapa-zoom sa iOS Safari
-       kapag tinapik ang field. Sa 14px, biglang lumalaki ang page
-       tuwing bubuksan ang dropdown ng subject. */
+    /* 16px is the smallest size that does not make iOS Safari zoom
+       when the field is tapped. At 14px the page jumps in scale
+       every time the subject dropdown is opened. */
     .subject-selection select,
     .subject-selection input,
     .dataTables_filter input,
@@ -1705,9 +1701,9 @@ body {
         line-height: 1.45;
     }
 
-    /* Kontrolado ng DataTables ang markup na ito. Sa telepono,
-       magkapatong ang "Show N entries" at "Search" kapag magkatabi —
-       kaya patung-patong na lang mula sa itaas. */
+    /* DataTables owns this markup. On a phone "Show N entries" and
+       "Search" overlap when placed side by side — so they stack
+       from the top instead. */
     .dataTables_wrapper .dataTables_length,
     .dataTables_wrapper .dataTables_filter {
         float: none;
@@ -1730,7 +1726,7 @@ body {
         width: auto;
     }
 
-    /* Sapat na laki para matapik ng daliri ang Previous/Next */
+    /* Big enough for a finger to hit Previous/Next */
     .dataTables_wrapper .dataTables_paginate .paginate_button {
         padding: 10px 14px;
         min-width: 44px;
@@ -1750,8 +1746,7 @@ body {
         padding: 8px 10px;
     }
 
-    /* Tanda na may mahihila pa sa gilid ang talahanayan.
-       Ingles ang teksto dahil Ingles ang buong UI ng app. */
+    /* A hint that the table can still be pulled sideways. */
     #attendance {
         position: relative;
     }
@@ -1771,20 +1766,20 @@ body {
 }
 
 /* ============================================================
-   SCAN MODE (telepono lang)
+   SCAN MODE (phones only)
 
-   Sa 390x844 na telepono, 466px ang chrome sa itaas ng camera:
-   header 82 + dekorasyong gif 90 + instructor info 62 + subject
-   picker 48 + status 38, dagdag pa ang mga margin. Sa Safari na may
-   sariling URL bar at toolbar, ~650px lang ang totoong nakikita —
-   kaya putol ang camera at kailangang mag-scroll tuwing magsi-scan.
+   On a 390x844 phone there is 466px of chrome above the camera:
+   header 82 + decorative gif 90 + instructor info 62 + subject
+   picker 48 + status 38, plus the margins. In Safari, with its own
+   URL bar and toolbar, only ~650px is actually visible — so the
+   camera gets cut off and you have to scroll on every scan.
 
-   Kapag nakapili na ng subject, iniaalis natin ang lahat ng hindi
-   kailangan habang nag-i-scan at idinidikit ang camera sa itaas.
-   Nasa desktop pa rin ang buong anyo.
+   Once a subject has been picked, everything that is not needed
+   while scanning is removed and the camera is pinned to the top.
+   The desktop keeps the full layout.
    ============================================================ */
 
-/* Nakatago ang chip maliban sa scan mode sa telepono */
+/* The chip is hidden except in scan mode on a phone */
 .scan-chip {
     display: none;
     align-items: center;
@@ -1828,24 +1823,25 @@ body {
         display: flex;
     }
 
-    /* Tinanggal na ang `.qr-decor` (dekorasyong GIF) sa markup, kaya
-       wala na rin ito rito. Ang `.scan-field` ang itinatago at hindi
-       na ang `select` mismo: nasa balot na ngayon ang icon, at
-       maiiwan itong lumulutang kung ang loob lang ang mawawala. */
+    /* `.qr-decor` (the decorative GIF) is gone from the markup, so it
+       is gone from here too. `.scan-field` is what gets hidden rather
+       than the `select` itself: the icon now lives on the wrapper and
+       would be left floating if only the inside disappeared. */
     body.scan-mode .instructor-info,
     body.scan-mode .subject-selection label,
     body.scan-mode .scan-field {
         display: none;
     }
 
-    /* Ang pamagat at logo ay hindi kailangan habang nag-i-scan.
-       Pinapayagan nating mag-scroll palayo para sa camera ang
-       buong itaas ng screen. */
-    /* `relative` at hindi `static`: pareho silang naiiwan sa normal
-       na daloy (walang epekto ang `top/left` sa relative dito), pero
-       kailangan ng `header::before` ng nakapusisyong magulang —
-       kung `static`, sa buong itaas ng page tumatawid ang 3px na
-       gradient sa halip na sa loob ng header. */
+    /* The title and logo are not needed while scanning. The whole top
+       of the screen is allowed to scroll away and give the camera the
+       room.
+
+       `relative` rather than `static`: both leave the header in the
+       normal flow (`top/left` have no effect on relative here), but
+       `header::before` needs a positioned parent — with `static` the
+       3px gradient stretches across the top of the whole page instead
+       of sitting inside the header. */
     body.scan-mode header {
         position: relative;
     }
@@ -1861,18 +1857,17 @@ body {
         font-size: .82rem;
     }
 
-    /* Kailangan ito para gumana ang sticky sa ibaba: ang `overflow-x:
-       auto` ng #leftPanel ay ginagawa ring `auto` ang overflow-y, kaya
-       ito ang nagiging scroll container at sa loob nito dumidikit ang
-       camera — hindi sa screen. Hindi na ito kailangan mula nang
-       ayusin ang tunay na sanhi ng overflow (ang padding ng
-       #scannerContainer). */
+    /* Needed for the sticky below to work: #leftPanel's `overflow-x:
+       auto` also makes overflow-y `auto`, which turns it into the
+       scroll container — so the camera sticks inside it rather than
+       to the screen. This has not been needed since the real cause of
+       the overflow was fixed (#scannerContainer's padding). */
     body.scan-mode #leftPanel {
         overflow: visible;
     }
 
-    /* Ang pinakamahalaga: nananatiling nakikita ang camera kahit
-       mag-scroll pababa sa talaan ng attendance. */
+    /* The important part: the camera stays visible even when you
+       scroll down into the attendance list. */
     body.scan-mode #scannerContainer {
         position: sticky;
         top: 0;
@@ -1886,8 +1881,8 @@ body {
     }
 }
 
-/* Walang tunay na hover sa touch screen — natitigil ang highlight
-   pagkatapos tapikin ang isang row. */
+/* There is no real hover on a touch screen — the highlight would
+   otherwise stay stuck after tapping a row. */
 @media (hover: none) {
     tr:hover td {
         background-color: transparent;

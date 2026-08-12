@@ -10,9 +10,9 @@ if(!isAdmin()){
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
 
-// Tatlong bilang para sa hero. Walang anumang kabuuan ang page na
-// ito noon — kailangan mo pang hintayin ang table at basahin ang
-// "Showing 1 to 10 of N" sa ibaba.
+// Three counts for the hero. This page had no totals at all before —
+// you had to wait for the table and read "Showing 1 to 10 of N" at
+// the bottom.
 $studentTotal = (int) (mysqli_fetch_assoc(
     mysqli_query($conn, "SELECT COUNT(*) AS n FROM students_tbl")
 )['n'] ?? 0);
@@ -31,8 +31,8 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
 <head>
     <?php include __DIR__ . "/../includes/header.php" ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/students-page.css') ?>">
-    <!-- Anyo ng mga modal na may porma (.app-modal). Dapat kasunod ng
-         main.css para mabawi ang mga lumang panuntunan doon. -->
+    <!-- Styling for the form modals (.app-modal). Must come after
+         main.css to override the older rules there. -->
     <link rel="stylesheet" href="<?= asset('../assets/css/modal-form.css') ?>">
 </head>
 
@@ -93,7 +93,7 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
                                 <span class="btn-text">Delete All</span>
                             </button>
 
-                            <!-- Add Student Button — ang tanging punong aksyon -->
+                            <!-- Add Student Button — the only primary action -->
                             <button class="stud-btn primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                                 <i class="bi bi-person-plus"></i>
                                 <span class="btn-text">Add Student</span>
@@ -112,9 +112,9 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
                         </div>
 
                         <?php
-                        // Kinukuha na ng get_students_ajax.php ang mga row.
-                        // Dating ini-render dito ang lahat ng estudyante bilang
-                        // HTML — 253 KB sa 474 na estudyante, 3.5 MB sa 1,762.
+                        // get_students_ajax.php fetches the rows now. Every
+                        // student used to be rendered here as HTML — 253 KB
+                        // for 474 students, 3.5 MB for 1,762.
                         ?>
 
                         <!-- Table (hidden initially) -->

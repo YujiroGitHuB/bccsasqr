@@ -35,9 +35,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['role'] = $user['role'];
-                // Ginagamit ng topbar. Null-safe: wala pang `avatar`
-                // column ang mga server na hindi pa napapatakbuhan ng
-                // migrations/2026-08-10_add_user_avatar.sql.
+                // Used by the topbar. Null-safe: servers that have not
+                // run migrations/2026-08-10_add_user_avatar.sql have no
+                // `avatar` column yet.
                 $_SESSION['user_avatar'] = $user['avatar'] ?? null;
 
                 // UPDATE LAST LOGIN (OPTIONAL BUT RECOMMENDED)

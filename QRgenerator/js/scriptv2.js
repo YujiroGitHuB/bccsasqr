@@ -8,7 +8,7 @@ function generateQR() {
     const course = sanitizeInput(document.getElementById('course').value.toUpperCase());
     const section = sanitizeInput(document.getElementById('section').value.toUpperCase());
 
-    // Katugma ng ibabaw at tuldik ng pahina (tingnan ang style.css).
+    // Matches the page's surface and accent (see style.css).
     const swalTheme = {
         confirmButtonColor: '#0ea5e9',
         background: '#16161a',
@@ -59,7 +59,7 @@ function generateQR() {
         return;
     }
 
-    // student number lang ang naka-encode sa QR
+    // only the student number is encoded in the QR
     const qrData = id;
 
     document.getElementById('qrText').innerText =
@@ -84,7 +84,8 @@ function generateQR() {
     const downloadBtn = document.getElementById('downloadBtn');
     const placeholder = document.getElementById('qrPlaceholder');
 
-    // May QR na — wala nang dapat hintayin ang naghihintay na estado.
+    // There is a QR now — the waiting state has nothing left to wait
+    // for.
     if (placeholder) placeholder.style.display = 'none';
 
     qrWrapper.style.display = 'block';
@@ -159,22 +160,21 @@ function downloadQR() {
         ['Section', section]
     ];
 
-    /* ── Ang ini-imprentang kard ──────────────────────────────────
-       Ito ang tanging bahaging dinadala ng estudyante palabas ng
-       sistema, kaya dapat itong mukhang galing dito: guhit na
-       tuldik sa itaas, malinis na tipo ng letra, at mga detalyeng
-       nakahanay bilang label/halaga sa halip na isang tumpok na
-       "Label: Halaga" na teksto.
+    /* ── The printed card ─────────────────────────────────────────
+       This is the only part a student carries out of the system, so
+       it should look like it came from here: an accent rule on top,
+       clean type, and the details aligned as label/value rather than
+       one lump of "Label: Value" text.
 
-       Ang kulay ng likod ay dapat MANATILING kapareho ng
-       `colorLight` ng QR sa itaas — kung magkaiba, may kitang
-       parisukat na tahi sa palibot ng code.
+       The background color MUST stay identical to the QR's
+       `colorLight` above — if they differ, a visible square seam
+       appears around the code.
 
-       Hindi ginagalaw ang kulay ng mismong QR. Ang jsQR sa
-       Qrscanner/js/scriptV3.js ay tinatawag nang walang opsiyon,
-       kaya "attemptBoth" ang default nito at nababasa ang baligtad
-       na QR — pero hindi lahat ng ibang scanner ay ganoon. */
-    const QR_BG = '#0f172a';   // = colorLight sa itaas
+       The QR's own colors are left alone. jsQR in
+       Qrscanner/js/scriptV3.js is called with no options, so its
+       default is "attemptBoth" and it reads an inverted QR — but not
+       every other scanner does. */
+    const QR_BG = '#0f172a';   // = colorLight above
     const INK = '#e2e8f0';
     const INK_DIM = '#8b9bb0';
     const FONT = '"Segoe UI", system-ui, -apple-system, Roboto, sans-serif';
@@ -189,13 +189,12 @@ function downloadQR() {
     const ctx = combinedCanvas.getContext('2d');
     combinedCanvas.width = width;
 
-    // Iginuguhit ang buong kard. Tinatawag ito ng dalawang landas
-    // ng logo (nakita / hindi nakita) — dati, ang landas ng error
-    // ay nagda-download ng hubad na QR nang walang kahit anong
-    // detalye, kaya walang pangalan sa larawan.
+    // Draws the whole card. Both logo paths call it (found / not
+    // found) — previously the error path downloaded a bare QR with no
+    // details at all, leaving no name on the image.
     //
-    // Nakadepende ang taas sa kung may logo: kung wala, hindi na
-    // nagrereserba ng espasyo para dito kaysa mag-iwan ng butas.
+    // The height depends on whether there is a logo: without one, no
+    // space is reserved for it rather than leaving a gap.
     function paintCard(logoImg) {
         const logoBlock = logoImg ? logoHeight + 24 : 0;
         const titleY = margin + logoBlock + 14;
@@ -235,8 +234,8 @@ function downloadQR() {
         ctx.lineTo(width - margin, dividerY + .5);
         ctx.stroke();
 
-        // Label sa kaliwa, halaga sa kanan — nababasa nang pahalang
-        // kahit magkaiba ang haba ng mga pangalan.
+        // Label left, value right — it reads across even when the
+        // names are of different lengths.
         details.forEach(([label, value], i) => {
             const y = detailsY + i * rowHeight;
 

@@ -1,31 +1,29 @@
 /* ============================================================
-   FORM MODAL — bahay na anyo ng mga modal na may porma
+   FORM MODAL — the house style for modals that carry a form
 
-   Sinusunod nito ang parehong wika ng mga admin page (tingnan ang
-   students-page.css): sky/cyan na tuldik (#0ea5e9 → #06b6d4),
-   ibabaw na #16161a, hangganang rgba(255,255,255,.07), tile na
-   icon sa ulo, at IISANG punong butones.
+   Follows the same language as the admin pages (see
+   students-page.css): sky/cyan accent (#0ea5e9 → #06b6d4),
+   #16161a surfaces, rgba(255,255,255,.07) borders, an icon tile
+   in the header, and exactly ONE primary button.
 
-   Ang lumang Add Student modal ay may sariling bokabularyo na
-   wala sa kahit saang bahagi ng app:
+   The old Add Student modal had its own vocabulary, found nowhere
+   else in the app:
 
-     • asul-lila na gradient (#1a1a2e → #16213e) na likod
-     • ibang asul (#0575e6 → #021b79) para sa badge at butones
-     • ang pamagat ay isang PILL BADGE — hugis ng chip/estado,
-       hindi ng ulo; mukha itong butones na mapipindot
-     • `border-left: 3px solid #0575e6 !important` sa bawat
-       patlang, kasama ang hiwalay na madilim na kahon ng icon —
-       kaya nahahati sa tatlong piraso ang bawat isa:
-       [icon] | guhit | kahon ng sulat
-     • dalawang icon kada patlang (isa sa label, isa sa loob) na
-       parehong-pareho ang sinasabi
-     • `text-white-50` na mga label — 50% na opacity sa madilim na
-       likod, halos hindi na mabasa
-     • isang buong-lapad na `btn-lg py-3` na Save na walang
-       katabing Cancel
+     • a blue-violet gradient (#1a1a2e → #16213e) background
+     • a different blue (#0575e6 → #021b79) for the badge and button
+     • the title was a PILL BADGE — the shape of a chip/status,
+       not of a heading; it looked like a button you could press
+     • `border-left: 3px solid #0575e6 !important` on every field,
+       plus a separate dark icon box — so each one broke into
+       three pieces: [icon] | rule | text box
+     • two icons per field (one on the label, one inside) saying
+       exactly the same thing
+     • `text-white-50` labels — 50% opacity on a dark background,
+       barely readable
+     • one full-width `btn-lg py-3` Save with no Cancel beside it
 
-   Klase ito ng bahay, hindi pang-isang-modal: maaari itong gamitin
-   ng update_students_modal.php at userManagementModal.php.
+   This is a house class, not a one-modal class:
+   update_students_modal.php and userManagementModal.php can use it too.
    ============================================================ */
 
 .app-modal,
@@ -43,7 +41,7 @@
     --am-dim: rgba(255, 255, 255, .5);
 }
 
-/* ─── Ang kahon ──────────────────────────────────────────── */
+/* ─── The box ────────────────────────────────────────────── */
 
 .app-modal .modal-content {
     position: relative;
@@ -54,8 +52,8 @@
     box-shadow: 0 28px 70px rgba(0, 0, 0, .6);
 }
 
-/* Ang guhit ng tuldik sa itaas — kapareho ng .stud-hero::before,
-   kaya kapamilya ng page sa likod nito ang modal. */
+/* The accent rule on top — the same one as .stud-hero::before, so
+   the modal reads as family with the page behind it. */
 .app-modal .modal-content::before {
     content: '';
     position: absolute;
@@ -70,7 +68,7 @@
     opacity: .7;
 }
 
-/* ─── Ulo ────────────────────────────────────────────────── */
+/* ─── Header ─────────────────────────────────────────────── */
 
 .app-modal .modal-header {
     display: flex;
@@ -101,7 +99,7 @@
     min-width: 0;
 }
 
-/* Tunay nang ulo ito at hindi na pill badge. */
+/* A real heading now, not a pill badge. */
 .app-modal .modal-title {
     margin: 0 0 2px;
     font-size: 1.15rem;
@@ -137,7 +135,7 @@
     box-shadow: 0 0 0 3px rgba(14, 165, 233, .3);
 }
 
-/* ─── Katawan ────────────────────────────────────────────── */
+/* ─── Body ───────────────────────────────────────────────── */
 
 .app-modal .modal-body {
     padding: 1.3rem 1.4rem;
@@ -157,13 +155,13 @@
     font-size: .78rem;
     font-weight: 600;
     letter-spacing: .3px;
-    /* Buong lakas ng kulay, hindi `text-white-50`. */
+    /* Full-strength color, not `text-white-50`. */
     color: #cbd5e1;
 }
 
-/* Isang icon na lang kada patlang, nasa loob ng kahon. Dati ay
-   dalawa: isa sa label at isa sa hiwalay na `input-group-text` na
-   kahon sa gilid. */
+/* One icon per field, inside the box. There were two before: one
+   on the label and one in a separate `input-group-text` box beside
+   it. */
 .app-input {
     position: relative;
 }
@@ -185,9 +183,9 @@
     color: var(--am-ink);
 }
 
-/* Isang tuloy-tuloy na kahon — walang segment, walang guhit sa
-   gilid. Kailangan ang lakas dito dahil may sariling background,
-   border, at padding ang Bootstrap para sa .form-control. */
+/* One continuous box — no segments, no rule down the side. The
+   weight is needed here because Bootstrap ships its own
+   background, border and padding for .form-control. */
 .app-input .form-control,
 .app-input .form-select {
     width: 100%;
@@ -206,9 +204,9 @@
     color: rgba(255, 255, 255, .25);
 }
 
-/* Ang `.form-control:focus` sa main.css ay may `!important` sa
-   background (nag-iiwan ng lumang navy na #1a1a2e), kaya kailangan
-   ding `!important` dito para mabawi. */
+/* `.form-control:focus` in main.css carries `!important` on the
+   background (leaving the old navy #1a1a2e behind), so it takes
+   `!important` here to win it back. */
 .app-input .form-control:focus,
 .app-input .form-select:focus {
     border-color: var(--am) !important;
@@ -218,8 +216,8 @@
     outline: none;
 }
 
-/* Pinapanatili ang sariling pana ng Bootstrap sa kanan; ang
-   padding lang ang inaayos para magkasya ang icon sa kaliwa. */
+/* Keeps Bootstrap's own arrow on the right; only the padding is
+   adjusted so the icon fits on the left. */
 .app-input .form-select {
     padding-right: 2.4rem;
     cursor: pointer;
@@ -230,8 +228,8 @@
     color: var(--am-text);
 }
 
-/* Hindi pa napipili — mas malabo, para malinaw na hindi pa ito
-   sagot kundi paanyaya. */
+/* Nothing picked yet — dimmer, to make clear this is not an answer
+   yet but an invitation. */
 .app-input .form-select:invalid,
 .app-input .form-select option[value=""] {
     color: rgba(255, 255, 255, .35);
@@ -244,12 +242,11 @@
     color: rgba(255, 255, 255, .38);
 }
 
-/* ─── Paanan ─────────────────────────────────────────────── */
+/* ─── Footer ─────────────────────────────────────────────── */
 
-/* Nasa LOOB ito ng <form> para manatiling katutubo ang pagsumite —
-   walang inaasahang `form=` na atributo mula sa labas. Ang mga
-   negatibong margin ang nagpapaabot ng guhit sa buong lapad ng
-   modal. */
+/* This sits INSIDE the <form> so submitting stays native — no
+   `form=` attribute expected from outside. The negative margins
+   are what stretch the rule across the full width of the modal. */
 .app-modal-footer {
     display: flex;
     align-items: center;
@@ -262,8 +259,8 @@
     background: rgba(255, 255, 255, .02);
 }
 
-/* Hindi naka-saklaw sa .app-modal — ginagamit din ito ng mga
-   dialog ng SweetAlert sa ibaba. */
+/* Not scoped to .app-modal — the SweetAlert dialogs below use it
+   too. */
 .app-btn {
     display: inline-flex;
     align-items: center;
@@ -279,8 +276,8 @@
     transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease, filter .18s ease;
 }
 
-/* Ang tanging punong aksyon. Dati ay isang buong-lapad na bloke
-   na walang katabi — walang paraang umatras maliban sa ✕. */
+/* The only primary action. It used to be a full-width block with
+   nothing beside it — no way back except the ✕. */
 .app-btn.primary {
     color: #fff;
     background: linear-gradient(135deg, var(--am), var(--am-deep));
@@ -297,8 +294,8 @@
     transform: translateY(0);
 }
 
-/* Mapanirang pagkumpirma (hal. "Alisin ang litrato") — pula ang
-   punong butones, hindi sky. Kapareho ng `.app-swal.is-danger`. */
+/* Destructive confirmation (e.g. "Remove photo") — the primary
+   button is red, not sky. Same as `.app-swal.is-danger`. */
 .app-btn.danger {
     color: #fff;
     background: linear-gradient(135deg, #ef4444, #b91c1c);
@@ -315,7 +312,7 @@
     transform: translateY(0);
 }
 
-/* Tahimik na pag-atras — nakikita, pero hindi nakikipag-agawan. */
+/* A quiet way back — visible, but not competing for attention. */
 .app-btn.ghost {
     color: #cbd5e1;
     background: rgba(255, 255, 255, .05);
@@ -332,7 +329,7 @@
     outline-offset: 2px;
 }
 
-/* ─── Telepono ───────────────────────────────────────────── */
+/* ─── Phone ──────────────────────────────────────────────── */
 
 @media (max-width: 575.98px) {
     .app-modal .modal-header {
@@ -346,7 +343,7 @@
 
     .app-modal-heading p {
         display: none;
-        /* Ang pamagat ang mahalaga sa makipot na screen. */
+        /* On a narrow screen the title is what matters. */
     }
 
     .app-modal-footer {
@@ -354,8 +351,8 @@
         padding: .9rem 1.1rem;
     }
 
-    /* Buong lapad at nakasalansan — ang punong aksyon ang nasa
-       itaas dahil `column-reverse` ang pagkakasunod. */
+    /* Full width and stacked — the primary action ends up on top
+       because the order is `column-reverse`. */
     .app-modal-footer {
         flex-direction: column-reverse;
     }
@@ -366,33 +363,33 @@
 }
 
 /* ============================================================
-   DATA MODAL — talahanayan sa loob ng .app-modal
+   DATA MODAL — a table inside .app-modal
 
-   Para sa mga modal na NAGPAPAKITA at hindi tumatanggap ng sagot
-   (hal. view_absences_modal.php). Ginagamit nito ang parehong
-   kahon, ulo, at butones sa itaas; ito lang ang nagdadagdag ng
-   talahanayan, mga kahon ng estado, at paanan na `.modal-footer`.
+   For modals that SHOW something rather than take an answer (e.g.
+   view_absences_modal.php). It reuses the box, header and buttons
+   above; all it adds is the table, the state panels, and a real
+   `.modal-footer`.
 
-   Ang lumang listahan ng absent ay may sariling bokabularyo:
+   The old absences list had its own vocabulary:
 
-     • ang pamagat ay NAKASULAT NANG DALAWANG BESES — sa ulo at sa
-       `alert-info` na kahon sa ibaba nito, salita por salita
-     • hilaw na `alert-info` ng Bootstrap — asul na wala sa mga
-       tuldik ng app, at nakatabi pa sa pulang icon ng ulo
-     • `table-dark` na default — kulay-abong ulo na walang
-       hierarchy laban sa mga hanay
-     • BERDENG tsek sa walang-laman na kalagayan; nakalaan ang
-       berde sa estadong Present, kaya nagmumukhang badge ng
-       estado ang isang mensaheng "wala akong nakita"
-     • dalawang mabigat na butones sa paanan: kulay-abong solid na
-       Close at PULANG solid na Export. Nakalaan ang pula sa
-       mapanira — hindi mapanira ang mag-export ng PDF, at
-       nanalo pa ito sa tingin laban sa mismong nilalaman.
+     • the title was WRITTEN TWICE — in the header and in the
+       `alert-info` box right under it, word for word
+     • a raw Bootstrap `alert-info` — a blue that is not among the
+       app's accents, sitting next to the red header icon
+     • the `table-dark` default — grey column heads with no
+       hierarchy against the rows
+     • a GREEN check in the empty state; green is reserved for the
+       Present status, so a message that means "I found nothing"
+       looked like a status badge
+     • two heavy buttons in the footer: a solid grey Close and a
+       solid RED Export. Red is reserved for destructive actions —
+       exporting a PDF is not one, and it out-shouted the content
+       it was describing.
    ============================================================ */
 
-/* Ang tsart ng ulo ay sumusunod sa kulay ng pinindot na kard sa
-   dashboard (.dash-risk.warn / .dash-risk.crit) para malinaw na
-   iisang bagay ang pinagmulan at ang nabuksan. */
+/* The header tile takes the color of the dashboard card that was
+   clicked (.dash-risk.warn / .dash-risk.crit), so it is clear the
+   thing that opened and the thing it came from are the same. */
 .app-modal-icon.is-warn {
     background: linear-gradient(135deg, #f59e0b, #d97706);
     box-shadow: 0 8px 20px rgba(245, 158, 11, .3);
@@ -403,11 +400,11 @@
     box-shadow: 0 8px 20px rgba(239, 68, 68, .3);
 }
 
-/* ─── Paanan (tunay na .modal-footer) ────────────────────── */
+/* ─── Footer (a real .modal-footer) ──────────────────────── */
 
-/* Ang .app-modal-footer sa itaas ay may negatibong margin dahil
-   nasa LOOB iyon ng <form> sa modal-body. Katutubong paanan ito,
-   kaya walang margin — pareho lang ang anyo. */
+/* The .app-modal-footer above carries negative margins because it
+   lives INSIDE the <form> in the modal-body. This is the native
+   footer, so no margins — the look is identical. */
 .app-modal .modal-footer {
     justify-content: flex-end;
     gap: .6rem;
@@ -417,13 +414,13 @@
     background: rgba(255, 255, 255, .02);
 }
 
-/* Ang Bootstrap ay naglalagay ng .5rem na margin sa bawat anak ng
-   .modal-footer — dinodoble nito ang `gap` sa itaas. */
+/* Bootstrap puts a .5rem margin on every child of .modal-footer,
+   which doubles the `gap` set above. */
 .app-modal .modal-footer>* {
     margin: 0;
 }
 
-/* ─── Mga chip ng buod ───────────────────────────────────── */
+/* ─── Summary chips ──────────────────────────────────────── */
 
 .app-modal .app-chips {
     margin: 0 0 .9rem;
@@ -435,14 +432,13 @@
     color: var(--am-ink);
 }
 
-/* ─── Talahanayan ────────────────────────────────────────── */
+/* ─── Table ──────────────────────────────────────────────── */
 
-/* Ang kahon mismo ang nag-iiskrol, hindi ang modal-body: ang
-   `position: sticky` na ulo ay sumusukat sa pinakamalapit na
-   kahon na may overflow — kung nasa wrap ang overflow-x, iyon
-   ang magiging sukatan nito, at hindi ito dudikit habang ang
-   modal-body ang gumagalaw. Dito magkasama ang dalawang direksyon
-   sa iisang kahon, kaya tumatakbo ang ulo kasama ng laman. */
+/* The box itself scrolls, not the modal-body: a `position: sticky`
+   head measures against the nearest ancestor with overflow — if
+   the wrap carries overflow-x, that becomes its reference, and it
+   will not stick while the modal-body is what moves. Keeping both
+   axes on one box makes the head travel with the content. */
 .app-table-wrap {
     max-height: 58vh;
     border: 1px solid var(--am-border);
@@ -460,10 +456,10 @@
     color: #e2e8f0;
 }
 
-/* Nakadikit ang ulo habang nag-iiskrol ang modal-body — mahaba
-   ang mga listahang ito, at walang saysay ang hilera ng bilang
-   kapag hindi na nakikita kung ano ang hanay. Kailangan ng
-   sariling background dahil lumulutang ito sa ibabaw ng laman. */
+/* The head stays put while the list scrolls — these lists run
+   long, and a row of numbers means nothing once you can no longer
+   see which column is which. It needs its own background because
+   it floats above the content. */
 .app-table thead th {
     position: sticky;
     top: 0;
@@ -493,8 +489,8 @@
     background: rgba(14, 165, 233, .06);
 }
 
-/* Ang bilang ng hanay ay pantulong lang sa pagbibilang, hindi
-   datos — kaya hindi ito dapat kasingtingkad ng pangalan. */
+/* The row number is a counting aid, not data — so it should not
+   be as loud as the name. */
 .app-table .app-rank {
     width: 2.5rem;
     color: rgba(255, 255, 255, .3);
@@ -513,10 +509,9 @@
     color: rgba(255, 255, 255, .6);
 }
 
-/* Isang badge lang ang may kulay kada hanay: ang bilang ng liban.
-   Iyon ang dahilan kung bakit binuksan ang listahan. Amber →
-   pula → matingkad na pula ayon sa bigat, kapareho ng warn/crit
-   sa dashboard. */
+/* Only one badge per row carries color: the absence count. That
+   is the reason the list was opened. Amber → red → solid red by
+   severity, matching warn/crit on the dashboard. */
 .app-count {
     display: inline-flex;
     align-items: baseline;
@@ -554,7 +549,7 @@
     color: #fff;
 }
 
-/* ─── Mga kalagayan (naglo-load / wala / mali) ───────────── */
+/* ─── States (loading / empty / error) ───────────────────── */
 
 .app-state {
     display: flex;
@@ -564,10 +559,9 @@
     padding: 2.6rem 1rem;
 }
 
-/* Neutral ang walang-laman na kalagayan. Berdeng tsek ito dati —
-   pero ang berde ay Present/Active sa buong app, kaya mukhang
-   estado ng estudyante ang isang mensaheng tungkol sa RESULTA ng
-   paghahanap. */
+/* The empty state is neutral. It was a green check before — but
+   green means Present/Active everywhere in the app, so a message
+   about the RESULT of a search looked like a student's status. */
 .app-state-icon {
     width: 54px;
     height: 54px;
@@ -618,29 +612,28 @@
         width: 100%;
     }
 
-    /* Hindi kayang paliitin ang limang hanay sa telepono nang hindi
-       nagiging dalawang linya ang bawat pangalan — pahalang na
-       iskrol sa loob ng kahon, at hindi pagpiga. */
+    /* Five columns cannot shrink to phone width without wrapping
+       every name onto two lines — scroll sideways inside the box
+       instead of squeezing. */
     .app-table {
         min-width: 30rem;
     }
 }
 
 /* ============================================================
-   SWEETALERT — pareho ng anyo ng .app-modal
+   SWEETALERT — the same look as .app-modal
 
-   Opt-in sa pamamagitan ng customClass.popup = 'app-swal'. Ang mga
-   panuntunan ay isinusulat gamit ang sariling klase ng SweetAlert
-   (hal. .app-swal .swal2-confirm) at hindi umaasa sa customClass ng
-   butones: iniinject ng SweetAlert ang sarili nitong style sa head
-   sa oras ng pagtakbo, kaya mas huli iyon kaysa sa file na ito at
-   mananalo sa pantay na specificity.
+   Opt in with customClass.popup = 'app-swal'. The rules are
+   written against SweetAlert's own classes (e.g.
+   .app-swal .swal2-confirm) rather than relying on the buttons'
+   customClass: SweetAlert injects its own style into the head at
+   runtime, which lands after this file and wins on equal
+   specificity.
 
-   Ang lumang dialog ng import ay may lilang confirm (#7066e0, ang
-   default ng SweetAlert) at kulay-abong Cancel — dalawang kulay na
-   wala kahit saan sa app — at berdeng bilog na tandang-pananong.
-   Nakalaan ang berde sa ESTADO (Active/Present), kaya hindi ito
-   dapat gawing palamuti ng isang tanong.
+   The old import dialog had a violet confirm (#7066e0, SweetAlert's
+   default) and a grey Cancel — two colors found nowhere in the app
+   — plus a green circled question mark. Green is reserved for
+   STATUS (Active/Present), so it should not decorate a question.
    ============================================================ */
 
 .app-swal.swal2-popup {
@@ -655,7 +648,7 @@
     overflow: hidden;
 }
 
-/* Ang guhit ng tuldik — kapareho ng .app-modal at ng .stud-hero. */
+/* The accent rule — the same one as .app-modal and .stud-hero. */
 .app-swal.swal2-popup::before {
     content: '';
     position: absolute;
@@ -666,8 +659,8 @@
     z-index: 2;
 }
 
-/* Ginagawa na ng nilalaman ang ulo, kaya itinatago ang malaking
-   bilog na icon at ang pamagat ng SweetAlert. */
+/* The content builds its own header, so SweetAlert's big circled
+   icon and title are hidden. */
 .app-swal .swal2-icon,
 .app-swal .swal2-title {
     display: none !important;
@@ -682,7 +675,7 @@
     overflow: visible;
 }
 
-/* ─── Ulo ────────────────────────────────────────────────── */
+/* ─── Header ─────────────────────────────────────────────── */
 
 .app-swal-head {
     display: flex;
@@ -712,7 +705,7 @@
     color: rgba(255, 255, 255, .42);
 }
 
-/* Kulay ayon sa kahulugan, hindi palamuti. */
+/* Color by meaning, not decoration. */
 .app-swal-head.is-ok .app-modal-icon {
     background: linear-gradient(135deg, #10b981, #059669);
     box-shadow: 0 8px 20px rgba(16, 185, 129, .3);
@@ -723,14 +716,14 @@
     box-shadow: 0 8px 20px rgba(239, 68, 68, .3);
 }
 
-/* ─── Katawan ────────────────────────────────────────────── */
+/* ─── Body ───────────────────────────────────────────────── */
 
 .app-swal-body {
     padding: 1.2rem 1.4rem;
 }
 
-/* Ang kard ng file: pangalan at sukat nang magkasama bilang isang
-   bagay, hindi dalawang magkahiwalay na "Label: halaga" na linya. */
+/* The file card: name and size together as one object, not two
+   separate "Label: value" lines. */
 .app-swal-file {
     display: flex;
     align-items: center;
@@ -753,8 +746,8 @@
     flex: 1 1 auto;
 }
 
-/* Mahaba ang mga pangalan ng file at hindi maganda ang wrap —
-   putulin nang tapat sa halip na sirain ang lapad ng dialog. */
+/* File names run long and wrap badly — truncate honestly instead
+   of blowing out the width of the dialog. */
 .app-swal-file-name {
     display: block;
     font-size: .88rem;
@@ -772,7 +765,7 @@
     color: rgba(255, 255, 255, .4);
 }
 
-/* Tinted na paalala — pareho ng mga badge sa admin. */
+/* Tinted notice — the same as the admin badges. */
 .app-note {
     display: flex;
     align-items: flex-start;
@@ -810,7 +803,7 @@
     font-size: .95em;
 }
 
-/* Mga bilang pagkatapos ng import. */
+/* Counts after an import. */
 .app-chips {
     display: flex;
     flex-wrap: wrap;
@@ -840,8 +833,8 @@
     color: #fcd34d;
 }
 
-/* Talaan ng mga naiwan. Nag-i-scroll sa loob ng sariling kahon —
-   hindi nito dapat pahabain ang buong dialog. */
+/* The list of rows that were skipped. It scrolls inside its own
+   box — it should not stretch the whole dialog. */
 .app-errors {
     margin-top: .9rem;
     border-radius: 10px;
@@ -868,7 +861,7 @@
     color: rgba(255, 255, 255, .55);
 }
 
-/* ─── Mga butones ────────────────────────────────────────── */
+/* ─── Buttons ────────────────────────────────────────────── */
 
 .app-swal .swal2-actions {
     display: flex;
@@ -881,11 +874,11 @@
     background: rgba(255, 255, 255, .02);
 }
 
-/* Walang `.swal2-styled` sa mga selector na ito: nakatakda ang
-   `buttonsStyling: false` sa importStudent.js, at iyon mismo ang
-   nag-aalis ng klaseng `.swal2-styled` — kaya walang tumatama ang
-   anumang panuntunang umaasa rito. Iyon din ang nagtatanggal sa
-   lilang default, kaya wala nang kaagaw ang mga panuntunang ito. */
+/* No `.swal2-styled` in these selectors: importStudent.js sets
+   `buttonsStyling: false`, and that is exactly what strips the
+   `.swal2-styled` class — so any rule relying on it matches
+   nothing. That same flag removes the violet default, which is
+   why these rules have no competition. */
 .app-swal .swal2-confirm,
 .app-swal .swal2-cancel,
 .app-swal .swal2-deny {
@@ -936,8 +929,8 @@
     box-shadow: none;
 }
 
-/* Mapanirang pagkumpirma (hal. "Burahin lahat") — pula ang punong
-   butones, hindi sky. */
+/* Destructive confirmation (e.g. "Delete all") — the primary
+   button is red, not sky. */
 .app-swal.is-danger .swal2-confirm {
     background: linear-gradient(135deg, #ef4444, #b91c1c);
     box-shadow: 0 6px 16px rgba(239, 68, 68, .3);

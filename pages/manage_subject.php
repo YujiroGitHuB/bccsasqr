@@ -17,8 +17,8 @@ $systemName = $system['system_name'] ?? '';
 $systemAcronym = $system['system_acronym'] ?? '';
 $systemLogo = $system['logo'] ?? '';
 
-// Isang beses lang binibilang — ginagamit ng hero chip at ng badge
-// sa card header. Dating dalawang magkahiwalay na query ito.
+// Counted once — used by the hero chip and the card header badge.
+// This used to be two separate queries.
 $subjectTotal = (int) (mysqli_fetch_assoc(
     mysqli_query($conn, "SELECT COUNT(*) as total FROM subjects_tbl")
 )['total'] ?? 0);
@@ -137,10 +137,10 @@ $assignedTotal = (int) (mysqli_fetch_assoc(
                                     <?php
                                     $subjects = mysqli_query($conn, "SELECT * FROM subjects_tbl ORDER BY subject_code ASC");
 
-                                    // Ang mensahe kapag walang laman ay galing sa
-                                    // DataTables (assets/js/datatables.js) — hindi
-                                    // puwedeng magsingit ng colspan row dito dahil
-                                    // itinuturing iyon ng DataTables na datos.
+                                    // The empty message comes from DataTables
+                                    // (assets/js/datatables.js) — a colspan row
+                                    // cannot be injected here because DataTables
+                                    // would treat it as data.
                                     if (mysqli_num_rows($subjects) > 0) {
                                         $i = 1;
                                         while ($row = mysqli_fetch_assoc($subjects)) {

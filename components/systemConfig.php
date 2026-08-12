@@ -1,11 +1,12 @@
 <!-- System Configuration Modal
-     Anyo: assets/css/modal-form.css (klase: .app-modal) — pareho ng
-     Add/Update Student. Ang tagapili ng logo ay nasa
-     assets/css/settings-page.css (.cfg-*), dahil sa iisang modal
-     lang ito ginagamit.
+     Styling: assets/css/modal-form.css (class: .app-modal) — same as
+     Add/Update Student. The logo picker lives in
+     assets/css/settings-page.css (.cfg-*), because only this one
+     modal uses it.
 
-     Ang mga `id` at `name` ay hindi dapat baguhin — sila ang binabasa
-     ng assets/js/systemConfig.js at ng crud/update_system_config.php. -->
+     The `id`s and `name`s must not change — they are what
+     assets/js/systemConfig.js and crud/update_system_config.php
+     read. -->
 <div class="modal fade app-modal" id="systemConfigModal" tabindex="-1" aria-labelledby="systemConfigModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -55,9 +56,10 @@
                                 aria-describedby="systemAcronymHint"
                                 required>
                         </div>
-                        <!-- Ito na ang tanging nagsasabi kung anong sistema ito sa
-                             telepono: nakatago ang sidebar sa ≤992px at acronym lang
-                             ang laman ng topbar doon (components/topBar.php). -->
+                        <!-- On a phone this is the only thing that says which
+                             system this is: the sidebar is hidden at ≤992px and
+                             the topbar carries only the acronym there
+                             (components/topBar.php). -->
                         <span class="app-hint" id="systemAcronymHint">The short form — sidebar, and the only label on phone screens. Keep it brief.</span>
                     </div>
 
@@ -66,11 +68,11 @@
                         <label for="systemLogo" class="form-label">System Logo</label>
 
                         <div class="cfg-logo">
-                            <!-- Puting plate: karamihan ng logo ng paaralan ay
-                                 madilim ang tinta at transparent ang background,
-                                 kaya nawawala ang mga ito sa madilim na modal —
-                                 at dito pa mismo tinitingnan ng admin kung tama
-                                 ang na-upload niya. -->
+                            <!-- White plate: most school logos are dark ink on a
+                                 transparent background, so they disappear into
+                                 the dark modal — and this is exactly where an
+                                 admin checks that the right thing was
+                                 uploaded. -->
                             <div class="cfg-plate<?= $systemLogo ? '' : ' is-empty' ?>" id="logoPreview">
                                 <?php if ($systemLogo): ?>
                                     <img src="../<?= htmlspecialchars($systemLogo) ?>" alt="Current system logo">
@@ -80,11 +82,11 @@
                             </div>
 
                             <div class="cfg-logo-side">
-                                <!-- Nakatago ang katutubong input pero naaabot pa rin
-                                     ng keyboard (clip, hindi `display:none`) — ang
-                                     "Choose File / No file chosen" ng browser ang
-                                     tanging kontrol dito na hindi sumusunod sa anyo
-                                     ng app, at hindi ito maistilo nang direkta. -->
+                                <!-- The native input is hidden but still reachable by
+                                     keyboard (clipped, not `display:none`) — the
+                                     browser's "Choose File / No file chosen" is the
+                                     only control here that does not follow the app's
+                                     styling, and it cannot be styled directly. -->
                                 <input type="file"
                                     class="cfg-file"
                                     id="systemLogo"
@@ -96,23 +98,23 @@
                                     <label for="systemLogo" class="app-btn ghost cfg-pick">
                                         <i class="bi bi-upload" aria-hidden="true"></i> Choose image
                                     </label>
-                                    <!-- Walang paraan dating umatras sa napiling file
-                                         maliban sa pagsara ng modal. -->
+                                    <!-- There used to be no way back from a chosen
+                                         file except closing the modal. -->
                                     <button type="button" class="cfg-undo" id="logoReset" hidden>
                                         <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Undo
                                     </button>
                                 </div>
 
                                 <span class="cfg-file-name is-idle" id="logoFileName">Keeping the current logo</span>
-                                <!-- Ang tinatanggap lang ng crud/update_system_config.php
-                                     ay ang apat na uri na sinusuri nito sa `getimagesize`. -->
+                                <!-- crud/update_system_config.php accepts only the four
+                                     types it checks with `getimagesize`. -->
                                 <span class="app-hint" id="systemLogoHint">JPG, PNG, GIF, or WEBP. Square images sit best on the plate.</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Nasa loob ng <form> ang paanan para manatiling katutubo
-                         ang pagsumite ng Save. -->
+                    <!-- The footer sits inside the <form> so Save submits
+                         natively. -->
                     <div class="app-modal-footer">
                         <button type="button" class="app-btn ghost" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="app-btn primary">

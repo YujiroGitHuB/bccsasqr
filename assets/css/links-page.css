@@ -1,14 +1,13 @@
 /* ============================================================
    ATTENDANCE LINKS
 
-   Kaparehong violet (#8b5cf6) ng Attendance — magkapangkat sila sa
-   sidebar, kaya dapat magkakilala ang dalawang page. Tingnan ang
-   attendance-page.css para sa buong lohika ng sistema ng kulay.
+   The same violet (#8b5cf6) as Attendance — they share a sidebar
+   group, so the two pages should recognise each other. See
+   attendance-page.css for the full logic of the color system.
 
-   Ang inaayos dito: asul ng Bootstrap (#0d6efd / #6ea8fe) ang buong
-   page — ang short-code pill, ang mga icon ng empty state, ang QR
-   modal — samantalang wala nang asul sa natitirang bahagi ng
-   pangkat na ito.
+   What it fixes: the page was Bootstrap blue throughout (#0d6efd /
+   #6ea8fe) — the short-code pill, the empty-state icons, the QR
+   modal — while there is no blue anywhere else in this group.
    ============================================================ */
 
 .link-page {
@@ -111,9 +110,9 @@
     flex: 1 1 280px;
 }
 
-/* `width: 100%` ang .form-select ng Bootstrap. Sa loob ng flex row
-   ay buong hanay ang kinukuha ng bawat isa, kaya nagsasalansan ang
-   tatlong filter sa tatlong linya sa halip na magkatabi. */
+/* Bootstrap's .form-select is `width: 100%`. Inside a flex row each
+   one takes the whole line, so the three filters stack onto three
+   lines instead of sitting side by side. */
 .link-page .lnk-filters .form-select {
     flex: 0 1 auto;
     width: auto;
@@ -149,8 +148,8 @@
 }
 
 /* ─── Card ────────────────────────────────────────────────── */
-/* Ginagawa ng generate_link.js ang mga card na ito — hindi natin
-   binabago ang JS, ang hitsura lang ang pinapatugma. */
+/* generate_link.js builds these cards — the JS is left alone, only
+   the appearance is brought into line. */
 .link-page .link-card {
     border-radius: 14px;
     border: 1px solid var(--lnk-border);
@@ -163,8 +162,8 @@
     box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
 }
 
-/* Sariling subject — berde ang gilid dahil pag-aari ito ang ibig
-   sabihin, hindi estado. Iniwan na berde para tugma sa "Mine". */
+/* Your own subject — the edge is green because it means ownership,
+   not status. Left green to match the "Mine" chip. */
 .link-page .link-card.my-subject {
     border-left: 3px solid #34d399;
 }
@@ -199,9 +198,9 @@
     font-size: .76rem;
 }
 
-/* Ang section chip at ang "Mine" ay hilaw na `bg-secondary` at
-   `bg-success` ng Bootstrap — solidong bloke sa isang card na
-   tahimik naman ang iba. */
+/* The section chip and "Mine" were Bootstrap's raw `bg-secondary`
+   and `bg-success` — solid blocks on a card where everything else
+   is quiet. */
 .link-page .link-card .badge.bg-secondary {
     background: rgba(255, 255, 255, .07) !important;
     border: 1px solid rgba(255, 255, 255, .12);
@@ -220,7 +219,7 @@
     padding: .3rem .6rem;
 }
 
-/* ─── Mga butones sa card ─────────────────────────────────── */
+/* ─── Buttons on the card ─────────────────────────────────── */
 .link-page .link-card .btn-sm {
     display: inline-flex;
     align-items: center;
@@ -232,7 +231,7 @@
     transition: background .15s ease, color .15s ease;
 }
 
-/* Copy — ang punong aksyon ng card. */
+/* Copy — the card's primary action. */
 .link-page .link-card .btn-primary {
     background: linear-gradient(135deg, var(--lnk), var(--lnk-deep));
     border: none;
@@ -334,8 +333,8 @@
     border-color: rgba(255, 255, 255, .1);
 }
 
-/* Puti ang plate ng QR — kailangan ng kontrast para mabasa ito ng
-   camera; hindi ito palamuti. */
+/* The QR plate is white — a camera needs that contrast to read it;
+   this is not decoration. */
 .lnk-qr-plate {
     display: inline-block;
     padding: 14px;

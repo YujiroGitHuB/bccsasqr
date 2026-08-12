@@ -1,8 +1,8 @@
 <!-- Collapsible Instructions with Icons -->
 <div class="instructions-container">
-    <!-- `aria-expanded` at `aria-controls` — ipinapaalam sa screen
-         reader kung bukas ba ang panel na binubuksan nito.
-         Ina-update ito ng instruction.js. -->
+    <!-- `aria-expanded` and `aria-controls` — tell a screen reader
+         whether the panel this opens is currently open.
+         instruction.js keeps them updated. -->
     <button type="button" id="toggleInstructions" class="toggle-btn"
         aria-expanded="false" aria-controls="instructionsContent">
         <i class="bi bi-info-circle-fill"></i>

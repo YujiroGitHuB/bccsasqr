@@ -142,8 +142,8 @@ function showStudentCard(student, subject, time) {
     document.getElementById('cardMeta').textContent    =
         [student.course, student.section].filter(Boolean).join(' — ');
 
-    // Ang initials ay madaling mapagkamalang totoong photo sa sulyap.
-    // Sinasabi natin nang tahasan na walang mukhang maikukumpara.
+    // At a glance, initials are easily mistaken for a real photo. Say
+    // outright that there is no face to compare against.
     const subjectEl = document.getElementById('cardSubject');
     if (student.photo_url) {
         subjectEl.textContent = '✓ ' + subject;
@@ -400,10 +400,10 @@ function handleScanned(text) {
             });
 
             if (response.photo_missing) {
-                // Naitala ang attendance, pero walang mukhang maipapakita —
-                // walang paraan ang instructor na tiyaking siya nga ang
-                // may hawak ng QR. Sinasabi natin ito nang malinaw sa
-                // halip na tahimik na magpakita ng initials.
+                // Attendance was recorded, but there is no face to show —
+                // the instructor has no way to confirm this is really the
+                // person holding the QR. Say so plainly instead of
+                // quietly showing initials.
                 qrResult.textContent =
                     `✓ ${response.name ?? student.id} — ⚠ no photo, identity not verified`;
                 qrResult.style.color = '#facc15';
@@ -456,8 +456,8 @@ function handleScanned(text) {
                 confirmButtonColor: '#38bdf8', background: '#0f172a', color: '#e2e8f0' });
 
         } else if (response.message === 'photo_required') {
-            // Naka-ON ang "Require student photo for scanning" at walang
-            // photo ang estudyante — hindi naitala ang attendance.
+            // "Require student photo for scanning" is ON and the student
+            // has no photo — attendance was not recorded.
             qrResult.textContent = '✗ No photo on file — cannot verify identity';
             qrResult.style.color = '#f87171';
             qrResult.className   = 'error';
@@ -549,10 +549,11 @@ function addToAttendance(date, student) {
 /* ============================================================
    SUBJECT SELECT EVENT
    ============================================================ */
-/* ── Scan mode (telepono) ─────────────────────────────────────────────────────
-   Kapag may napiling subject, itinatago ang lahat ng hindi kailangan sa
-   itaas ng camera at idinidikit ang camera sa itaas ng screen. Nasa CSS
-   ang mismong paglalayout — dito lang binubuksan at sinasara. */
+/* ── Scan mode (phones) ───────────────────────────────────────────────────────
+   Once a subject is picked, everything above the camera that is not
+   needed gets hidden and the camera is pinned to the top of the screen.
+   The layout itself lives in the CSS — this only switches it on and
+   off. */
 function setScanMode(on, subjectLabel) {
     document.body.classList.toggle('scan-mode', on);
 
@@ -561,8 +562,8 @@ function setScanMode(on, subjectLabel) {
 }
 
 document.getElementById('scanChipChange')?.addEventListener('click', () => {
-    // Lumabas sa scan mode para bumalik ang buong picker, saka ito
-    // idulog sa gumagamit.
+    // Leave scan mode so the full picker comes back, then bring it to
+    // the user.
     setScanMode(false);
     subjectSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
     subjectSelect.focus();
@@ -574,8 +575,8 @@ subjectSelect.addEventListener('change', function () {
     selectedSubjectName = selected.getAttribute('data-name');
 
     if (selectedSubject) {
-        // Sa telepono, nasa chip na ang pangalan ng subject — dalawang
-        // linyang ulit lang ito at espasyo ang kinakain sa itaas ng camera.
+        // On a phone the subject name is already in the chip — repeating
+        // it costs two lines of space above the camera.
         const compact = window.matchMedia('(max-width: 768px)').matches;
         scannerStatus.textContent = compact
             ? 'Ready to scan'
@@ -621,10 +622,11 @@ window.onload = () => {
     })
     .then(res => res.json())
     .then(data => {
-        // Nag-e-expire ang session kapag matagal nakatiwangwang ang tab
-        // sa telepono. Object ang isinasauli ng API kapag ganoon
-        // ({error: "Not logged in"}), hindi array — kaya lumalabas noon
-        // ang malabong "data.forEach is not a function" sa screen.
+        // The session expires when a tab is left sitting for a long time
+        // on a phone. When that happens the API returns an object
+        // ({error: "Not logged in"}) rather than an array — which is why
+        // a cryptic "data.forEach is not a function" used to appear on
+        // screen.
         if (!Array.isArray(data)) {
             debugLog(data && data.error
                 ? `Cannot load attendance: ${data.error}. Please sign in again.`

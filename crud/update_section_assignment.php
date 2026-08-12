@@ -36,7 +36,7 @@ try {
             INNER JOIN subject_instructors_tbl si ON ist.instructor_id = si.instructor_id
             INNER JOIN subjects_tbl s ON si.subject_id = s.id
             WHERE ist.course = ?
-              AND ist.section = ?   -- full_section ang ilalagay dito
+              AND ist.section = ?   -- full_section goes here
             ORDER BY s.subject_name
         ";
         $stmt = $conn->prepare($query);
@@ -54,7 +54,7 @@ try {
                 AND si.instructor_id = ?
             INNER JOIN subjects_tbl s ON si.subject_id = s.id
             WHERE ist.course = ?
-              AND ist.section = ?   -- full_section ang ilalagay dito
+              AND ist.section = ?   -- full_section goes here
             ORDER BY s.subject_name
         ";
         $stmt = $conn->prepare($query);

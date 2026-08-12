@@ -1,14 +1,13 @@
 // ============================================================
-// Terms and Conditions gate para sa QR generation
+// Terms and Conditions gate for QR generation
 //
-// Dalawa na ngayon ang kondisyon bago mabuksan ang Generate:
-//   1. na-verify ang student number (fetch_students.js)
-//   2. naka-check ang "I agree to the Terms and Conditions"
+// There are now two conditions before Generate opens:
+//   1. the student number is verified (fetch_students.js)
+//   2. "I agree to the Terms and Conditions" is checked
 //
-// Ang fetch_students.js ang may hawak ng (1). Para hindi na natin
-// hatiin ang lohika sa dalawang file, binabalot natin dito ang
-// enable/disable nito — kahit ilang beses itong tawagin, hindi
-// bubukas ang button hangga't hindi pa naka-check ang kahon.
+// fetch_students.js owns (1). Rather than split the logic across two
+// files, its enable/disable is wrapped here — however many times it
+// is called, the button will not open until the box is checked.
 // ============================================================
 
 (function () {
@@ -24,15 +23,15 @@
 
     let studentVerified = false;   // itinatakda ng wrapper sa ibaba
 
-    /* ── Balutin ang gate ng fetch_students.js ──────────────────────── */
+    /* ── Wrap fetch_students.js's gate ──────────────────────────────── */
     const realEnable  = window.enableGenerateButton;
     const realDisable = window.disableGenerateButton;
 
-    // Dapat nakakarga na ang fetch_students.js bago ito (tingnan ang
-    // pagkakasunod sa QRcode.php). Kung hindi, mas mabuting huwag nang
-    // gumalaw kaysa sirain ang buong pahina ng generator.
+    // fetch_students.js must already be loaded before this (see the
+    // order in QRcode.php). If it is not, doing nothing is better than
+    // breaking the entire generator page.
     if (typeof realEnable !== 'function' || typeof realDisable !== 'function') {
-        console.error('terms.js: dapat nakakarga muna ang fetch_students.js');
+        console.error('terms.js: fetch_students.js must be loaded first');
         return;
     }
 
@@ -54,10 +53,9 @@
 
         realDisable();
 
-        // Ang realDisable() ay laging naglalagay ng "Verify First".
-        // Nakalilito iyon kapag na-verify na pala ang estudyante at
-        // ang kahon na lang pala ang kulang — sabihin natin kung ano
-        // talaga ang kailangang gawin.
+        // realDisable() always writes "Verify First". That is confusing
+        // once the student has actually been verified and only the
+        // checkbox is missing — say what is really needed.
         if (studentVerified && typeof window.setButtonText === 'function') {
             window.setButtonText('Agree First', 'Agree First');
         }
@@ -70,7 +68,7 @@
     openBtn?.addEventListener('click', openModal);
     closeBtns.forEach(b => b?.addEventListener('click', closeModal));
 
-    // Ang "I Agree" sa modal ay pareho ng pag-check sa kahon.
+    // "I Agree" in the modal is the same as ticking the box.
     acceptBtn?.addEventListener('click', () => {
         agree.checked = true;
         closeModal();
@@ -89,8 +87,8 @@
     agree.addEventListener('change', () => {
         refresh();
 
-        // Itinatala lang kapag alam natin kung sino — walang saysay
-        // ang talaan nang walang student number.
+        // Only recorded once we know who it is — the record is
+        // meaningless without a student number.
         if (agree.checked && studentVerified) {
             recordAcceptance(studentNo?.value.trim());
         }
@@ -108,12 +106,12 @@
         .then(d => {
             if (!d.success) console.warn('Terms not recorded:', d.error);
         })
-        // Ang hindi pagkatala ay hindi dapat humadlang sa estudyante
-        // na makakuha ng QR — nakita at pinindot naman niya ito.
+        // A failed log must not stop the student from getting their QR
+        // — they did see it and press it.
         .catch(err => console.warn('Terms not recorded:', err.message));
     }
 
-    // Kung na-restore ng browser ang naka-check na kahon (back button),
-    // itugma agad ang button sa totoong estado.
+    // If the browser restored a checked box (back button), bring the
+    // button in line with the real state right away.
     refresh();
 })();

@@ -404,7 +404,7 @@ function assignIndividual() {
             .then(res => {
                 if (res.success) {
                     Toast.fire({ icon: 'success', title: res.message });
-                    // idagdag ang course parameter
+                    // add the course parameter
                     addEnrollRow(res.id, studentNo, studentName, section, course, subjectCode, subjectName);
                     updateEnrollCount(1);
                 } else {

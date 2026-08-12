@@ -1,14 +1,13 @@
 // ============================================================
 //  MANAGE USERS
 //
-//  Ang table ay hawak ng DataTables (paging + sorting). Mahalaga
-//  ito: ang mga row na nasa ibang page ay WALA sa DOM. Ang dating
-//  filter dito ay `row.style.display = 'none'` sa mga row na nasa
-//  DOM lang — kaya ang user na nasa page 2 ay hindi kailanman
-//  natatagpuan ng paghahanap, at binubura pa ng DataTables ang
-//  pagtatago tuwing may sorting o paglipat ng page.
+//  DataTables owns the table (paging + sorting). That matters:
+//  rows on another page are NOT in the DOM. The old filter here
+//  set `row.style.display = 'none'` on the rows that were in the
+//  DOM — so a user on page 2 was never found by a search, and
+//  DataTables wiped the hiding on every sort or page change.
 //
-//  Sa halip, sa API na ng DataTables dumadaan ang paghahanap.
+//  Instead, the search now goes through the DataTables API.
 // ============================================================
 
 let usersTable = null;
@@ -27,8 +26,8 @@ const userToast = (icon, title) =>
     }, swalDark));
 
 // ── Filter ng role/status ────────────────────────────────────
-// Binabasa ang data-* ng mismong <tr>, kaya gumagana ito kahit sa
-// mga row na hindi pa naipapakita.
+// Reads the data-* off the <tr> itself, so it works even for rows
+// that have not been rendered yet.
 $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
     if (settings.nTable.id !== 'usersTable') return true;
 
@@ -49,10 +48,10 @@ $(document).ready(function () {
     if (!$('#usersTable').length) return;
 
     usersTable = $('#usersTable').DataTable({
-        // Walang 'f' (search box) — sa filter bar na sa itaas iyon.
+        // No 'f' (search box) — that lives in the filter bar above.
         dom: '<"row"<"col-12"tr>><"row mt-2"<"col-sm-6"i><"col-sm-6"p>>',
         pageLength: 10,
-        order: [],                       // panatilihin ang ORDER BY id DESC ng PHP
+        order: [],                       // keep PHP's ORDER BY id DESC
         columnDefs: [
             { targets: [0, 6], orderable: false, searchable: false }
         ],
@@ -100,9 +99,9 @@ function resetFilters() {
 function toggleUserStatus(userId, newStatus) {
     const row = document.querySelector(`tr[data-user-id="${userId}"]`);
 
-    // Ang pangalan ay galing sa data-name ng row at hindi na
-    // ipinapasok sa onclick — hindi na nasisira ng kudlit sa
-    // pangalan (hal. "O'Brien") ang JS string.
+    // The name comes from the row's data-name rather than being
+    // passed through onclick — an apostrophe in a name (e.g.
+    // "O'Brien") no longer breaks the JS string.
     const userName   = row?.getAttribute('data-name') ?? 'this user';
     const actionText = newStatus === 'disabled' ? 'Disable' : 'Enable';
 
@@ -156,9 +155,9 @@ function toggleUserStatus(userId, newStatus) {
                 `<button class="btn-edit" onclick="openEditUser(${userId})">
                      <i class="bi bi-pencil"></i> Edit</button>` + toggleBtn;
 
-            // Kailangan ito: may sariling kopya ang DataTables ng
-            // laman ng bawat cell. Kung hindi ipapaalam ang pagbabago,
-            // ang lumang "Active" pa rin ang hahanapin at sosortahin.
+            // Required: DataTables keeps its own copy of every cell's
+            // contents. Without telling it about the change, it would
+            // still search and sort against the old "Active".
             if (usersTable) usersTable.row(row).invalidate('dom').draw(false);
 
             setCount('activeCount', data.active_count);
@@ -219,8 +218,8 @@ function openEditUser(userId) {
     const roleInput = document.querySelector(`input[name="role"][value="${role}"]`);
     if (roleInput) roleInput.checked = true;
 
-    // Ipinagbabawal din ito ng server — dito lang para hindi pa
-    // masayang ang isang request bago malaman.
+    // The server forbids this too — checked here only to save a
+    // round trip before finding out.
     setRoleLock(isSelf);
 
     document.getElementById('formIcon').className     = 'bi bi-pencil-square';
@@ -274,10 +273,10 @@ function initUserForm() {
         btn.innerHTML  = '<i class="bi bi-hourglass-split"></i> Saving...';
 
         const fd = new FormData(form);
-        // Hindi ipinapadala ng browser ang mga disabled na input. Kapag
-        // naka-lock ang role picker (sarili mong account), mawawala ang
-        // `role` sa request at itatanggi ito ng server — kaya idinadagdag
-        // natin ang kasalukuyang halaga nang mano-mano.
+        // Browsers do not submit disabled inputs. When the role picker
+        // is locked (your own account) `role` goes missing from the
+        // request and the server rejects it — so the current value is
+        // added back by hand.
         if (!fd.has('role')) {
             const checked = document.querySelector('input[name="role"]:checked');
             if (checked) fd.append('role', checked.value);
@@ -294,9 +293,9 @@ function initUserForm() {
                 }
 
                 userToast('success', data.message);
-                // Buong reload: kasama sa pagbabago ang mga bilang, ang
-                // badge ng role, at ang pagkakasunod-sunod ng row —
-                // mas ligtas kaysa tapyasin ang bawat isa sa DOM.
+                // Full reload: the change touches the counts, the role
+                // badge and the row order — safer than patching each
+                // of them in the DOM.
                 setTimeout(() => location.reload(), 900);
             })
             .catch(() => {
@@ -307,7 +306,7 @@ function initUserForm() {
     });
 }
 
-// ── Mga katulong ─────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────
 function getUserModal() {
     const el = document.getElementById('userFormModal');
     if (!el || typeof bootstrap === 'undefined') return null;

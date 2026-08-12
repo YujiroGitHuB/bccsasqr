@@ -1,13 +1,13 @@
 <?php
-/* Ang punong butones. Nananatili ang mga isa-isang .btn-letter na
-   span dahil doon nagsusulat ang setButtonText() sa
-   fetch_students.js — pinapalitan nito ang teksto habang umuusad
-   ang estado ("Verify First" → "Agree First" → "Generate").
+/* The primary button. The per-letter .btn-letter spans stay because
+   that is where setButtonText() in fetch_students.js writes — it
+   swaps the text as the state advances ("Verify First" → "Agree
+   First" → "Generate").
 
-   Naka-aria-hidden ang mga titik at ang buong butones ang may
-   aria-label: kung hindi, baybayin ito ng screen reader nang
-   tig-iisang letra ("V… e… r… i… f… y…"). Ina-update ng
-   setButtonText() ang aria-label kasabay ng teksto. */
+   The letters are aria-hidden and the button as a whole carries the
+   aria-label: otherwise a screen reader spells it out one letter at
+   a time ("V… e… r… i… f… y…"). setButtonText() updates the
+   aria-label alongside the text. */
 ?>
 <div class="btn-wrapper">
     <button class="btn" id="generateBtn" type="button" onclick="generateQR()"

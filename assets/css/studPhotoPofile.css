@@ -1,33 +1,32 @@
 /* ============================================================
    STUDENT PHOTO PROFILES
 
-   Kapareho ng wika ng ibang admin page (tingnan ang
-   students-page.css at dashboard.css): sky/cyan na tuldik
-   (#0ea5e9 → #06b6d4), ibabaw na #16161a, hangganang
-   rgba(255,255,255,.07), hero card na may 3px na gradient sa
-   itaas, at mga pill chip.
+   The same language as the other admin pages (see
+   students-page.css and dashboard.css): sky/cyan accent
+   (#0ea5e9 → #06b6d4), #16161a surfaces, rgba(255,255,255,.07)
+   borders, a hero card with a 3px gradient bar on top, and pill
+   chips.
 
-   Ang lumang bersyon ay may sariling identidad na wala sa kahit
-   saang bahagi ng app:
+   The old version had its own identity, found nowhere else in the
+   app:
 
-     • TATLONG webfont sa iisang screen — Syne (mga ulo),
-       JetBrains Mono (mga numero), Outfit (katawan). Katutubong
-       font stack ang ginagamit ng lahat ng ibang page, kaya
-       ibang produkto ang hitsura nito; at tatlong render-blocking
-       na request pa iyon bago pa magsimulang gumuhit ang page.
-     • ibang paleta: #63b3ed na asul, #b794f4 na lila, #4fd1c7 na
-       teal, at #080c14 na base — samantalang #16161a ang ibabaw
-       sa lahat ng ibang page
-     • ang pamagat ay gradient text na dumadaan sa cyan → teal →
-       lila; walang ganoong pamagat kahit saan
-     • dalawang naka-fixed na radial gradient sa likod ng buong
-       content area
-     • ang "All" na pill ay solidong asul na bloke (#2b6cb0) —
-       mukha itong punong butones, gayong pagpili lang ng filter
+     • THREE webfonts on one screen — Syne (headings), JetBrains
+       Mono (numbers), Outfit (body). Every other page uses the
+       native font stack, so this looked like a different product
+       — and that was three render-blocking requests before the
+       page could even start drawing.
+     • a different palette: #63b3ed blue, #b794f4 violet, #4fd1c7
+       teal, and a #080c14 base — while every other page sits on
+       #16161a surfaces
+     • the title was gradient text running cyan → teal → violet;
+       no other title anywhere looks like that
+     • two fixed radial gradients behind the whole content area
+     • the "All" pill was a solid blue block (#2b6cb0) — it looked
+       like a primary button when it only picks a filter
 
-   BUG na naayos: walang base rule ang `.sp-fill` — `.sp-fill::after`
-   lang ang nakasulat. Kaya walang lapad, walang kulay, at BAKANTE
-   ang Photo Coverage bar kahit 67% ang nakasulat sa tabi nito.
+   FIXED BUG: `.sp-fill` had no base rule — only `.sp-fill::after`
+   was written. So it had no width and no color, and the Photo
+   Coverage bar was EMPTY even with 67% printed next to it.
    ============================================================ */
 
 .sp {
@@ -44,7 +43,7 @@
     --sp-muted: rgba(255, 255, 255, .45);
     --sp-dim: rgba(255, 255, 255, .28);
 
-    /* Estado, hindi palamuti: may litrato / wala pang litrato. */
+    /* Status, not decoration: has a photo / has none yet. */
     --sp-ok: #10b981;
     --sp-ok-ink: #34d399;
     --sp-warn: #f59e0b;
@@ -54,8 +53,8 @@
 }
 
 /* ─── Hero ────────────────────────────────────────────────── */
-/* Kaparehong hugis ng .stud-hero at .dash-hero — iisang pamilya
-   ang tatlong page kapag magkatabi sa sidebar. */
+/* The same shape as .stud-hero and .dash-hero — the three pages
+   read as one family when you move between them in the sidebar. */
 .sp .sp-hero {
     position: relative;
     display: flex;
@@ -99,8 +98,8 @@
     min-width: 0;
 }
 
-/* Isang kulay lang. Gradient text ito dati na dumadaan sa tatlong
-   kulay — wala nito sa ibang pamagat sa app. */
+/* One color. This used to be gradient text running through three
+   of them — no other title in the app does that. */
 .sp .sp-hero-text h2 {
     margin: 0 0 3px;
     font-size: 1.35rem;
@@ -136,7 +135,7 @@
     white-space: nowrap;
 }
 
-/* ─── Mga bilang ──────────────────────────────────────────── */
+/* ─── Stats ───────────────────────────────────────────────── */
 .sp .sp-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr)) 1.6fr;
@@ -153,8 +152,8 @@
     overflow: hidden;
 }
 
-/* Kaparehong 3px na guhit ng .dash-kpi. Ang kulay ay galing sa
-   `--k` ng bawat card para iisang panuntunan lang ito. */
+/* The same 3px rule as .dash-kpi. The color comes from each
+   card's `--k`, so this stays a single rule. */
 .sp .sp-stat::before {
     content: '';
     position: absolute;
@@ -207,8 +206,8 @@
     color: var(--sp-warn-ink);
 }
 
-/* `tabular-nums` para hindi gumalaw-galaw ang mga numero kapag
-   nagbago ang bilang. */
+/* `tabular-nums` so the digits stop shifting around when the
+   count changes. */
 .sp .sp-stat-val {
     font-size: 1.75rem;
     font-weight: 700;
@@ -270,10 +269,10 @@
     overflow: hidden;
 }
 
-/* Ito ang nawawalang panuntunan. Nakasulat lang dati ang
-   `.sp-fill::after` (ang makintab na dulo), kaya walang lapad at
-   walang kulay ang mismong bar — laging mukhang 0% ang coverage.
-   Galing sa `style="width:…%"` ang lapad, itinatakda ng PHP. */
+/* This is the rule that was missing. Only `.sp-fill::after` (the
+   glossy tip) was written, so the bar itself had no width and no
+   color — coverage always looked like 0%. The width comes from
+   `style="width:…%"`, set by PHP. */
 .sp .sp-fill {
     position: relative;
     height: 100%;
@@ -294,10 +293,9 @@
     filter: blur(3px);
 }
 
-/* Isang pangungusap na nagbibigay-kahulugan sa bar. Dalawang
-   magkahiwalay na bilang ito dati ("483 uploaded" / "234
-   remaining") — pareho na iyong nakasulat sa dalawang card sa
-   tabi mismo nito. */
+/* One sentence that gives the bar meaning. This used to be two
+   separate figures ("483 uploaded" / "234 remaining") — both
+   already printed on the two cards sitting right beside it. */
 .sp .sp-prog-sub {
     margin-top: .55rem;
     font-size: .74rem;
@@ -378,9 +376,9 @@
     color: var(--sp-text);
 }
 
-/* Segmented control, kapareho ng .dash-switch. Dating solidong
-   asul na bloke ang napiling pill — kasingtingkad ng isang punong
-   butones, gayong pagpili lang ito ng tanawin. */
+/* Segmented control, the same as .dash-switch. The selected pill
+   used to be a solid blue block — as loud as a primary button,
+   when all it does is choose a view. */
 .sp .sp-pills {
     display: inline-flex;
     gap: 4px;
@@ -417,9 +415,9 @@
     background: rgba(255, 255, 255, .1);
 }
 
-/* Ang dalawang filter ng estado ay nagsusuot ng kulay ng estadong
-   pinipili nila, kaya nauuna pa sa teksto ang sagot kung ano ang
-   nasa grid sa ibaba. */
+/* The two status filters wear the color of the status they select,
+   so the answer to "what is in the grid below" arrives before you
+   read the label. */
 .sp .sp-pill.on.g {
     color: var(--sp-ok-ink);
     background: rgba(16, 185, 129, .14);
@@ -435,7 +433,7 @@
     outline-offset: 1px;
 }
 
-/* ─── Linya ng bilang ─────────────────────────────────────── */
+/* ─── Count line ──────────────────────────────────────────── */
 .sp .sp-meta {
     display: flex;
     align-items: center;
@@ -463,7 +461,7 @@
     border: 1px solid var(--sp-line);
 }
 
-/* ─── Grid ng mga card ────────────────────────────────────── */
+/* ─── Card grid ───────────────────────────────────────────── */
 .sp .sp-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
@@ -490,8 +488,8 @@
     box-shadow: 0 12px 28px rgba(0, 0, 0, .45);
 }
 
-/* Ang kulang na litrato ay isang KALAGAYAN, kaya amber ang
-   hangganan — pareho ng badge sa loob at ng "None" na filter. */
+/* A missing photo is a STATUS, so the border is amber — the same
+   as the badge inside the card and the "Missing" filter. */
 .sp .sp-card.nc {
     border-color: rgba(245, 158, 11, .18);
 }
@@ -539,7 +537,7 @@
     color: rgba(255, 255, 255, .3);
 }
 
-/* Teksto */
+/* Text */
 .sp .sp-n {
     font-size: .8rem;
     font-weight: 700;
@@ -559,7 +557,7 @@
     color: var(--sp-muted);
 }
 
-/* Mga badge */
+/* Badges */
 .sp .sp-badge {
     display: inline-flex;
     align-items: center;
@@ -591,7 +589,7 @@
     color: var(--sp-dim);
 }
 
-/* Butones ng pagtanggal */
+/* Delete button */
 .sp .sp-x {
     position: absolute;
     top: 8px;
@@ -626,7 +624,7 @@
     outline-offset: 1px;
 }
 
-/* Walang tumugma */
+/* No matches */
 .sp .sp-empty {
     grid-column: 1/-1;
     display: flex;
@@ -636,8 +634,8 @@
     text-align: center;
 }
 
-/* Walang klase ang icon sa EMPTY_HTML ng studPhotoProfile.js —
-   sa elemento mismo naka-target ang panuntunan. */
+/* The icon in studPhotoProfile.js's EMPTY_HTML carries no class,
+   so this rule targets the element itself. */
 .sp .sp-empty i {
     width: 54px;
     height: 54px;
@@ -686,7 +684,7 @@
     }
 }
 
-/* Hindi lahat ay gustong gumalaw ang screen habang naghihintay. */
+/* Not everyone wants the screen moving while they wait. */
 @media (prefers-reduced-motion: reduce) {
     .sp .sk {
         animation: none;
@@ -748,8 +746,8 @@
     margin-top: 1.5rem;
 }
 
-/* Tahimik na butones: hindi ito ang punong aksyon ng page, at ito
-   lang naman ang butones dito. */
+/* A quiet button: this is not the page's primary action, and it
+   is the only button here anyway. */
 .sp .sp-more {
     display: inline-flex;
     align-items: center;
@@ -777,10 +775,10 @@
     cursor: default;
 }
 
-/* ─── Modal ng pagtanggal ─────────────────────────────────── */
-/* Walang `.sp` na saklaw: nasa labas ng `.content.sp` ang modal —
-   direktang anak ito ng <body>. Ang kahon, ulo, at butones ay
-   galing na sa .app-modal (assets/css/modal-form.css). */
+/* ─── Delete modal ────────────────────────────────────────── */
+/* No `.sp` scope: the modal sits outside `.content.sp` — it is a
+   direct child of <body>. The box, header and buttons already come
+   from .app-modal (assets/css/modal-form.css). */
 .sp-del-msg {
     margin: 0;
     font-size: .88rem;

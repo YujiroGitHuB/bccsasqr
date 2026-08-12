@@ -1,16 +1,16 @@
 <?php
-/* Ang tanging tinitipahang patlang ng pahina.
+/* The page's only typed field.
 
-   Dating "holo/glitch" na input ito: naka-fixed sa 270px sa loob
-   ng wrapper na may 1.5rem na padding, kaya hindi kailanman
-   pumipila sa ibang patlang; may sarili itong pamilya ng kulay
-   (cyan #00f2ea + lila #a855f7) at sariling tipo ng letra (Fira
-   Code) na wala sa ibang bahagi ng app; at ang label nito ay
-   nakaturo sa `for="holo-input"` — isang id na wala sa pahina,
-   kaya walang label na naiuugnay sa totoong kahon.
+   This used to be a "holo/glitch" input: fixed at 270px inside a
+   wrapper with 1.5rem of padding, so it never lined up with the
+   other fields; it had a color family of its own (cyan #00f2ea +
+   violet #a855f7) and its own typeface (Fira Code) found nowhere
+   else in the app; and its label pointed at `for="holo-input"` — an
+   id that does not exist on the page, so no label was associated
+   with the real box at all.
 
-   Ang pangalan ng file ay pinanatili para hindi na baguhin ang mga
-   include sa left_panel.php. */
+   The file name is kept so the includes in left_panel.php do not
+   have to change. */
 ?>
 <div class="qr-field qr-field-primary" id="studentNoField">
     <label for="studentNo">
@@ -29,9 +29,8 @@
         aria-describedby="studentStatus"
         required />
 
-    <!-- Dito isinusulat ng fetch_students.js ang resulta ng
-         paghahanap. `aria-live` para maiparating din ito sa screen
-         reader — dating tahimik na kahon lang ito na nakikita ng
-         mata pero hindi naririnig. -->
+    <!-- fetch_students.js writes the lookup result here. `aria-live`
+         so it reaches a screen reader too — this used to be a silent
+         box that the eye could see but nobody could hear. -->
     <div class="qr-status" id="studentStatus" role="status" aria-live="polite"></div>
 </div>

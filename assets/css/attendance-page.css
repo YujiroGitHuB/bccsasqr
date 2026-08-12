@@ -1,20 +1,19 @@
 /* ============================================================
    ATTENDANCE PAGE
 
-   Kulay: violet (#8b5cf6 → #7c3aed).
+   Color: violet (#8b5cf6 → #7c3aed).
 
-   Ang sistema ng kulay ay sumusunod sa PANGKAT sa sidebar, hindi
-   sa bawat page:
+   The color system follows the sidebar GROUP, not the individual
+   page:
        MAIN / ACADEMICS ....... indigo  #667eea
        STUDENTS ............... sky     #0ea5e9
-       ATTENDANCE ............. violet  #8b5cf6   ← ito
-       ADMINISTRATION ......... asul    #3b82f6
+       ATTENDANCE ............. violet  #8b5cf6   ← this one
+       ADMINISTRATION ......... blue    #3b82f6
 
-   Bakit violet: hindi pa ito kinukuha ng ibang pangkat, at
-   malayo ito sa berde/amber/pula na may kahulugan nang
-   Present / babala / Absent. Ang page na ito mismo ang
-   pinakamadalas magpakita ng mga estadong iyon, kaya hindi
-   puwedeng isa sa kanila ang identidad nito.
+   Why violet: no other group has taken it, and it is far from the
+   green/amber/red that already mean Present / warning / Absent.
+   This page shows those statuses more than any other, so its
+   identity cannot be one of them.
    ============================================================ */
 
 .att-page {
@@ -107,8 +106,8 @@
 }
 
 /* ─── Tabs ────────────────────────────────────────────────── */
-/* Dating hilaw na `nav-tabs` ng Bootstrap — may nakausling gilid
-   at hindi tugma sa madilim na card sa ilalim nito. */
+/* This used to be Bootstrap's raw `nav-tabs` — protruding edges
+   that did not match the dark card beneath them. */
 .att-page .nav-tabs {
     display: inline-flex;
     gap: 4px;
@@ -144,7 +143,7 @@
     box-shadow: 0 4px 12px rgba(139, 92, 246, .3);
 }
 
-/* ─── Toolbar at card ─────────────────────────────────────── */
+/* ─── Toolbar and card ────────────────────────────────────── */
 .att-page .att-toolbar {
     display: flex;
     align-items: center;
@@ -185,10 +184,10 @@
     background: var(--att-surface);
 }
 
-/* ─── Mga butones ─────────────────────────────────────────── */
-/* Palaging nakikita ang label — ang lumang `.btn-icon` ay itinatago
-   ito hanggang sa hi-nover, kaya dalawang magkamukhang pulang trash
-   icon ang magkatabi na walang paraan para pag-ibahin. */
+/* ─── Buttons ─────────────────────────────────────────────── */
+/* The label is always visible — the old `.btn-icon` hid it until
+   hover, leaving two identical red trash icons side by side with no
+   way to tell them apart. */
 .att-page .att-btn {
     display: inline-flex;
     align-items: center;
@@ -199,8 +198,8 @@
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
-    /* Ang "Last 30 days" ay isang <a> — may salungguhit ito kung
-       hindi tatanggalin, kaya hindi tugma sa katabing butones. */
+    /* "Last 30 days" is an <a> — it carries an underline unless one
+       is removed, which does not match the button beside it. */
     text-decoration: none;
     transition: background .18s ease, color .18s ease, transform .18s ease;
 }
@@ -245,8 +244,8 @@
     color: #fca5a5;
 }
 
-/* Naka-disable hangga't walang napiling hanay — dapat halata iyon
-   nang hindi kailangang subukang pindutin. */
+/* Disabled until rows are selected — that should be obvious without
+   having to try pressing it. */
 .att-page .att-btn:disabled {
     opacity: .4;
     cursor: not-allowed;
@@ -265,9 +264,9 @@
     background: rgba(255, 255, 255, .02);
 }
 
-/* Ang form ang humahawak sa date window (GET reload); hiwalay ang
-   section filter (JS lang). Magkaibang elemento sila pero iisang
-   hanay ang dapat nilang hitsura. */
+/* The form owns the date window (a GET reload); the section filter
+   is separate (JS only). They are different elements but should
+   read as one row. */
 .att-page .att-filter-form,
 .att-page .att-filter-group {
     display: flex;
@@ -331,8 +330,8 @@
     border-bottom: 1px solid rgba(255, 255, 255, .05);
 }
 
-/* Ang `table-striped` ay naglalagay ng sariling background kada
-   isang hanay — guhit-guhit ang labas sa madilim na card. */
+/* `table-striped` puts a background of its own on every other row —
+   on a dark card that just comes out as stripes. */
 .att-page #example.table-striped>tbody>tr:nth-of-type(odd)>* {
     --bs-table-accent-bg: transparent;
     background-color: transparent;
@@ -344,9 +343,9 @@
     background: rgba(139, 92, 246, .07);
 }
 
-/* Ang pambura kada hanay ay solidong pulang bloke noon. Sa isang
-   talahanayang libo ang hanay, sila ang unang nakikita — hindi ang
-   pangalan o ang oras. */
+/* The per-row delete used to be a solid red block. In a table with
+   a thousand rows those are the first thing seen — not the name or
+   the time. */
 .att-page .btn-delete {
     display: inline-flex;
     align-items: center;
@@ -370,7 +369,7 @@
     color: var(--att-ink) !important;
 }
 
-/* ─── Mga kontrol ng DataTables ───────────────────────────── */
+/* ─── DataTables controls ─────────────────────────────────── */
 .att-page .dataTables_wrapper .dataTables_filter input,
 .att-page .dataTables_wrapper .dataTables_length select {
     background: #0f0f13;

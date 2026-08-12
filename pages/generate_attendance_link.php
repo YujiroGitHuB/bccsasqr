@@ -56,8 +56,8 @@ $user_role = $_SESSION['role'];
     <div class="content link-page" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <!-- px-3 sa telepono, px-4 sa mas malaking screen: masyadong
-             malaki ang 24px kada gilid kapag 375px lang ang screen -->
+        <!-- px-3 on phones, px-4 on larger screens: 24px per side is
+             too much when the screen is only 375px -->
         <div class="container-fluid px-3 px-md-4 py-3">
 
             <div class="lnk-hero">
@@ -177,10 +177,10 @@ $user_role = $_SESSION['role'];
                             <span id="qrSubjectFullName"></span>
                         </span>
                     </div>
-                    <!-- Puting plate: kailangan ng kontrast ang QR para
-                         mabasa ito ng camera. Ang dating #0a1628 na
-                         madilim na plate ay umaasa sa kulay ng mismong
-                         QR module para sa kontrast. -->
+                    <!-- White plate: a QR needs contrast for a camera to
+                         read it. The old dark #0a1628 plate relied on
+                         the color of the QR modules themselves for
+                         contrast. -->
                     <div class="lnk-qr-plate">
                         <div id="qrcode"></div>
                     </div>

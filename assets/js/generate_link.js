@@ -172,8 +172,8 @@ function updateCount(visible, total) {
 
 // ─── Copy link ────────────────────────────────────────────────────────────────
 function copyLink(uid, btn) {
-    // textContent, hindi innerText: hindi ito apektado ng layout, kaya
-    // walang panganib na makasingit ang mga soft line break sa kopya.
+    // textContent, not innerText: it is unaffected by layout, so soft
+    // line breaks cannot slip into the copied text.
     const text = document.getElementById(uid)?.textContent.trim();
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
@@ -272,14 +272,14 @@ function generateQR(link, section, code, name) {
     const container     = document.getElementById('qrcode');
     container.innerHTML = '';
 
-    // Itim sa puti — hindi palamuti ito, sinusukat ng camera.
+    // Black on white — this is not decoration, a camera measures it.
     //
-    // Dati: cyan (#00c8ff) na module sa madilim na navy (#0a1628).
-    // Dalawang problema roon: mababa ang kontrast ng dalawang kulay,
-    // at BALIKTAD ang polarity — inaasahan ng QR spec na madilim ang
-    // module at maliwanag ang background. May ilang scanner na kayang
-    // basahin ang baliktad, marami ang hindi. Kasama rin ito sa
-    // dina-download na PNG na ipinapaskil o ipinipinta sa projector.
+    // Previously: cyan (#00c8ff) modules on dark navy (#0a1628). Two
+    // problems with that: the contrast between the two colors is low,
+    // and the polarity is INVERTED — the QR spec expects dark modules
+    // on a light background. Some scanners can read an inverted code,
+    // many cannot. It also carried into the downloaded PNG that gets
+    // posted on a wall or projected.
     qrInstance = new QRCode(container, {
         text        : link,
         width       : 220,
@@ -302,12 +302,12 @@ function downloadQR() {
 }
 
 // ─── Escape helpers ───────────────────────────────────────────────────────────
-// Isang mahabang "salita" ang URL na walang puwang, kaya kahit saan ito
-// pinuputol ng browser — kalagitnaan ng "daily_attendance" sa telepono.
-// Ang <wbr> ay nagtuturo ng pinapayagang hatian: pagkatapos ng / ? = &
-// kaya sa hangganan ng path o parameter na ito nahahati.
+// A URL is one long "word" with no spaces, so the browser breaks it
+// anywhere — mid-way through "daily_attendance" on a phone. <wbr>
+// marks the allowed break points: after / ? = & so it breaks at a path
+// or parameter boundary.
 //
-// Walang idinaragdag na teksto ang <wbr>, kaya buo pa rin ang nakokopya.
+// <wbr> adds no text, so what gets copied is still intact.
 function wbrUrl(str) {
     return escHtml(str).replace(/(&amp;|[\/?=])/g, '$1<wbr>');
 }

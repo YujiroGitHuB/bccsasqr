@@ -1,26 +1,25 @@
 /* ============================================================
    TOPBAR — profile dropdown
 
-   Ikinakarga pagkatapos ng main.css at bago ang mobile.css.
+   Loaded after main.css and before mobile.css.
 
-   Ang inaayos dito:
-   · Walang lapad ang dropdown, kaya ang Bootstrap default na
-     10rem ang sumusukat — nagsasalansan ang pangalan sa tatlong
-     linya ("Charles / Nixon / Cayading").
-   · BANGGAAN: `.user-avatar` ang pangalan ng lalagyan ng avatar sa
-     topBar.php, pero may sarili ring `.user-avatar { width: 32px }`
-     ang management-pages.css para sa mga hanay ng talahanayan. Sa
-     bawat page na naglo-load niyon (backup, manage_users, mga
-     academic page) ay 32px na kahon ang nakabalot sa 48px na
-     `.avatar-circle` — kaya lumalabas at sumisikip. `.tb-avatar`
-     na ang pangalan dito para hindi na sila maabot ng isa't isa.
-   · Walang anumang estilo ang `.avatar-status` — patay na elemento
-     ito noon.
+   What it fixes:
+   · The dropdown had no width, so Bootstrap's 10rem default set the
+     size — the name stacked onto three lines ("Charles / Nixon /
+     Cayading").
+   · A COLLISION: `.user-avatar` was the name of the avatar wrapper
+     in topBar.php, but management-pages.css also has its own
+     `.user-avatar { width: 32px }` for table rows. On every page
+     that loads it (backup, manage_users, the academic pages) a 32px
+     box ended up wrapping a 48px `.avatar-circle` — so it spilled
+     out and got squeezed. It is named `.tb-avatar` here now so the
+     two can no longer reach each other.
+   · `.avatar-status` had no styling at all — it was a dead element.
    ============================================================ */
 
 .topbar .dropdown-menu {
-    /* Sapat para sa karaniwang buong pangalan sa isang linya; may
-       ellipsis pa rin ang sobrang haba (tingnan ang .tb-user-info). */
+    /* Enough for a typical full name on one line; anything longer
+       still gets an ellipsis (see .tb-user-info). */
     min-width: 268px;
     max-width: 320px;
     padding: 8px;
@@ -30,7 +29,7 @@
     box-shadow: 0 18px 45px rgba(0, 0, 0, .55);
 }
 
-/* ─── Ulo: sino ang naka-login ────────────────────────────── */
+/* ─── Header: who is signed in ────────────────────────────── */
 .topbar .user-dropdown-header {
     padding: 0;
 }
@@ -57,8 +56,8 @@
     border: 2px solid rgba(255, 255, 255, .12);
 }
 
-/* Berdeng tuldok na "naka-online" — may span na para dito sa
-   topBar.php pero wala itong estilo noon, kaya hindi lumalabas. */
+/* The green "online" dot — topBar.php already had a span for it,
+   but it carried no styling, so nothing showed. */
 .topbar .tb-status {
     position: absolute;
     right: 1px;
@@ -79,8 +78,8 @@
     font-size: .92rem;
     font-weight: 700;
     color: #f1f5f9;
-    /* Isang linya lang — ang mahabang pangalan ay pinuputol, hindi
-       pinapasalansan hanggang tumaas ang buong kahon. */
+    /* One line only — a long name is truncated rather than stacked
+       until the whole box grows taller. */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -101,7 +100,7 @@
     border: 1px solid rgba(102, 126, 234, .3);
 }
 
-/* ─── Mga item ────────────────────────────────────────────── */
+/* ─── Items ───────────────────────────────────────────────── */
 .topbar .dropdown-divider {
     margin: 6px 2px;
     border-color: rgba(255, 255, 255, .08);
@@ -124,8 +123,8 @@
     font-size: 1rem;
     text-align: center;
     color: #94a3b8;
-    /* Ang `me-2` ng markup ay hinahalinhan ng gap sa itaas para
-       pantay ang agwat ng lahat ng item. */
+    /* The markup's `me-2` is superseded by the gap above so every
+       item is spaced identically. */
     margin-right: 0 !important;
     transition: color .18s ease;
 }
@@ -140,8 +139,8 @@
     color: #a5b4fc;
 }
 
-/* Ang paglabas ay hiwalay sa mga karaniwang aksyon — pula pa rin
-   ang teksto pero may sariling wash kapag hi-nover. */
+/* Signing out is set apart from the ordinary actions — the text
+   stays red, with a wash of its own on hover. */
 .topbar .dropdown-item.text-danger {
     color: #f87171 !important;
 }
@@ -159,7 +158,7 @@
     color: #fca5a5;
 }
 
-/* ─── Ang pindutan sa topbar mismo ────────────────────────── */
+/* ─── The trigger in the topbar itself ────────────────────── */
 .topbar .profile {
     gap: 0;
     padding: 4px 10px 4px 4px;
@@ -183,14 +182,13 @@
     }
 }
 
-/* ─── Brand sa topbar ─────────────────────────────────────────
-   Nakatago sa desktop: nasa sidebar na ang logo at pangalan doon.
+/* ─── Brand in the topbar ─────────────────────────────────────
+   Hidden on desktop: the logo and name already live in the sidebar.
 
-   Lumalabas ito sa ≤992px — doon nagiging off-canvas ang sidebar
-   (`transform: translateX(-100%)` sa mobile.css), kaya nawawala
-   ang tanging lugar kung saan makikita ang pagkakakilanlan ng
-   sistema. Walang laman ang gitna ng topbar sa lahat ng lapad na
-   iyon.
+   It appears at ≤992px — that is where the sidebar goes off-canvas
+   (`transform: translateX(-100%)` in mobile.css), taking away the
+   only place the system's identity is visible. The middle of the
+   topbar is empty at all of those widths.
    ───────────────────────────────────────────────────────────── */
 
 .topbar .tb-brand {
@@ -199,11 +197,10 @@
 
 @media (max-width: 992px) {
     .topbar .tb-brand {
-        /* `flex: 1` at `center` — kinukuha nito ang natitirang
-           espasyo sa pagitan ng hamburger at ng avatar at doon
-           isinesentro ang sarili. Ang `space-between` lang ay
-           ilalagay ito sa gitna ng dalawang bagay na magkaibang
-           lapad, kaya bahagyang hindi nakasentro ang tingin. */
+        /* `flex: 1` plus `center` — it takes the space left between
+           the hamburger and the avatar and centers itself in that.
+           `space-between` alone would place it between two objects
+           of different widths, which reads as slightly off-center. */
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -220,15 +217,15 @@
         color: #fff;
     }
 
-    /* Kumakapit ang sukat sa lapad ng viewport sa halip na tumalon sa
-       mga breakpoint: ~13.6px sa 360px na telepono hanggang ~16.8px sa
-       992px, tuloy-tuloy. Ang `.74rem + .5vw` at hindi purong `vw` —
-       may kasamang `rem` ang formula kaya sumusunod pa rin ito sa
-       pinalaking font ng browser (accessibility), at hindi masyadong
-       matarik ang pagbabago.
+    /* The size tracks the viewport width instead of jumping at
+       breakpoints: ~13.6px on a 360px phone up to ~16.8px at 992px,
+       continuously. `.74rem + .5vw` rather than pure `vw` — the
+       formula includes a `rem` so it still follows the browser's
+       enlarged font setting (accessibility), and the change is not
+       too steep.
 
-       May mga acronym pa ring mahaba ("BCC SASQR v1.0") — putulin nang
-       tapat sa halip na itulak ang avatar palabas ng screen. */
+       Some acronyms still run long ("BCC SASQR v1.0") — truncate
+       honestly rather than push the avatar off screen. */
     .topbar .tb-brand span {
         min-width: 0;
         font-size: clamp(.85rem, .74rem + .5vw, 1.05rem);

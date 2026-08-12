@@ -1,12 +1,12 @@
-/* Dalawa ang gumagamit ng file na ito:
-     1. pages/daily_attendance.php  — student page, nakasentrong card
-     2. pages/generate_attendance_link.php — admin page, may sidebar
+/* Two pages use this file:
+     1. pages/daily_attendance.php  — student page, centered card
+     2. pages/generate_attendance_link.php — admin page, has a sidebar
 
-   Para sa (1) lang ang buong-page na pagsentro sa ibaba. Dati itong
-   hubad na `body`, kaya nakukuha rin ito ng (2) — at napipilitan itong
-   maglagay ng `style="display: block !important"` para kanselahin ang
-   flex. Ang 20px na padding ay hindi nakansela, kaya 40px ang nawawala
-   sa lapad ng admin page sa telepono. Naka-scope na ito ngayon. */
+   The full-page centering below is for (1) only. It used to be a bare
+   `body`, so (2) picked it up as well — and had to add
+   `style="display: block !important"` to cancel the flex. The 20px of
+   padding was never cancelled, costing the admin page 40px of width on
+   a phone. It is scoped now. */
 body.attendance-page {
     background-color: #0f172a;
     min-height: 100vh;
@@ -701,7 +701,7 @@ h5 {
    ATTENDANCE LINKS — MOBILE
    ============================================================ */
 
-/* Nananatiling "naka-hover" ang card pagkatapos tapikin sa touch. */
+/* On touch, the card stays stuck in its "hover" state after a tap. */
 @media (hover: none) {
     .link-card:hover {
         transform: none;
@@ -711,9 +711,9 @@ h5 {
 
 @media (max-width: 576px) {
 
-    /* Dating `btn-sm` lang: 31px ang taas — masyadong maliit para sa
-       daliri, lalo na ang trash na icon-only at hindi na maibabalik
-       kapag namali. 44px ang pinakamaliit na inirerekomenda. */
+    /* This was just `btn-sm`: 31px tall — too small for a finger,
+       especially the trash, which is icon-only and cannot be undone
+       if hit by mistake. 44px is the recommended minimum. */
     .link-card .btn {
         min-height: 44px;
         padding-top: 0;
@@ -723,8 +723,8 @@ h5 {
         justify-content: center;
     }
 
-    /* Copy / Test / QR: pantay-pantay at pinupuno ang isang hanay.
-       Ang trash ay may sariling sukat sa dulo. */
+    /* Copy / Test / QR: equal widths filling one row. The trash keeps
+       its own size at the end. */
     .link-card .d-flex.flex-wrap>.btn:not(.btn-outline-danger) {
         flex: 1 1 0;
         min-width: 0;
@@ -734,13 +734,13 @@ h5 {
         min-width: 48px;
     }
 
-    /* `break-all` dati: pinupuno nito ang bawat linya kaya naghahati sa
-       gitna ng salita ("…/pa" + "ges/…"). Sa `break-word`, ginagamit
-       muna ang mga pinapayagang hatian — ang <wbr> na inilalagay ng
-       wbrUrl() sa generate_link.js pagkatapos ng bawat / ? = & — at
-       sa gitna lang humahati kung talagang hindi kasya.
-       (Hindi `anywhere`: pinupuno rin nito ang linya tulad ng
-       break-all, kaya babalik ang parehong problema.) */
+    /* This was `break-all`: it packs every line full and so breaks
+       mid-word ("…/pa" + "ges/…"). With `break-word` the allowed
+       break points are used first — the <wbr>s that wbrUrl() in
+       generate_link.js inserts after every / ? = & — and it only
+       breaks mid-word when nothing else fits.
+       (Not `anywhere`: that packs the line like break-all does, which
+       brings the same problem back.) */
     .link-display {
         word-break: normal;
         overflow-wrap: break-word;
@@ -749,8 +749,8 @@ h5 {
         padding: 10px 12px;
     }
 
-    /* Puno ng lapad ang search at mga filter — walang halagang
-       ipagsiksikan ang mga ito sa telepono. */
+    /* The search and filters run full width — there is nothing to be
+       gained by cramming them together on a phone. */
     .search-wrap,
     #filterSection,
     #filterOwner {
@@ -761,9 +761,10 @@ h5 {
         gap: .75rem !important;
     }
 
-    /* Doble ang padding: may `.card { padding: 20px }` ang app at may
-       sariling padding din ang `.card-body` sa loob. Sa telepono, 40px
-       pa iyon na nawawala sa laman ng card. Sa .card-body na lang. */
+    /* The padding was doubled: the app has `.card { padding: 20px }`
+       and the `.card-body` inside carries padding of its own. On a
+       phone that costs the card 40px of content. Keep it on
+       .card-body only. */
     .link-card {
         padding: 0;
     }

@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
-    // Delete lahat, walang WHERE filter
+    // Delete everything, no WHERE filter
     $sql = "DELETE FROM attendance_tbl";
     $stmt = $conn->prepare($sql);
 

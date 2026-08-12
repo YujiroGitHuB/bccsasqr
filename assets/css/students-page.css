@@ -1,19 +1,18 @@
 /* ============================================================
    STUDENTS PAGE
 
-   Kulay: sky/cyan (#0ea5e9 → #06b6d4). Malamig pa rin kaya
-   kapamilya ng indigo ng sidebar at dashboard, nasa bokabularyo
-   na ng app (#38bdf8 sa QR Generator at Terms), at — ang
-   pinakamahalaga — WALA itong ibig sabihin sa estado. Ang berde,
-   amber, at pula ay nakalaan na sa Active/Present, babala, at
-   Disabled/Absent; kung isa sa mga iyon ang gagawing identidad ng
-   page, makikipag-agawan ito sa mga totoong badge sa talahanayan.
+   Color: sky/cyan (#0ea5e9 → #06b6d4). Still cool, so it is family
+   with the indigo of the sidebar and dashboard; already in the
+   app's vocabulary (#38bdf8 in the QR Generator and Terms); and —
+   most importantly — it carries NO status meaning. Green, amber and
+   red are already reserved for Active/Present, warning, and
+   Disabled/Absent; making one of those the page's identity would
+   put it in competition with the real badges in the table.
 
-   Ang hanay ng butones dati ay apat na hilaw na kulay ng Bootstrap
-   (info, warning, danger, primary) na magkakatabi — pantay-pantay
-   silang sumisigaw, kaya kasingtingkad ng "Add Student" ang
-   "Delete All". Isang punong butones na lang ngayon; tahimik na
-   tinted ang iba.
+   The button row used to be four raw Bootstrap colors (info,
+   warning, danger, primary) side by side — all shouting equally, so
+   "Delete All" was as loud as "Add Student". There is one primary
+   button now; the rest are quietly tinted.
    ============================================================ */
 
 .stud-page {
@@ -139,11 +138,10 @@
     flex-wrap: wrap;
 }
 
-/* ─── Mga butones ─────────────────────────────────────────── */
-/* Nakikita na palagi ang label. Ang lumang `.btn-icon` ay
-   itinatago ito hanggang sa hi-nover — kaya magkatabi ang dalawang
-   magkamukhang pulang trash icon na walang pagkakaiba hangga't
-   hindi mo dinadaanan ng mouse. */
+/* ─── Buttons ─────────────────────────────────────────────── */
+/* The label is always visible. The old `.btn-icon` hid it until
+   hover — leaving two identical red trash icons side by side with
+   nothing to tell them apart until the mouse passed over. */
 .stud-page .stud-btn {
     display: inline-flex;
     align-items: center;
@@ -163,7 +161,7 @@
     margin-left: 0;
 }
 
-/* Ang tanging punong aksyon sa page. */
+/* The only primary action on the page. */
 .stud-page .stud-btn.primary {
     color: #fff;
     border: none;
@@ -177,7 +175,7 @@
     box-shadow: 0 10px 22px rgba(14, 165, 233, .4);
 }
 
-/* Pangalawang aksyon: nakikita pero hindi sumisigaw. */
+/* Secondary action: visible, but not shouting. */
 .stud-page .stud-btn.ghost {
     color: #cbd5e1;
     background: rgba(255, 255, 255, .05);
@@ -189,8 +187,8 @@
     color: #fff;
 }
 
-/* Mapanirang aksyon: pula ang teksto, hindi ang buong bloke —
-   hindi ito dapat ang unang mahuli ng mata sa page. */
+/* Destructive action: the text is red, not the whole block — this
+   should not be the first thing the eye lands on. */
 .stud-page .stud-btn.danger {
     color: #f87171;
     background: rgba(239, 68, 68, .1);
@@ -202,8 +200,8 @@
     color: #fca5a5;
 }
 
-/* Lumalabas lang kapag may napiling row — amber, dahil bilang ito
-   ng napili at hindi ang "buburahin lahat". */
+/* Only appears once rows are selected — amber, because it is a
+   count of what is selected rather than "delete everything". */
 .stud-page .stud-btn.warn {
     color: #fcd34d;
     background: rgba(245, 158, 11, .12);
@@ -240,8 +238,8 @@
     border-bottom: 1px solid rgba(255, 255, 255, .05);
 }
 
-/* Ang `table-striped` ay nagdaragdag ng sariling background kada
-   isang hanay — sa madilim na card ay guhit-guhit ang labas. */
+/* `table-striped` adds a background of its own to every other row
+   — on a dark card that just comes out as stripes. */
 .stud-page #stud_tbl.table-striped>tbody>tr:nth-of-type(odd)>* {
     --bs-table-accent-bg: transparent;
     background-color: transparent;
@@ -256,11 +254,10 @@
     color: var(--stud-ink) !important;
 }
 
-/* Mga aksyon kada hanay: malambot na tinted na kahon sa halip na
-   matingkad na solid na berde at pula. Sa 1,762 na hanay, ang
-   solidong bloke ay 3,524 na sumisigaw na kulay sa isang page —
-   sila ang unang nakikita, hindi ang mismong pangalan. Ginagawa ng
-   datatables.js ang mga butones na ito bilang .btn-success at
+/* Per-row actions: soft tinted boxes instead of bright solid green
+   and red. Across 1,762 rows, solid blocks mean 3,524 shouting
+   patches of color on one page — they get seen before the names do.
+   datatables.js renders these buttons as .btn-success and
    .btn-danger. */
 .stud-page td .btn-sm {
     display: inline-flex;
@@ -297,7 +294,7 @@
     color: #f87171;
 }
 
-/* ─── Mga kontrol ng DataTables ───────────────────────────── */
+/* ─── DataTables controls ─────────────────────────────────── */
 .stud-page .dataTables_wrapper .dataTables_filter input,
 .stud-page .dataTables_wrapper .dataTables_length select {
     background: #0f0f13;
@@ -337,8 +334,8 @@
     color: #fff;
 }
 
-/* Ang mga export button ng DataTables ay sumasabay sa parehong
-   tahimik na estilo ng toolbar. */
+/* DataTables' export buttons follow the same quiet toolbar
+   styling. */
 .stud-page .dt-buttons .btn {
     background: rgba(255, 255, 255, .05);
     border: 1px solid rgba(255, 255, 255, .12);

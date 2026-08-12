@@ -25,11 +25,11 @@ if ($locked) {
     <div id="particles-js"></div>
 
     <div class="trk-shell">
-        <!-- Hero — kapareho ng anyo ng QR Generator at ng mga admin
-             page (.stud-hero): guhit na gradient sa itaas, tile na
-             icon, pamagat, at mga chip. Dating isang GIF mula sa CDN
-             ng flaticon ang logo, at ang subtitle ay isang <h3> na
-             sumusunod agad sa <h1> — butas sa hanay ng heading. -->
+        <!-- Hero — the same shape as the QR Generator and the admin
+             pages (.stud-hero): a gradient rule on top, an icon tile,
+             the title, and chips. The logo used to be a GIF from the
+             flaticon CDN, and the subtitle was an <h3> following
+             straight after the <h1> — a gap in the heading order. -->
         <header class="trk-hero">
             <div class="trk-hero-icon">
                 <img src="../<?php echo $systemLogo; ?>" alt="" width="34" height="34">
@@ -59,7 +59,7 @@ if ($locked) {
                     placeholder="019-464"
                     inputmode="numeric"
                     autocomplete="off">
-                <!-- Kasunod ng input para umubra ang `:focus ~ .search-icon` -->
+                <!-- After the input so `:focus ~ .search-icon` works -->
                 <i class="bi bi-hash search-icon"></i>
                 <div class="search-status">
                     <span class="status-idle">Type to search</span>
@@ -74,14 +74,14 @@ if ($locked) {
 
             <span class="field-hint">The search runs on its own — no need to press anything.</span>
 
-            <!-- Nasa ilalim na ng input ang mensahe. Sa itaas, ang
-                 pagsulpot nito ang nagtutulak sa patlang pababa
-                 habang tumitipa ka. -->
+            <!-- The message sits below the input now. Above it, its
+                 appearing pushed the field down while you were
+                 typing. -->
             <div id="messageContainer" class="message-container"></div>
         </section>
 
-        <!-- Naghihintay na estado: blangko ang bahaging ito noon
-             hanggang sa unang paghahanap. -->
+        <!-- Waiting state: this part used to be blank until the first
+             search. -->
         <div id="trkPlaceholder" class="trk-placeholder">
             <i class="bi bi-calendar2-check"></i>
             <h2>No record shown yet</h2>

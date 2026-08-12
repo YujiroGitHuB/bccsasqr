@@ -1,16 +1,15 @@
 /* ============================================================
    DASHBOARD
 
-   Ang lumang disenyo ay mas maraming dekorasyon kaysa datos: sa
-   bawat section card ay may 90px na lumulutang na bilog at pulse
-   ring na walang sinasabing impormasyon, habang ang mga totoong
-   numero ay nakatago sa loob ng isang collapse. Sa 26 na section
-   ay 52 na walang-hanggang animation ang sabay-sabay tumatakbo —
-   mabigat iyon sa telepono.
+   The old design carried more decoration than data: every section
+   card had a 90px floating circle and a pulse ring that said
+   nothing, while the real numbers were hidden inside a collapse.
+   Across 26 sections that is 52 endless animations running at
+   once — heavy on a phone.
 
-   Dito, ang numero ang laman ng card at ang kulay ay palatandaan
-   lang. Naka-scope lahat sa `.dash-page`; hindi ginagamit ng ibang
-   page ang mga pangalang may `dash-` na unlapi.
+   Here the number is the card's content and color is only a
+   marker. Everything is scoped to `.dash-page`; no other page uses
+   the `dash-` prefixed names.
    ============================================================ */
 
 .dash-page {
@@ -141,9 +140,9 @@
 }
 
 /* ─── Toolbar (pamagat ng view + petsa) ───────────────────── */
-/* Dating tatlong magkakapatong na kahon ang nagsasabi ng iisang
-   bagay: "Filter Overview" header, ang date panel, at ang
-   "Currently Viewing" card. Isang hanay na lang sila ngayon. */
+/* This used to be three stacked boxes saying the same thing: a
+   "Filter Overview" header, the date panel, and the "Currently
+   Viewing" card. They are one row now. */
 .dash-page .dash-toolbar {
     display: flex;
     align-items: center;
@@ -402,9 +401,8 @@
     color: var(--dash-muted);
 }
 
-/* Kasama na sa taas ang banda ng x-axis — kung ang plot lang ang
-   sinukat, may sariling maliit na scroll ang card at naipuputol
-   ang mga label ng petsa. */
+/* The height includes the x-axis band — measuring only the plot
+   gives the card its own small scroll and clips the date labels. */
 .dash-page .dash-chart {
     position: relative;
     height: 240px;
@@ -416,7 +414,7 @@
     }
 }
 
-/* ─── Table view (ang kambal ng chart) ────────────────────── */
+/* ─── Table view (the chart's twin) ───────────────────────── */
 .dash-page .dash-table-view {
     margin-top: .9rem;
     border-top: 1px solid rgba(255, 255, 255, .06);
@@ -466,7 +464,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, .04);
 }
 
-/* Naka-hanay na hanay ng numero — dito lang bagay ang tabular. */
+/* An aligned column of figures — the one place tabular fits. */
 .dash-page .dash-table-view td:last-child,
 .dash-page .dash-table-view th:last-child {
     text-align: right;
@@ -555,10 +553,10 @@
     margin-bottom: .9rem;
 }
 
-/* Ang kulay ng section ay palatandaan lang para madaling makilala
-   ang card sa mahabang listahan — hindi na ito 90px na bilog. */
-/* Ang --tag* ay ibinibigay ng PHP bilang tunay na rgba() at hindi
-   sa pamamagitan ng color-mix(), na wala pa sa mga lumang browser. */
+/* The section color is only a marker, so a card can be picked out
+   of a long list — no longer a 90px circle. */
+/* PHP hands --tag* over as real rgba() values rather than going
+   through color-mix(), which older browsers do not have. */
 .dash-page .dash-tag {
     display: inline-flex;
     align-items: center;
@@ -617,8 +615,8 @@
     color: #fbbf24;
 }
 
-/* Ang engagement ay ratio — mas mabilis basahin bilang bar
-   kaysa bilang numero lang. */
+/* Engagement is a ratio — quicker to read as a bar than as a bare
+   number. */
 .dash-page .dash-engage {
     margin-bottom: .85rem;
 }
@@ -640,7 +638,7 @@
     background: linear-gradient(90deg, #06b6d4, #67e8f9);
 }
 
-/* ─── Mapipindot na risk pill ─────────────────────────────── */
+/* ─── Clickable risk pill ─────────────────────────────────── */
 .dash-page .dash-risks {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -977,8 +975,8 @@
     }
 }
 
-/* Ang paggalaw ay dekorasyon lang dito — kaya kayang isuko nang
-   buo para sa mga gumagamit na nasasakit ang ulo sa animation. */
+/* Motion is purely decorative here — so it can be given up
+   entirely for users who get headaches from animation. */
 @media (prefers-reduced-motion: reduce) {
 
     .dash-page *,

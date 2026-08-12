@@ -1,6 +1,6 @@
-// Delegated: ginagawa na ng DataTables ang mga row mula sa JSON, kaya
-// wala pang buton sa DOM kapag na-load ang script na ito — at nagbabago
-// ang mga row tuwing lumilipat ng page o naghahanap.
+// Delegated: DataTables builds the rows from JSON, so no button is in
+// the DOM yet when this script loads — and the rows change on every
+// page move or search.
 document.addEventListener('click', function (e) {
     const button = e.target.closest('.btn-deletes');
     if (button) {
@@ -48,9 +48,9 @@ document.addEventListener('click', function (e) {
                             });
 
                             // Smoothly remove the row from table.
-                            // Kailangang dumaan sa DataTables API — kung ang <tr>
-                            // lang ang tatanggalin, nasa internal data pa rin ito
-                            // at muling lilitaw pagkalipat ng page o paghahanap.
+                            // Must go through the DataTables API — removing only
+                            // the <tr> leaves it in the internal data, and it
+                            // reappears on the next page change or search.
                             const row = document.getElementById('row-' + studentId);
                             if (row) {
                                 row.classList.add('animate__animated', 'animate__fadeOut');

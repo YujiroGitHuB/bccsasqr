@@ -54,7 +54,7 @@ $has_subjects  = count($user_subjects) > 0;
 $subject_names = array_values($user_subjects);
 
 // ── Sections ──────────────────────────────────────────────
-// ✅ FIXED: CONCAT course + section para maging "BSIT-1A"
+// ✅ FIXED: CONCAT course + section to form "BSIT-1A"
 $user_sections = [];
 if ($role === 'admin') {
     // Admin sees all sections
@@ -90,16 +90,15 @@ $view_mode       = (isset($_GET['view']) && in_array($_GET['view'], ['sections',
 $can_switch_view = ($has_subjects && $has_sections) || ($role === 'admin' && $has_subjects);
 
 // ── Top Metrics ───────────────────────────────────────────
-// Ang $trend_where ay ang KAPAREHONG saklaw ng mga bilang sa itaas.
-// Iisang pinagmumulan para hindi magkaiba ang sinasabi ng KPI at ng
-// trend chart sa ilalim nito.
+// $trend_where is the SAME scope as the counts above. One source, so
+// the KPIs and the trend chart below them can never disagree.
 $trend_where = null;
 
 if ($view_mode === 'sections') {
     if ($role === 'admin') {
         $totalStudent          = $conn->query("SELECT COUNT(DISTINCT student_no) AS total FROM students_tbl WHERE user_id = '$user_id'")->fetch_assoc()['total'];
-        // Isang scan na lang ng attendance_tbl para sa dalawang bilang —
-        // magkapareho ang WHERE, ang petsa lang ang idinaragdag.
+        // A single scan of attendance_tbl for both counts — the WHERE
+        // is identical, only the date is added.
         $m = $conn->query("
             SELECT COUNT(DISTINCT student_no) AS total,
                    COUNT(DISTINCT CASE WHEN DATE(date) = '$selected_date' THEN student_no END) AS present
@@ -114,7 +113,7 @@ if ($view_mode === 'sections') {
         $sections_in           = "'" . implode("','", array_map(fn($s) => $conn->real_escape_string($s), $user_sections)) . "'";
         $totalStudent          = $conn->query("SELECT COUNT(DISTINCT student_no) as total FROM students_tbl WHERE CONCAT(course,'-',section) IN ($sections_in)")->fetch_assoc()['total'];
         // ✅ FIXED: attendance_tbl.section stores raw "1A" — use CONCAT to match "BSIT-1A"
-        // Pinagsama sa isang scan — magkapareho ang WHERE, petsa lang ang dagdag.
+        // Merged into one scan — identical WHERE, only the date added.
         $m = $conn->query("
             SELECT COUNT(DISTINCT student_no) AS total,
                    COUNT(DISTINCT CASE WHEN DATE(date) = '$selected_date' THEN student_no END) AS present
@@ -130,7 +129,7 @@ if ($view_mode === 'sections') {
 } else {
     if ($has_subjects) {
         $subjects_in           = "'" . implode("','", array_map(fn($s) => $conn->real_escape_string($s), $subject_names)) . "'";
-        // Pinagsama sa isang scan — magkapareho ang WHERE, petsa lang ang dagdag.
+        // Merged into one scan — identical WHERE, only the date added.
         $m = $conn->query("
             SELECT COUNT(DISTINCT student_no) AS total,
                    COUNT(DISTINCT CASE WHEN DATE(date) = '$selected_date' THEN student_no END) AS present
@@ -161,23 +160,23 @@ function getYearLevel(string $full_section): string {
 }
 
 // ============================================================
-//  ATTENDANCE TREND (14 araw hanggang sa napiling petsa)
+//  ATTENDANCE TREND (14 days up to the selected date)
 //
-//  Ito ang tanging tanong na hindi kayang sagutin ng mga numero
-//  sa itaas: snapshot lahat sila ng iisang araw. Ang linya ang
-//  nagsasabi kung pataas o pababa.
+//  This is the one question the numbers above cannot answer: they
+//  are all a snapshot of a single day. The line says whether things
+//  are going up or down.
 //
-//  BILANG ng estudyanteng nag-scan ang ipinapakita, hindi
-//  porsyento: ang denominador ay 1,762 estudyante samantalang
-//  iilang section lang ang may klase kada araw — magmumukhang
-//  bumagsak sa 5% ang attendance gayong hindi naman.
+//  It shows the COUNT of students who scanned, not a percentage:
+//  the denominator would be 1,762 students while only a handful of
+//  sections have class on any given day — attendance would look
+//  like it had collapsed to 5% when it had not.
 // ============================================================
 $trend_from   = date('Y-m-d', strtotime($selected_date . ' -13 days'));
 $trend_series = [];   // ['label' => ..., 'iso' => ..., 'value' => int]
-$trend_days   = 0;    // ilang araw ang may kahit isang scan
+$trend_days   = 0;    // how many days had at least one scan
 
 if ($trend_where !== null) {
-    // Isang query lang; may idx_section_date(date) ang attendance_tbl.
+    // A single query; attendance_tbl has idx_section_date(date).
     $tq = $conn->query("
         SELECT DATE(date) AS d, COUNT(DISTINCT student_no) AS n
         FROM attendance_tbl
@@ -193,9 +192,9 @@ if ($trend_where !== null) {
         }
     }
 
-    // Punuin ang buong kalendaryo: ang araw na walang scan ay tunay
-    // na zero, at pantay-pantay dapat ang agwat ng mga tuldok sa x —
-    // ang linyang laktaw-laktaw ang petsa ay nagsisinungaling.
+    // Fill the whole calendar: a day with no scans is a genuine
+    // zero, and the points must be evenly spaced on x — a line that
+    // skips dates lies.
     for ($i = 13; $i >= 0; $i--) {
         $iso = date('Y-m-d', strtotime($selected_date . " -$i days"));
         $val = $byDate[$iso] ?? 0;
@@ -210,15 +209,15 @@ if ($trend_where !== null) {
     }
 }
 
-// Dalawang araw ang pinakamababa bago may masabing "trend" —
-// ang isang tuldok ay hindi linya.
+// Two days is the minimum before there is any "trend" to speak of —
+// a single point is not a line.
 $trend_ready = $trend_days >= 2;
 
-// ── Helper: matatag na kulay kada section ────────────────────
-// Palatandaan lang ito para mabilis makilala ang isang card sa
-// mahabang listahan. Ang lumang palette ay may mga pastel (hal.
-// #a8edea, #fed6e3) na halos hindi na mabasa ang puting teksto —
-// mga tinting na akma sa madilim na background na lang ang natira.
+// ── Helper: a stable color per section ───────────────────────
+// Only a marker, so a card can be picked out quickly in a long
+// list. The old palette held pastels (e.g. #a8edea, #fed6e3) that
+// left white text almost unreadable — only tints that suit a dark
+// background remain.
 function sectionAccent(string $section): array {
     $palette = [
         [102, 126, 234],  // indigo
@@ -381,9 +380,9 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
         <div class="container-fluid p-0">
 
             <!-- ── KPI ────────────────────────────────────────────
-                 Ang ikalawa at ikatlong card ay ratio, kaya isinusulat
-                 na rin ang porsyento — ang bar lang dati ang nagsasabi
-                 niyon at kailangan pang tantiyahin ng mata. -->
+                 The second and third cards are ratios, so the
+                 percentage is spelled out — only the bar carried that
+                 before, and the eye had to estimate it. -->
             <?php
             $scanRate    = $totalStudent  > 0 ? round($totalStudents / $totalStudent * 100) : 0;
             $presentRate = $totalStudents > 0 ? round($presentOnSelectedDate / $totalStudents * 100) : 0;
@@ -435,9 +434,9 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
             </div>
 
             <!-- ── Toolbar: pamagat ng view + petsa ───────────────
-                 Dating tatlong kahon ito: "Filter Overview" header,
-                 ang date panel, at ang "Currently Viewing" card —
-                 pare-parehong sinasabi kung anong petsa ang tinitingnan. -->
+                 This used to be three boxes: a "Filter Overview"
+                 header, the date panel, and the "Currently Viewing"
+                 card — all saying which date is being looked at. -->
             <div class="dash-toolbar">
                 <div class="dash-toolbar-title">
                     <i class="bi bi-clipboard-data"></i>
@@ -472,10 +471,10 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
             </div>
 
             <!-- ── Attendance trend ───────────────────────────────
-                 Nasa ILALIM ng toolbar dahil ang date filter sa itaas
-                 ang nagtatakda ng dulo ng 14-araw na bintana — ang
-                 kontrol ay dapat nasa ibabaw ng lahat ng sinasaklaw
-                 nito, at walang hiwalay na filter sa loob ng card. -->
+                 BELOW the toolbar, because the date filter above sets
+                 the end of the 14-day window — a control belongs above
+                 everything it governs, and there is no separate filter
+                 inside the card. -->
             <section class="dash-trend">
                 <div class="dash-trend-head">
                     <div>
@@ -494,8 +493,8 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                             aria-label="Line chart of students who scanned per day over 14 days. Exact values are in the table below."></canvas>
                     </div>
 
-                    <!-- Ang tooltip ay pandagdag lang, hindi tanging
-                         daan papunta sa halaga — narito ang buong datos. -->
+                    <!-- The tooltip is supplementary, not the only route
+                         to the value — the full data is here. -->
                     <details class="dash-table-view">
                         <summary>Show as table</summary>
                         <table>
@@ -625,8 +624,9 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                                             </div>
                                         <?php endif; ?>
 
-                                        <!-- Ang tatlong bilang na ito ang laman ng card at hindi na
-                                             nakatago sa loob ng collapse — iyon ang unang tinitingnan. -->
+                                        <!-- These three figures are the card's content, no longer
+                                             hidden inside a collapse — they are what gets looked at
+                                             first. -->
                                         <div class="dash-mini">
                                             <div>
                                                 <b><?= number_format($total) ?></b>
@@ -653,7 +653,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                                         <div class="dash-risks">
                                             <a href="#" class="dash-risk warn"
                                                 onclick="viewAbsences('<?= htmlspecialchars($section) ?>',3); return false;"
-                                                title="Tingnan at i-export ang listahan">
+                                                title="View and export the list">
                                                 <i class="bi bi-exclamation-circle-fill"></i>
                                                 <span class="n">
                                                     <b><?= number_format($students_3_absences) ?></b>
@@ -662,7 +662,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                                             </a>
                                             <a href="#" class="dash-risk crit"
                                                 onclick="viewAbsences('<?= htmlspecialchars($section) ?>',5); return false;"
-                                                title="Kritikal — tingnan at i-export">
+                                                title="Critical — view and export">
                                                 <i class="bi bi-x-octagon-fill"></i>
                                                 <span class="n">
                                                     <b><?= number_format($students_5_absences) ?></b>
@@ -762,8 +762,8 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                                             <small><?= number_format($total_students) ?> students</small>
                                         </div>
 
-                                        <!-- Mapipindot pa rin ang dalawang tile para sa listahan;
-                                             ang pang-PDF ay hiwalay na nasa ilalim. -->
+                                        <!-- Both tiles are still clickable for the list; the PDF
+                                             action sits separately below. -->
                                         <div class="dash-splits">
                                             <a href="#" class="dash-split present"
                                                 onclick="viewAttendance('<?= htmlspecialchars($subject) ?>','<?= htmlspecialchars($section) ?>','present','<?= $selected_date ?>'); return false;">
@@ -934,9 +934,9 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
 
                 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-                // Ang halaga sa dulo ay direktang nilalagyan ng label —
-                // isa lang, hindi lahat ng tuldok (magulo iyon at hindi
-                // nababasa). Ang axis at tooltip ang bahala sa iba.
+                // The final value gets a direct label — just the one,
+                // not every point (that is noisy and unreadable). The
+                // axis and tooltip cover the rest.
                 const endLabel = {
                     id: 'endLabel',
                     afterDatasetsDraw(chart) {
@@ -964,7 +964,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                         datasets: [{
                             data: points.map(p => p.value),
                             borderColor: SERIES,
-                            // Wash lang ang fill (~10%), hindi solidong bloke.
+                            // The fill is a wash (~10%), not a solid block.
                             backgroundColor: 'rgba(102,126,234,.10)',
                             fill: true,
                             borderWidth: 2,
@@ -973,8 +973,8 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                             tension: .25,
                             pointRadius: 4,
                             pointBackgroundColor: SERIES,
-                            // 2px na singsing sa kulay ng surface para
-                            // manatiling malinaw ang tuldok sa ibabaw ng linya.
+                            // A 2px ring in the surface color keeps the
+                            // point legible on top of the line.
                             pointBorderColor: SURFACE,
                             pointBorderWidth: 2,
                             pointHoverRadius: 6,
@@ -987,8 +987,8 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                         maintainAspectRatio: false,
                         animation: reduceMotion ? false : { duration: 500 },
                         layout: { padding: { top: 24, right: 14, left: 2, bottom: 2 } },
-                        // Isang series lang — ang pamagat sa itaas ang
-                        // nagsasabi kung ano ito, kaya walang legend box.
+                        // Only one series — the title above says what it
+                        // is, so there is no legend box.
                         plugins: {
                             legend: { display: false },
                             tooltip: {

@@ -95,11 +95,11 @@ try {
     $course = $student_data['course'];
 
     // ── 4b. Photo requirement ─────────────────────────────────────────────────
-    // Ang photo ang tanging biswal na patunay ng pagkakakilanlan sa scanner.
-    // Kapag naka-ON ang setting, hindi tumutuloy ang scan nang wala ito.
-    // Kapag OFF, tumutuloy pero may ipinapadalang babala sa scanner para
-    // alam ng instructor na hindi niya mapapatunayan kung sino ang harap
-    // niya. Naka-OFF ang default — tingnan ang migration para sa dahilan.
+    // The photo is the scanner's only visual proof of identity. With the
+    // setting ON, a scan does not go through without one. With it OFF the
+    // scan proceeds but a warning is sent to the scanner, so the
+    // instructor knows they cannot confirm who is in front of them. The
+    // default is OFF — see the migration for why.
     $photo_missing = empty($student_data['photo_path']);
 
     $require_photo = false;
@@ -220,8 +220,8 @@ try {
             'photo_url' => !empty($student_data['photo_path'])
                 ? '../' . $student_data['photo_path']
                 : null,
-            // Naipasok ang attendance, pero walang mukhang maipapakita —
-            // ipinaaalam sa scanner para makapagbabala ito.
+            // Attendance went in, but there is no face to show — tell the
+            // scanner so it can warn.
             'photo_missing' => $photo_missing,
         ]);
     } else {

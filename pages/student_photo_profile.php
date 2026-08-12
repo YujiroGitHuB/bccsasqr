@@ -82,13 +82,13 @@ $sectionStmt->close();
 <head>
     <?php include __DIR__ . "/../includes/header.php" ?>
     <?php
-    // Tinanggal ang tatlong webfont (Syne / JetBrains Mono / Outfit) at
-    // ang pangalawang kopya ng Bootstrap Icons: katutubong font stack
-    // ang ginagamit ng lahat ng ibang page, at naka-link na ang mga
-    // icon sa includes/header.php.
+    // Dropped the three webfonts (Syne / JetBrains Mono / Outfit) and
+    // the second copy of Bootstrap Icons: every other page uses the
+    // native font stack, and the icons are already linked in
+    // includes/header.php.
     ?>
     <link rel="stylesheet" href="<?= asset('../assets/css/studPhotoPofile.css') ?>">
-    <!-- Anyo ng spDelModal (.app-modal) -->
+    <!-- Styling for spDelModal (.app-modal) -->
     <link rel="stylesheet" href="<?= asset('../assets/css/modal-form.css') ?>">
 </head>
 <body>
@@ -96,7 +96,7 @@ $sectionStmt->close();
     <div class="content sp" id="content">
         <?php include("../components/topBar.php"); ?>
 
-        <!-- Hero — kaparehong hugis ng .stud-hero at .dash-hero -->
+        <!-- Hero — the same shape as .stud-hero and .dash-hero -->
         <div class="sp-hero">
             <div class="sp-hero-icon"><i class="bi bi-person-badge-fill"></i></div>
             <div class="sp-hero-text">
@@ -137,8 +137,8 @@ $sectionStmt->close();
                     <div class="sp-prog-lbl">Photo coverage</div>
                     <div class="sp-prog-pct"><?= $pct ?><small>%</small></div>
                 </div>
-                <!-- Ang lapad ay galing dito; walang base rule ang
-                     `.sp-fill` dati kaya laging bakante ang bar. -->
+                <!-- The width comes from here; `.sp-fill` had no base
+                     rule before, so the bar was always empty. -->
                 <div class="sp-track">
                     <div class="sp-fill" style="width: <?= $pct ?>%"></div>
                 </div>
@@ -203,10 +203,10 @@ $sectionStmt->close();
     </div>
 
     <!-- Delete Modal
-         Anyo: assets/css/modal-form.css (.app-modal). Dating may
-         sariling inline na estilo bawat elemento — kasama ang isang
-         'Syne' na ulo at dalawang butoneng magkasinglaki, kaya
-         magkapantay ang timbang ng Cancel at ng Remove. -->
+         Styling: assets/css/modal-form.css (.app-modal). Every element
+         used to carry its own inline style — including a 'Syne'
+         heading and two equally sized buttons, which gave Cancel and
+         Remove the same weight. -->
     <div class="modal fade app-modal" id="spDelModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">

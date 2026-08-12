@@ -133,9 +133,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <?php include __DIR__ . "/../components/footer.php"; ?>
 </div>
 
-<!-- Ang mga estilo ng sidebar ay nasa assets/css/sidebar.css na
-     (naka-link sa includes/header.php) — hindi na nakakalat sa
-     inline na <style> dito at sa dalawang bloke sa main.css. -->
+<!-- The sidebar's styles now live in assets/css/sidebar.css (linked
+     from includes/header.php) — no longer scattered across an inline
+     <style> here and two blocks in main.css. -->
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -171,10 +171,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
             collapseEl.classList.toggle('show', open);
 
-            // Ang paunang estado ay itinatakda nang diretso sa classList,
-            // kaya hindi nakikita ng Bootstrap ang pagbubukas at hindi
-            // nito naaayos ang sarili nitong `.collapsed`. Sarili nating
-            // klase ang ginagamit para sa direksyon ng caret.
+            // The initial state is written straight into the classList,
+            // so Bootstrap never sees the opening and does not keep its
+            // own `.collapsed` in step. Our own class drives the caret
+            // direction instead.
             const syncCaret = function(isOpen) {
                 if (!toggleEl) return;
                 toggleEl.classList.toggle('expanded', isOpen);
@@ -192,13 +192,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
             });
         });
 
-        // ── Tooltip para sa naka-collapse na rail ────────────────
-        // Ang `::after` na tooltip sa main.css ay hindi kailanman
-        // nakikita: `overflow-x: hidden` ang .sidebar, kaya naputol
-        // ito sa gilid ng 80px na rail. Ang naka-fixed na elemento sa
-        // <body> ay nakakalabas sa clip na iyon. Dito rin nakukuha ng
-        // mga submenu item ang pangalan nila — mga hubad na icon lang
-        // sila noon kapag naka-collapse.
+        // ── Tooltip for the collapsed rail ───────────────────────
+        // The `::after` tooltip in main.css is never visible: .sidebar
+        // is `overflow-x: hidden`, so it gets clipped at the edge of
+        // the 80px rail. A fixed element on <body> escapes that clip.
+        // It is also where submenu items get their names — they were
+        // bare icons when collapsed.
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
 
@@ -212,17 +211,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
         sidebar.addEventListener('mouseover', function(e) {
             const link = e.target.closest('.nav-link');
-            // Sa telepono ay buo ang mga label (mobile.css), kaya
-            // dagdag na kalat lang ang tooltip doon.
+            // On a phone the labels are shown in full (mobile.css), so
+            // a tooltip there is only extra clutter.
             if (!link || !sidebar.classList.contains('collapsed') || window.innerWidth <= 992) {
                 return hideTip();
             }
 
-            // `data-tip` at hindi `title`: ang katutubong tooltip ng
-            // browser ay lalabas din sa ibabaw ng sarili natin.
-            // Ang mga submenu item ay walang data-tip — ang sarili
-            // nilang teksto ang gamit (naka-`font-size: 0` sila kapag
-            // collapsed, pero nasa DOM pa rin ang teksto).
+            // `data-tip` rather than `title`: the browser's native
+            // tooltip would appear on top of ours. Submenu items have
+            // no data-tip — their own text is used (they are
+            // `font-size: 0` when collapsed, but the text is still in
+            // the DOM).
             const label = (link.getAttribute('data-tip') || link.textContent || '').trim();
             if (!label) return hideTip();
 

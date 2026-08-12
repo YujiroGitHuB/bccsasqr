@@ -1,14 +1,14 @@
 <?php
 // ============================================================
-//  save_user.php — paggawa at pag-edit ng user account
+//  save_user.php — creating and editing user accounts
 //
-//  Wala nitong katumbas noon: ang tanging paraan para magkaroon ng
-//  account ay ang pampublikong reg.php, at instructor lagi ang role
-//  na naibibigay noon. Walang paraan ang admin na mag-promote,
-//  magpalit ng email, o mag-reset ng nakalimutang password.
+//  There was no equivalent before: the only way to get an account
+//  was the public reg.php, and the role it handed out was always
+//  instructor. An admin had no way to promote anyone, change an
+//  email, or reset a forgotten password.
 //
-//  Iisang endpoint ang add at edit: pareho ang mga patakaran, ang
-//  password lang ang naiiba (kailangan sa bago, opsyonal sa edit).
+//  Add and edit share one endpoint: the rules are the same, only the
+//  password differs (required when new, optional on edit).
 // ============================================================
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -62,8 +62,8 @@ if ($password !== '' && strlen($password) < MIN_PASSWORD_LEN) {
     reply('warning', 'Password must be at least ' . MIN_PASSWORD_LEN . ' characters.');
 }
 
-// UNIQUE KEY ang email — mas malinaw ang sariling mensahe kaysa sa
-// hilaw na "Duplicate entry" mula sa MySQL.
+// email is a UNIQUE KEY — our own message is clearer than MySQL's
+// raw "Duplicate entry".
 $dupe = $conn->prepare("SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1");
 $dupe->bind_param("si", $email, $userId);
 $dupe->execute();
@@ -74,7 +74,7 @@ if ($taken) {
     reply('warning', 'That email is already used by another account.');
 }
 
-// ── Mga proteksyon sa pag-edit ──────────────────────────────
+// ── Guards on editing ───────────────────────────────────────
 if ($isEdit) {
     $cur = $conn->prepare("SELECT role, IFNULL(status,'active') as status FROM users WHERE id = ?");
     $cur->bind_param("i", $userId);
@@ -86,16 +86,15 @@ if ($isEdit) {
         reply('error', 'User not found.');
     }
 
-    // Hindi puwedeng i-demote ng admin ang sarili niya — sa isang
-    // admin na system, iyon ay permanenteng pagkawala ng akses sa
-    // Manage Users at Settings.
+    // An admin cannot demote themselves — in a one-admin system that
+    // means permanently losing access to Manage Users and Settings.
     if ($userId === (int)$_SESSION['user_id'] && $role !== $existing['role']) {
         reply('warning', 'You cannot change your own role.');
     }
 
-    // Dapat laging may natitirang isang aktibong admin. Kung hindi,
-    // walang makakapasok sa mga admin page — kahit ang pag-enable
-    // pabalik ay nangangailangan ng admin.
+    // At least one active admin must always remain. Otherwise nobody
+    // can reach the admin pages — even re-enabling one requires an
+    // admin.
     if ($existing['role'] === 'admin' && $role !== 'admin') {
         $left = (int) $conn->query("
             SELECT COUNT(*) as c FROM users
@@ -108,7 +107,7 @@ if ($isEdit) {
     }
 }
 
-// ── Ang mismong pag-save ────────────────────────────────────
+// ── The save itself ─────────────────────────────────────────
 if ($isEdit) {
 
     if ($password !== '') {
@@ -125,7 +124,7 @@ if ($isEdit) {
         ? 'User updated and password reset.'
         : 'User updated successfully.';
 
-    // Kung ang sarili ang na-edit, dapat sumabay ang topbar.
+    // If you edited yourself, the topbar has to follow.
     if ($ok && $userId === (int)$_SESSION['user_id']) {
         $_SESSION['user_name'] = $name;
     }

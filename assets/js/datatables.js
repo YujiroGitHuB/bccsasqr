@@ -78,8 +78,8 @@ $(document).ready(function () {
         var target = $(e.target).attr("data-bs-target");
 
         if (target === '#summary' && !summaryTableInitialized && $('#summaryTable').length) {
-            // Isang beses lang — kunin ang summary sa pag-bukas ng tab.
-            // Dati ay kasama na ito sa HTML ng bawat page load.
+            // Once only — fetch the summary when the tab is opened.
+            // It used to ship inside the HTML on every page load.
             summaryTableInitialized = true;
             $('#summaryTableLoader').show();
 
@@ -178,13 +178,13 @@ $(document).ready(function () {
     // STUDENT TABLE (#stud_tbl)
     // ================================================================
     if ($('#stud_tbl').length) {
-        // Ang mga row ay dumarating na bilang JSON mula sa
-        // get_students_ajax.php — mas magaan nang ~74% kaysa sa HTML,
-        // at ang DOM lang ng kasalukuyang page ang ginagawa ng DataTables.
+        // The rows arrive as JSON from get_students_ajax.php — about
+        // 74% lighter than HTML, and DataTables only builds the DOM
+        // for the current page.
         var escText = $.fn.dataTable.render.text();
 
-        // Para sa markup na binubuo natin mismo (checkbox at buton),
-        // kailangang i-escape ang halaga bago ipasok sa attribute.
+        // For markup built here by hand (the checkbox and buttons) the
+        // value has to be escaped before it goes into an attribute.
         var attr = function (v) {
             return String(v === null || v === undefined ? '' : v)
                 .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
@@ -224,9 +224,9 @@ $(document).ready(function () {
                 {
                     data: null,
                     render: function (row) {
-                        // data-* attributes sa halip na inline onclick: hindi
-                        // nasisira ng kudlit sa pangalan, at hindi umaasa sa
-                        // pag-escape ng PHP sa loob ng JS string.
+                        // data-* attributes instead of an inline onclick: an
+                        // apostrophe in a name cannot break it, and it does
+                        // not rely on PHP escaping inside a JS string.
                         return '<button class="btn btn-sm btn-success me-2 btn-edit-student"' +
                                ' data-id="'      + attr(row.id) + '"' +
                                ' data-no="'      + attr(row.student_no) + '"' +
@@ -240,7 +240,7 @@ $(document).ready(function () {
                 }
             ],
             createdRow: function (tr, data) {
-                // Umaasa ang delete at deleteSelected sa id na ito.
+                // delete and deleteSelected both rely on this id.
                 tr.id = 'row-' + data.id;
             },
             processing: true,
@@ -279,10 +279,10 @@ $(document).ready(function () {
     // ================================================================
     // OTHER TABLES
     // ================================================================
-    // Ang mensahe kapag walang laman ay dito ipinapasa at hindi
-    // isinisingit sa HTML ng page: ang isang <tr><td colspan> sa loob
-    // ng tbody ay binibilang ng DataTables bilang tunay na row, kaya
-    // hindi tugma ang bilang ng column at nasisira ang table.
+    // The empty message is passed here rather than injected into the
+    // page's HTML: a <tr><td colspan> inside the tbody is counted by
+    // DataTables as a real row, so the column count no longer matches
+    // and the table breaks.
     var emptyMsg = function (icon, title, hint) {
         return '<div class="empty-state">' +
                '<i class="bi bi-' + icon + '"></i>' +
@@ -309,10 +309,9 @@ $(document).ready(function () {
         });
     }
 
-    // Ang #usersTable ay hindi na dito ini-initialize: kailangan nito
-    // ng sarili nitong config (nakatagong search box, filter ng role at
-    // status) at nasa assets/js/userManagement.js na iyon. Kapag dalawang
-    // beses na-initialize ang isang table, "Cannot reinitialise" ang
-    // ibinabato ng DataTables.
+    // #usersTable is no longer initialised here: it needs its own
+    // config (hidden search box, role and status filters) and that
+    // lives in assets/js/userManagement.js. Initialising one table
+    // twice makes DataTables throw "Cannot reinitialise".
 
 });

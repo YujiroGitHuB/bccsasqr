@@ -1,28 +1,26 @@
 /* ============================================================
-   ATTENDANCE TRACKER — pahina ng estudyante
+   ATTENDANCE TRACKER — the student-facing page
 
-   Sinusunod na nito ang wika ng mga admin page (tingnan ang
-   students-page.css) at ng QR Generator: sky/cyan na tuldik
-   (#0ea5e9 → #06b6d4), madilim na ibabaw (#16161a), hero na may
-   guhit sa itaas, at mga chip na bilog. Iisang produkto na ang
-   nakikita ng estudyante mula sa pag-generate ng QR hanggang sa
-   pagtingin ng talaan.
+   Now speaks the same language as the admin pages (see
+   students-page.css) and the QR Generator: sky/cyan accent
+   (#0ea5e9 → #06b6d4), dark surfaces (#16161a), a hero with a rule
+   on top, and round chips. A student now sees one product, from
+   generating a QR through to checking their record.
 
-   Ang dating anyo ay may sariling bokabularyo: Times New Roman sa
-   buong katawan (samantalang native stack ang lahat ng ibang
-   pahina), lila-indigong gradient (#667eea / #764ba2 / #1a0b2e),
-   at isang neon na cyan (#00f0ff) na guhit sa ilalim ng header na
-   wala sa kahit saang ibang bahagi ng app. Ang mga kahon ng
-   subject ay may `border: 1px solid #e0e0e0` — maputing gilid sa
-   madilim na card, tira pa ng isang disenyong pang-puting pahina.
+   The old look had its own vocabulary: Times New Roman across the
+   whole body (while every other page used the native stack), a
+   violet-indigo gradient (#667eea / #764ba2 / #1a0b2e), and a neon
+   cyan (#00f0ff) rule under the header found nowhere else in the
+   app. The subject boxes carried `border: 1px solid #e0e0e0` — a
+   near-white edge on a dark card, left over from a design meant
+   for a white page.
 
-   ANG NAKALAAN NA KULAY — huwag gamiting palamuti:
-     berde  #10b981 → naitala / dumalo
-     amber  #f59e0b → babala
-     pula   #ef4444 → wala sa talaan, mali ang hinanap
-   Ang sky ay pagkakakilanlan lang ng pahina; wala itong ibig
-   sabihing estado, kaya hindi ito nakikipag-agawan sa mga nasa
-   itaas.
+   THE RESERVED COLORS — never use as decoration:
+     green  #10b981 → recorded / present
+     amber  #f59e0b → warning
+     red    #ef4444 → not on the list, wrong thing searched for
+   Sky is only the page's identity; it carries no status meaning,
+   so it does not compete with the three above.
    ============================================================ */
 
 .trk-page {
@@ -51,9 +49,9 @@
     --radius-sm: 10px;
 }
 
-/* Isang tipo ng letra para sa buong pahina. Native stack — walang
-   hinihintay na webfont mula sa CDN, kaya walang kisap ng
-   walang-letrang teksto sa mabagal na koneksiyon. */
+/* One typeface for the whole page. Native stack — no webfont to
+   wait on from a CDN, so no flash of unstyled text on a slow
+   connection. */
 .trk-page,
 .trk-page input,
 .trk-page button,
@@ -83,10 +81,10 @@ body.trk-page {
     overflow-x: hidden;
 }
 
-/* Ang particles ay dekorasyon lang — nasa likod ng lahat, at
-   katugma ng kulay ng katawan. Dating #2c2e43 ang kahon habang
-   lila naman ang body: kitang-kita ang tahi sa gilid ng screen
-   kapag mas mahaba ang pahina kaysa sa viewport. */
+/* The particles are decoration only — behind everything, matching
+   the body color. The box used to be #2c2e43 while the body was
+   violet: the seam was obvious at the edge of the screen whenever
+   the page ran longer than the viewport. */
 #particles-js {
     position: fixed;
     inset: 0;
@@ -258,9 +256,8 @@ body.trk-page {
     position: relative;
 }
 
-/* Ang tanging patlang na tinitipa sa pahina, kaya mas malaki ito
-   kaysa sa karaniwang input — isang tanong lang ang itinatanong
-   nito. */
+/* The only field you type into on this page, so it is larger than
+   a normal input — the page asks exactly one question. */
 .search-input {
     display: block;
     width: 100%;
@@ -317,10 +314,10 @@ body.trk-page {
     font-weight: 500;
 }
 
-/* Ang pagpapakita/pagtatago ay hawak ng klase sa wrapper, hindi ng
-   `style.display` mula sa JS — kung inline ang estilo, hindi na ito
-   kayang bawiin ng media query sa ibaba na nagtatago ng "Type to
-   search" sa makipot na telepono. */
+/* Showing and hiding is held by a class on the wrapper, not by
+   `style.display` from the JS — an inline style could not be won
+   back by the media query below that hides "Type to search" on a
+   narrow phone. */
 .status-checking {
     display: none;
     align-items: center;
@@ -355,12 +352,11 @@ body.trk-page {
     }
 }
 
-/* ─── Mensahe ng estado ───────────────────────────────────── */
-/* Nasa ilalim na ito ng input at hindi na sa itaas. Dati, ang
-   pagsulpot ng kahon ng mensahe ang nagtutulak sa mismong patlang
-   pababa habang tumitipa ka — gumagalaw ang target sa ilalim ng
-   daliri mo. Kaya rin may nakalaang 60px na butas doon kahit walang
-   mensahe. */
+/* ─── Status message ──────────────────────────────────────── */
+/* This sits below the input now, not above it. Previously the
+   message box appearing pushed the field itself down while you
+   were typing — the target moved under your finger. That is also
+   why 60px of space is reserved there even with no message. */
 
 .message-container:empty {
     display: none;
@@ -432,8 +428,8 @@ body.trk-page {
 }
 
 /* ─── Naghihintay na estado ───────────────────────────────── */
-/* Blangko ang ilalim ng pahina noon bago ka maghanap — mukhang
-   kalahating na-load ang pahina pagdating mo. */
+/* The bottom of the page used to be blank before you searched —
+   it looked half-loaded when you arrived. */
 
 .trk-placeholder {
     display: flex;
@@ -477,10 +473,9 @@ body.trk-page {
     animation: trk-rise .45s cubic-bezier(.2, .7, .3, 1) backwards;
 }
 
-/* Pagkakakilanlan ng estudyante. Dati, apat na hilerang
-   "Label: Halaga" ang lahat ng ito — pantay-pantay ang timbang ng
-   pangalan at ng section. Ang pangalan naman ang hinahanap ng mata
-   para malamang tama ang natagpuang tao. */
+/* Who the student is. This used to be four "Label: Value" rows —
+   the name and the section carried equal weight. The name is what
+   the eye looks for to confirm the right person was found. */
 .trk-identity {
     display: flex;
     align-items: center;
@@ -546,20 +541,20 @@ body.trk-page {
     color: var(--trk-ink);
 }
 
-/* ── Mga bilang ──
-   Dating isang 72px na numero na tuloy-tuloy na nagpi-pulse. Ang
-   gumagalaw na bagay ang unang nakukuha ng mata, at bumabalik ito
-   kada dalawang segundo habang binabasa mo ang talaan sa ibaba. */
+/* ── Stats ──
+   This used to be one 72px number pulsing continuously. Motion is
+   the first thing the eye catches, and it came back every two
+   seconds while you were reading the list below. */
 .trk-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: .75rem;
 }
 
-/* Nakabitin sa ibaba ang halaga: sa makipot na screen ay nagiging
-   dalawang linya ang "Last attended" habang isang linya lang ang
-   "Subjects" — kung tuloy-tuloy lang ang daloy, magkaibang taas ang
-   dalawang numero na magkatabi. */
+/* The value is pinned to the bottom: on a narrow screen "Last
+   attended" wraps to two lines while "Subjects" stays on one — in
+   normal flow the two numbers beside each other would sit at
+   different heights. */
 .trk-stat {
     display: flex;
     flex-direction: column;
@@ -590,15 +585,15 @@ body.trk-page {
     color: #fff;
 }
 
-/* Ang petsa ay teksto, hindi bilang — hindi ito dapat kasingtaas
-   ng mga numero sa tabi nito, kung hindi ay mabababa ito sa kahon. */
+/* The date is text, not a number — it should not be as tall as the
+   figures beside it, or it overruns its box. */
 .trk-stat-value.is-text {
     font-size: 1.05rem;
     font-weight: 600;
 }
 
-/* Ang punong bilang lang ang may kulay: ito ang isinagot ng pahina
-   sa tanong na "ilang beses ako nakadalo?" */
+/* Only the primary figure carries color: it is the page's answer to
+   "how many times did I attend?" */
 .trk-stat.is-primary {
     background:
         radial-gradient(circle at 100% 0%, rgba(14, 165, 233, .14), transparent 60%),
@@ -610,7 +605,7 @@ body.trk-page {
     color: var(--trk-ink);
 }
 
-/* ── Mga subject ── */
+/* ── Subjects ── */
 
 .subjects-container {
     display: flex;
@@ -654,8 +649,8 @@ body.trk-page {
     min-width: 0;
 }
 
-/* Berde ang bilang na ito dahil dumalo — estado ito, hindi
-   palamuti. Ang lumang lila (#47468e) ay walang sinasabi. */
+/* This count is green because it means attended — that is a status,
+   not decoration. The old violet (#47468e) said nothing. */
 .subject-count {
     margin-left: auto;
     display: inline-flex;
@@ -671,10 +666,9 @@ body.trk-page {
     border: 1px solid rgba(16, 185, 129, .25);
 }
 
-/* ── Talahanayan ──
-   Nasa sariling kahon na may `overflow-x` — sa 320px na screen ay
-   lumalampas dati ang tatlong hanay at humihila ng buong pahina
-   pahalang. */
+/* ── Table ──
+   In its own box with `overflow-x` — on a 320px screen the three
+   columns used to overflow and drag the whole page sideways. */
 .table-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -732,10 +726,9 @@ body.trk-page {
     color: var(--text-faint);
 }
 
-/* Sa tatlong hanay lang, hinahati ng browser ang natitirang lapad at
-   naiiwang lumulutang ang oras sa gitna ng malaking puwang. Naka-
-   angkla ito sa kanan para may dalawang malinis na gilid ang bawat
-   hilera. */
+/* With only three columns the browser splits the leftover width and
+   leaves the time floating in the middle of a large gap. Anchoring
+   it right gives every row two clean edges. */
 .attendance-table .col-time {
     text-align: right;
 }
@@ -746,7 +739,7 @@ body.trk-page {
     font-variant-numeric: tabular-nums;
 }
 
-/* ─── Walang laman / walang nakita ────────────────────────── */
+/* ─── Empty / nothing found ───────────────────────────────── */
 
 .no-results {
     display: flex;
@@ -785,10 +778,10 @@ body.trk-page {
 }
 
 /* ─── Footer ──────────────────────────────────────────────── */
-/* Ang mga kulay ay nakasulat na bilang inline style sa
-   components/footer.php — guhit na panghati lang ang idinaragdag
-   dito. Ang lumang `footer { background: #0f172a }` ay hindi
-   kailanman nanalo laban doon: patay na panuntunan ito. */
+/* The colors are already written as inline styles in
+   components/footer.php — all that is added here is a divider rule.
+   The old `footer { background: #0f172a }` never beat those inline
+   styles: it was a dead rule. */
 .trk-page footer {
     border-top: 1px solid var(--border);
 }
@@ -820,9 +813,9 @@ body.trk-page {
         width: 100%;
     }
 
-    /* Sa makipot na patlang ay nakikipag-agawan ang "Type to search"
-       sa mismong pino-post na placeholder. Ang umiikot na spinner ay
-       nananatili — iyon ang tanging bahaging may sinasabi. */
+    /* In a narrow field "Type to search" competes with the
+       placeholder saying the same thing. The spinner stays — it is
+       the only part that carries information. */
     .status-idle {
         display: none;
     }
@@ -837,8 +830,8 @@ body.trk-page {
         display: none;
     }
 
-    /* Dalawang hanay: mananatiling nababasa ang malalaking numero
-       kaysa sa tatlong pinipilit na siksikin sa 320px. */
+    /* Two columns: the large figures stay readable, unlike three
+       squeezed into 320px. */
     .trk-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -858,8 +851,8 @@ body.trk-page {
     }
 }
 
-/* Iginagalang ang setting ng system — pareho ito ng ginagawa ng
-   shape.js sa mga particle. */
+/* Respects the system setting — the same thing shape.js does for
+   the particles. */
 @media (prefers-reduced-motion: reduce) {
 
     .trk-shell,

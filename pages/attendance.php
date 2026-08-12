@@ -14,13 +14,13 @@ function cleanSection($section) {
 }
 
 // ── Date window ───────────────────────────────────────────────
-// Dati ay ini-render ang BUONG attendance_tbl sa isang page. Sa
-// isang semestre ay libo-libong row iyon na HTML kada page load,
-// kaya lalong bumabagal habang dumadami ang pumapasok.
-// Huling 30 araw ang default; puwedeng palawakin sa From/To.
+// This used to render the ENTIRE attendance_tbl on one page. Over a
+// semester that is thousands of rows of HTML per page load, getting
+// slower the more people attend. The default is the last 30 days;
+// From/To can widen it.
 $DEFAULT_WINDOW_DAYS = 30;
 
-// Tanggapin lang ang tunay na YYYY-MM-DD para hindi makalusot ang basura.
+// Accept only a real YYYY-MM-DD so junk cannot get through.
 $validDate = function ($v) {
     if (!is_string($v)) return null;
     $v = trim($v);
@@ -31,7 +31,7 @@ $validDate = function ($v) {
 $from = $validDate($_GET['from'] ?? null) ?? date('Y-m-d', strtotime("-{$DEFAULT_WINDOW_DAYS} days"));
 $to   = $validDate($_GET['to']   ?? null) ?? date('Y-m-d');
 
-// Kapag baligtad ang pagkakasunod, pagpalitin — mas mabuti kaysa walang lalabas.
+// If the order is reversed, swap them — better than showing nothing.
 if ($from > $to) {
     [$from, $to] = [$to, $from];
 }
@@ -112,7 +112,7 @@ if ($from > $to) {
                         </div>
 
                         <?php
-                        // Nakakulong na sa $from..$to — tingnan ang date window sa itaas.
+                        // Already bounded by $from..$to — see the date window above.
                         if (isAdmin()) {
                             $stmt = $conn->prepare("
                                 SELECT id, date, student_no, name, course, section, time_in, subject
@@ -137,12 +137,12 @@ if ($from > $to) {
                         ?>
 
                         <div id="tableContainer" style="display:none;">
-                            <!-- Date window: nagre-reload ng page, kaya rows lang sa
-                                 loob ng range ang kinukuha mula sa database. -->
-                            <!-- Isang hanay na ang date window (nagre-reload, dahil
-                                 ang range ang nagtatakda kung anong rows ang kukunin
-                                 sa database) at ang section filter (JS lang, sa loob
-                                 ng nakuha nang datos). -->
+                            <!-- Date window: reloads the page, so only rows inside
+                                 the range are fetched from the database. -->
+                            <!-- The date window (which reloads, because the range
+                                 decides which rows are fetched from the database)
+                                 and the section filter (JS only, within the data
+                                 already fetched) now sit in one row. -->
                             <div class="att-filters">
                                 <form method="get" class="att-filter-form">
                                     <div>
@@ -260,10 +260,10 @@ if ($from > $to) {
                     <div class="att-card">
 
                     <?php
-                    // Ang summary ay kinukuha na ng get_summary_ajax.php kapag
-                    // binuksan ang tab. Dati ay tumatakbo ang GROUP BY dito sa
-                    // bawat page load kahit sarado ang tab, at ini-render ang
-                    // lahat ng row sa HTML.
+                    // The summary is fetched by get_summary_ajax.php when the
+                    // tab is opened. The GROUP BY used to run here on every
+                    // page load even with the tab closed, rendering every row
+                    // into the HTML.
                     ?>
 
                     <div id="summaryTableLoader" class="text-center py-5" style="display:none;">

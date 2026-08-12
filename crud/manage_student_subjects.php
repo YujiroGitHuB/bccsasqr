@@ -19,14 +19,14 @@ $action = $data['action'] ?? '';
 if ($action === 'assign') {
     $student_no   = trim($data['student_no']   ?? '');
     $subject_code = trim($data['subject_code'] ?? '');
-    $section      = trim($data['section']      ?? '');  // may dating "BSIT-1L" — i-strip ang prefix
-    $course       = trim($data['course']       ?? '');  // "BSIT" — para sa strip lang, hindi isasave
+    $section      = trim($data['section']      ?? '');  // may arrive as "BSIT-1L" — strip the prefix
+    $course       = trim($data['course']       ?? '');  // "BSIT" — used only for stripping, never saved
 
-    // Strip course prefix kung nakalagay — e.g. "BSIT-1L" → "1L"
+    // Strip the course prefix if present — e.g. "BSIT-1L" → "1L"
     if (!empty($course) && str_starts_with($section, $course . '-')) {
         $section = substr($section, strlen($course) + 1);
     }
-    // Fallback: kung may "-" pa rin, kuhanin lang yung huling part
+    // Fallback: if a "-" is still there, take the last part only
     if (strpos($section, '-') !== false && preg_match('/^[A-Z]+-(.+)$/', $section, $m)) {
         $section = $m[1];
     }
@@ -45,7 +45,7 @@ if ($action === 'assign') {
         exit;
     }
 
-    // Insert raw section only — "1L" hindi "BSIT-1L"
+    // Insert raw section only — "1L", not "BSIT-1L"
     $insert = $conn->prepare("INSERT INTO student_subjects_tbl (student_no, subject_code, section) VALUES (?, ?, ?)");
     $insert->bind_param("sss", $student_no, $subject_code, $section);
 
@@ -102,7 +102,7 @@ if ($action === 'bulk_assign') {
     $new_rows  = [];
 
     $dup_check = $conn->prepare("SELECT id FROM student_subjects_tbl WHERE student_no = ? AND subject_code = ?");
-    // Insert raw section only — "1L" hindi "BSIT-1L"
+    // Insert raw section only — "1L", not "BSIT-1L"
     $insert    = $conn->prepare("INSERT INTO student_subjects_tbl (student_no, subject_code, section) VALUES (?, ?, ?)");
 
     foreach ($students as $student) {

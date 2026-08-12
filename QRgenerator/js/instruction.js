@@ -1,9 +1,8 @@
-// Ang pagbukas-sara ng mga tagubilin.
+// Opening and closing the instructions.
 //
-// Dati, `toggleBtn.innerHTML` ang pinapalitan sa bawat pindot —
-// tinatanggal nito ang icon at muling ginagawa, at nawawala ang
-// anumang atributo. Ang label na lang ang hinihipo ngayon, at
-// sinusundan ng aria-expanded ang totoong estado.
+// `toggleBtn.innerHTML` used to be replaced on every press — which
+// destroyed and rebuilt the icon, losing any attributes on it. Only
+// the label is touched now, and aria-expanded follows the real state.
 
 const toggleBtn = document.getElementById('toggleInstructions');
 const instructions = document.getElementById('instructionsContent');

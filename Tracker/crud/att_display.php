@@ -76,13 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
 
     if ($search_performed && isset($_POST['student_no'])) {
 
-        // Mga unang titik para sa tile ng pangalan. Walang larawan
-        // ang pahinang ito ng estudyante, at ang isang blangkong
-        // bilog ay wala ring sinasabi.
+        // Initials for the name tile. This student page has no photo,
+        // and an empty circle says nothing either.
         $trk_initials = function ($name) {
-            // "Apelyido, Pangalan G." ang pormat ng fullname dito, kaya
-            // ang unang dalawang salita ang kinukuha at hindi ang una
-            // at huli — ang huli ay ang inisyal ng gitnang pangalan.
+            // fullname is formatted "Surname, First M." here, so the
+            // first two words are taken rather than the first and last
+            // — the last one is the middle initial.
             $parts = preg_split('/[\s,]+/', trim((string) $name), -1, PREG_SPLIT_NO_EMPTY);
             if (!$parts) {
                 return '?';
@@ -94,9 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
             return mb_strtoupper($letters);
         };
 
-        // Huling pagdalo. Naka-uri ang query ayon sa subject bago
-        // ang petsa, kaya hindi ang unang hanay ang pinakabago sa
-        // buong talaan — kailangang hanapin ang pinakamalaki.
+        // Last attendance. The query sorts by subject before date, so
+        // the first row is not the most recent overall — the maximum
+        // has to be found.
         $latest_date = null;
         foreach ($attendance_records as $record) {
             $ts = strtotime((string) $record['date']);
@@ -107,9 +106,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
 ?>
         <div class="results-container" data-status="<?= $status ?>">
             <?php if ($status === 'success'): ?>
-                <!-- Sino ang natagpuan. Ang pangalan ang hinahanap ng
-                     mata para makumpirmang tama ang tao; ang iba ay
-                     mga chip na sumusuporta lang. -->
+                <!-- Who was found. The name is what the eye looks for to
+                     confirm the right person; the rest are supporting
+                     chips. -->
                 <div class="trk-identity">
                     <div class="trk-avatar"><?= htmlspecialchars($trk_initials($student_info['fullname'])) ?></div>
                     <div class="trk-identity-text">
@@ -122,9 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
                     </div>
                 </div>
 
-                <!-- Ang buod. Ang bilang ng subject at ang huling
-                     pagdalo ay nasa talaan na noon pero kailangan mong
-                     bilangin sila mismo. -->
+                <!-- The summary. The subject count and the last
+                     attendance were already in the table before, but you
+                     had to count them yourself. -->
                 <div class="trk-stats">
                     <div class="trk-stat is-primary">
                         <div class="trk-stat-label"><i class="bi bi-check2-circle"></i> Days present</div>
@@ -196,9 +195,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
                     </div>
                 </div>
 
-                <!-- Ang pangalan lang ang lumalabas dati dito, na
-                     mukhang putol na resulta. Sinasabi na ngayon kung
-                     bakit walang talahanayan sa ilalim. -->
+                <!-- Only the name used to appear here, which looked like
+                     a truncated result. It now says why there is no
+                     table below. -->
                 <div class="no-results">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"></path>

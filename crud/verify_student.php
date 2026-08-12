@@ -19,9 +19,10 @@ if (empty($student_no)) {
 
 try {
     // ── 1. Check if student exists ────────────────────────────────────────────
-    // NOTE: walang TRIM() sa column — pumipigil iyon sa paggamit ng
-    // uniq_student_no index (full scan sa buong students_tbl). Na-trim na
-    // ang input sa taas, at nilinis na ng migration ang stored values.
+    // NOTE: no TRIM() on the column — that would prevent the use of
+    // the uniq_student_no index (a full scan of students_tbl). The
+    // input is trimmed above, and a migration cleaned the stored
+    // values.
     $stmt = $conn->prepare("
         SELECT student_no, fullname, course, section
         FROM students_tbl
@@ -46,9 +47,9 @@ try {
 
     // ── 2. Check if student is enrolled in this subject ───────────────────────
     if (!empty($subject_code)) {
-        // utf8mb4_general_ci ang collation kaya case-insensitive na ang
-        // paghahambing — redundant ang UPPER(), at tulad ng TRIM() ay
-        // pinapatay nito ang idx_student_no.
+        // The collation is utf8mb4_general_ci, so the comparison is
+        // already case-insensitive — UPPER() is redundant, and like
+        // TRIM() it kills idx_student_no.
         $enroll = $conn->prepare("
             SELECT section
             FROM student_subjects_tbl

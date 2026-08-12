@@ -1,25 +1,25 @@
 <?php
 /*
  * ============================================================
- * Terms and Conditions para sa QR generation ng estudyante
+ * Terms and Conditions for student QR generation
  *
- * BABALA SA NAGMAMAY-ARI: DRAFT ang teksto sa ibaba. Ipabasa ito
- * sa administrasyon ng paaralan (at sa Data Protection Officer, kung
- * mayroon) bago gamitin sa production. Hindi ito legal na payo — mga
- * karaniwang tuntunin lang ito na akma sa ginagawa ng sistema.
+ * WARNING TO THE OWNER: the text below is a DRAFT. Have the school
+ * administration read it (and the Data Protection Officer, if there
+ * is one) before using it in production. This is not legal advice —
+ * they are ordinary terms fitted to what the system actually does.
  *
- * Palitan ang CONTACT_EMAIL sa ibaba ng totoong opisina.
+ * Replace CONTACT_EMAIL below with the real office.
  *
- * Kapag binago mo ang teksto, ITAAS ang TERMS_VERSION. Muling
- * tatanungin ang lahat ng estudyante, at mananatili ang lumang
- * talaan sa student_terms_tbl bilang kasaysayan.
+ * When you change the text, RAISE TERMS_VERSION. Every student will
+ * be asked again, and the old records stay in student_terms_tbl as
+ * history.
  * ============================================================
  */
 
-// Itaas kapag may makabuluhang pagbabago sa teksto sa ibaba.
+// Raise this whenever the text below changes meaningfully.
 const TERMS_VERSION = 1;
 
-// Palitan ng totoong opisina/email ng paaralan.
+// Replace with the school's real office/email.
 const TERMS_CONTACT = 'charlesnixoncayading@gmail.com';
 
 function terms_body_html(): string

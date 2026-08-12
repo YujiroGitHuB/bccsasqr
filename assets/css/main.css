@@ -1,14 +1,13 @@
-/* Katutubong font stack — walang webfont, kaya walang
-   render-blocking na request at pareho ang hitsura offline.
+/* Native font stack — no webfont, so no render-blocking request and
+   the same look offline.
 
-   Dating `'Times New Roman', Times, serif` ang nakasulat dito. Ang
-   `*` ay tumatama sa BAWAT elemento nang tuwiran, kaya hindi
-   kailanman umaabot ang `font-family` ng <body> sa kahit ano —
-   natatalo ito ng mana. Serif ang buong admin UI dahil doon,
-   gayong "Poppins, sans-serif" ang nakasaad sa ibaba (at hindi
-   naman naka-link kahit saan ang Poppins). Iyon din ang dahilan
-   kung bakit nagkakarga ng sariling webfont ang ilang page — para
-   lang makatakas dito. */
+   This used to read `'Times New Roman', Times, serif`. The `*`
+   selector hits EVERY element directly, so the `font-family` on
+   <body> never reached anything — inheritance always lost. That is
+   why the whole admin UI rendered serif even though "Poppins,
+   sans-serif" is declared below (and Poppins is not linked
+   anywhere). It is also why a few pages loaded their own webfont —
+   just to escape this rule. */
 * {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -139,12 +138,12 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Palitan-palitan ang logo mula sa Settings, at karamihan ng logo ng
-   paaralan ay madilim ang tinta at transparent ang background — kaya
-   nawawala ang mga ito sa madilim na sidebar. Ang puting plate ang
-   nagbibigay ng sariling kontrast sa logo kahit ano ang ma-upload.
+/* The logo is swappable from Settings, and most school logos are dark
+   ink on a transparent background — so they disappear into the dark
+   sidebar. The white plate gives the logo its own contrast whatever
+   gets uploaded.
 
-   `contain` (hindi `cover`): hindi na pinuputol ang gilid ng logo. */
+   `contain` (not `cover`): the edges of the logo are no longer cut. */
 .logo-img {
   width: 60px;
   height: 60px;
@@ -156,10 +155,10 @@ body {
   transition: transform 0.3s ease;
 }
 
-/* Ang puting plate ng preview sa Settings ay `.cfg-plate` na ngayon,
-   nasa assets/css/settings-page.css kasama ng natitirang tagapili ng
-   logo. Hindi na `.card` ang balot niyon, kaya wala nang kailangang
-   labanan na `.card { background-color: #1e293b }` ng settings.css. */
+/* The white plate behind the Settings preview is `.cfg-plate` now,
+   over in assets/css/settings-page.css with the rest of the logo
+   picker. It is no longer wrapped in a `.card`, so there is nothing
+   left to fight settings.css's `.card { background-color: #1e293b }`. */
 
 .logo-text {
   color: #fff;
@@ -569,7 +568,7 @@ h4 {
   overflow: hidden;
 }
 
-/* May larawan nang na-upload — pumapalit ito sa initials. */
+/* A photo has been uploaded — it replaces the initials. */
 .avatar-circle img {
   width: 100%;
   height: 100%;
@@ -834,9 +833,9 @@ h4 {
 /* ============================================================
    PROFILE PAGE  (#profilePage)
 
-   Dalawang hanay: buod ng account (avatar, role, huling login) sa
-   kaliwa, mga field sa kanan. Sa ilalim ng 992px ay nagsasalansan
-   ito — iisang hanay sa telepono.
+   Two columns: the account summary (avatar, role, last login) on the
+   left, the fields on the right. Below 992px they stack — a single
+   column on phones.
    ============================================================ */
 #profilePage {
   max-width: 1080px;
@@ -885,8 +884,8 @@ h4 {
   text-align: center;
 }
 
-/* Banda ng kulay sa likod ng avatar — nagbibigay ng lalim sa
-   card nang hindi kailangan ng larawan. */
+/* A color band behind the avatar — gives the card depth without
+   needing an image. */
 #profilePage .profile-cover {
   height: 92px;
   margin: 0 -22px 0;
@@ -941,7 +940,7 @@ h4 {
   user-select: none;
 }
 
-/* Larawan ang ipinapakita kapag may na-upload; kung wala, initials. */
+/* The photo shows when one has been uploaded; otherwise, initials. */
 #profilePage .avatar-block.has-photo .avatar-photo {
   display: block;
 }
@@ -1151,7 +1150,7 @@ h4 {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
-/* Ang password field ay may butones sa kanan — bigyan ng lugar. */
+/* The password field has a button on the right — leave room for it. */
 #profilePage .input-eye {
   position: absolute;
   right: 6px;
@@ -1202,7 +1201,7 @@ h4 {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-/* ── Mga butones ───────────────────────────────────────────── */
+/* ── Buttons ───────────────────────────────────────────────── */
 #profilePage .profile-btn-save {
   display: inline-flex;
   align-items: center;
@@ -1287,7 +1286,7 @@ h4 {
     margin: 0 -16px;
   }
 
-  /* Buong lapad ang mga butones para madaling matapik sa telepono. */
+  /* Full-width buttons so they are easy to tap on a phone. */
   #profilePage .profile-actions {
     flex-direction: column-reverse;
   }
@@ -1848,7 +1847,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
   table {
     min-width: 800px;
-    /* important para lumabas ang scroll */
+    /* needed for the scrollbar to appear */
   }
 }
 
@@ -2033,7 +2032,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   padding-bottom: 20px;
 }
 
-/* Optional: Para gawing mas maganda ang scrollbar */
+/* Optional: nicer scrollbar */
 .sidebar::-webkit-scrollbar {
   width: 6px;
 }
@@ -2069,7 +2068,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   /* Light gray line */
 }
 
-/* Para mas maganda yung submenu items */
+/* Nicer submenu items */
 .submenu-item {
   position: relative;
   padding-left: 15px !important;
@@ -2125,29 +2124,28 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   color: #d0d0d1;
 }
 
-/* ── Naka-collapse na sidebar: mga icon lang ang submenu ──────
-   Ang teksto ng submenu ay HUBAD na text node sa sidebar.php:
+/* ── Collapsed sidebar: submenu shows icons only ──────────────
+   The submenu text is a BARE text node in sidebar.php:
 
        <a class="nav-link submenu-item">
            <i class="bi bi-list-check"></i> Attendance List
        </a>
 
-   Hindi ito naka-<span>, kaya hindi ito naaabot ng panago sa
-   itaas na `.sidebar.collapsed .nav-link span { display: none }`.
-   Ang resulta ay napuputol lang ito ng `overflow: hidden` ng
-   sidebar at nagiging "Att... Lis...".
+   It is not wrapped in a <span>, so the rule above —
+   `.sidebar.collapsed .nav-link span { display: none }` — never
+   reaches it. The result is that the sidebar's `overflow: hidden`
+   merely clips it into "Att... Lis...".
 
-   Ang `font-size: 0` ang tanging paraan sa CSS para itago ang
-   hubad na text node. Ibinabalik natin ang sukat sa <i> para
-   manatiling nakikita AT nabubuksan pa rin ang mga pahina —
-   kung basta natin itatago ang buong submenu, hindi na maaabot
-   ang Attendance List habang naka-collapse. */
+   `font-size: 0` is the only way in CSS to hide a bare text node.
+   The size is restored on the <i> so the pages stay visible AND
+   still reachable — if we simply hid the whole submenu, Attendance
+   List could not be opened while collapsed. */
 .sidebar.collapsed .nav-item.dropdown .collapse {
   margin-left: 0;
 }
 
-/* Alisin ang patayong linya at ang tuldok — kumakain sila ng
-   espasyo na wala naman sa 80px na rail. */
+/* Drop the vertical line and the dot — they eat space the 80px rail
+   does not have. */
 .sidebar.collapsed .nav-item.dropdown .collapse::before,
 .sidebar.collapsed .submenu-item::before {
   display: none;
@@ -2167,7 +2165,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   text-align: center;
 }
 
-/* Ang caret ay dagdag na kalat sa makipot na rail. */
+/* The caret is extra clutter on a narrow rail. */
 .sidebar.collapsed .dropdown-toggle::after {
   display: none;
 }

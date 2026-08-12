@@ -1,7 +1,7 @@
 // ── CONFIG ────────────────────────────────────────────────
 const API_VERIFY = 'student_photo_api.php?action=verify';
 const API_SAVE   = 'student_photo_api.php?action=save';
-const OUTPUT_SIZE = 300;   // 400 → 300px, malaki pa rin para sa attendance
+const OUTPUT_SIZE = 300;   // 400 → 300px, still large enough for attendance
 const OUTPUT_QUALITY = 0.75; // 0.88 → 0.75, mas maliit na file
 
 // ── STATE ─────────────────────────────────────────────────
@@ -157,7 +157,7 @@ async function savePhoto() {
             data = JSON.parse(raw);
         } catch {
             console.error('Raw server response:', raw);
-            showAlert(null, 'error', 'Server error. Buksan ang console (F12) para sa details.');
+            showAlert(null, 'error', 'Server error. Open the console (F12) for details.');
             return;
         }
 

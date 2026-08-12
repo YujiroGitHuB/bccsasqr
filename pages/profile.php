@@ -34,9 +34,9 @@ $system = mysqli_fetch_assoc($systemQuery);
         $userQuery = mysqli_query($conn, "SELECT * FROM users WHERE id='$userId'");
         $user = mysqli_fetch_assoc($userQuery);
 
-        // Ang `avatar` column ay galing sa migration na
-        // 2026-08-10_add_user_avatar.sql. Ginagamit ang ?? para hindi
-        // mabasag ang page sa server na hindi pa napapatakbuhan iyon.
+        // The `avatar` column comes from the
+        // 2026-08-10_add_user_avatar.sql migration. The ?? keeps the
+        // page from breaking on a server where it has not been run.
         $avatarPath = trim((string)($user['avatar'] ?? ''));
         $avatarUrl  = $avatarPath !== '' && is_file(__DIR__ . '/../' . $avatarPath)
             ? '../' . $avatarPath . '?v=' . @filemtime(__DIR__ . '/../' . $avatarPath)
@@ -72,9 +72,9 @@ $system = mysqli_fetch_assoc($systemQuery);
 
                     <div class="avatar-block <?= $avatarUrl !== '' ? 'has-photo' : '' ?>" id="avatarBlock">
                         <div class="avatar-ring">
-                            <!-- Walang `src=""` kapag walang larawan — sa ilang
-                                 browser ay hinihila nito ang mismong page URL
-                                 bilang imahe at nasasayang na request iyon. -->
+                            <!-- No `src=""` when there is no photo — in some
+                                 browsers that fetches the page URL itself as an
+                                 image, wasting a request. -->
                             <img <?= $avatarUrl !== '' ? 'src="' . htmlspecialchars($avatarUrl) . '"' : '' ?>
                                 alt="Profile picture" class="avatar-photo" id="avatarPreview">
                             <span class="avatar-initials" id="avatarInitials"><?= htmlspecialchars($initials) ?></span>
@@ -85,8 +85,8 @@ $system = mysqli_fetch_assoc($systemQuery);
                         </button>
                     </div>
 
-                    <!-- Nasa loob ng form ang file input para kasama agad
-                         sa FormData ng "Save Changes" — isang submit lang. -->
+                    <!-- The file input sits inside the form so it is carried
+                         in "Save Changes"' FormData — one submit only. -->
                     <input type="file" name="avatar" id="avatarInput"
                         accept="image/jpeg,image/png,image/webp" hidden>
                     <input type="hidden" name="remove_avatar" id="removeAvatarFlag" value="0">
@@ -125,7 +125,7 @@ $system = mysqli_fetch_assoc($systemQuery);
                     </ul>
                 </aside>
 
-                <!-- ── Kanan: mga field ───────────────────────────── -->
+                <!-- ── Right: the fields ──────────────────────────── -->
                 <section class="profile-card profile-main">
 
                     <div class="profile-section-title">

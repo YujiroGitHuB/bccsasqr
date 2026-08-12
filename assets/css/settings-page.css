@@ -1,23 +1,22 @@
 /* ============================================================
    MANAGE SETTINGS
 
-   Ang dating ayos ay apat na 340px na card na naka-`text-align:
-   center`. Tatlong problema niyon:
+   The old layout was four 340px cards set to `text-align: center`.
+   Three problems with that:
 
-   · Nagsasalansan ang pamagat ("Page Lock / Settings" sa dalawang
-     linya) at naka-center ang paliwanag — pinakamahirap basahing
-     ayos para sa tekstong maraming linya.
-   · Bawat card ay may sariling <h2> na #38bdf8 — limang <h2> sa
-     isang page, kaya nakikipagsapalaran ang mga ito sa mismong
-     pamagat ng page.
-   · Iba-iba ang taas at gilagid ang grid: maikli ang Attendance
-     Lock, napakataas ng Student Photo, at malawak na blangko sa
-     kanan.
+   · The title stacked ("Page Lock / Settings" over two lines) and
+     the description was centered — the hardest possible layout to
+     read for multi-line text.
+   · Every card had its own #38bdf8 <h2> — five <h2>s on one page,
+     all competing with the page title itself.
+   · The heights varied and the grid went ragged: Attendance Lock
+     was short, Student Photo very tall, and a wide blank was left
+     on the right.
 
-   Kapalit: isang listahan ng hanay — icon at paliwanag sa kaliwa,
-   estado at switch sa kanan. Iyon ang karaniwang anyo ng settings
-   dahil kaya nitong tumanggap ng mahabang paliwanag nang hindi
-   nasisira ang hanay.
+   Replaced with a list of rows — icon and description on the left,
+   status and switch on the right. That is the usual shape for
+   settings because it can absorb a long description without
+   breaking the row.
    ============================================================ */
 
 .set-page {
@@ -26,14 +25,13 @@
     --set-muted: rgba(255, 255, 255, .45);
 }
 
-/* Naka-cap ang lapad dahil ang bawat hanay ay pangungusap na
-   babasahin — sa buong lapad ng malaking monitor ay lumalampas na
-   sa 120 titik ang isang linya at nahihirapan nang bumalik ang mata
-   sa simula ng susunod.
+/* The width is capped because every row is a sentence to be read —
+   at the full width of a large monitor a line runs past 120
+   characters and the eye struggles to find the start of the next.
 
-   `margin: 0 auto` — kung nakakaliwa ito, ang natitirang espasyo ay
-   naiipon lahat sa kanan at mukhang nakalimutang ayusin sa halip na
-   sinadya. Kapareho ito ng ginawa sa profile page. */
+   `margin: 0 auto` — left-aligned, all the leftover space pools on
+   the right and looks forgotten rather than intended. Same as what
+   the profile page does. */
 .set-page .set-wrap {
     max-width: 1040px;
     margin: 0 auto;
@@ -162,8 +160,8 @@
     color: #f1f5f9;
 }
 
-/* Naka-align sa kaliwa at may hangganan sa lapad — ang naka-center
-   na talata ay kailangang habulin ng mata sa bawat bagong linya. */
+/* Left aligned with a width limit — a centered paragraph makes the
+   eye hunt for the start of every new line. */
 .set-page .set-main p {
     margin: 0;
     max-width: 62ch;
@@ -284,8 +282,8 @@
         font-size: 1.15rem;
     }
 
-    /* Sa makipot na screen ay bumababa ang switch sa ilalim ng
-       paliwanag — hindi na ito sumisiksik sa gilid. */
+    /* On a narrow screen the switch drops below the description
+       instead of being squeezed against the edge. */
     .set-page .set-row {
         flex-wrap: wrap;
         padding: 1rem;
@@ -299,27 +297,27 @@
 }
 
 /* ============================================================
-   SYSTEM CONFIGURATION MODAL — ang tagapili ng logo
+   SYSTEM CONFIGURATION MODAL — the logo picker
 
-   Ang kahon mismo ng modal ay galing na sa .app-modal
-   (assets/css/modal-form.css); ito ang natitirang piraso na sa
-   iisang modal lang ginagamit.
+   The modal box itself already comes from .app-modal
+   (assets/css/modal-form.css); this is the remaining piece used by
+   only that one modal.
 
-   Ang dating ayos ay isang lumulutang na preview sa gitna at,
-   sa ilalim niyon, ang hubad na `<input type="file">` — ang
-   "Choose File / No file chosen" ng browser. Tatlong problema:
+   The old layout was a floating preview in the middle with a bare
+   `<input type="file">` underneath — the browser's "Choose File /
+   No file chosen". Three problems:
 
-   · Nakahiwalay ang preview sa kontrol na nagpapalit nito, kaya
-     hindi malinaw na iisang patlang sila. Wala pa ngang label
-     ang preview.
-   · Ang katutubong file input ang nag-iisang kontrol sa buong
-     app na hindi sumusunod sa anyo nito — kulay-abo, kwadrado,
-     serif ang sulat, at hindi maistilo nang direkta.
-   · Kapag nakapili ka na ng file, wala nang paraang umatras
-     maliban sa pagsara ng buong modal.
+   · The preview was separated from the control that changes it, so
+     it was not clear they were one field. The preview had no label
+     at all.
+   · The native file input was the only control in the whole app
+     that did not follow its styling — grey, square, set in serif,
+     and not directly styleable.
+   · Once a file was picked there was no way back except closing
+     the whole modal.
 
-   Kapalit: isang hanay — plate sa kaliwa, aksyon sa kanan —
-   kaya isang bagay na ang tingin ng preview at ng butones.
+   Replaced with a row — plate on the left, action on the right —
+   so the preview and the button read as one object.
    ============================================================ */
 
 .cfg-logo {
@@ -348,13 +346,13 @@
 .cfg-plate img {
     max-width: 100%;
     max-height: 100%;
-    /* `contain` at hindi `cover` — hindi pinuputol ang gilid ng logo. */
+    /* `contain` rather than `cover` — the logo's edges are not cut. */
     object-fit: contain;
 }
 
-/* Wala pang na-upload: hindi puting plate — walang ipinapakitang
-   larawan ang puting kahon, blangko lang ito. Guhit-tuldok para
-   malinaw na butas ito na dapat punan. */
+/* Nothing uploaded yet: not a white plate — a white box showing no
+   image is just a blank. Dashed instead, to make clear this is a
+   gap waiting to be filled. */
 .cfg-plate.is-empty {
     background: rgba(255, 255, 255, .03);
     border: 1px dashed rgba(255, 255, 255, .18);
@@ -369,9 +367,9 @@
     min-width: 0;
 }
 
-/* Nakatago pero hindi `display: none`: kailangang manatiling
-   naaabot ng Tab ang input, dahil ang `<label for>` lang ang
-   nakikitang butones at hindi ito nakukuha ng keyboard. */
+/* Hidden but not `display: none`: the input has to stay reachable
+   by Tab, because the visible button is a `<label for>`, which the
+   keyboard cannot focus. */
 .cfg-file {
     position: absolute;
     width: 1px;
@@ -384,8 +382,8 @@
     border: 0;
 }
 
-/* Nawala ang sariling focus ring ng input nang itago ito, kaya
-   ang label ang nagsusuot nito. */
+/* Hiding the input took away its own focus ring, so the label
+   wears it instead. */
 .cfg-file:focus-visible+.cfg-logo-actions .cfg-pick {
     outline: 2px solid var(--am-ink);
     outline-offset: 2px;
@@ -398,15 +396,15 @@
     flex-wrap: wrap;
 }
 
-/* `margin: 0` — may sariling `margin-bottom` ang <label> mula sa
-   Bootstrap, at pumipilipit iyon sa hanay ng mga butones. */
+/* `margin: 0` — Bootstrap gives <label> its own `margin-bottom`,
+   which throws the button row out of alignment. */
 .cfg-pick {
     margin: 0;
     cursor: pointer;
 }
 
-/* Pag-atras lang ito, hindi pangunahing aksyon — kaya walang
-   hangganan at walang likod hangga't hindi hinahawakan. */
+/* This is only a way back, not a primary action — so no border and
+   no background until it is touched. */
 .cfg-undo {
     display: inline-flex;
     align-items: center;
@@ -432,8 +430,8 @@
     outline-offset: 2px;
 }
 
-/* Mahaba ang mga pangalan ng file — putulin nang tapat sa halip
-   na palawakin ang modal. */
+/* File names run long — truncate honestly rather than widen the
+   modal. */
 .cfg-file-name {
     display: block;
     margin-top: .5rem;
@@ -445,8 +443,8 @@
     text-overflow: ellipsis;
 }
 
-/* Wala pang pinipiling bago — pahayag lang ito ng kalagayan, kaya
-   hindi ito dapat kasingtingkad ng tunay na pangalan ng file. */
+/* Nothing new picked yet — this is a statement of state, so it
+   should not be as loud as a real file name. */
 .cfg-file-name.is-idle {
     font-weight: 500;
     color: rgba(255, 255, 255, .38);
@@ -454,8 +452,8 @@
 
 @media (max-width: 575.98px) {
 
-    /* Masyadong makipot ang natitira sa kanan ng plate sa telepono
-       para sa butones at sa pangalan ng file — isalansan. */
+    /* On a phone what is left to the right of the plate is too
+       narrow for the button and the file name — stack them. */
     .cfg-logo {
         flex-direction: column;
         align-items: stretch;

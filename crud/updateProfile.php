@@ -14,9 +14,9 @@ if (!$userId) {
 }
 
 // ── Avatar constants ────────────────────────────────────────
-// Ang itinatago sa DB ay path na relatibo sa app root (kagaya ng
-// student_photos.photo_path), kaya "../" lang ang idinadagdag ng
-// mga page sa loob ng /pages.
+// What is stored in the DB is a path relative to the app root (the
+// same as student_photos.photo_path), so pages inside /pages only
+// have to prepend "../".
 define('AVATAR_DIR',      __DIR__ . '/../uploads/avatars/');
 define('AVATAR_URL_BASE', 'uploads/avatars/');
 define('AVATAR_MAX_BYTES', 2 * 1024 * 1024);
@@ -45,9 +45,9 @@ if ($password !== '' && strlen($password) < MIN_PASSWORD_LEN) {
     exit;
 }
 
-// UNIQUE KEY ang email sa users. Kung hindi ito tsi-tsek dito,
-// "Update failed." lang ang makikita ng user at hindi niya
-// malalaman na naunahan na siya ng ibang account sa email na iyon.
+// email is a UNIQUE KEY on users. Without checking here, the user
+// only sees "Update failed." and never learns that another account
+// already holds that email.
 $dupe = $conn->prepare("SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1");
 $dupe->bind_param("si", $email, $userId);
 $dupe->execute();
@@ -60,9 +60,9 @@ if ($taken) {
 }
 
 // ── May avatar column ba? ───────────────────────────────────
-// Kailangan ng migrations/2026-08-10_add_user_avatar.sql. Kung hindi
-// pa iyon napapatakbo sa server na ito, tuloy pa rin ang pag-save ng
-// pangalan/email/password sa halip na mag-fatal error ang buong form.
+// Requires migrations/2026-08-10_add_user_avatar.sql. If that has not
+// been run on this server, saving name/email/password still goes
+// through rather than the whole form throwing a fatal error.
 $hasAvatarColumn = false;
 try {
     $col = $conn->query("SHOW COLUMNS FROM users LIKE 'avatar'");
@@ -76,8 +76,8 @@ $avatarChanged = false;
 $avatarRemoved = false;
 
 if ($hasAvatarColumn) {
-    // Kasalukuyang path — kailangan para malaman kung anong file ang
-    // buburahin sa disk kapag pinalitan o tinanggal.
+    // The current path — needed to know which file on disk to delete
+    // when it is replaced or removed.
     $cur = $conn->prepare("SELECT avatar FROM users WHERE id = ?");
     $cur->bind_param("i", $userId);
     $cur->execute();
@@ -107,8 +107,8 @@ if ($hasAvatarColumn) {
             exit;
         }
 
-        // Ang totoong nilalaman ang sinusuri, hindi ang extension o
-        // ang client-supplied na MIME — parehong nagagaya ng attacker.
+        // The actual contents are checked, not the extension or the
+        // client-supplied MIME — an attacker can fake either.
         $info = @getimagesize($file['tmp_name']);
         $allowed = [
             IMAGETYPE_JPEG => 'jpg',
@@ -137,9 +137,9 @@ if ($hasAvatarColumn) {
         }
         @chmod($target, 0644);
 
-        // Isang file lang kada user — linisin ang lumang extension
-        // (hal. user_1.png na napalitan ng user_1.jpg), kung hindi ay
-        // maiiwan itong orphan sa uploads folder magpakailanman.
+        // One file per user — clean up the old extension (e.g.
+        // user_1.png replaced by user_1.jpg), otherwise it is left
+        // orphaned in the uploads folder forever.
         foreach (['jpg', 'png', 'webp'] as $other) {
             if ($other === $ext) continue;
             $stale = AVATAR_DIR . 'user_' . $userId . '.' . $other;
@@ -156,9 +156,9 @@ if ($hasAvatarColumn) {
             if (is_file($stale)) @unlink($stale);
         }
 
-        // Kung nasa labas ng standard na pangalan ang lumang path
-        // (hal. galing sa naunang bersyon), burahin din — pero sa loob
-        // lang ng uploads/avatars para hindi makagalaw ng ibang file.
+        // If the old path falls outside the standard naming (e.g. from
+        // an earlier version), delete it too — but only within
+        // uploads/avatars, so no other file can be touched.
         if ($currentAvatar !== '' && str_starts_with($currentAvatar, AVATAR_URL_BASE)) {
             $old = __DIR__ . '/../' . $currentAvatar;
             if (is_file($old)) @unlink($old);
@@ -170,7 +170,7 @@ if ($hasAvatarColumn) {
     }
 }
 
-// ── Ang mismong update ──────────────────────────────────────
+// ── The update itself ───────────────────────────────────────
 $sets   = ["name = ?", "email = ?"];
 $types  = "ss";
 $values = [$name, $email];
@@ -184,7 +184,7 @@ if ($password !== '') {
 if ($avatarChanged) {
     $sets[]   = "avatar = ?";
     $types   .= "s";
-    $values[] = $avatarPath; // NULL kapag tinanggal
+    $values[] = $avatarPath; // NULL when removed
 }
 
 $types   .= "i";
@@ -194,9 +194,8 @@ $stmt = $conn->prepare("UPDATE users SET " . implode(", ", $sets) . " WHERE id =
 $stmt->bind_param($types, ...$values);
 
 if ($stmt->execute()) {
-    // Ang topbar ay nagbabasa mula sa session, kaya kung hindi ito
-    // ita-update ay mananatiling luma ang pangalan/larawan hanggang
-    // sa susunod na login.
+    // The topbar reads from the session, so without updating it the
+    // name/photo would stay stale until the next login.
     $_SESSION['user_name'] = $name;
     if ($avatarChanged) {
         $_SESSION['user_avatar'] = $avatarPath;

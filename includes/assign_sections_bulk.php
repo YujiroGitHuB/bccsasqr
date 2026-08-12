@@ -51,7 +51,7 @@ try {
     foreach ($sections as $section) {
     $section = mysqli_real_escape_string($conn, trim($section));
     
-    // ✅ I-split ang "BSIT-1A" → course = "BSIT", section = "1A"
+    // ✅ Split "BSIT-1A" → course = "BSIT", section = "1A"
     $parts   = explode('-', $section, 2);
     $course  = mysqli_real_escape_string($conn, $parts[0] ?? '');
     $section = mysqli_real_escape_string($conn, $parts[1] ?? $section);

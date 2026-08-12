@@ -158,6 +158,6 @@ echo json_encode([
     'success'       => true,
     'students'      => $students,
     'total_classes' => $total_classes,
-    'section'       => $full_section,   // return full "BSIT-1A" para sa frontend
+    'section'       => $full_section,   // return full "BSIT-1A" for the frontend
     'min_absences'  => $min_absences,
 ]);

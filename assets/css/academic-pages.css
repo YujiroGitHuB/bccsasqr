@@ -2,17 +2,17 @@
    ACADEMIC SETTINGS — Subject Enrollment, Subjects, Sections,
    Instructors
 
-   Ang apat na page na ito ay may parehong hugis: hero header sa
-   itaas, form card sa kaliwa, table card sa kanan. Dati ay
-   `.page-header h2` lang ang pamagat at iba-iba ang timpla ng
-   card at butones sa bawat isa.
+   These four pages share one shape: a hero header on top, a form
+   card on the left, a table card on the right. Previously the title
+   was just `.page-header h2` and each page mixed its cards and
+   buttons differently.
 
-   LAHAT ay naka-scope sa `.acad-page` (nasa <div class="content">
-   ng apat na page). Kasama sa management-pages.css ang backup.php
-   at manage_users.php na may sariling bagong disenyo na — hindi
-   sila dapat magalaw ng ginagawa rito.
+   EVERYTHING is scoped to `.acad-page` (on the <div class="content">
+   of those four pages). management-pages.css also covers backup.php
+   and manage_users.php, which already have their own new design —
+   nothing here should touch them.
 
-   Ikinakarga PAGKATAPOS ng management-pages.css.
+   Loaded AFTER management-pages.css.
    ============================================================ */
 
 /* ─── Hero header ─────────────────────────────────────────── */
@@ -32,8 +32,8 @@
     overflow: hidden;
 }
 
-/* Manipis na guhit ng kulay sa itaas — pareho ng `.stat-card`
-   sa management-pages.css para magkapamilya ang hitsura. */
+/* A thin color rule on top — the same as `.stat-card` in
+   management-pages.css, so the two read as family. */
 .acad-page .acad-hero::before {
     content: '';
     position: absolute;
@@ -127,17 +127,16 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
 }
 
-/* Ang table sa kanan ay mahaba; ang form sa kaliwa ay maikli.
-   Sinusundan ng form ang scroll para hindi na kailangang bumalik
-   sa itaas tuwing may ie-edit na row. */
+/* The table on the right is long; the form on the left is short.
+   The form follows the scroll so you do not have to go back to the
+   top every time a row needs editing. */
 @media (min-width: 1200px) {
     .acad-page .acad-sticky {
         position: sticky;
         top: 1rem;
-        /* Kailangang `auto` — sa `.card-custom { height: 100% }` ay
-           kasingtaas ng buong table column ang card, at hindi
-           makakadikit sa itaas ang isang bagay na kasintaas ng
-           lalagyan nito. */
+        /* Must be `auto` — with `.card-custom { height: 100% }` the
+           card is as tall as the whole table column, and something
+           as tall as its container can never stick to the top. */
         height: auto;
     }
 }
@@ -151,7 +150,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, .07);
 }
 
-/* Ang icon ay nakakahon na ngayon sa halip na lumulutang na glyph. */
+/* The icon sits in a tile now instead of floating as a glyph. */
 .acad-page .card-header-custom>i {
     flex-shrink: 0;
     width: 36px;
@@ -183,7 +182,7 @@
     white-space: nowrap;
 }
 
-/* ─── Mga field ───────────────────────────────────────────── */
+/* ─── Fields ──────────────────────────────────────────────── */
 .acad-page .form-label {
     font-size: .82rem;
     font-weight: 600;
@@ -221,7 +220,7 @@
     color: #4b5563;
 }
 
-/* ─── Mga butones ─────────────────────────────────────────── */
+/* ─── Buttons ─────────────────────────────────────────────── */
 .acad-page .btn-primary {
     background: linear-gradient(135deg, #667eea, #764ba2);
     border: none;
@@ -255,9 +254,9 @@
     transform: none;
 }
 
-/* Mga aksyon sa hanay ng table: malambot na tinted na kahon sa
-   halip na matingkad na solid na Bootstrap button — hindi na sila
-   nakakalamon ng pansin kaysa sa mismong datos. */
+/* Row actions in the table: soft tinted boxes instead of bright
+   solid Bootstrap buttons — they no longer take more attention than
+   the data itself. */
 .acad-page td .btn-sm {
     display: inline-flex;
     align-items: center;
@@ -334,7 +333,7 @@
     background: rgba(102, 126, 234, .07);
 }
 
-/* ─── Mga badge sa loob ng table ──────────────────────────── */
+/* ─── Badges inside the table ─────────────────────────────── */
 .acad-page .badge-subject {
     background: rgba(102, 126, 234, .16);
     border: 1px solid rgba(102, 126, 234, .28);
@@ -371,7 +370,7 @@
     color: rgba(255, 255, 255, .42);
 }
 
-/* ─── Walang laman ────────────────────────────────────────── */
+/* ─── Empty state ─────────────────────────────────────────── */
 .acad-page .empty-state {
     padding: 2.5rem 1rem;
     color: rgba(255, 255, 255, .3);
@@ -395,9 +394,9 @@
     font-size: .82rem;
 }
 
-/* ─── Mga kontrol ng DataTables ───────────────────────────── */
-/* Bootstrap 5 theme ang gamit ng DataTables dito, pero mas maliwanag
-   ang default nito kaysa sa mga card — pinapatugma natin. */
+/* ─── DataTables controls ─────────────────────────────────── */
+/* DataTables uses the Bootstrap 5 theme here, but its defaults are
+   lighter than the cards — matched up. */
 .acad-page .dataTables_wrapper .dataTables_length,
 .acad-page .dataTables_wrapper .dataTables_filter,
 .acad-page .dataTables_wrapper .dataTables_info {
@@ -442,8 +441,8 @@
     opacity: .4;
 }
 
-/* Ang sariling padding ng .empty-state ang sumusukat sa taas — kung
-   hindi, dodoble ito sa padding ng cell ng DataTables. */
+/* .empty-state's own padding sets the height — otherwise it doubles
+   up with DataTables' cell padding. */
 .acad-page td.dataTables_empty {
     padding: 0;
 }
@@ -466,8 +465,8 @@
         font-size: 1.15rem;
     }
 
-    /* Sa makipot na screen ay sa sariling linya na ang mga chip —
-       kung hindi, nasisiksik ang pamagat sa dalawang letra kada linya. */
+    /* On a narrow screen the chips take their own line — otherwise
+       the title is squeezed to two letters per line. */
     .acad-page .acad-hero-meta {
         margin-left: 0;
         width: 100%;

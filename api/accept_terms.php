@@ -1,13 +1,14 @@
 <?php
 // ============================================================
-// Itinatala ang pagtanggap ng estudyante sa Terms and Conditions
-// bago siya makagawa ng QR.
+// Records a student's acceptance of the Terms and Conditions before
+// they can generate a QR.
 //
-// Bukas ito sa publiko tulad ng QR generator mismo (walang login
-// ang estudyante), kaya:
-//   - tinatanggap lang ang student_no na talagang nasa students_tbl
-//   - ang bersyon ay galing sa server, hindi sa client — hindi
-//     maipagpipilitan ng kahit sino ang ibang bersyon
+// This is public, like the QR generator itself (students do not log
+// in), so:
+//   - only a student_no that actually exists in students_tbl is
+//     accepted
+//   - the version comes from the server, not the client — nobody can
+//     force a different one
 // ============================================================
 
 include __DIR__ . '/../includes/db_connect.php';
@@ -24,8 +25,8 @@ if ($student_no === '') {
     exit;
 }
 
-// Dapat totoong estudyante — hindi tayo nagtatala ng basta-basta
-// ipinadalang student number.
+// Must be a real student — no logging of any student number someone
+// happens to post.
 $check = $conn->prepare("SELECT 1 FROM students_tbl WHERE student_no = ? LIMIT 1");
 $check->bind_param('s', $student_no);
 $check->execute();
@@ -39,9 +40,8 @@ if ($check->get_result()->num_rows === 0) {
 $version = TERMS_VERSION;
 $ip      = substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 45);
 
-// May UNIQUE KEY ang (student_no, terms_version): kapag tinanggap
-// niyang muli, ina-update lang ang oras sa halip na magdagdag ng
-// bagong row.
+// (student_no, terms_version) has a UNIQUE KEY: accepting again just
+// updates the timestamp rather than adding another row.
 $stmt = $conn->prepare("
     INSERT INTO student_terms_tbl (student_no, terms_version, accepted_at, ip_address)
     VALUES (?, ?, NOW(), ?)

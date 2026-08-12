@@ -6,18 +6,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoReset = document.getElementById('logoReset');
     const systemConfigForm = document.getElementById('systemConfigForm');
 
-    // Iisang anyo ng dialog sa buong app — sky/cyan, ibabaw na
-    // #16161a. Dati ay #1e1e2f na likod at #e11d48 na butones dito:
-    // dalawang kulay na wala kahit saan sa natitirang bahagi ng app.
+    // One dialog look across the whole app — sky/cyan on a #16161a
+    // surface. This used to be a #1e1e2f background with #e11d48
+    // buttons: two colors found nowhere else in the app.
     const swalBase = {
         background: '#16161a',
         color: '#f1f5f9',
         confirmButtonColor: '#0ea5e9',
     };
 
-    // Ang unang laman ng plate — ito ang ibinabalik ng Undo. Kailangan
-    // itong sagipin bago pa man may mapili, dahil ito na ang tanging
-    // kopya kapag napalitan na ng preview ang innerHTML.
+    // The plate's original contents — this is what Undo restores. It
+    // has to be saved before anything is picked, because it is the
+    // only copy once the preview has replaced innerHTML.
     const originalPlate = logoPreview.innerHTML;
     const originalPlateEmpty = logoPreview.classList.contains('is-empty');
 
@@ -33,9 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
     systemLogo.addEventListener('change', (e) => {
         const file = e.target.files[0];
 
-        // Kinansela ang dialog ng file — walang napili, kaya balik sa
-        // dating logo sa halip na maiwang nakatingin sa preview ng
-        // file na hindi na naman ipapadala.
+        // The file dialog was cancelled — nothing was picked, so go
+        // back to the old logo rather than leaving the user looking at
+        // a preview of a file that will never be sent.
         if (!file) {
             showOriginalLogo();
             return;
@@ -54,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
         logoReset.hidden = false;
     });
 
-    // 🔹 Undo — ibinabalik ang patlang sa walang laman, kaya hindi na
-    // nagpapadala ng file ang form at nananatili ang lumang logo
-    // (`UPLOAD_ERR_NO_FILE` ang nakikita ng crud/update_system_config.php).
+    // 🔹 Undo — empties the field, so the form sends no file and the
+    // old logo stays (crud/update_system_config.php sees
+    // `UPLOAD_ERR_NO_FILE`).
     logoReset.addEventListener('click', () => {
         systemLogo.value = '';
         showOriginalLogo();

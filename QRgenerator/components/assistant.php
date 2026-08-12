@@ -1,9 +1,9 @@
     <!-- Chat Toggle Button -->
     <button class="chat-toggle-btn" id="chatToggleBtn">
-        <!-- Logo ng Lexon. Lokal na file, hindi na galing sa CDN ng
-             flaticon — mas mabilis, at hindi masisira kapag inalis nila
-             ang GIF. Naka-128px ito para malinaw sa retina kahit 50px
-             lang ang ipinapakita. -->
+        <!-- The Lexon logo. A local file rather than the flaticon CDN —
+             faster, and it cannot break if they remove the GIF. It is
+             128px so it stays sharp on retina even though only 50px is
+             shown. -->
         <img width="50" height="50" style="border-radius: 50px;"
             src="../assets/images/lexon-lx.png" alt="Lexon">
         <span class="notification-badge">1</span>

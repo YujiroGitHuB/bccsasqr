@@ -1,37 +1,36 @@
 <?php
 /*
  * ============================================================
- * Awtomatikong cache-busting para sa lokal na CSS at JS.
+ * Automatic cache-busting for local CSS and JS.
  *
- * Ang problema: ini-cache ng browser ang main.css at mga script.
- * Kapag nag-deploy tayo ng ayos sa CSS, luma pa rin ang nakikita ng
- * mga gumagamit — lalo na sa telepono kung saan matagal nananatili
- * ang cache. Ang lunas noon ay manwal na "?v=1.2", pero kailangan
- * itong tandaang baguhin sa tuwing may edit; kapag nakalimutan,
- * walang nakikitang pagbabago.
+ * The problem: browsers cache main.css and the scripts. When a CSS
+ * fix is deployed, users still see the old one — especially on
+ * phones, where the cache lives a long time. The old remedy was a
+ * manual "?v=1.2", but that has to be remembered on every edit; when
+ * it is forgotten, nothing appears to change.
  *
- * Dito, ang oras ng huling pagbabago ng file (filemtime) ang bersyon.
- * Ganito ito ginagamit sa loob ng isang PHP echo tag:
+ * Here the file's last-modified time (filemtime) is the version. It
+ * is used inside a PHP echo tag like this:
  *
  *     <link rel="stylesheet" href="{asset('../assets/css/main.css')}">
  *
- * at ang inilalabas nito ay:
+ * and what it emits is:
  *
  *     ../assets/css/main.css?v=1770712345
  *
- * Kapag nag-iba ang file, nag-iba ang numero, at kusang kukuha ng
- * bago ang browser. Kapag hindi, mananatili ang cache — walang
- * nasasayang na request.
+ * When the file changes the number changes and the browser fetches a
+ * fresh copy on its own. When it does not, the cache stands — no
+ * request is wasted.
  *
- * Ang ipinapasa ay ang HREF mismo na nakasulat sa HTML (kasama ang
- * mga "../"). Ang ganoong path ay sinusukat ng browser laban sa URL
- * ng page, at ang katumbas nito sa disk ay ang folder ng script na
- * tumatakbo — kaya SCRIPT_FILENAME ang batayan natin. Gumagana ito
- * kahit saang lalim ang page (index.php, pages/…, Qrscanner/…).
+ * What gets passed in is the HREF exactly as written in the HTML
+ * (including the "../"). The browser resolves such a path against
+ * the page's URL, and its equivalent on disk is the folder of the
+ * running script — which is why SCRIPT_FILENAME is the base. It
+ * works at any depth (index.php, pages/…, Qrscanner/…).
  *
- * TANDA: huwag maglagay ng PHP closing tag sa loob ng "//" na
- * komento dito — tinatapos noon ang PHP mode kahit komento pa iyon,
- * at hindi na mababasa ang function sa ibaba.
+ * NOTE: never put a PHP closing tag inside a "//" comment here — it
+ * ends PHP mode even inside a comment, and the function below would
+ * no longer be read.
  * ============================================================
  */
 
@@ -39,15 +38,15 @@ if (!function_exists('asset')) {
 
     function asset(string $href): string
     {
-        // Isang beses lang kada request ang stat sa bawat file —
-        // ilang beses ini-include ang ilang script kada page.
+        // stat each file once per request — some scripts are included
+        // several times on a page.
         static $cache = [];
 
         if (isset($cache[$href])) {
             return $cache[$href];
         }
 
-        // Tanggalin ang anumang lumang "?v=…" na nakasulat pa sa HTML.
+        // Strip any old "?v=…" still written in the HTML.
         $path = strtok($href, '?');
 
         $base = isset($_SERVER['SCRIPT_FILENAME'])
@@ -56,9 +55,9 @@ if (!function_exists('asset')) {
 
         $mtime = @filemtime($base . '/' . $path);
 
-        // Kapag hindi makita ang file (halimbawa, ibang setup ng
-        // hosting), ibinabalik ang orihinal na path — mas mabuti nang
-        // walang bersyon kaysa sirang link.
+        // When the file cannot be found (a different hosting setup,
+        // say), return the original path — better no version than a
+        // broken link.
         return $cache[$href] = $mtime ? $path . '?v=' . $mtime : $path;
     }
 }

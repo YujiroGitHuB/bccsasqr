@@ -1,9 +1,9 @@
-// requirePhoto.js — toggle para sa "Student Photo Requirement"
+// requirePhoto.js — the "Student Photo Requirement" toggle
 //
-// Kapag naka-ON, hindi maitatala ang attendance ng estudyanteng walang
-// photo (tingnan ang crud/save_attendance.php). Malaki ang epekto nito
-// kaya may kumpirmasyon muna bago buksan — hindi tulad ng ibang toggle
-// dito na agad-agad.
+// When ON, attendance cannot be recorded for a student with no photo
+// (see crud/save_attendance.php). The effect is large, so turning it
+// on asks for confirmation first — unlike the other toggles here,
+// which act immediately.
 
 const requirePhotoToggle = document.getElementById('require-photo-toggle');
 const requirePhotoInput  = document.getElementById('require_photo_status');
@@ -13,13 +13,12 @@ if (requirePhotoToggle && requirePhotoInput) {
     requirePhotoToggle.addEventListener('change', async () => {
         const turningOn = requirePhotoToggle.checked;
 
-        // Ang pagbukas ay maaaring humarang sa buong klase, kaya
-        // tinatanong muna. Ang pagsara ay hindi mapanganib — dumaan
-        // agad.
+        // Turning it on can block a whole class, so it asks first.
+        // Turning it off is not dangerous — let it through.
         if (turningOn) {
-            // Diretso nang sa id — dating hinahalungkat nito ang DOM
-            // pataas mula sa icon ng babala, na nasisira sa bawat
-            // pagbabago ng balangkas ng page.
+            // Straight to the id now — this used to walk up the DOM
+            // from the warning icon, which broke on every change to
+            // the page structure.
             const warning = document.getElementById('photoWarning')?.textContent?.trim();
 
             const result = await Swal.fire({
@@ -65,8 +64,8 @@ if (requirePhotoToggle && requirePhotoInput) {
                 color: '#e2e8f0'
             });
 
-            // I-refresh para tumugma ang status text at ang bilang ng
-            // maaapektuhang estudyante sa bagong halaga.
+            // Refresh so the status text and the count of affected
+            // students match the new value.
             setTimeout(() => window.location.reload(), 900);
 
         } catch (err) {

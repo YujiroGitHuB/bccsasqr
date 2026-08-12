@@ -5,9 +5,9 @@ $result = mysqli_query($conn, $query);
 ?>
 
 <!-- Add Student Modal
-     Ang anyo ay nasa assets/css/modal-form.css (klase: .app-modal).
-     Ang mga id at `name` ay hindi dapat baguhin — sila ang binabasa
-     ng assets/js/addStudent.js at ng crud/add_students.php. -->
+     Styling lives in assets/css/modal-form.css (class: .app-modal).
+     The ids and `name`s must not change — they are what
+     assets/js/addStudent.js and crud/add_students.php read. -->
 <div class="modal fade app-modal" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -38,10 +38,10 @@ $result = mysqli_query($conn, $query);
                                 aria-describedby="student_no_hint"
                                 required>
                         </div>
-                        <!-- Ang pormat ay itinutugma sa sinusuri ng QR generator
-                             (`\d{3}-\d{3,4}` sa QRgenerator/js/fetch_students.js) —
-                             kung mali ang naitala rito, hindi makakagawa ng QR
-                             ang estudyante. -->
+                        <!-- The format matches what the QR generator checks
+                             (`\d{3}-\d{3,4}` in QRgenerator/js/fetch_students.js) —
+                             record it wrong here and the student cannot generate
+                             a QR. -->
                         <span class="app-hint" id="student_no_hint">Format: YEAR-Registration No. — e.g. 019-464 or 025-1023</span>
                     </div>
 
@@ -98,8 +98,8 @@ $result = mysqli_query($conn, $query);
                         </div>
                     </div>
 
-                    <!-- Nasa loob ng <form> ang paanan para manatiling katutubo
-                         ang pagsumite ng Save. -->
+                    <!-- The footer sits inside the <form> so Save submits
+                         natively. -->
                     <div class="app-modal-footer">
                         <button type="button" class="app-btn ghost" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="app-btn primary">
