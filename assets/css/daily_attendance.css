@@ -1,605 +1,515 @@
-/* Two pages use this file:
-     1. pages/daily_attendance.php  — student page, centered card
-     2. pages/generate_attendance_link.php — admin page, has a sidebar
+/* ============================================================
+   DAILY ATTENDANCE — STUDENT FORM   (pages/daily_attendance.php)
 
-   The full-page centering below is for (1) only. It used to be a bare
-   `body`, so (2) picked it up as well — and had to add
-   `style="display: block !important"` to cancel the flex. The 20px of
-   padding was never cancelled, costing the admin page 40px of width on
-   a phone. It is scoped now. */
+   Color: violet (#8b5cf6 → #7c3aed) — the ATTENDANCE group's
+   identity, see attendance-page.css for the full logic. This form
+   is what the links from generate_attendance_link.php open, so the
+   two read as one product instead of the student landing on
+   something that looks unrelated to the rest of the system.
+
+   What it replaces: a neon "holographic console" — cyan card glow,
+   an infinite shine sweep, a scan line, floating particles, a
+   20-segment data readout, corner brackets, and an Orbitron font
+   that was never loaded (so it silently fell back to sans-serif).
+   That vocabulary exists nowhere else in the app, and the
+   decoration sat *between* the field and the submit button — the
+   two stacked 30px margins plus a <br> left ~100px of dead space
+   in the middle of the only screen students ever see.
+
+   NOTE: pages/generate_attendance_link.php loads this file as well,
+   so everything for the student page is scoped to
+   `.attendance-page`. The unscoped rules from "Search bar" down
+   belong to that admin page and are left alone.
+   ============================================================ */
+
 body.attendance-page {
-    background-color: #0f172a;
+    --att: #8b5cf6;
+    --att-deep: #7c3aed;
+    --att-soft: rgba(139, 92, 246, .14);
+    --att-line: rgba(139, 92, 246, .3);
+    --att-ink: #c4b5fd;
+    --att-surface: #16161a;
+    --att-border: rgba(255, 255, 255, .07);
+
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 24px 16px;
+    color: #e2e8f0;
+    background-color: #0f172a;
+    /* Fixed, not scrolling: on a short phone the card scrolls and a
+       moving wash under it reads as the page jittering. */
+    background-image:
+        radial-gradient(circle at 50% -10%, rgba(139, 92, 246, .18), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(56, 189, 248, .08), transparent 45%);
+    background-attachment: fixed;
 }
 
-.attendance-card {
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-    border-radius: 20px;
-    box-shadow:
-        0 0 20px rgba(0, 240, 255, 0.3),
-        0 0 40px rgba(0, 240, 255, 0.2),
-        inset 0 0 50px rgba(0, 0, 0, 0.5);
-    max-width: 500px;
+/* ─── Card ────────────────────────────────────────────────── */
+.attendance-page .attendance-card {
+    position: relative;
     width: 100%;
-    border: 2px solid rgba(0, 240, 255, 0.5);
+    max-width: 460px;
+    border-radius: 20px;
+    border: 1px solid var(--att-border);
+    background: var(--att-surface);
+    box-shadow:
+        0 24px 60px rgba(0, 0, 0, .5),
+        0 0 0 1px rgba(255, 255, 255, .02) inset;
     overflow: hidden;
+}
+
+/* The 3px gradient bar every hero card in the admin UI carries. */
+.attendance-page .attendance-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--att), var(--att-deep));
+    box-shadow: 0 0 12px rgba(139, 92, 246, .6);
+    z-index: 2;
+}
+
+/* ─── Header ──────────────────────────────────────────────── */
+.attendance-page .card-header {
+    padding: 1.9rem 1.5rem 1.4rem;
+    text-align: center;
+    border-bottom: 1px solid var(--att-border);
+    background:
+        radial-gradient(circle at 50% 0%, rgba(139, 92, 246, .16), transparent 60%),
+        linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, 0));
+}
+
+.attendance-page .att-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    object-fit: cover;
+    background: #0f172a;
+    padding: 6px;
+    border: 1px solid var(--att-line);
+    box-shadow: 0 8px 20px rgba(139, 92, 246, .28);
+}
+
+.attendance-page .att-title {
+    margin: .85rem 0 .3rem;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: #fff;
+}
+
+.attendance-page .att-date {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin: 0;
+    font-size: .82rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+/* ─── Class panel ─────────────────────────────────────────── */
+/* Was a Bootstrap-blue box (#0d6efd / #6ea8fe) on a cyan-bordered
+   card — a third color on a screen that only needs one. */
+.attendance-page .att-class {
+    margin-top: 1.15rem;
+    padding: 1rem 1.1rem;
+    text-align: left;
+    border-radius: 14px;
+    border: 1px solid var(--att-line);
+    background: var(--att-soft);
+}
+
+.attendance-page .att-class-code {
+    display: inline-block;
+    margin-bottom: .5rem;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: var(--att-ink);
+    background: rgba(139, 92, 246, .18);
+    border: 1px solid var(--att-line);
+}
+
+.attendance-page .att-class-name {
+    margin: 0 0 .75rem;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #f1f5f9;
+}
+
+.attendance-page .att-meta {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    margin: 0;
+}
+
+/* margin:0 because these are <p> — Bootstrap's 1rem bottom margin
+   would fight the flex gap above and space the two rows unevenly. */
+.attendance-page .att-meta-row {
+    display: flex;
+    align-items: baseline;
+    gap: .5rem;
+    margin: 0;
+    font-size: .84rem;
+    color: #cbd5e1;
+}
+
+.attendance-page .att-meta-row i {
+    color: var(--att-ink);
+    font-size: .85rem;
+}
+
+.attendance-page .att-meta-label {
+    color: rgba(255, 255, 255, .45);
+}
+
+/* Locked banner — red is a status here, not decoration. */
+.attendance-page .att-locked {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: 1rem;
+    padding: .45rem .9rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    color: #fca5a5;
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .28);
+}
+
+/* ─── Body ────────────────────────────────────────────────── */
+.attendance-page .card-body {
+    padding: 1.5rem;
+    color: #e2e8f0;
+}
+
+.attendance-page .att-label {
+    display: block;
+    margin-bottom: .5rem;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .5);
+}
+
+.attendance-page .att-input-wrap {
     position: relative;
 }
 
-.attendance-card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
+.attendance-page .att-input {
     width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.1), transparent);
-    animation: shine 3s infinite;
+    height: 54px;
+    padding: 0 3rem 0 2.85rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    background: rgba(255, 255, 255, .04);
+    color: #f1f5f9;
+    font-size: 1rem;
+    letter-spacing: .04em;
+    outline: none;
+    transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
 }
 
-@keyframes shine {
-    100% {
-        left: 100%;
-    }
+.attendance-page .att-input::placeholder {
+    color: rgba(255, 255, 255, .3);
+    letter-spacing: normal;
 }
 
-.card-header {
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-    color: white;
-    border-radius: 20px 20px 0 0 !important;
-    padding: 30px;
-    text-align: center;
-    border-bottom: 2px solid #00f0ff;
-    box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+.attendance-page .att-input:focus {
+    border-color: var(--att);
+    background: rgba(255, 255, 255, .06);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, .18);
 }
 
-.card-body {
-    color: #e0e0e0;
-}
-
-.student-info {
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-    border-radius: 20px;
-    box-shadow:
-        0 0 20px rgba(0, 240, 255, 0.3),
-        0 0 40px rgba(0, 240, 255, 0.2),
-        inset 0 0 50px rgba(0, 0, 0, 0.5);
-    border-radius: 10px;
-    padding: 20px;
-    margin: 20px 0;
-    display: none;
-    border: 1px solid #444;
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid #444;
-}
-
-.info-row:last-child {
-    border-bottom: none;
-}
-
-.info-label {
-    font-weight: 600;
-    color: #999;
-}
-
-.info-value {
-    color: #f0f0f0;
-    font-weight: 500;
-}
-
-.btn-submit {
-    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    border: none;
-    padding: 15px;
-    font-weight: 600;
-    font-size: 18px;
-    color: white;
-    transition: 0.2s;
-}
-
-.btn-submit:hover:not(:disabled) {
-    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-}
-
-.btn-submit:disabled {
-    opacity: 0.6;
+.attendance-page .att-input:disabled {
+    opacity: .5;
     cursor: not-allowed;
 }
 
-.alert {
-    border-radius: 10px;
+.attendance-page .att-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, .35);
+    pointer-events: none;
+    transition: color .18s ease;
 }
 
-.form-label {
-    color: #e0e0e0;
+.attendance-page .att-input:focus~.att-input-icon {
+    color: var(--att-ink);
 }
 
-.text-muted {
-    color: #888 !important;
+/* Verification indicator. JS toggles `.verifying` on this element
+   (id="verifyingIndicator") while the lookup is in flight — it is a
+   spinner now instead of an orange dot, because a dot changing
+   color does not read as "working" to someone waiting. */
+.attendance-page .att-status {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    margin-top: -9px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .12);
+    opacity: .6;
+    transition: opacity .2s ease;
 }
 
-.alert-success {
-    background: rgba(0, 255, 65, 0.05);
-    border: 2px solid #00ff41;
-    color: #00ff41;
-    box-shadow:
-        inset 0 0 20px rgba(0, 255, 65, 0.1),
-        0 0 20px rgba(0, 255, 65, 0.2);
+.attendance-page .att-status.verifying {
+    opacity: 1;
+    border-color: rgba(139, 92, 246, .25);
+    border-top-color: var(--att);
+    animation: att-spin .7s linear infinite;
 }
 
-.alert-danger {
-    background: rgba(255, 0, 100, 0.05);
-    border: 2px solid #ff0064;
-    color: #ff0064;
-    box-shadow:
-        inset 0 0 20px rgba(255, 0, 100, 0.1),
-        0 0 20px rgba(255, 0, 100, 0.2);
+@keyframes att-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.alert-warning {
-    background: rgba(255, 215, 0, 0.05);
-    border: 2px solid #ffd700;
-    color: #ffd700;
-    box-shadow:
-        inset 0 0 20px rgba(255, 215, 0, 0.1),
-        0 0 20px rgba(255, 215, 0, 0.2);
+/* Says what the missing "Verify" button would have said: nothing is
+   submitted until the number resolves to a student. */
+.attendance-page .att-hint {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: .6rem 0 0;
+    font-size: .78rem;
+    color: rgba(255, 255, 255, .4);
 }
 
-h5 {
-    color: #f0f0f0;
+/* ─── Verified student ───────────────────────────────────── */
+/* JS flips this to display:block, so the reveal animation replays
+   on every successful lookup — that motion is the confirmation. */
+.attendance-page .student-info {
+    display: none;
+    margin-top: 1.25rem;
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    border: 1px solid var(--att-border);
+    background: rgba(255, 255, 255, .03);
+    animation: att-reveal .25s ease both;
 }
 
-#loadingSpinner {
+@keyframes att-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}
+
+.attendance-page .student-info h5 {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0 0 .75rem;
+    font-size: .88rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.attendance-page .student-info h5 i {
+    color: #4ade80;
+    /* verified = present-green, the same green the badges use */
+}
+
+.attendance-page .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: .5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    font-size: .85rem;
+}
+
+.attendance-page .info-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.attendance-page .info-label {
+    color: rgba(255, 255, 255, .45);
+    font-weight: 500;
+}
+
+.attendance-page .info-value {
+    color: #f1f5f9;
+    font-weight: 600;
+    text-align: right;
+    word-break: break-word;
+}
+
+/* ─── Submit ─────────────────────────────────────────────── */
+/* The one primary action on the page. It was indigo→purple
+   (#5568d3 → #6a3f8f), a color that matched nothing else here. */
+.attendance-page .btn-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    width: 100%;
+    margin-top: 1.35rem;
+    padding: .9rem 1rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, var(--att), var(--att-deep));
+    box-shadow: 0 8px 20px rgba(139, 92, 246, .3);
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+.attendance-page .btn-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 12px 26px rgba(139, 92, 246, .4);
+}
+
+.attendance-page .btn-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Disabled is the state students see first, so it has to look
+   deliberately inert — not a faded version of a live button. */
+.attendance-page .btn-submit:disabled {
+    background: rgba(255, 255, 255, .06);
+    color: rgba(255, 255, 255, .35);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.attendance-page #loadingSpinner {
     display: none;
 }
 
-/* Holographic Input Styles */
-.input-container {
-    position: relative;
-    width: 100%;
+/* ─── Alerts ─────────────────────────────────────────────── */
+/* Green / amber / red keep their status meaning; only the shape is
+   brought in line with the rest of the app. */
+.attendance-page .alert {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    z-index: 10;
-    margin-bottom: 30px;
+    gap: .6rem;
+    margin-bottom: 1.15rem;
+    padding: .8rem 2.6rem .8rem 1rem;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    border-left-width: 3px;
+    font-size: .86rem;
+    box-shadow: none;
 }
 
-.input-field-container {
-    position: relative;
-    width: 100%;
-    margin-bottom: 30px;
+.attendance-page .alert-success {
+    color: #86efac;
+    background: rgba(34, 197, 94, .12);
+    border-color: rgba(34, 197, 94, .25);
+    border-left-color: #22c55e;
 }
 
-.holo-input {
-    width: 100%;
-    height: 60px;
-    background: rgba(0, 12, 36, 0.7);
-    border: none;
-    outline: none;
-    padding: 0 60px 0 20px;
-    color: rgba(0, 195, 255, 0.9);
-    font-family: "Orbitron", sans-serif;
-    font-size: 18px;
-    letter-spacing: 1px;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    border-radius: 4px;
-    box-shadow:
-        0 0 15px rgba(0, 140, 255, 0.3),
-        inset 0 0 10px rgba(0, 0, 0, 0.8);
-    transition: all 0.3s ease;
-    text-shadow: 0 0 5px rgba(0, 160, 255, 0.7);
-    z-index: 1;
+.attendance-page .alert-danger {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, .12);
+    border-color: rgba(239, 68, 68, .25);
+    border-left-color: #ef4444;
 }
 
-.holo-input::placeholder {
-    color: rgba(0, 110, 200, 0.4);
-    transition: all 0.3s ease;
+.attendance-page .alert-warning {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, .12);
+    border-color: rgba(245, 158, 11, .25);
+    border-left-color: #f59e0b;
 }
 
-.input-border {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    border: 1px solid rgba(0, 150, 255, 0.4);
-    border-radius: 4px;
-    z-index: 2;
+/* Bootstrap's close button is a dark SVG — invisible on this card.
+   Its 1.25rem padding was sized for a taller alert and overhangs
+   this one, so it is trimmed to sit inside the 2.6rem gutter. */
+.attendance-page .alert .btn-close {
+    padding: .95rem .9rem;
+    filter: invert(1) grayscale(1) brightness(1.6);
+    opacity: .5;
 }
 
-.input-border::before,
-.input-border::after {
-    content: "";
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    border: 1px solid rgba(0, 150, 255, 0.7);
-    z-index: 2;
-    transition: all 0.3s ease;
+.attendance-page .alert .btn-close:hover {
+    opacity: .9;
 }
 
-.input-border::before {
-    top: -1px;
-    left: -1px;
-    border-right: none;
-    border-bottom: none;
+/* ─── Footer ─────────────────────────────────────────────── */
+/* components/footer.php carries inline styles (a 30px top margin
+   and 0.9rem text) sized for full pages; inside a 460px card that
+   is a second block of dead space, hence the !important. */
+.attendance-page .attendance-card footer {
+    margin-top: 0 !important;
+    padding: 1rem 1.25rem !important;
+    font-size: .75rem !important;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, .4) !important;
+    border-top: 1px solid var(--att-border);
+    background: rgba(255, 255, 255, .015);
 }
 
-.input-border::after {
-    bottom: -1px;
-    right: -1px;
-    border-left: none;
-    border-top: none;
-}
+/* ─── Small phones ───────────────────────────────────────── */
+@media (max-width: 480px) {
+    body.attendance-page {
+        padding: 14px 12px;
+        /* A card pinned mid-screen on a short phone pushes the
+           submit button under the keyboard; let it start at the top
+           once it no longer fits comfortably. */
+        align-items: flex-start;
+    }
 
-.holo-scan-line {
-    position: absolute;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg,
-            rgba(0, 0, 0, 0) 0%,
-            rgba(0, 150, 255, 0.5) 20%,
-            rgba(255, 255, 255, 0.8) 50%,
-            rgba(0, 150, 255, 0.5) 80%,
-            rgba(0, 0, 0, 0) 100%);
-    top: 0;
-    left: 0;
-    opacity: 0;
-    filter: blur(1px);
-    z-index: 3;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-}
+    .attendance-page .card-header {
+        padding: 1.5rem 1.15rem 1.15rem;
+    }
 
-.input-glow {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    background: radial-gradient(ellipse at center,
-            rgba(0, 150, 255, 0.1) 0%,
-            rgba(0, 0, 0, 0) 70%);
-    opacity: 0;
-    border-radius: 4px;
-    z-index: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-}
+    .attendance-page .card-body {
+        padding: 1.25rem 1.15rem;
+    }
 
-.input-active-indicator {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: rgba(0, 150, 255, 0.7);
-    border-radius: 50%;
-    right: 20px;
-    top: 25px;
-    opacity: 0.3;
-    box-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
-    transition: all 0.3s ease;
-    z-index: 2;
-}
+    .attendance-page .att-title {
+        font-size: 1.3rem;
+    }
 
-/* Verifying indicator */
-.input-active-indicator.verifying {
-    opacity: 1;
-    background: rgba(255, 165, 0, 1);
-    box-shadow: 0 0 15px rgba(255, 165, 0, 0.7);
-}
-
-.input-active-indicator.verifying::after {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 165, 0, 0.5);
-    animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-
-@keyframes ping {
-
-    75%,
-    100% {
-        transform: scale(2);
-        opacity: 0;
+    /* 16px keeps iOS from zooming the page on focus. */
+    .attendance-page .att-input {
+        font-size: 16px;
     }
 }
 
-.input-label {
-    position: absolute;
-    top: -30px;
-    left: 0;
-    color: rgba(0, 150, 255, 0.7);
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    transition: all 0.3s ease;
-    pointer-events: none;
-    text-shadow: 0 0 5px rgba(0, 150, 255, 0.5);
-}
+@media (prefers-reduced-motion: reduce) {
 
-.input-data-visualization {
-    position: absolute;
-    width: calc(100% - 40px);
-    height: 3px;
-    bottom: 12px;
-    left: 20px;
-    display: flex;
-    justify-content: space-between;
-    z-index: 2;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-}
-
-.data-segment {
-    width: 4%;
-    height: 100%;
-    background: rgba(0, 150, 255, 0.3);
-    transition: all 0.5s ease;
-}
-
-.data-segment:nth-child(even) {
-    height: 5px;
-    transform: translateY(-1px);
-}
-
-.input-particles {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    z-index: 3;
-    overflow: hidden;
-    border-radius: 4px;
-}
-
-.input-particle {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: rgba(0, 150, 255, 0.7);
-    border-radius: 50%;
-    opacity: 0;
-    filter: blur(1px);
-    transition: all 0.3s ease;
-    box-shadow: 0 0 5px rgba(0, 150, 255, 0.7);
-}
-
-.input-holo-overlay {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    background-image: linear-gradient(90deg,
-            rgba(0, 150, 255, 0.05) 25%,
-            rgba(0, 150, 255, 0.02) 50%,
-            rgba(0, 150, 255, 0.05) 75%);
-    background-size: 8px 100%;
-    opacity: 0.5;
-    pointer-events: none;
-    z-index: 4;
-    mix-blend-mode: overlay;
-}
-
-.interface-lines {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    z-index: 2;
-}
-
-.interface-line {
-    position: absolute;
-    background: rgba(0, 150, 255, 0.3);
-    transition: all 0.3s ease;
-}
-
-.interface-line:nth-child(1) {
-    width: 20px;
-    height: 1px;
-    top: 15px;
-    right: 15px;
-}
-
-.interface-line:nth-child(2) {
-    width: 1px;
-    height: 20px;
-    top: 15px;
-    right: 15px;
-}
-
-.interface-line:nth-child(3) {
-    width: 1px;
-    height: 20px;
-    bottom: 15px;
-    left: 15px;
-}
-
-.interface-line:nth-child(4) {
-    width: 20px;
-    height: 1px;
-    bottom: 15px;
-    left: 15px;
-}
-
-.input-status {
-    position: absolute;
-    bottom: -25px;
-    right: 0;
-    font-size: 12px;
-    color: rgba(0, 150, 255, 0.5);
-    letter-spacing: 1px;
-    opacity: 0;
-    transition: all 0.3s ease;
-    pointer-events: none;
-    text-transform: uppercase;
-}
-
-@keyframes scan-animation {
-    0% {
-        top: 0;
-        opacity: 0;
+    .attendance-page .student-info,
+    .attendance-page .att-status.verifying {
+        animation: none;
     }
 
-    10% {
-        opacity: 1;
-    }
-
-    90% {
-        opacity: 1;
-    }
-
-    100% {
-        top: 100%;
-        opacity: 0;
+    .attendance-page .btn-submit:hover:not(:disabled) {
+        transform: none;
     }
 }
 
-@keyframes data-pulse {
-    0% {
-        transform: scaleY(1);
-    }
+/* ============================================================
+   Everything below is the ADMIN page
+   (pages/generate_attendance_link.php), which loads this file
+   before links-page.css. Unscoped on purpose — leave as is.
+   ============================================================ */
 
-    50% {
-        transform: scaleY(1.8);
-    }
-
-    100% {
-        transform: scaleY(1);
-    }
-}
-
-@keyframes particle-float {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
-.holo-input:focus {
-    background: rgba(0, 22, 46, 0.8);
-    box-shadow:
-        0 0 20px rgba(0, 150, 255, 0.4),
-        inset 0 0 15px rgba(0, 0, 0, 0.9);
-    color: rgba(0, 210, 255, 1);
-}
-
-.holo-input:focus::placeholder {
-    color: rgba(0, 150, 255, 0.3);
-    transform: translateX(10px);
-}
-
-.holo-input:focus~.input-border {
-    border-color: rgba(0, 180, 255, 0.7);
-}
-
-.holo-input:focus~.input-border::before,
-.holo-input:focus~.input-border::after {
-    border-color: rgba(0, 180, 255, 1);
-    width: 30px;
-    height: 30px;
-}
-
-.holo-input:focus~.holo-scan-line {
-    opacity: 1;
-    animation: scan-animation 2s infinite ease-in-out;
-}
-
-.holo-input:focus~.input-glow {
-    opacity: 1;
-}
-
-.holo-input:focus~.input-active-indicator {
-    opacity: 1;
-    background: rgba(0, 200, 255, 1);
-    box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
-    transform: scale(1.2);
-}
-
-.holo-input:focus~.input-label {
-    color: rgba(0, 200, 255, 1);
-    text-shadow: 0 0 10px rgba(0, 200, 255, 0.7);
-    transform: translateY(-5px);
-}
-
-.holo-input:focus~.input-data-visualization {
-    opacity: 1;
-}
-
-.holo-input:focus~.input-data-visualization .data-segment {
-    animation: data-pulse 2s infinite;
-    animation-delay: calc(var(--index) * 0.1s);
-}
-
-.holo-input:focus~.input-status {
-    opacity: 1;
-}
-
-.holo-input:focus~.interface-lines .interface-line {
-    background: rgba(0, 200, 255, 0.6);
-}
-
-.holo-input:focus~.input-particles .input-particle {
-    opacity: 1;
-    animation: particle-float 3s infinite ease-in-out;
-    animation-delay: calc(var(--index) * 0.2s);
-}
-
-.holo-input:hover {
-    background: rgba(0, 15, 40, 0.75);
-}
-
-.holo-input:hover~.input-active-indicator {
-    opacity: 0.6;
-}
-
-.power-indicator {
-    position: absolute;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg,
-            rgba(0, 180, 255, 0.7) 0%,
-            rgba(0, 180, 255, 0.3) 100%);
-    bottom: 0;
-    left: 0;
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s ease;
-    z-index: 3;
-}
-
-.holo-input:focus~.power-indicator {
-    transform: scaleX(1);
+.text-muted {
+    color: #888 !important;
 }
 
 /* ── Search bar ── */

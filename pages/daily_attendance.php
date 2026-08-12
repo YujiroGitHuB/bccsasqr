@@ -64,82 +64,60 @@ if ($result && $result->num_rows > 0) {
     <?php include __DIR__ . "/../includes/attendance_lock.php" ?>
     <div class="attendance-card <?php echo $is_locked ? 'form-disabled' : ''; ?>">
         <div class="card-header">
-            <img style="width: 50px; height: 50px; border-radius: 50px;"
-                src="https://cdn-icons-gif.flaticon.com/18995/18995020.gif" alt="">
-            <h2 class="mb-0">Daily Attendance</h2>
-            <p class="mb-0 mt-1 text-muted" style="font-size:.9rem;">
-                <i class="bi bi-calendar3 me-1"></i><?php echo date('F d, Y'); ?>
+            <img class="att-logo" src="../<?php echo $systemLogo; ?>"
+                alt="<?php echo htmlspecialchars($systemName); ?>">
+            <h1 class="att-title">Daily Attendance</h1>
+            <p class="att-date">
+                <i class="bi bi-calendar3"></i><?php echo date('F d, Y'); ?>
             </p>
 
-            <!-- Class Info -->
-            <div class="mt-3 p-3 rounded-3" style="background: rgba(13,110,253,.1); border: 1px solid rgba(13,110,253,.25);">
-                <h5 class="mb-2 fw-bold" style="color:#6ea8fe;">
-                    <i class="bi bi-bookmark-fill me-1"></i>
-                    <?php echo htmlspecialchars($attendance_data['subject_code']); ?> &mdash;
-                    <?php echo htmlspecialchars($attendance_data['subject_name']); ?>
-                </h5>
-                <p class="mb-1" style="font-size:.88rem; color:#ced4da;">
-                    <i class="bi bi-people-fill me-1" style="color:#20c997;"></i>
-                    <strong>Section:</strong> <?php echo htmlspecialchars($attendance_data['section']); ?>
-                </p>
-                <p class="mb-0" style="font-size:.88rem; color:#ced4da;">
-                    <i class="bi bi-person-badge me-1" style="color:#0dcaf0;"></i>
-                    <strong>Instructor:</strong> <?php echo htmlspecialchars($attendance_data['instructor_name']); ?>
-                </p>
+            <!-- Class info. The subject code leads as a chip: it is what a
+                 student checks first to know they opened the right link. -->
+            <div class="att-class">
+                <span class="att-class-code"><?php echo htmlspecialchars($attendance_data['subject_code']); ?></span>
+                <h2 class="att-class-name"><?php echo htmlspecialchars($attendance_data['subject_name']); ?></h2>
+                <div class="att-meta">
+                    <p class="att-meta-row">
+                        <i class="bi bi-people-fill"></i>
+                        <span class="att-meta-label">Section</span>
+                        <?php echo htmlspecialchars($attendance_data['section']); ?>
+                    </p>
+                    <p class="att-meta-row">
+                        <i class="bi bi-person-badge"></i>
+                        <span class="att-meta-label">Instructor</span>
+                        <?php echo htmlspecialchars($attendance_data['instructor_name']); ?>
+                    </p>
+                </div>
             </div>
 
             <?php if ($is_locked): ?>
-                <div class="mt-3 py-2 px-3 rounded-3 d-inline-flex align-items-center gap-2"
-                    style="background: rgba(220,53,69,.15); border: 1px solid rgba(220,53,69,.3); color:#ea868f;">
+                <div class="att-locked">
                     <i class="bi bi-lock-fill"></i>
-                    <span class="fw-semibold" style="font-size:.88rem; letter-spacing:.5px;">ATTENDANCE LOCKED</span>
+                    <span>ATTENDANCE LOCKED</span>
                 </div>
             <?php endif; ?>
         </div>
-        <div class="card-body p-4">
+        <div class="card-body">
             <div id="alertContainer"></div>
-            <br>
             <form id="attendanceForm">
-                <div class="input-container">
-                    <div class="input-field-container">
-                        <input type="text" id="studentNo" class="holo-input" placeholder="Enter your student number" required autocomplete="off" <?php echo $is_locked ? 'disabled' : ''; ?> />
-                        <div class="input-border"></div>
-                        <div class="holo-scan-line"></div>
-                        <div class="input-glow"></div>
-                        <div class="input-active-indicator" id="verifyingIndicator"></div>
-                        <div class="input-label">Student Number</div>
-
-                        <div class="input-data-visualization">
-                            <?php for ($i = 1; $i <= 20; $i++): ?>
-                                <div class="data-segment" style="--index: <?php echo $i; ?>;"></div>
-                            <?php endfor; ?>
-                        </div>
-
-                        <div class="input-particles">
-                            <div class="input-particle" style="--index: 1; top: 20%; left: 10%;"></div>
-                            <div class="input-particle" style="--index: 2; top: 65%; left: 25%;"></div>
-                            <div class="input-particle" style="--index: 3; top: 40%; left: 40%;"></div>
-                            <div class="input-particle" style="--index: 4; top: 75%; left: 60%;"></div>
-                            <div class="input-particle" style="--index: 5; top: 30%; left: 75%;"></div>
-                            <div class="input-particle" style="--index: 6; top: 60%; left: 90%;"></div>
-                        </div>
-
-                        <div class="input-holo-overlay"></div>
-
-                        <div class="interface-lines">
-                            <div class="interface-line"></div>
-                            <div class="interface-line"></div>
-                            <div class="interface-line"></div>
-                            <div class="interface-line"></div>
-                        </div>
-
-                        <div class="input-status">Ready for input</div>
-                        <div class="power-indicator"></div>
+                <div class="att-field">
+                    <label class="att-label" for="studentNo">Student Number</label>
+                    <div class="att-input-wrap">
+                        <!-- The icon and the indicator follow the input in the
+                             DOM so the focus styles can reach them with `~`. -->
+                        <input type="text" id="studentNo" class="att-input" placeholder="e.g. 019-464" required
+                            autocomplete="off" inputmode="text" <?php echo $is_locked ? 'disabled' : ''; ?> />
+                        <i class="bi bi-person-vcard att-input-icon"></i>
+                        <span class="att-status" id="verifyingIndicator"></span>
                     </div>
+                    <p class="att-hint">
+                        <i class="bi bi-info-circle"></i>
+                        Your details are checked automatically as you type.
+                    </p>
                 </div>
 
                 <div id="studentInfo" class="student-info">
-                    <h5 class="mb-3"><i class="bi bi-person-circle"></i> Student Information</h5>
+                    <h5><i class="bi bi-patch-check-fill"></i> Student Verified</h5>
                     <div class="info-row">
                         <span class="info-label">Student Number:</span>
                         <span class="info-value" id="displayStudentNo"></span>
@@ -158,7 +136,7 @@ if ($result && $result->num_rows > 0) {
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-submit w-100 mt-4" id="submitBtn" disabled>
+                <button type="submit" class="btn-submit" id="submitBtn" disabled>
                     <span id="submitText"><i class="bi bi-check-circle"></i> Submit Attendance</span>
                     <span id="loadingSpinner">
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
