@@ -8,6 +8,7 @@ and view or export attendance and absence reports as PDF.
 
 Built with **vanilla PHP** (procedural, MySQLi) and **Bootstrap 5** — no framework, no build step,
 no package manager.
+
 ---
 
 ## Features

@@ -81,6 +81,17 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
                             </button>
                             <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
 
+                            <!-- Promote Section — the once-a-year move that used
+                                 to mean editing every student by hand. Ghost, not
+                                 primary: it is rare, and Add Student is still the
+                                 one action this page is for. -->
+                            <button class="stud-btn ghost" id="promoteSectionBtn"
+                                data-bs-toggle="modal" data-bs-target="#promoteSectionModal"
+                                title="Move a whole section up a year level">
+                                <i class="bi bi-arrow-up-right-circle"></i>
+                                <span class="btn-text">Promote Section</span>
+                            </button>
+
                             <!-- Delete Selected Button (hidden by default) -->
                             <button class="stud-btn warn d-none" id="deleteSelectedBtn" title="Delete Selected Students">
                                 <i class="bi bi-trash2-fill"></i>
@@ -211,6 +222,8 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
     </div>
     <!-- update students -->
     <?php include __DIR__ . "/../components/update_students_modal.php"; ?>
+    <!-- promote a whole section to the next year level -->
+    <?php include __DIR__ . "/../components/promote_section_modal.php"; ?>
     <!-- script add student -->
     <script src="<?= asset('../assets/js/addStudent.js') ?>"></script>
     <!-- script student update -->
@@ -221,6 +234,10 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
     <script src="<?= asset('../assets/js/importStudent.js') ?>"></script>
     <!-- delete selected -->
     <script src="<?= asset('../assets/js/deleteSelected.js') ?>"></script>
+    <!-- promote section — must load AFTER importStudent.js, whose
+         top-level `esc`/`SWAL_APP`/`swalHead` it deliberately avoids
+         re-declaring. -->
+    <script src="<?= asset('../assets/js/promoteSection.js') ?>"></script>
     <!-- script -->
     <?php include __DIR__ . "/../includes/footer.php"; ?>
     <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
