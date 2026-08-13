@@ -788,19 +788,36 @@ body.trk-page {
 /* ─── Responsive ──────────────────────────────────────────── */
 
 @media (max-width: 640px) {
+    /* The hero becomes a real column when narrow rather than relying
+       on flex wrapping — that way the logo is guaranteed its own row
+       instead of breaking wherever the title length happens to put
+       it. Matches the QR generator, which does the same at its own
+       breakpoint (860px, where its two-column shell collapses). */
     .trk-hero {
         padding: 1rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .85rem;
     }
 
+    /* The whole hero centers: logo, title, subtitle and chips. With
+       only the chips wrapping and everything else left aligned it
+       reads as an accident — they should all follow one axis. */
     .trk-hero-icon {
         width: 44px;
         height: 44px;
         border-radius: 12px;
+        align-self: center;
     }
 
     .trk-hero-icon img {
         width: 28px;
         height: 28px;
+    }
+
+    .trk-hero-text {
+        flex-basis: auto;
+        text-align: center;
     }
 
     .trk-hero-text h1 {
@@ -810,6 +827,7 @@ body.trk-page {
     .trk-chips {
         margin-left: 0;
         width: 100%;
+        justify-content: center;
     }
 
     /* In a narrow field "Type to search" competes with the
