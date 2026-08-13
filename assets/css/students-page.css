@@ -138,6 +138,90 @@
     flex-wrap: wrap;
 }
 
+/* ─── Overflow menu ───────────────────────────────────────── */
+
+/* Square: it holds an icon and no label, so the horizontal padding
+   the other buttons carry would leave it lopsided. */
+.stud-page .stud-more .stud-btn {
+    padding: .55rem;
+    width: 38px;
+    justify-content: center;
+}
+
+.stud-page .stud-more-menu {
+    min-width: 210px;
+    padding: .35rem;
+    border-radius: 12px;
+    border: 1px solid var(--stud-border);
+    background: var(--surface);
+    box-shadow: 0 18px 40px var(--shadow-lg);
+}
+
+.stud-page .stud-more-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .55rem .7rem;
+    border-radius: 8px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--ink-3);
+    background: transparent;
+}
+
+.stud-page .stud-more-menu .dropdown-item i {
+    font-size: .95rem;
+    color: var(--stud-ink);
+}
+
+.stud-page .stud-more-menu .dropdown-item:hover,
+.stud-page .stud-more-menu .dropdown-item:focus {
+    color: var(--ink);
+    background: rgba(14, 165, 233, .12);
+}
+
+/* Delete All keeps its red, one level down. The whole row is not
+   tinted — only the text — so it does not shout from inside a menu
+   the way a solid red block would. */
+.stud-page .stud-more-menu .dropdown-item.is-danger,
+.stud-page .stud-more-menu .dropdown-item.is-danger i {
+    color: #f87171;
+}
+
+.stud-page .stud-more-menu .dropdown-item.is-danger:hover,
+.stud-page .stud-more-menu .dropdown-item.is-danger:focus {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, .14);
+}
+
+.stud-page .stud-more-menu .dropdown-divider {
+    margin: .3rem .2rem;
+    border-color: var(--line);
+    opacity: 1;
+}
+
+/* The amber and red here were picked to glow on a near-black card.
+   On a white one they wash out — and these two are a destructive
+   action and a live count, which are the last things that should be
+   hard to read. */
+:root:not([data-theme="dark"]) .stud-page .stud-btn.warn {
+    color: #b45309;
+}
+
+:root:not([data-theme="dark"]) .stud-page .stud-btn.danger {
+    color: #b91c1c;
+}
+
+:root:not([data-theme="dark"]) .stud-page .stud-more-menu .dropdown-item.is-danger,
+:root:not([data-theme="dark"]) .stud-page .stud-more-menu .dropdown-item.is-danger i {
+    color: #b91c1c;
+}
+
+:root:not([data-theme="dark"]) .stud-page .stud-more-menu .dropdown-item.is-danger:hover,
+:root:not([data-theme="dark"]) .stud-page .stud-more-menu .dropdown-item.is-danger:focus {
+    color: #991b1b;
+}
+
 /* ─── Buttons ─────────────────────────────────────────────── */
 /* The label is always visible. The old `.btn-icon` hid it until
    hover — leaving two identical red trash icons side by side with

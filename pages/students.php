@@ -73,42 +73,66 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
                         <div class="stud-toolbar-title">
                             <i class="bi bi-table"></i> Student Records
                         </div>
+                        <!-- Five buttons in a row wrapped onto two ragged
+                             lines as soon as the window narrowed, and the
+                             fifth ("Delete Selected") appears without warning
+                             the moment a checkbox is ticked — so the row
+                             changed shape while you were using it.
+
+                             Only the actions you reach for often stay on the
+                             bar. The rare ones move into the overflow menu:
+                             Import CSV, Promote Section (once a year) and
+                             Delete All (which is safer one level down).
+
+                             The ids are unchanged — importStudent.js,
+                             deleteSelected.js and delStudent.js find these
+                             by id, not by position. -->
                         <div class="stud-actions">
-                            <!-- Import CSV Button -->
-                            <button class="stud-btn ghost" id="importCsvBtn" title="Import from CSV">
-                                <i class="bi bi-file-earmark-arrow-up"></i>
-                                <span class="btn-text">Import CSV</span>
-                            </button>
-                            <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
-
-                            <!-- Promote Section — the once-a-year move that used
-                                 to mean editing every student by hand. Ghost, not
-                                 primary: it is rare, and Add Student is still the
-                                 one action this page is for. -->
-                            <button class="stud-btn ghost" id="promoteSectionBtn"
-                                data-bs-toggle="modal" data-bs-target="#promoteSectionModal"
-                                title="Move a whole section up a year level">
-                                <i class="bi bi-arrow-up-right-circle"></i>
-                                <span class="btn-text">Promote Section</span>
-                            </button>
-
-                            <!-- Delete Selected Button (hidden by default) -->
+                            <!-- Contextual: appears only once rows are ticked,
+                                 so it needs to be seen, not buried. -->
                             <button class="stud-btn warn d-none" id="deleteSelectedBtn" title="Delete Selected Students">
                                 <i class="bi bi-trash2-fill"></i>
                                 <span class="btn-text">Delete Selected (<span id="selectedCount">0</span>)</span>
                             </button>
 
-                            <!-- Delete All Button -->
-                            <button class="stud-btn danger" id="deleteAllBtn" onclick="confirmDeleteAll()" title="Delete All Students">
-                                <i class="bi bi-trash-fill"></i>
-                                <span class="btn-text">Delete All</span>
-                            </button>
+                            <div class="dropdown stud-more">
+                                <button class="stud-btn ghost" type="button" id="studMoreBtn"
+                                    data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false"
+                                    title="More actions" aria-label="More actions">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end stud-more-menu" aria-labelledby="studMoreBtn">
+                                    <li>
+                                        <button class="dropdown-item" type="button" id="importCsvBtn">
+                                            <i class="bi bi-file-earmark-arrow-up"></i> Import CSV
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item" type="button" id="promoteSectionBtn"
+                                            data-bs-toggle="modal" data-bs-target="#promoteSectionModal">
+                                            <i class="bi bi-arrow-up-right-circle"></i> Promote Section
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button class="dropdown-item is-danger" type="button" id="deleteAllBtn"
+                                            onclick="confirmDeleteAll()">
+                                            <i class="bi bi-trash-fill"></i> Delete All
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
 
-                            <!-- Add Student Button — the only primary action -->
+                            <!-- The one action this page is for. Kept last so
+                                 it stays where it has always been. -->
                             <button class="stud-btn primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                                 <i class="bi bi-person-plus"></i>
                                 <span class="btn-text">Add Student</span>
                             </button>
+
+                            <!-- importStudent.js clicks this; it must stay in
+                                 the DOM even though it is never seen. -->
+                            <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
                         </div>
                     </div>
                     <!-- add modal -->
