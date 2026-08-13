@@ -139,6 +139,30 @@ body {
     color: var(--ink-2);
 }
 
+/* ─── The modal close button ─────────────────────────────────
+   Ten templates carry Bootstrap's `.btn-close-white`, which
+   hard-codes an invert filter so the ✕ is always white. On a white
+   modal header that makes it invisible — the dialog looks like it
+   has no way out. The filter is dropped and re-applied only in
+   dark, which is the one theme that needs it.
+
+   Scoped to nothing in particular on purpose: the class appears
+   inside .app-modal, .lnk-qr-modal, .user-modal and plain Bootstrap
+   modals alike, and every one of them has the same problem. */
+.btn-close.btn-close-white {
+    filter: none;
+}
+
+:root[data-theme="dark"] .btn-close.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .btn-close.btn-close-white {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+}
+
 /* ─── Accent "ink" on a light ground ─────────────────────────
    Each page picks a pale tint of its accent for small text —
    --stud-ink #7dd3fc, --att-ink #c4b5fd and so on. Those were

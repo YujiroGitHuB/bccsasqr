@@ -304,7 +304,19 @@
 }
 
 /* ─── QR modal ────────────────────────────────────────────── */
+/* The modal is rendered as a SIBLING of .link-page, not inside it, so
+   none of the --lnk-* accents defined there reach it. Every rule below
+   that referenced them was therefore invalid: the Download button's
+   gradient resolved to nothing, leaving a transparent button with
+   white text. In dark that read as a borderless text link and went
+   unnoticed; on a white modal it disappeared completely.
+   Declaring the accents here is what makes those rules resolve. */
 .lnk-qr-modal {
+    --lnk: #8b5cf6;
+    --lnk-deep: #7c3aed;
+    --lnk-soft: rgba(139, 92, 246, .14);
+    --lnk-line: rgba(139, 92, 246, .3);
+
     border-radius: 16px !important;
     border: 1px solid var(--lnk-line) !important;
     background: var(--surface) !important;

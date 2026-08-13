@@ -135,25 +135,9 @@
     box-shadow: 0 0 0 3px rgba(14, 165, 233, .3);
 }
 
-/* The markup carries Bootstrap's `.btn-close-white`, which hard-codes
-   an invert filter so the ✕ is white. On a white modal header that
-   makes it invisible — the dialog looked like it had no way out.
-   The filter is dropped here and re-applied only in dark, which is
-   the one theme that needs it. Changing the class in seven templates
-   would have done the same thing; this keeps it in one place. */
-.app-modal .btn-close.btn-close-white {
-    filter: none;
-}
-
-:root[data-theme="dark"] .app-modal .btn-close.btn-close-white {
-    filter: invert(1) grayscale(100%) brightness(200%);
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .app-modal .btn-close.btn-close-white {
-        filter: invert(1) grayscale(100%) brightness(200%);
-    }
-}
+/* The `.btn-close-white` fix is not here: ten templates use that
+   class and only some of them are .app-modal, so it lives in
+   theme.css where it can cover all of them at once. */
 
 /* ─── Body ───────────────────────────────────────────────── */
 
