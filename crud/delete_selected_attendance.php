@@ -11,6 +11,8 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
+requirePermissionJson('attendance.delete');
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['ids']) || !is_array($_POST['ids'])) {
     echo json_encode(['success' => false, 'message' => 'No records selected.']);
     exit;

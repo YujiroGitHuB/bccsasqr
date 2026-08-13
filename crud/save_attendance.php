@@ -5,9 +5,12 @@ ini_set('display_errors', 1);
 session_start();
 include "../includes/db_connect.php";
 include "../includes/auth.php";
+include __DIR__ . "/../includes/permissions.php";
 date_default_timezone_set('Asia/Manila');
 
 header('Content-Type: application/json');
+
+requirePermissionJson('attendance.record');
 
 try {
     $data = json_decode(file_get_contents('php://input'), true);

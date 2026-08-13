@@ -5,8 +5,14 @@ include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
+requirePermission('attendance.view');
 
 $user_id = (int)$_SESSION['user_id'];
+
+// Whether the delete controls (row buttons, checkboxes, Delete Selected)
+// are rendered at all. crud/delete_attendance.php and
+// crud/delete_selected_attendance.php enforce the same permission.
+$canDeleteAttendance = can('attendance.delete');
 
 // Helper: strip course prefix from section (e.g. "BSIT-2A" → "2A", "2A" → "2A")
 function cleanSection($section) {
@@ -90,10 +96,12 @@ if ($from > $to) {
                             <i class="bi bi-table"></i> Attendance Records
                         </div>
                         <div class="att-actions">
+                            <?php if (can('attendance.delete')): ?>
                             <button id="deleteSelected" class="att-btn danger" disabled>
                                 <i class="bi bi-trash"></i>
                                 <span class="btn-text">Delete Selected</span>
                             </button>
+                            <?php endif; ?>
                             <?php if (isAdmin()): ?>
                                 <button id="deleteAll" class="att-btn danger">
                                     <i class="bi bi-trash-fill"></i>
@@ -209,7 +217,13 @@ if ($from > $to) {
                                 <table id="example" class="table table-striped" style="width:100%;">
                                     <thead>
                                         <tr>
-                                            <th class="text-center"><input type="checkbox" id="selectAllAttendance" title="Select all"></th>
+                                            <?php
+                                            // The checkbox and Action columns are kept even without
+                                            // the delete permission, only emptied: the DataTables
+                                            // config in assets/js/datatables.js addresses columns by
+                                            // index, and dropping one here would shift every target.
+                                            ?>
+                                            <th class="text-center"><?php if ($canDeleteAttendance): ?><input type="checkbox" id="selectAllAttendance" title="Select all"><?php endif; ?></th>
                                             <th>No.</th>
                                             <th>Date</th>
                                             <th>Student Number</th>
@@ -225,7 +239,7 @@ if ($from > $to) {
                                         <?php $counter = 1; while ($row = $result->fetch_assoc()): ?>
                                             <?php $cleanSec = cleanSection($row['section']); ?>
                                             <tr id="row-<?= $row['id'] ?>">
-                                                <td class="text-center"><input type="checkbox" class="rowCheck" value="<?= $row['id'] ?>"></td>
+                                                <td class="text-center"><?php if ($canDeleteAttendance): ?><input type="checkbox" class="rowCheck" value="<?= $row['id'] ?>"><?php endif; ?></td>
                                                 <td><?= $counter++ ?></td>
                                                 <td><?= htmlspecialchars($row['date']) ?></td>
                                                 <td><?= htmlspecialchars($row['student_no']) ?></td>
@@ -235,9 +249,11 @@ if ($from > $to) {
                                                 <td><?= htmlspecialchars($row['time_in']) ?></td>
                                                 <td><?= htmlspecialchars($row['subject']) ?></td>
                                                 <td>
+                                                    <?php if ($canDeleteAttendance): ?>
                                                     <button class="btn-delete" data-id="<?= $row['id'] ?>">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                         <?php endwhile; ?>

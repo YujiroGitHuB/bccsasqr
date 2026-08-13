@@ -1,6 +1,7 @@
 <?php
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
+include __DIR__ . "/../includes/permissions.php";
 
 header('Content-Type: application/json');
 
@@ -8,6 +9,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     echo json_encode(['success' => false, 'message' => 'Not logged in']);
     exit();
 }
+
+requirePermissionJson('links.manage');
 
 if (!isset($_POST['short_code'])) {
     echo json_encode(['success' => false, 'message' => 'Short code required']);

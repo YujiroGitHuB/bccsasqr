@@ -2,6 +2,15 @@
 
 include "../includes/db_connect.php"; // ensure this connects to your DB
 
+// This page has never required a login (it is opened on shared
+// machines to print codes), so anonymous visitors are left as they
+// were — but a signed-in instructor still needs the permission.
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+include __DIR__ . "/../includes/permissions.php";
+requirePermissionIfSignedIn('qr.generator');
+
 // Fetch lock setting from database
 $query = mysqli_query($conn, "SELECT setting_value FROM lock_settings_tbl WHERE setting_key = 'page_locked'");
 $row = mysqli_fetch_assoc($query);

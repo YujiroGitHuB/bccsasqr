@@ -129,6 +129,13 @@ if ($isEdit) {
         $_SESSION['user_name'] = $name;
     }
 
+    // An admin demoted to instructor has no permission rows of their
+    // own — as an admin they never needed any. Without seeding, they
+    // would land on a dashboard with nothing else on it.
+    if ($ok && $role === 'instructor' && $existing['role'] !== 'instructor') {
+        seedDefaultPermissions($conn, $userId);
+    }
+
 } else {
 
     $hash = password_hash($password, PASSWORD_ARGON2ID);
@@ -140,6 +147,12 @@ if ($isEdit) {
 
     $ok      = $stmt->execute();
     $message = 'User created successfully.';
+
+    // New instructors start with the standard set; the admin narrows
+    // it down afterwards from Manage Users → Access.
+    if ($ok && $role === 'instructor') {
+        seedDefaultPermissions($conn, $conn->insert_id);
+    }
 }
 
 if (!$ok) {

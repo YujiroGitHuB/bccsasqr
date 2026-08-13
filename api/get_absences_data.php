@@ -11,7 +11,12 @@
 
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
+include __DIR__ . "/../includes/permissions.php";
 require_once __DIR__ . "/../includes/absences.php";
+
+// Feeds the absences modal on the attendance page, so it rides on the
+// same permission as that page rather than a separate one.
+requirePermissionJson('attendance.view');
 
 header('Content-Type: application/json');
 

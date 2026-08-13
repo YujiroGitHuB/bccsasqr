@@ -2,9 +2,12 @@
 session_start();
 include "../includes/db_connect.php";
 include "../includes/auth.php";
+include __DIR__ . "/../includes/permissions.php";
 
 header('Content-Type: application/json');
 date_default_timezone_set('Asia/Manila');
+
+requirePermissionJson('attendance.import');
 
 if ($_SERVER['REQUEST_METHOD'] != 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);

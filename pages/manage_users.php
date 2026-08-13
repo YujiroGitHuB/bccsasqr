@@ -32,6 +32,34 @@ try {
     $hasAvatarColumn = false;
 }
 $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
+
+// ── Access summary per instructor ───────────────────────────
+// One grouped query instead of a lookup per row, so the "3 of 11"
+// badge costs nothing extra. Guarded the same way as the avatar
+// column above: servers that have not run
+// migrations/2026-08-13_add_user_permissions.sql yet simply show no
+// badge rather than erroring out.
+$permissionCounts = [];
+$hasPermissionsTable = false;
+try {
+    $tbl = $conn->query("SHOW TABLES LIKE 'user_permissions_tbl'");
+    $hasPermissionsTable = $tbl && $tbl->num_rows > 0;
+
+    if ($hasPermissionsTable) {
+        $counts = $conn->query("
+            SELECT user_id, COUNT(*) AS granted
+            FROM user_permissions_tbl
+            GROUP BY user_id
+        ");
+        while ($row = $counts->fetch_assoc()) {
+            $permissionCounts[(int)$row['user_id']] = (int)$row['granted'];
+        }
+    }
+} catch (Throwable $e) {
+    $hasPermissionsTable = false;
+}
+
+$totalPermissions = count(allPermissionKeys());
 ?>
 <!doctype html>
 <html lang="en">
@@ -176,6 +204,20 @@ $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
                             <span class="role-badge role-instructor">
                                 <i class="bi bi-person-badge"></i> Instructor
                             </span>
+                            <?php if ($hasPermissionsTable): ?>
+                                <?php
+                                $granted = $permissionCounts[(int)$user['id']] ?? 0;
+                                // Full access is the norm, so it is not worth a
+                                // badge — only a narrowed-down account is.
+                                ?>
+                                <?php if ($granted < $totalPermissions): ?>
+                                    <span class="access-badge <?= $granted === 0 ? 'none' : 'limited' ?>"
+                                          title="<?= $granted ?> of <?= $totalPermissions ?> permissions granted">
+                                        <i class="bi bi-shield-lock"></i>
+                                        <?= $granted === 0 ? 'No access' : $granted . ' of ' . $totalPermissions ?>
+                                    </span>
+                                <?php endif; ?>
+                            <?php endif; ?>
                             <?php endif; ?>
                         </td>
                         <td>
@@ -202,6 +244,11 @@ $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
                                 <button class="btn-edit" onclick="openEditUser(<?= $user['id'] ?>)">
                                     <i class="bi bi-pencil"></i> Edit
                                 </button>
+                                <?php if ($user['role'] !== 'admin'): ?>
+                                    <button class="btn-access" onclick="openAccessModal(<?= $user['id'] ?>)">
+                                        <i class="bi bi-shield-lock"></i> Access
+                                    </button>
+                                <?php endif; ?>
                                 <?php if (!$isSelf): ?>
                                     <?php if ($user_status === 'active'): ?>
                                     <button class="btn-disable" onclick="toggleUserStatus(<?= $user['id'] ?>, 'disabled')">
@@ -309,6 +356,92 @@ $avatarSelect = $hasAvatarColumn ? "avatar," : "NULL as avatar,";
                         <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn-save" id="formSubmit">
                             <i class="bi bi-check2-circle"></i> Save User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         MANAGE ACCESS
+
+         The catalog is rendered here from PERMISSION_CATALOG rather
+         than being rebuilt in JavaScript: the labels and grouping
+         then have exactly one definition (includes/permissions.php),
+         and the modal cannot drift out of step with what the server
+         actually enforces. The JS only ticks the boxes.
+         ════════════════════════════════════════════════════════ -->
+    <div class="modal fade" id="accessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content user-modal access-modal">
+                <form id="accessForm">
+                    <input type="hidden" name="user_id" id="accessUserId" value="">
+
+                    <div class="modal-header">
+                        <div class="user-modal-icon"><i class="bi bi-shield-lock"></i></div>
+                        <div>
+                            <h5 class="modal-title">Manage Access</h5>
+                            <small>What <strong id="accessUserName">this instructor</strong> is allowed to do.</small>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="access-toolbar">
+                            <span class="access-count" id="accessCount">0 of <?= $totalPermissions ?> selected</span>
+                            <div class="access-toolbar-actions">
+                                <button type="button" class="btn-ghost-sm" id="accessSelectAll">
+                                    <i class="bi bi-check2-all"></i> Select all
+                                </button>
+                                <button type="button" class="btn-ghost-sm" id="accessClearAll">
+                                    <i class="bi bi-x-lg"></i> Clear all
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="access-loading" id="accessLoading">
+                            <i class="bi bi-hourglass-split"></i> Loading current access...
+                        </div>
+
+                        <div class="access-groups" id="accessGroups">
+                            <?php foreach (PERMISSION_CATALOG as $groupKey => $group): ?>
+                                <fieldset class="access-group" data-group="<?= htmlspecialchars($groupKey) ?>">
+                                    <legend class="access-group-head">
+                                        <i class="bi <?= htmlspecialchars($group['icon']) ?>"></i>
+                                        <span><?= htmlspecialchars($group['label']) ?></span>
+                                        <button type="button" class="access-group-toggle" data-group-toggle="<?= htmlspecialchars($groupKey) ?>">
+                                            Toggle
+                                        </button>
+                                    </legend>
+
+                                    <?php foreach ($group['items'] as $key => $item): ?>
+                                        <label class="perm-row">
+                                            <input type="checkbox" class="perm-check" name="permissions[]"
+                                                   value="<?= htmlspecialchars($key) ?>">
+                                            <span class="perm-box"><i class="bi bi-check"></i></span>
+                                            <span class="perm-text">
+                                                <b><i class="bi <?= htmlspecialchars($item['icon']) ?>"></i> <?= htmlspecialchars($item['label']) ?></b>
+                                                <small><?= htmlspecialchars($item['note']) ?></small>
+                                            </span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </fieldset>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <p class="access-note" id="accessEmptyNote">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            With nothing selected this instructor can still sign in, but will
+                            only see the dashboard.
+                        </p>
+                        <small class="field-error" id="accessError"></small>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn-save" id="accessSubmit">
+                            <i class="bi bi-check2-circle"></i> Save Access
                         </button>
                     </div>
                 </form>

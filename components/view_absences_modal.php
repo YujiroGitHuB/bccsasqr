@@ -91,6 +91,7 @@
                 </button>
                 <!-- Hidden when there is nothing to export; a disabled
                      button is just a dead end. -->
+                <?php if (can('attendance.export')): ?>
                 <form id="exportAbsencesPdfForm" action="../exports/export_absences_pdf.php" method="POST">
                     <input type="hidden" name="section" id="exportSection">
                     <input type="hidden" name="min_absences" id="exportMinAbsences">
@@ -104,6 +105,7 @@
                         <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Export to PDF
                     </button>
                 </form>
+                <?php endif; ?>
             </div>
 
         </div>

@@ -34,7 +34,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
             </div>
         </div>
-    <?php } elseif (isStaff()) { ?>
+    <?php } elseif (can('students.photos')) { ?>
         <!-- STUDENTS (instructor: view-only photos of their sections) -->
         <small class="sidebar-label">STUDENTS</small>
         <a href="../pages/student_photo_profile.php" class="nav-link <?php echo ($current_page == 'student_photo_profile.php') ? 'active' : ''; ?>" data-tip="Student Photos">
@@ -42,22 +42,34 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </a>
     <?php } ?>
 
-    <!-- ATTENDANCE -->
-    <small class="sidebar-label">ATTENDANCE</small>
-    <div class="nav-item dropdown">
-        <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['attendance.php', 'generate_attendance_link.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#attendanceMenu" data-tip="Attendance">
-            <i class="bi bi-journal-text"></i> <span>Attendance</span>
-        </a>
-        <div class="collapse ps-3" id="attendanceMenu">
-            <a href="../pages/attendance.php" class="nav-link submenu-item <?php echo ($current_page == 'attendance.php') ? 'active' : ''; ?>">
-                <i class="bi bi-list-check"></i> Attendance List
+    <?php
+    // Every section below is skipped entirely when the user holds none
+    // of its permissions — an empty dropdown is worse than no dropdown.
+    // Admins pass can() unconditionally, so their sidebar is unchanged.
+    ?>
+    <?php if (canAny(['attendance.view', 'links.manage'])) { ?>
+        <!-- ATTENDANCE -->
+        <small class="sidebar-label">ATTENDANCE</small>
+        <div class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['attendance.php', 'generate_attendance_link.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#attendanceMenu" data-tip="Attendance">
+                <i class="bi bi-journal-text"></i> <span>Attendance</span>
             </a>
-            <a href="../pages/generate_attendance_link.php" class="nav-link submenu-item <?php echo ($current_page == 'generate_attendance_link.php') ? 'active' : ''; ?>">
-                <i class="bi bi-link-45deg"></i> Attendance Link
-            </a>
+            <div class="collapse ps-3" id="attendanceMenu">
+                <?php if (can('attendance.view')) { ?>
+                    <a href="../pages/attendance.php" class="nav-link submenu-item <?php echo ($current_page == 'attendance.php') ? 'active' : ''; ?>">
+                        <i class="bi bi-list-check"></i> Attendance List
+                    </a>
+                <?php } ?>
+                <?php if (can('links.manage')) { ?>
+                    <a href="../pages/generate_attendance_link.php" class="nav-link submenu-item <?php echo ($current_page == 'generate_attendance_link.php') ? 'active' : ''; ?>">
+                        <i class="bi bi-link-45deg"></i> Attendance Link
+                    </a>
+                <?php } ?>
+            </div>
         </div>
-    </div>
+    <?php } ?>
 
+    <?php if (isAdmin() || can('enrollment.manage')) { ?>
     <!-- ACADEMICS -->
     <small class="sidebar-label">ACADEMICS</small>
     <div class="nav-item dropdown">
@@ -65,9 +77,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="bi bi-gear-fill"></i> <span>Academic Settings</span>
         </a>
         <div class="collapse ps-3" id="acadMenu">
-            <a href="../pages/student_subjects.php" class="nav-link submenu-item <?php echo ($current_page == 'student_subjects.php') ? 'active' : ''; ?>">
-                <i class="bi bi-journal-bookmark"></i> Subject Enrollment
-            </a>
+            <?php if (can('enrollment.manage')) { ?>
+                <a href="../pages/student_subjects.php" class="nav-link submenu-item <?php echo ($current_page == 'student_subjects.php') ? 'active' : ''; ?>">
+                    <i class="bi bi-journal-bookmark"></i> Subject Enrollment
+                </a>
+            <?php } ?>
             <?php if (isAdmin()) { ?>
                 <a href="../pages/manage_subject.php" class="nav-link submenu-item <?php echo ($current_page == 'manage_subject.php') ? 'active' : ''; ?>">
                     <i class="bi bi-journal-bookmark"></i> Subjects
@@ -81,6 +95,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <?php } ?>
         </div>
     </div>
+    <?php } ?>
 
     <?php if (isAdmin()) { ?>
         <!-- ADMINISTRATION -->
@@ -97,6 +112,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
     <?php } ?>
 
+    <?php if (canAny(['qr.generator', 'qr.scanner', 'qr.tracker'])) { ?>
     <!-- QR TOOLS -->
     <small class="sidebar-label">QR TOOLS</small>
     <div class="nav-item dropdown">
@@ -104,17 +120,24 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="bi bi-qr-code"></i><span>QR Tools</span>
         </a>
         <div class="collapse ps-3" id="qrMenu">
-            <a href="../QRgenerator/QRcode.php" target="_blank" class="nav-link submenu-item <?php echo ($current_page == 'QRcode.php') ? 'active' : ''; ?>">
-                <i class="bi bi-qr-code"></i> QR Generator
-            </a>
-            <a href="../Qrscanner/qrscanner.php" target="_blank" class="nav-link submenu-item <?php echo ($current_page == 'qrscanner.php') ? 'active' : ''; ?>">
-                <i class="bi bi-qr-code-scan"></i> QR Scanner
-            </a>
-            <a href="../Tracker/view.php" target="_blank" class="nav-link submenu-item <?php echo ($current_page == 'view.php') ? 'active' : ''; ?>">
-                <i class="bi bi-search"></i> Attendance Tracker
-            </a>
+            <?php if (can('qr.generator')) { ?>
+                <a href="../QRgenerator/QRcode.php" target="_blank" class="nav-link submenu-item <?php echo ($current_page == 'QRcode.php') ? 'active' : ''; ?>">
+                    <i class="bi bi-qr-code"></i> QR Generator
+                </a>
+            <?php } ?>
+            <?php if (can('qr.scanner')) { ?>
+                <a href="../Qrscanner/qrscanner.php" target="_blank" class="nav-link submenu-item <?php echo ($current_page == 'qrscanner.php') ? 'active' : ''; ?>">
+                    <i class="bi bi-qr-code-scan"></i> QR Scanner
+                </a>
+            <?php } ?>
+            <?php if (can('qr.tracker')) { ?>
+                <a href="../Tracker/view.php" target="_blank" class="nav-link submenu-item <?php echo ($current_page == 'view.php') ? 'active' : ''; ?>">
+                    <i class="bi bi-search"></i> Attendance Tracker
+                </a>
+            <?php } ?>
         </div>
     </div>
+    <?php } ?>
 
     <?php if (isAdmin()) { ?>
         <!-- SYSTEM -->

@@ -18,6 +18,8 @@ if (empty($_SESSION['user_id'])) {
     http_response_code(403);
     exit(json_encode(['success' => false, 'message' => 'Unauthorized.']));
 }
+requirePermissionJson('students.photos');
+
 $user_id = (int) $_SESSION['user_id'];
 $role    = $_SESSION['role'] ?? '';
 

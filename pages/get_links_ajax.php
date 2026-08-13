@@ -13,6 +13,8 @@ include __DIR__ . "/../includes/db_connect.php";
 ob_clean();
 header('Content-Type: application/json');
 
+requirePermissionJson('links.manage');
+
 if (empty($_SESSION['user_id']) || empty($_SESSION['role'])) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;

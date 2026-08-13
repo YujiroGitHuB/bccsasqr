@@ -2,12 +2,15 @@
 session_start();
 header('Content-Type: application/json');
 include("../includes/db_connect.php");
+include __DIR__ . "/../includes/permissions.php";
 
 // Require a logged-in user (instructor or admin).
 if (empty($_SESSION['user_id'])) {
     echo json_encode(["success" => false, "message" => "Unauthorized"]);
     exit;
 }
+
+requirePermissionJson('attendance.delete');
 
 if (isset($_POST['id'])) {
     $id = intval($_POST['id']);

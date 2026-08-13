@@ -9,6 +9,8 @@
 
 include __DIR__ . "/../includes/db_connect.php";
 session_start();
+include __DIR__ . "/../includes/permissions.php";
+requirePermission('attendance.export', '../pages/dashboard.php');
 include __DIR__ . "/../includes/systemConfig.php";
 require __DIR__ . '/../includes/pdf_report.php';
 

@@ -2,6 +2,7 @@
 session_start();
 include "../includes/db_connect.php";
 include "../includes/auth.php";
+include __DIR__ . "/../includes/permissions.php";
 
 header('Content-Type: application/json');
 
@@ -9,6 +10,8 @@ if (!in_array($_SESSION['role'] ?? '', ['admin', 'instructor'])) {
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
 }
+
+requirePermissionJson('enrollment.manage');
 
 $data   = json_decode(file_get_contents('php://input'), true);
 $action = $data['action'] ?? '';

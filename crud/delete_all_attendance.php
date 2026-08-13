@@ -1,9 +1,19 @@
 <?php
 session_start();
 include("../includes/db_connect.php");
+include __DIR__ . "/../includes/permissions.php";
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(["success" => false, "message" => "Unauthorized access"]);
+    exit;
+}
+
+// "Delete All" has only ever been offered to admins in the UI
+// (pages/attendance.php), but the endpoint accepted any signed-in
+// user — an instructor could wipe the whole table by calling it
+// directly. It is now admin-only, matching the button.
+if (!isAdmin()) {
+    echo json_encode(["success" => false, "message" => "Only an administrator can delete all attendance records."]);
     exit;
 }
 

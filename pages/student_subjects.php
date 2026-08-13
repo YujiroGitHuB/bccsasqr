@@ -14,6 +14,8 @@ if (!in_array($user_role, ['admin', 'instructor'])) {
     exit;
 }
 
+requirePermission('enrollment.manage');
+
 $systemQuery   = mysqli_query($conn, "SELECT * FROM system_settings_tbl WHERE id = 1");
 $system        = mysqli_fetch_assoc($systemQuery);
 $systemName    = $system['system_name']    ?? '';

@@ -75,6 +75,7 @@ $(document).ready(function () {
     document.getElementById('filterStatus')?.addEventListener('change', filterUsers);
 
     initUserForm();
+    initAccessForm();
 });
 
 function filterUsers() {
@@ -151,9 +152,18 @@ function toggleUserStatus(userId, newStatus) {
                        <i class="bi bi-person-check me-1"></i>Enable</button>`
                 : `<button class="btn-disable" onclick="toggleUserStatus(${userId}, 'disabled')">
                        <i class="bi bi-person-x me-1"></i>Disable</button>`;
+
+            // Rebuilt rather than patched, so the Access button has to be
+            // put back too — it is only offered for instructors, since
+            // admins hold every permission by role.
+            const accessBtn = row.getAttribute('data-role') === 'admin'
+                ? ''
+                : `<button class="btn-access" onclick="openAccessModal(${userId})">
+                       <i class="bi bi-shield-lock"></i> Access</button>`;
+
             actionCell.innerHTML =
                 `<button class="btn-edit" onclick="openEditUser(${userId})">
-                     <i class="bi bi-pencil"></i> Edit</button>` + toggleBtn;
+                     <i class="bi bi-pencil"></i> Edit</button>` + accessBtn + toggleBtn;
 
             // Required: DataTables keeps its own copy of every cell's
             // contents. Without telling it about the change, it would
@@ -304,6 +314,150 @@ function initUserForm() {
                 btn.innerHTML = original;
             });
     });
+}
+
+// ── Manage Access ────────────────────────────────────────────
+//  The checkbox list itself is rendered by PHP from
+//  PERMISSION_CATALOG — this only fetches which boxes are ticked,
+//  keeps the counter honest, and posts the result back.
+// ─────────────────────────────────────────────────────────────
+function openAccessModal(userId) {
+    const el = document.getElementById('accessModal');
+    if (!el || typeof bootstrap === 'undefined') return;
+
+    const row   = document.querySelector(`tr[data-user-id="${userId}"]`);
+    const name  = row?.getAttribute('data-name') ?? 'this instructor';
+    const boxes = accessCheckboxes();
+
+    document.getElementById('accessUserId').value      = userId;
+    document.getElementById('accessUserName').textContent = name;
+    showAccessError('');
+
+    // Cleared and locked until the server answers, so a stale set from
+    // the previously opened user can never be saved onto this one.
+    boxes.forEach(b => { b.checked = false; b.disabled = true; });
+    setAccessLoading(true);
+    updateAccessCount();
+
+    bootstrap.Modal.getOrCreateInstance(el).show();
+
+    fetch(`../api/get_user_permissions.php?user_id=${encodeURIComponent(userId)}`)
+        .then(res => res.json())
+        .then(data => {
+            setAccessLoading(false);
+
+            if (data.status !== 'success') {
+                showAccessError(data.message || 'Could not load this user\'s access.');
+                return;
+            }
+
+            const granted = new Set(data.permissions || []);
+            boxes.forEach(b => {
+                b.checked  = granted.has(b.value);
+                b.disabled = false;
+            });
+            updateAccessCount();
+        })
+        .catch(() => {
+            setAccessLoading(false);
+            showAccessError('Could not reach the server. Please try again.');
+        });
+}
+
+function initAccessForm() {
+    const form = document.getElementById('accessForm');
+    if (!form) return;
+
+    document.getElementById('accessSelectAll')?.addEventListener('click', () => {
+        accessCheckboxes().forEach(b => { if (!b.disabled) b.checked = true; });
+        updateAccessCount();
+    });
+
+    document.getElementById('accessClearAll')?.addEventListener('click', () => {
+        accessCheckboxes().forEach(b => { if (!b.disabled) b.checked = false; });
+        updateAccessCount();
+    });
+
+    // Per-group toggle: ticks the whole group unless it is already
+    // fully ticked, in which case it clears it.
+    document.querySelectorAll('[data-group-toggle]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const group = btn.closest('.access-group');
+            if (!group) return;
+
+            const boxes = Array.from(group.querySelectorAll('.perm-check')).filter(b => !b.disabled);
+            const target = !boxes.every(b => b.checked);
+            boxes.forEach(b => { b.checked = target; });
+            updateAccessCount();
+        });
+    });
+
+    form.addEventListener('change', (e) => {
+        if (e.target.classList.contains('perm-check')) updateAccessCount();
+    });
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const btn      = document.getElementById('accessSubmit');
+        const original = btn.innerHTML;
+        btn.disabled   = true;
+        btn.innerHTML  = '<i class="bi bi-hourglass-split"></i> Saving...';
+
+        fetch('../crud/save_user_permissions.php', { method: 'POST', body: new FormData(form) })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    showAccessError(data.message);
+                    btn.disabled  = false;
+                    btn.innerHTML = original;
+                    return;
+                }
+
+                userToast('success', data.message);
+                // Reload: the row's access badge is rendered by PHP, and
+                // an instructor's own sidebar is rebuilt on their next
+                // page load anyway.
+                setTimeout(() => location.reload(), 900);
+            })
+            .catch(() => {
+                showAccessError('Could not reach the server. Please try again.');
+                btn.disabled  = false;
+                btn.innerHTML = original;
+            });
+    });
+}
+
+function accessCheckboxes() {
+    return Array.from(document.querySelectorAll('#accessGroups .perm-check'));
+}
+
+function updateAccessCount() {
+    const boxes   = accessCheckboxes();
+    const checked = boxes.filter(b => b.checked).length;
+
+    const counter = document.getElementById('accessCount');
+    if (counter) counter.textContent = `${checked} of ${boxes.length} selected`;
+
+    // The "dashboard only" warning is worth showing exactly when it
+    // applies, not permanently.
+    const note = document.getElementById('accessEmptyNote');
+    if (note) note.classList.toggle('show', checked === 0);
+}
+
+function setAccessLoading(loading) {
+    document.getElementById('accessLoading')?.classList.toggle('show', loading);
+    document.getElementById('accessGroups')?.classList.toggle('is-loading', loading);
+
+    const btn = document.getElementById('accessSubmit');
+    if (btn) btn.disabled = loading;
+}
+
+function showAccessError(msg) {
+    const el = document.getElementById('accessError');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('show', !!msg);
 }
 
 // ── Helpers ──────────────────────────────────────────────────

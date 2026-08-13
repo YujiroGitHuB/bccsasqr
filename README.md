@@ -145,14 +145,15 @@ sidebar rather than embedded in the main flow.
 
 **No router.** Navigation is direct links to `.php` files. The sidebar
 ([components/sidebar.php](bccsasqr/components/sidebar.php)) highlights the active item via
-`basename($_SERVER['PHP_SELF'])` and hides admin-only sections with `isAdmin()`.
+`basename($_SERVER['PHP_SELF'])` and hides sections the user cannot reach with `isAdmin()` and
+`can()` / `canAny()`.
 
 **Page bootstrap.** Authenticated pages open with this include sequence — order matters, session first:
 
 ```php
 session_start();
 include "../includes/auth.php";              // redirect to login if not signed in
-include "../includes/permissions.php";       // isAdmin() / isStaff()
+include "../includes/permissions.php";       // isAdmin() / isStaff() / can()
 include "../includes/check_user_status.php"; // log out disabled accounts
 include "../includes/db_connect.php";        // provides $conn (mysqli)
 ```
@@ -160,6 +161,24 @@ include "../includes/db_connect.php";        // provides $conn (mysqli)
 **Roles.** `$_SESSION['role']` is either `admin` or `instructor` (note: `isStaff()` checks for the
 string `'instructor'`). Instructors are scoped to their assignments in `subject_instructors_tbl` and
 `instructor_section_tbl`.
+
+**Permissions.** The role says *who* you are; `can('attendance.delete')` says *what you may do*.
+Admins pass `can()` unconditionally (a role check short-circuits before the table is read, so an
+admin cannot be locked out). For instructors the answer comes from `user_permissions_tbl`, one row
+per granted permission, managed per-instructor from **Manage Users → Access**.
+
+- The catalog of keys, their labels and their grouping live in `PERMISSION_CATALOG`
+  ([includes/permissions.php](bccsasqr/includes/permissions.php)) — the single source of truth. The
+  Manage Access modal renders itself from it, so the UI cannot drift from what is enforced.
+- Guards: `requirePermission($key)` on a page (redirects to the dashboard with an alert),
+  `requirePermissionJson($key)` in a `crud/` or `api/` endpoint. Gate the UI control *and* the
+  endpoint — hiding a button is not access control.
+- A missing `user_permissions_tbl` (migration not run yet) falls back to
+  `INSTRUCTOR_DEFAULT_PERMISSIONS`, which equals what every instructor could do before per-user
+  permissions existed. Degrading to the old behaviour beats locking everyone out.
+- New instructors are seeded with those defaults, so access starts wide and is narrowed
+  deliberately. Adding a permission key means adding a guard for it — an unguarded key is a
+  checkbox that does nothing.
 
 **Alerts.** User-facing messages go through `$_SESSION['alert']` (`icon` / `title` / `text` /
 `position`, optional `redirect`) and are rendered by SweetAlert2 in `includes/alert.php` — not `echo`.
@@ -170,7 +189,7 @@ string `'instructor'`). Instructors are scoped to their assignments in `subject_
 
 `users`, `students_tbl`, `attendance_tbl`, `subjects_tbl`, `subject_instructors_tbl`,
 `instructor_section_tbl`, `student_subjects_tbl`, `attendance_links_tbl`, `attendance_settings`,
-`lock_settings_tbl`, `system_settings_tbl`, `activity_log`.
+`lock_settings_tbl`, `system_settings_tbl`, `activity_log`, `user_permissions_tbl`.
 
 ### Data-model quirk: course + section
 
@@ -192,7 +211,7 @@ Read these before deploying anywhere beyond a local machine.
 - **Rotate the Gemini key.** It was moved out of `gemini-proxy.php` into gitignored `config.php`, but the old key **remains in git history** and must be rotated at https://aistudio.google.com/apikey.
 - **DB credentials are hardcoded** (`root`, no password) in `db_connect.php`. Fine for local XAMPP, not for deployment.
 - **SQL safety is inconsistent.** Most code uses prepared statements; some older code interpolates values or wraps them in `real_escape_string`. Prefer prepared statements for anything new and never widen the interpolation pattern.
-- **Mutating endpoints must guard access** — `isAdmin()` for admin actions, an `empty($_SESSION['user_id'])` check otherwise.
+- **Mutating endpoints must guard access** — `isAdmin()` for admin actions, `requirePermissionJson('some.key')` for anything an instructor can be granted or denied, and an `empty($_SESSION['user_id'])` check at minimum.
 - **Uploads** validate the real image type with `getimagesize()`/`getimagesizefromstring()` and derive the extension from the *detected* type, never the client filename (that previously allowed uploading `.php`). [student/student_photo_api.php](bccsasqr/student/student_photo_api.php) shows the fuller pattern: CSRF token + rate limiting + type/size validation.
 - **Face login residual risk** — `get_face_users.php` still ships all stored descriptors to the browser, so a stolen descriptor could be replayed. Liveness / challenge-response is the next hardening step.
 - **Errors are silenced.** `error_reporting(0)` and `display_errors 0` are set in `db_connect.php`, so PHP errors never surface. When debugging, check `bccsasqr/includes/db_error.log` and the Apache error log.

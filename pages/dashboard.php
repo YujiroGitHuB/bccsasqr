@@ -797,6 +797,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                                         </div>
 
                                         <div class="dash-exports">
+                                            <?php if (can('attendance.export')): ?>
                                             <form action="../exports/export_pdf.php" method="POST">
                                                 <input type="hidden" name="subject" value="<?= htmlspecialchars($subject) ?>">
                                                 <input type="hidden" name="section" value="<?= htmlspecialchars($section) ?>">
@@ -815,6 +816,7 @@ if ($view_mode === 'sections' && ($has_sections || $role === 'admin')) {
                                                     <i class="bi bi-file-earmark-pdf"></i> Absent PDF
                                                 </button>
                                             </form>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>

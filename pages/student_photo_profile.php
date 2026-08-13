@@ -5,6 +5,7 @@ include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/auth.php";        // require login (admin OR instructor)
 include "../includes/db_connect.php";
+requirePermission('students.photos');
 
 $user_id     = (int) $_SESSION['user_id'];
 $isAdminUser = isAdmin();

@@ -465,6 +465,286 @@
     color: var(--ink);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   MANAGE ACCESS
+
+   Per-instructor permissions. The row gets an "Access" button and,
+   when the account has been narrowed down, a badge next to the role
+   so a restricted instructor is visible without opening anything.
+   ═══════════════════════════════════════════════════════════ */
+.users-page .btn-access {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .3rem .85rem;
+    border-radius: 7px;
+    font-size: .78rem;
+    font-weight: 600;
+    background: rgba(139, 92, 246, .1);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, .2);
+    transition: all .15s;
+    cursor: pointer;
+}
+
+.users-page .btn-access:hover {
+    background: rgba(139, 92, 246, .2);
+    color: #c4b5fd;
+}
+
+/* Only shown when access has actually been narrowed — full access is
+   the norm and does not need announcing. */
+.users-page .access-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    margin-top: .3rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: .68rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.users-page .access-badge.limited {
+    background: rgba(245, 158, 11, .14);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, .25);
+}
+
+.users-page .access-badge.none {
+    background: rgba(239, 68, 68, .14);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, .25);
+}
+
+/* ─── Access modal ────────────────────────────────────────── */
+.access-modal .modal-body {
+    max-height: min(62vh, 560px);
+    overflow-y: auto;
+}
+
+.access-modal .access-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    padding-bottom: .85rem;
+    margin-bottom: .35rem;
+    border-bottom: 1px solid rgba(var(--tint), .08);
+}
+
+.access-modal .access-count {
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--ink-4);
+}
+
+.access-modal .access-toolbar-actions {
+    display: flex;
+    gap: .4rem;
+    margin-left: auto;
+}
+
+.access-modal .btn-ghost-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .3rem .7rem;
+    border-radius: 8px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--ink-3);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .12);
+    cursor: pointer;
+    transition: .15s;
+}
+
+.access-modal .btn-ghost-sm:hover {
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
+}
+
+.access-modal .access-loading {
+    display: none;
+    padding: .7rem 0;
+    font-size: .8rem;
+    color: var(--ink-4);
+}
+
+.access-modal .access-loading.show {
+    display: block;
+}
+
+/* Dimmed instead of hidden while loading: the list keeps its height,
+   so the modal does not jump when the answer arrives. */
+.access-modal .access-groups.is-loading {
+    opacity: .4;
+    pointer-events: none;
+}
+
+.access-modal .access-group {
+    border: 1px solid rgba(var(--tint), .09);
+    border-radius: 12px;
+    padding: .5rem .85rem .7rem;
+    margin-top: .9rem;
+    background: rgba(var(--tint), .02);
+}
+
+.access-modal .access-group-head {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    float: none;
+    width: auto;
+    padding: 0 .4rem;
+    margin: 0 0 .3rem;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-4);
+}
+
+.access-modal .access-group-head i {
+    color: #60a5fa;
+    font-size: .9rem;
+}
+
+.access-modal .access-group-toggle {
+    margin-left: .3rem;
+    padding: 1px 7px;
+    border-radius: 5px;
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    color: var(--ink-4);
+    background: transparent;
+    border: 1px solid rgba(var(--tint), .15);
+    cursor: pointer;
+    transition: .15s;
+}
+
+.access-modal .access-group-toggle:hover {
+    color: var(--ink);
+    border-color: rgba(var(--tint), .3);
+}
+
+/* ─── One permission row ──────────────────────────────────── */
+.access-modal .perm-row {
+    position: relative;      /* contains the absolutely positioned .perm-check */
+    display: flex;
+    align-items: flex-start;
+    gap: .65rem;
+    padding: .5rem .4rem;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.access-modal .perm-row:hover {
+    background: rgba(var(--tint), .04);
+}
+
+/* The native checkbox is kept in the DOM (it carries the name and
+   value that get posted) but replaced visually by .perm-box. */
+.access-modal .perm-check {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.access-modal .perm-box {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 19px;
+    height: 19px;
+    margin-top: .1rem;
+    border-radius: 6px;
+    border: 1.5px solid rgba(var(--tint), .25);
+    background: rgba(var(--tint), .04);
+    transition: .15s;
+}
+
+.access-modal .perm-box i {
+    font-size: .8rem;
+    color: var(--on-accent);
+    opacity: 0;
+    transform: scale(.6);
+    transition: .15s;
+}
+
+.access-modal .perm-check:checked+.perm-box {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-color: transparent;
+}
+
+.access-modal .perm-check:checked+.perm-box i {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.access-modal .perm-check:focus-visible+.perm-box {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+.access-modal .perm-check:disabled+.perm-box {
+    opacity: .45;
+}
+
+.access-modal .perm-text {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    min-width: 0;
+}
+
+.access-modal .perm-text b {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--ink-2);
+}
+
+.access-modal .perm-text b i {
+    color: var(--ink-4);
+    font-size: .85rem;
+}
+
+.access-modal .perm-text small {
+    font-size: .74rem;
+    color: var(--ink-4);
+    line-height: 1.35;
+}
+
+.access-modal .perm-check:checked~.perm-text b {
+    color: var(--ink);
+}
+
+/* Shown by the JS only while nothing at all is ticked. */
+.access-modal .access-note {
+    display: none;
+    align-items: center;
+    gap: .45rem;
+    margin: 1rem 0 0;
+    padding: .6rem .8rem;
+    border-radius: 10px;
+    font-size: .77rem;
+    line-height: 1.4;
+    color: #fbbf24;
+    background: rgba(245, 158, 11, .1);
+    border: 1px solid rgba(245, 158, 11, .22);
+}
+
+.access-modal .access-note.show {
+    display: flex;
+}
+
 /* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
     .users-page .users-hero {
@@ -492,5 +772,15 @@
 
     .user-modal .role-picker {
         grid-template-columns: 1fr;
+    }
+
+    .access-modal .access-toolbar-actions {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .access-modal .btn-ghost-sm {
+        flex: 1;
+        justify-content: center;
     }
 }

@@ -3,6 +3,8 @@
 session_start();
 include __DIR__ . "/../includes/auth.php";
 include "../includes/db_connect.php";
+include __DIR__ . "/../includes/permissions.php";
+requirePermission('qr.scanner', '../pages/dashboard.php');
 
 // Fetch lock setting
 $query = mysqli_query($conn, "SELECT setting_value FROM lock_settings_tbl WHERE setting_key = 'page_locked'");

@@ -7,6 +7,7 @@ include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
+requirePermission('links.manage');
 
 $systemQuery = mysqli_query($conn, "SELECT * FROM system_settings_tbl WHERE id = 1");
 $system = mysqli_fetch_assoc($systemQuery);

@@ -3,6 +3,15 @@
 // Include database connection
 include "../includes/db_connect.php";
 include __DIR__ . '/crud/att_display.php';
+
+// The display board is often left running on a projector with nobody
+// signed in, so anonymous access stays open — a signed-in instructor
+// without the permission is sent back to their dashboard.
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+include __DIR__ . "/../includes/permissions.php";
+requirePermissionIfSignedIn('qr.tracker');
 // Fetch lock setting from database
 $query = mysqli_query($conn, "SELECT setting_value FROM lock_settings_tbl WHERE setting_key = 'page_locked'");
 $row = mysqli_fetch_assoc($query);
