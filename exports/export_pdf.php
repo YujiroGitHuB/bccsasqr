@@ -34,6 +34,27 @@ $parts   = explode('-', $full_section, 2);
 $course  = trim($parts[0] ?? '');
 $section = trim($parts[1] ?? $full_section);
 
+// ── Whose records go in the report ────────────────────────
+// Every query below used to carry "AND user_id = ?" unconditionally,
+// with no isAdmin() branch. So an admin exporting a subject that an
+// instructor had scanned got an empty or partial PDF — even though
+// pages/attendance.php showed them the full list. The report now
+// follows the same rule as that list: admins see everything,
+// instructors only the rows they recorded.
+//
+// The fragment is a literal from this file, never request data; the
+// value still travels as a bound parameter. Same pattern as
+// pages/student_photo_profile.php.
+$scopeSql    = '';
+$scopeTypes  = '';
+$scopeParams = [];
+
+if (!isAdmin()) {
+    $scopeSql    = 'AND user_id = ?';
+    $scopeTypes  = 'i';
+    $scopeParams = [$user_id];
+}
+
 // ── Stats ─────────────────────────────────────────────────
 // The report used to end with a single "Total Present: N" line,
 // which says nothing about how big the class is. These three
@@ -47,9 +68,10 @@ $stmt->close();
 $stmt = $conn->prepare("
     SELECT COUNT(DISTINCT student_no) AS n
     FROM attendance_tbl
-    WHERE course = ? AND section = ? AND subject = ? AND user_id = ? AND DATE(`date`) = ?
+    WHERE course = ? AND section = ? AND subject = ? $scopeSql AND DATE(`date`) = ?
 ");
-$stmt->bind_param("sssis", $course, $section, $subject, $user_id, $date);
+$countParams = array_merge([$course, $section, $subject], $scopeParams, [$date]);
+$stmt->bind_param("sss" . $scopeTypes . "s", ...$countParams);
 $stmt->execute();
 $present_count = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
 $stmt->close();
@@ -65,28 +87,30 @@ if ($status === 'absent') {
         WHERE s.course = ? AND s.section = ?
           AND s.student_no NOT IN (
               SELECT student_no FROM attendance_tbl
-              WHERE course = ? AND section = ? AND subject = ? AND user_id = ? AND DATE(`date`) = ?
+              WHERE course = ? AND section = ? AND subject = ? $scopeSql AND DATE(`date`) = ?
           )
         ORDER BY s.fullname ASC
     ";
     $report_title = 'Absent Students Report';
     $filename     = "Absent_{$subject}_{$full_section}_" . date('Y-m-d', strtotime($date)) . ".pdf";
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssis", $course, $section, $course, $section, $subject, $user_id, $date);
+    $stmt      = $conn->prepare($sql);
+    $rowParams = array_merge([$course, $section, $course, $section, $subject], $scopeParams, [$date]);
+    $stmt->bind_param("sssss" . $scopeTypes . "s", ...$rowParams);
 } else {
     $sql = "
         SELECT date, student_no, name, course, section, subject, time_in
         FROM attendance_tbl
-        WHERE course = ? AND section = ? AND subject = ? AND user_id = ? AND DATE(`date`) = ?
+        WHERE course = ? AND section = ? AND subject = ? $scopeSql AND DATE(`date`) = ?
         ORDER BY name ASC
     ";
     $report_title = $status === 'present' ? 'Present Students Report' : 'Student Attendance Report';
     $prefix       = $status === 'present' ? 'Present' : 'Attendance';
     $filename     = "{$prefix}_{$subject}_{$full_section}_" . date('Y-m-d', strtotime($date)) . ".pdf";
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssis", $course, $section, $subject, $user_id, $date);
+    $stmt      = $conn->prepare($sql);
+    $rowParams = array_merge([$course, $section, $subject], $scopeParams, [$date]);
+    $stmt->bind_param("sss" . $scopeTypes . "s", ...$rowParams);
 }
 
 $stmt->execute();
