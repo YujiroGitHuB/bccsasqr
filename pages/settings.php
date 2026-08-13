@@ -3,15 +3,18 @@
 session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
-if (!isAdmin()) {
-    header("Location: dashboard.php");
-    exit;
-}
+// This one page hosts three different rights: the two lock toggles and
+// the system configuration. Getting in needs any one of them, and each
+// card below renders only for its own — so "may flip the attendance
+// lock" does not have to mean "may rename the system and change its
+// logo", and neither becomes a permission you cannot actually reach.
+requireAnyPermission(['settings.manage', 'attendance.lock', 'system.pagelock']);
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
 
 // Handle Page Lock Toggle
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lock_status'])) {
+    requirePermissionJson('system.pagelock');
     $newStatus = $_POST['lock_status'];
     $stmt = $conn->prepare("UPDATE lock_settings_tbl SET setting_value = ? WHERE setting_key = 'page_locked'");
     $stmt->bind_param("s", $newStatus);
@@ -27,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lock_status'])) {
 
 // Handle Attendance Lock Toggle
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['attendance_lock_status'])) {
+    requirePermissionJson('attendance.lock');
     $newStatus = $_POST['attendance_lock_status'];
 
     // Check if setting exists
@@ -51,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['attendance_lock_statu
 
 // Handle Student Photo Requirement Toggle
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['require_photo_status'])) {
+    requirePermissionJson('settings.manage');
     $newStatus = $_POST['require_photo_status'] === '1' ? '1' : '0';
 
     // setting_key has a UNIQUE KEY, so one statement is enough — it
@@ -145,10 +150,12 @@ $systemLogo = $system['logo'] ?? '';
                 </div>
             </div>
 
+            <?php if (canAny(['system.pagelock', 'attendance.lock'])): ?>
             <!-- ══ ACCESS CONTROL ══════════════════════════════ -->
             <div class="set-group-title">Access control</div>
             <div class="set-list">
 
+                <?php if (can('system.pagelock')): ?>
                 <!-- Page Lock -->
                 <div class="set-row">
                     <div class="set-icon"><i class="bi bi-shield-lock-fill"></i></div>
@@ -210,6 +217,9 @@ $systemLogo = $system['logo'] ?? '';
                     </div>
                 </div>
 
+                <?php endif; ?>
+
+                <?php if (can('attendance.lock')): ?>
                 <!-- Attendance Lock -->
                 <div class="set-row">
                     <div class="set-icon"><i class="bi bi-calendar-check-fill"></i></div>
@@ -270,8 +280,11 @@ $systemLogo = $system['logo'] ?? '';
                         </form>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
+            <?php endif; ?>
 
+            <?php if (can('settings.manage')): ?>
             <!-- ══ ATTENDANCE RULES ════════════════════════════ -->
             <div class="set-group-title">Attendance rules</div>
             <div class="set-list">
@@ -379,6 +392,7 @@ $systemLogo = $system['logo'] ?? '';
             </div>
 
             <?php include __DIR__ . "/../components/systemConfig.php"; ?>
+            <?php endif; ?>
 
         </div>
     </div> <?php include __DIR__ . "/../includes/footer.php"; ?>

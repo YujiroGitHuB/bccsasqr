@@ -5,10 +5,7 @@ include __DIR__ . "/../includes/db_connect.php";
 
 header('Content-Type: application/json'); // ensure clean JSON response
 
-if (!isAdmin()) {
-    echo json_encode(['status' => 'unauthorized']);
-    exit;
-}
+requirePermissionJson('students.manage', 'status');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $student_no = trim($_POST['student_no']);

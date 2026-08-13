@@ -25,11 +25,12 @@ include __DIR__ . "/../includes/db_connect.php";
 ob_clean();
 header('Content-Type: application/json');
 
-// Katulad ng guard ng students.php — admin lang.
-if (empty($_SESSION['user_id']) || !isAdmin()) {
+// Katulad ng guard ng students.php — kailangan ng students.view.
+if (empty($_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized', 'data' => []]);
     exit;
 }
+requirePermissionJson('students.view');
 
 $result = $conn->query("
     SELECT s.id, s.student_no, s.fullname, s.course, s.section,

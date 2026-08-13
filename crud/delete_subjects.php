@@ -5,11 +5,7 @@ include __DIR__ . "/../includes/db_connect.php";
 
 header('Content-Type: application/json');
 
-// Check if user is admin
-if (!isAdmin()) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit;
-}
+requirePermissionJson('subjects.manage');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subject_id'])) {
     $subjectId = (int)$_POST['subject_id']; // Cast to integer

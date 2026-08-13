@@ -5,10 +5,7 @@ include "../includes/db_connect.php";
 
 header('Content-Type: application/json');
 
-if (!isAdmin()) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
+requirePermissionJson('sections.assign');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);

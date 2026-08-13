@@ -10,10 +10,7 @@ include __DIR__ . "/../includes/db_connect.php";
 
 header('Content-Type: application/json');
 
-if (!isAdmin()) {
-    http_response_code(403);
-    exit(json_encode(['success' => false, 'message' => 'Unauthorized.']));
-}
+requirePermissionJson('students.photos.delete');
 
 $body       = json_decode(file_get_contents('php://input'), true);
 $student_id = intval($body['student_id'] ?? 0);

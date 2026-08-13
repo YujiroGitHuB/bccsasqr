@@ -43,8 +43,9 @@ function cardHtml(s) {
 
     if (has) {
         const url = '../' + esc(s.photo_path);
-        // Delete is admin-only; instructors get a read-only (view + zoom) card.
-        if (window.SP_IS_ADMIN) {
+        // Delete needs students.photos.delete; without it the card is
+        // read-only (view + zoom).
+        if (window.SP_CAN_DELETE_PHOTO) {
             inner += `<button class="sp-x" data-id="${s.id}" data-name="${nm}"><i class="bi bi-x-lg"></i></button>`;
         }
         inner += `<div class="sp-av-wrap"><img src="${url}" alt="${nm}" loading="lazy" decoding="async" style="cursor:zoom-in"` +

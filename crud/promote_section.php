@@ -32,12 +32,9 @@ include __DIR__ . "/../includes/db_connect.php";
 
 header('Content-Type: application/json');
 
-// Same gate as pages/students.php — instructors cannot reshape the
-// master list.
-if (!isAdmin()) {
-    echo json_encode(['success' => false, 'message' => 'Only an admin can promote a section.']);
-    exit;
-}
+// Same gate as pages/students.php — reshaping the master list is not
+// something every instructor gets, but it can now be granted to one.
+requirePermissionJson('students.promote');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);

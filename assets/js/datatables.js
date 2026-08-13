@@ -157,6 +157,13 @@ $(document).ready(function () {
                 .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         };
 
+        // What this user may do, published by pages/students.php. The
+        // fallback is "no", so a page that forgets to set it renders a
+        // read-only table rather than buttons that fail on submit.
+        var studentPerms = window.studentPerms || {};
+        var mayEdit      = studentPerms.manage === true;
+        var mayDelete    = studentPerms.delete === true;
+
         $('#stud_tbl').DataTable({
             ajax: {
                 url: 'get_students_ajax.php',
@@ -178,6 +185,10 @@ $(document).ready(function () {
                 {
                     data: 'id',
                     render: function (id) {
+                        // The checkboxes exist to bulk-delete, so they go
+                        // when that is not allowed. The column itself stays —
+                        // columnDefs below addresses columns by index.
+                        if (!mayDelete) return '';
                         return '<input type="checkbox" class="form-check-input row-checkbox" value="' + attr(id) + '">';
                     }
                 },
@@ -193,15 +204,24 @@ $(document).ready(function () {
                         // data-* attributes instead of an inline onclick: an
                         // apostrophe in a name cannot break it, and it does
                         // not rely on PHP escaping inside a JS string.
-                        return '<button class="btn btn-sm btn-success me-2 btn-edit-student"' +
-                               ' data-id="'      + attr(row.id) + '"' +
-                               ' data-no="'      + attr(row.student_no) + '"' +
-                               ' data-fullname="' + attr(row.fullname) + '"' +
-                               ' data-course="'  + attr(row.course) + '"' +
-                               ' data-section="' + attr(row.section) + '">' +
-                               '<i class="bi bi-pencil-square"></i></button>' +
-                               '<button class="btn btn-sm btn-danger btn-deletes" data-id="' + attr(row.id) + '">' +
-                               '<i class="bi bi-trash"></i></button>';
+                        var html = '';
+
+                        if (mayEdit) {
+                            html += '<button class="btn btn-sm btn-success me-2 btn-edit-student"' +
+                                    ' data-id="'      + attr(row.id) + '"' +
+                                    ' data-no="'      + attr(row.student_no) + '"' +
+                                    ' data-fullname="' + attr(row.fullname) + '"' +
+                                    ' data-course="'  + attr(row.course) + '"' +
+                                    ' data-section="' + attr(row.section) + '">' +
+                                    '<i class="bi bi-pencil-square"></i></button>';
+                        }
+
+                        if (mayDelete) {
+                            html += '<button class="btn btn-sm btn-danger btn-deletes" data-id="' + attr(row.id) + '">' +
+                                    '<i class="bi bi-trash"></i></button>';
+                        }
+
+                        return html;
                     }
                 }
             ],

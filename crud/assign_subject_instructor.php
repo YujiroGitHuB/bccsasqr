@@ -5,10 +5,7 @@ include __DIR__ . '/../includes/db_connect.php';
 
 header('Content-Type: application/json');
 
-if (!isAdmin()) {
-    echo json_encode(["success" => false, "message" => "Unauthorized"]);
-    exit;
-}
+requirePermissionJson('instructors.assign');
 
 $subject    = intval($_POST['subject_id'] ?? 0);
 $instructor = intval($_POST['instructor_id'] ?? 0);

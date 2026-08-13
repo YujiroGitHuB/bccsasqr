@@ -2,9 +2,15 @@
 session_start();
 include "../includes/auth.php";
 include "../includes/db_connect.php";
+include __DIR__ . "/../includes/permissions.php";
 
 header('Content-Type: application/json');
 $conn->set_charset("utf8mb4");
+
+// Bulk-inserts student records. The Student List page it belongs to was
+// admin-only, but this endpoint only ever checked for a login — any
+// instructor could call it directly.
+requirePermissionJson('students.import');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);

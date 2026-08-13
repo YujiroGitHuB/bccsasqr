@@ -5,11 +5,7 @@ include __DIR__ . "/../includes/db_connect.php";
 
 header('Content-Type: application/json');
 
-// Check if user is admin
-if (!isAdmin()) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit;
-}
+requirePermissionJson('subjects.manage');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $subjectId = mysqli_real_escape_string($conn, $_POST['subject_id']);

@@ -3,10 +3,7 @@
 session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
-if (!isAdmin()) {
-    header("Location: dashboard.php");
-    exit;
-}
+requirePermission('sections.assign');
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
 

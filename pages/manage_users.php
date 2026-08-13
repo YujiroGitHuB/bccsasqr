@@ -206,17 +206,27 @@ $totalPermissions = count(allPermissionKeys());
                             </span>
                             <?php if ($hasPermissionsTable): ?>
                                 <?php
+                                // Most of the catalog is admin territory that
+                                // starts off, so "not everything" is the norm
+                                // and the count is what is actually useful.
+                                // Only three states are worth distinguishing:
+                                // nothing, everything, and a number.
                                 $granted = $permissionCounts[(int)$user['id']] ?? 0;
-                                // Full access is the norm, so it is not worth a
-                                // badge — only a narrowed-down account is.
+                                $badge   = $granted === 0
+                                    ? 'none'
+                                    : ($granted >= $totalPermissions ? 'full' : 'limited');
                                 ?>
-                                <?php if ($granted < $totalPermissions): ?>
-                                    <span class="access-badge <?= $granted === 0 ? 'none' : 'limited' ?>"
-                                          title="<?= $granted ?> of <?= $totalPermissions ?> permissions granted">
-                                        <i class="bi bi-shield-lock"></i>
-                                        <?= $granted === 0 ? 'No access' : $granted . ' of ' . $totalPermissions ?>
-                                    </span>
-                                <?php endif; ?>
+                                <span class="access-badge <?= $badge ?>"
+                                      title="<?= $granted ?> of <?= $totalPermissions ?> permissions granted">
+                                    <i class="bi bi-shield-lock"></i>
+                                    <?php if ($granted === 0): ?>
+                                        No access
+                                    <?php elseif ($badge === 'full'): ?>
+                                        Full access
+                                    <?php else: ?>
+                                        <?= $granted ?> of <?= $totalPermissions ?>
+                                    <?php endif; ?>
+                                </span>
                             <?php endif; ?>
                             <?php endif; ?>
                         </td>

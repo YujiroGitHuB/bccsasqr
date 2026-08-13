@@ -2,8 +2,12 @@
 session_start();
 include "../includes/auth.php";
 include "../includes/db_connect.php";
+include __DIR__ . "/../includes/permissions.php";
 
 header('Content-Type: application/json');
+
+// Was reachable by any signed-in user despite the page being admin-only.
+requirePermissionJson('students.delete');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);

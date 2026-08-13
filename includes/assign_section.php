@@ -4,11 +4,7 @@ include "db_connect.php";
 include "auth.php";
 include "permissions.php";
 
-// Ensure only admin can assign
-if(!isAdmin()){
-    echo json_encode(['success'=>false,'message'=>'Unauthorized']);
-    exit;
-}
+requirePermissionJson('sections.assign');
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
     $section = trim($_POST['section']);

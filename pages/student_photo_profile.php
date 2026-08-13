@@ -238,7 +238,9 @@ $sectionStmt->close();
     <?php include __DIR__ . "/../includes/footer.php"; ?>
     <script src="<?= asset('../assets/js/logout.js') ?>"></script>
     <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
-    <script>window.SP_IS_ADMIN = <?= $isAdminUser ? 'true' : 'false' ?>;</script>
+    <!-- Deleting a photo is its own permission now, not "is an admin" —
+         api/delete_student_photo.php enforces the same key. -->
+    <script>window.SP_CAN_DELETE_PHOTO = <?= can('students.photos.delete') ? 'true' : 'false' ?>;</script>
     <script src="<?= asset('../assets/js/studPhotoProfile.js') ?>"></script>
 </body>
 

@@ -15,7 +15,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
     </a>
 
-    <?php if (isAdmin()) { ?>
+    <?php
+    // Every section below is skipped entirely when the user holds none
+    // of its permissions — an empty dropdown is worse than no dropdown.
+    // Admins pass can() unconditionally, so their sidebar is unchanged.
+    //
+    // The Students block used to branch on the role: the full dropdown
+    // for admins, a single photos link for instructors. Now it is the
+    // same markup for both, driven by the two permissions — an
+    // instructor granted students.view gets the dropdown too.
+    ?>
+    <?php if (canAny(['students.view', 'students.photos'])) { ?>
         <!-- STUDENTS -->
         <small class="sidebar-label">STUDENTS</small>
         <div class="nav-item dropdown">
@@ -23,30 +33,22 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <i class="bi bi-people-fill"></i> <span>Students</span>
             </a>
             <div class="collapse ps-3" id="studentMenu">
-                <a href="../pages/students.php" class="nav-link submenu-item <?php echo ($current_page == 'students.php') ? 'active' : ''; ?>">
-                    <i class="bi bi-people-fill"></i> Student List
-                </a>
-                <a href="../pages/student_photo_profile.php" class="nav-link submenu-item <?php echo ($current_page == 'student_photo_profile.php') ? 'active' : ''; ?>">
-                    <i class="bi bi-person-badge"></i> Student Photo Profile
-                </a>
-                  <a href="../student/StudentPhotoProfile.php" target="_blank" class="nav-link submenu-item <?php echo ($current_page == 'StudentPhotoProfile.php') ? 'active' : ''; ?>">
-                <i class="bi bi-person-bounding-box"></i> Student Photo Upload
-            </a>
+                <?php if (can('students.view')) { ?>
+                    <a href="../pages/students.php" class="nav-link submenu-item <?php echo ($current_page == 'students.php') ? 'active' : ''; ?>">
+                        <i class="bi bi-people-fill"></i> Student List
+                    </a>
+                <?php } ?>
+                <?php if (can('students.photos')) { ?>
+                    <a href="../pages/student_photo_profile.php" class="nav-link submenu-item <?php echo ($current_page == 'student_photo_profile.php') ? 'active' : ''; ?>">
+                        <i class="bi bi-person-badge"></i> Student Photo Profile
+                    </a>
+                    <a href="../student/StudentPhotoProfile.php" target="_blank" class="nav-link submenu-item <?php echo ($current_page == 'StudentPhotoProfile.php') ? 'active' : ''; ?>">
+                        <i class="bi bi-person-bounding-box"></i> Student Photo Upload
+                    </a>
+                <?php } ?>
             </div>
         </div>
-    <?php } elseif (can('students.photos')) { ?>
-        <!-- STUDENTS (instructor: view-only photos of their sections) -->
-        <small class="sidebar-label">STUDENTS</small>
-        <a href="../pages/student_photo_profile.php" class="nav-link <?php echo ($current_page == 'student_photo_profile.php') ? 'active' : ''; ?>" data-tip="Student Photos">
-            <i class="bi bi-person-badge"></i> <span>Student Photos</span>
-        </a>
     <?php } ?>
-
-    <?php
-    // Every section below is skipped entirely when the user holds none
-    // of its permissions — an empty dropdown is worse than no dropdown.
-    // Admins pass can() unconditionally, so their sidebar is unchanged.
-    ?>
     <?php if (canAny(['attendance.view', 'links.manage'])) { ?>
         <!-- ATTENDANCE -->
         <small class="sidebar-label">ATTENDANCE</small>
@@ -69,7 +71,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
     <?php } ?>
 
-    <?php if (isAdmin() || can('enrollment.manage')) { ?>
+    <?php if (canAny(['enrollment.manage', 'subjects.manage', 'sections.assign', 'instructors.assign'])) { ?>
     <!-- ACADEMICS -->
     <small class="sidebar-label">ACADEMICS</small>
     <div class="nav-item dropdown">
@@ -82,13 +84,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <i class="bi bi-journal-bookmark"></i> Subject Enrollment
                 </a>
             <?php } ?>
-            <?php if (isAdmin()) { ?>
+            <?php if (can('subjects.manage')) { ?>
                 <a href="../pages/manage_subject.php" class="nav-link submenu-item <?php echo ($current_page == 'manage_subject.php') ? 'active' : ''; ?>">
                     <i class="bi bi-journal-bookmark"></i> Subjects
                 </a>
+            <?php } ?>
+            <?php if (can('sections.assign')) { ?>
                 <a href="../pages/manage_instructor_section.php" class="nav-link submenu-item <?php echo ($current_page == 'manage_instructor_section.php') ? 'active' : ''; ?>">
                     <i class="bi bi-diagram-3"></i> Sections
                 </a>
+            <?php } ?>
+            <?php if (can('instructors.assign')) { ?>
                 <a href="../pages/manage_instructor_subject.php" class="nav-link submenu-item <?php echo ($current_page == 'manage_instructor_subject.php') ? 'active' : ''; ?>">
                     <i class="bi bi-person-badge"></i> Instructors
                 </a>
@@ -139,12 +145,19 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </div>
     <?php } ?>
 
-    <?php if (isAdmin()) { ?>
+    <?php if (canAny(['backup.manage', 'db.monitor'])) { ?>
         <!-- SYSTEM -->
         <small class="sidebar-label">SYSTEM</small>
-        <a href="../pages/backup.php" class="nav-link <?php echo ($current_page == 'backup.php') ? 'active' : ''; ?>" data-tip="Database Backup">
-            <i class="bi bi-database"></i><span>Database Backup</span>
-        </a>
+        <?php if (can('backup.manage')) { ?>
+            <a href="../pages/backup.php" class="nav-link <?php echo ($current_page == 'backup.php') ? 'active' : ''; ?>" data-tip="Database Backup">
+                <i class="bi bi-database"></i><span>Database Backup</span>
+            </a>
+        <?php } ?>
+        <?php if (can('db.monitor')) { ?>
+            <a href="../pages/db_monitor.php" class="nav-link <?php echo ($current_page == 'db_monitor.php') ? 'active' : ''; ?>" data-tip="Database Monitor">
+                <i class="bi bi-activity"></i><span>Database Monitor</span>
+            </a>
+        <?php } ?>
     <?php } ?>
 
     <!-- ACCOUNT -->

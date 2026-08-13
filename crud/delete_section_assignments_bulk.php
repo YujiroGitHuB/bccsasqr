@@ -1,8 +1,13 @@
 <?php
 session_start();
 include "../includes/db_connect.php";
+include __DIR__ . "/../includes/permissions.php";
 
 header('Content-Type: application/json');
+
+// Like update_section_assignment.php, this had no session or role check
+// at all — bulk-deleting section assignments was open to anyone.
+requirePermissionJson('sections.assign');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);

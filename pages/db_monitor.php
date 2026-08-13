@@ -5,6 +5,10 @@ include __DIR__ . "/../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/db_connect.php";
 
+// This page had no role check at all — any signed-in instructor could
+// read the database's table sizes and storage usage.
+requirePermission('db.monitor');
+
 // Get the active database name
 $dbname = $conn->query("SELECT DATABASE()")->fetch_row()[0];
 

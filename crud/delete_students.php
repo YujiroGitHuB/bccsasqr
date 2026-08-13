@@ -5,10 +5,7 @@ include __DIR__ . "/../includes/db_connect.php";
 
 header('Content-Type: application/json');
 
-if (!isAdmin()) {
-    echo json_encode(["status" => "unauthorized"]);
-    exit;
-}
+requirePermissionJson('students.delete', 'status');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = intval($_POST['id']);

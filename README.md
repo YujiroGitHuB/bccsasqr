@@ -169,16 +169,24 @@ per granted permission, managed per-instructor from **Manage Users → Access**.
 
 - The catalog of keys, their labels and their grouping live in `PERMISSION_CATALOG`
   ([includes/permissions.php](bccsasqr/includes/permissions.php)) — the single source of truth. The
-  Manage Access modal renders itself from it, so the UI cannot drift from what is enforced.
+  Manage Access modal renders itself from it, so the UI cannot drift from what is enforced. 25 keys
+  in five groups: Attendance, Students, Academic Setup, System, QR Tools.
 - Guards: `requirePermission($key)` on a page (redirects to the dashboard with an alert),
-  `requirePermissionJson($key)` in a `crud/` or `api/` endpoint. Gate the UI control *and* the
-  endpoint — hiding a button is not access control.
+  `requireAnyPermission([...])` for a page hosting several rights (`settings.php`),
+  `requirePermissionJson($key)` in a `crud/` or `api/` endpoint, and `requirePermissionIfSignedIn()`
+  for the pages that also serve anonymous kiosk visitors (the QR generator and Tracker board). Gate
+  the UI control *and* the endpoint — hiding a button is not access control.
 - A missing `user_permissions_tbl` (migration not run yet) falls back to
   `INSTRUCTOR_DEFAULT_PERMISSIONS`, which equals what every instructor could do before per-user
   permissions existed. Degrading to the old behaviour beats locking everyone out.
-- New instructors are seeded with those defaults, so access starts wide and is narrowed
-  deliberately. Adding a permission key means adding a guard for it — an unguarded key is a
-  checkbox that does nothing.
+- **`INSTRUCTOR_DEFAULT_PERMISSIONS` is a snapshot of the old behaviour, not "the catalog minus a
+  few".** It holds the 11 original Attendance/QR/photo keys. The other 14 — everything under
+  Students, Academic Setup and System — was admin territory, so it starts **off** and is granted one
+  instructor at a time. Adding a key to that constant grants it to every instructor at once on the
+  next deploy.
+- Adding a permission key means adding a guard for it. An unguarded key is a checkbox that does
+  nothing, and so is a key whose only page requires a *different* permission to open — that is why
+  `settings.php` lets any of its three keys in and then gates each card separately.
 
 **Alerts.** User-facing messages go through `$_SESSION['alert']` (`icon` / `title` / `text` /
 `position`, optional `redirect`) and are rendered by SweetAlert2 in `includes/alert.php` — not `echo`.
@@ -211,7 +219,8 @@ Read these before deploying anywhere beyond a local machine.
 - **Rotate the Gemini key.** It was moved out of `gemini-proxy.php` into gitignored `config.php`, but the old key **remains in git history** and must be rotated at https://aistudio.google.com/apikey.
 - **DB credentials are hardcoded** (`root`, no password) in `db_connect.php`. Fine for local XAMPP, not for deployment.
 - **SQL safety is inconsistent.** Most code uses prepared statements; some older code interpolates values or wraps them in `real_escape_string`. Prefer prepared statements for anything new and never widen the interpolation pattern.
-- **Mutating endpoints must guard access** — `isAdmin()` for admin actions, `requirePermissionJson('some.key')` for anything an instructor can be granted or denied, and an `empty($_SESSION['user_id'])` check at minimum.
+- **Mutating endpoints must guard access** — `isAdmin()` for admin actions, `requirePermissionJson('some.key')` for anything an instructor can be granted or denied, and an `empty($_SESSION['user_id'])` check at minimum. Several endpoints previously had *only* a login check (or none) while the page that used them was admin-only, which made the page guard cosmetic: `delete_all_students.php`, `delete_selected_students.php`, `import_students.php`, `update_students.php`, `delete_all_attendance.php`, `reset_attenadance.php`, `update_section_assignment.php`, `delete_section_assignments_bulk.php`. Guarding the page is not guarding the action.
+- **Wiping a whole table stays admin-only**, separate from the per-row delete permission: `delete_all_students.php` and `delete_all_attendance.php` check `isAdmin()` even for instructors holding `students.delete` / `attendance.delete`.
 - **Uploads** validate the real image type with `getimagesize()`/`getimagesizefromstring()` and derive the extension from the *detected* type, never the client filename (that previously allowed uploading `.php`). [student/student_photo_api.php](bccsasqr/student/student_photo_api.php) shows the fuller pattern: CSRF token + rate limiting + type/size validation.
 - **Face login residual risk** — `get_face_users.php` still ships all stored descriptors to the browser, so a stolen descriptor could be replayed. Liveness / challenge-response is the next hardening step.
 - **Errors are silenced.** `error_reporting(0)` and `display_errors 0` are set in `db_connect.php`, so PHP errors never surface. When debugging, check `bccsasqr/includes/db_error.log` and the Apache error log.

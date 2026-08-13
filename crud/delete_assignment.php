@@ -5,11 +5,7 @@ include __DIR__ . "/../includes/db_connect.php";
 
 header('Content-Type: application/json');
 
-// Check if user is admin
-if (!isAdmin()) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit;
-}
+requirePermissionJson('instructors.assign');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assignment_id'])) {
     $assignmentId = mysqli_real_escape_string($conn, $_POST['assignment_id']);

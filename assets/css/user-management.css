@@ -492,8 +492,8 @@
     color: #c4b5fd;
 }
 
-/* Only shown when access has actually been narrowed — full access is
-   the norm and does not need announcing. */
+/* Three states worth telling apart: nothing granted, everything
+   granted, and a count in between. */
 .users-page .access-badge {
     display: inline-flex;
     align-items: center;
@@ -516,6 +516,12 @@
     background: rgba(239, 68, 68, .14);
     color: #f87171;
     border: 1px solid rgba(239, 68, 68, .25);
+}
+
+.users-page .access-badge.full {
+    background: rgba(16, 185, 129, .14);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, .25);
 }
 
 /* ─── Access modal ────────────────────────────────────────── */

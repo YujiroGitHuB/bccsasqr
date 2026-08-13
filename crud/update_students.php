@@ -1,8 +1,15 @@
 <?php
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
+include __DIR__ . "/../includes/auth.php";
+include __DIR__ . "/../includes/permissions.php";
 
 header('Content-Type: application/json');
+
+// There was no auth include here at all — the only thing standing in the
+// way was that $_SESSION['user_id'] is needed as a column value below,
+// which made it "logged in" by accident rather than by design.
+requirePermissionJson('students.manage', 'status');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id         = intval($_POST['id']);

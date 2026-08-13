@@ -2,6 +2,12 @@
 session_start();
 header('Content-Type: application/json');
 include __DIR__ . "/../includes/db_connect.php";
+include __DIR__ . "/../includes/permissions.php";
+
+// This endpoint had no session or role check whatsoever — reassigning a
+// section to a different facilitator was open to anyone who knew the URL.
+requirePermissionJson('sections.assign');
+
 error_log("POST data: " . print_r($_POST, true));
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);

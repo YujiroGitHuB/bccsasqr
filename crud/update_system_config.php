@@ -5,11 +5,7 @@ include __DIR__ . "/../includes/db_connect.php";
 
 header('Content-Type: application/json');
 
-// Only admins may change system configuration.
-if (!isAdmin()) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
+requirePermissionJson('settings.manage');
 
 $response = ['success' => false, 'message' => 'Something went wrong.'];
 

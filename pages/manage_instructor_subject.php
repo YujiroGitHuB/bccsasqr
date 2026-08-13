@@ -3,14 +3,14 @@
 session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
-if (!isAdmin()) {
-    header("Location: dashboard.php");
-    exit;
-}
+requirePermission('instructors.assign');
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lock_status'])) {
+    // Same toggle as the one on settings.php, so it answers to the same
+    // permission rather than riding along on instructors.assign.
+    requirePermissionJson('system.pagelock');
     $newStatus = $_POST['lock_status'];
     $stmt = $conn->prepare("UPDATE lock_settings_tbl SET setting_value = ? WHERE setting_key = 'page_locked'");
     $stmt->bind_param("s", $newStatus);

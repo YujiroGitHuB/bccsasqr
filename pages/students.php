@@ -3,10 +3,18 @@
 session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
-if(!isAdmin()){
-    header("Location: dashboard.php");
-    exit;
-}
+requirePermission('students.view');
+
+// Viewing the list and changing it are separate grants, so each control
+// on this page is rendered only for the permission that backs it. The
+// matching crud/ endpoints enforce the same keys.
+$canManageStudents   = can('students.manage');
+$canImportStudents   = can('students.import');
+$canDeleteStudents   = can('students.delete');
+$canPromoteSections  = can('students.promote');
+// Emptying the whole roster stays admin-only — see
+// crud/delete_all_students.php.
+$canDeleteAllStudents = isAdmin();
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
 
@@ -88,13 +96,16 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
                              deleteSelected.js and delStudent.js find these
                              by id, not by position. -->
                         <div class="stud-actions">
+                            <?php if ($canDeleteStudents): ?>
                             <!-- Contextual: appears only once rows are ticked,
                                  so it needs to be seen, not buried. -->
                             <button class="stud-btn warn d-none" id="deleteSelectedBtn" title="Delete Selected Students">
                                 <i class="bi bi-trash2-fill"></i>
                                 <span class="btn-text">Delete Selected (<span id="selectedCount">0</span>)</span>
                             </button>
+                            <?php endif; ?>
 
+                            <?php if ($canImportStudents || $canPromoteSections || $canDeleteAllStudents): ?>
                             <div class="dropdown stud-more">
                                 <button class="stud-btn ghost" type="button" id="studMoreBtn"
                                     data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false"
@@ -102,17 +113,22 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
                                     <i class="bi bi-three-dots"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end stud-more-menu" aria-labelledby="studMoreBtn">
+                                    <?php if ($canImportStudents): ?>
                                     <li>
                                         <button class="dropdown-item" type="button" id="importCsvBtn">
                                             <i class="bi bi-file-earmark-arrow-up"></i> Import CSV
                                         </button>
                                     </li>
+                                    <?php endif; ?>
+                                    <?php if ($canPromoteSections): ?>
                                     <li>
                                         <button class="dropdown-item" type="button" id="promoteSectionBtn"
                                             data-bs-toggle="modal" data-bs-target="#promoteSectionModal">
                                             <i class="bi bi-arrow-up-right-circle"></i> Promote Section
                                         </button>
                                     </li>
+                                    <?php endif; ?>
+                                    <?php if ($canDeleteAllStudents): ?>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <button class="dropdown-item is-danger" type="button" id="deleteAllBtn"
@@ -120,23 +136,30 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
                                             <i class="bi bi-trash-fill"></i> Delete All
                                         </button>
                                     </li>
+                                    <?php endif; ?>
                                 </ul>
                             </div>
+                            <?php endif; ?>
 
+                            <?php if ($canManageStudents): ?>
                             <!-- The one action this page is for. Kept last so
                                  it stays where it has always been. -->
                             <button class="stud-btn primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                                 <i class="bi bi-person-plus"></i>
                                 <span class="btn-text">Add Student</span>
                             </button>
+                            <?php endif; ?>
 
                             <!-- importStudent.js clicks this; it must stay in
                                  the DOM even though it is never seen. -->
                             <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
                         </div>
                     </div>
-                    <!-- add modal -->
-                    <?php include __DIR__ . "/../components/add_students_modal.php"; ?>
+                    <!-- add modal — skipped without students.manage, so it is
+                         not left in the DOM with nothing able to open it -->
+                    <?php if ($canManageStudents): ?>
+                        <?php include __DIR__ . "/../components/add_students_modal.php"; ?>
+                    <?php endif; ?>
                     <div class="stud-table-card">
                         <!-- Loading Spinner -->
                         <div id="tableLoader" class="text-center py-5">
@@ -245,9 +268,13 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
         </script>
     </div>
     <!-- update students -->
-    <?php include __DIR__ . "/../components/update_students_modal.php"; ?>
+    <?php if ($canManageStudents): ?>
+        <?php include __DIR__ . "/../components/update_students_modal.php"; ?>
+    <?php endif; ?>
     <!-- promote a whole section to the next year level -->
-    <?php include __DIR__ . "/../components/promote_section_modal.php"; ?>
+    <?php if ($canPromoteSections): ?>
+        <?php include __DIR__ . "/../components/promote_section_modal.php"; ?>
+    <?php endif; ?>
     <!-- script add student -->
     <script src="<?= asset('../assets/js/addStudent.js') ?>"></script>
     <!-- script student update -->
@@ -262,6 +289,17 @@ $sectionTotal = (int) (mysqli_fetch_assoc(
          top-level `esc`/`SWAL_APP`/`swalHead` it deliberately avoids
          re-declaring. -->
     <script src="<?= asset('../assets/js/promoteSection.js') ?>"></script>
+    <!-- The rows are built by DataTables from get_students_ajax.php, so
+         the Edit and Delete buttons are decided in JS. It reads this;
+         crud/update_students.php and crud/delete_students.php enforce
+         the same two permissions server-side. Must come before
+         datatables.js. -->
+    <script>
+        window.studentPerms = {
+            manage: <?= $canManageStudents ? 'true' : 'false' ?>,
+            delete: <?= $canDeleteStudents ? 'true' : 'false' ?>
+        };
+    </script>
     <!-- script -->
     <?php include __DIR__ . "/../includes/footer.php"; ?>
     <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>

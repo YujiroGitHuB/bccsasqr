@@ -68,15 +68,97 @@ const PERMISSION_CATALOG = [
         'label' => 'Students',
         'icon'  => 'bi-people-fill',
         'items' => [
+            'students.view' => [
+                'label' => 'View the student list',
+                'note'  => 'Open the Student List page.',
+                'icon'  => 'bi-people',
+            ],
+            'students.manage' => [
+                'label' => 'Add and edit students',
+                'note'  => 'Create student records and change their details.',
+                'icon'  => 'bi-person-plus',
+            ],
+            'students.import' => [
+                'label' => 'Import students',
+                'note'  => 'Bulk-import from CSV or Excel, and download the template.',
+                'icon'  => 'bi-file-earmark-arrow-up',
+            ],
+            'students.delete' => [
+                'label' => 'Delete students',
+                'note'  => 'Remove student records. Wiping every student stays admin-only.',
+                'icon'  => 'bi-person-dash',
+            ],
+            'students.promote' => [
+                'label' => 'Promote sections',
+                'note'  => 'Move a whole section up to the next year level.',
+                'icon'  => 'bi-arrow-up-circle',
+            ],
             'students.photos' => [
                 'label' => 'View student photos',
                 'note'  => 'Photo profiles of students in their sections.',
                 'icon'  => 'bi-person-badge',
             ],
+            'students.photos.delete' => [
+                'label' => 'Delete student photos',
+                'note'  => 'Remove a photo so the student can upload a new one.',
+                'icon'  => 'bi-trash',
+            ],
             'enrollment.manage' => [
                 'label' => 'Manage subject enrollment',
                 'note'  => 'Enroll and remove students from subjects.',
                 'icon'  => 'bi-journal-bookmark',
+            ],
+        ],
+    ],
+    'academics' => [
+        'label' => 'Academic Setup',
+        'icon'  => 'bi-mortarboard',
+        'items' => [
+            'subjects.manage' => [
+                'label' => 'Manage subjects',
+                'note'  => 'Add, edit and remove subjects.',
+                'icon'  => 'bi-journal-bookmark',
+            ],
+            'sections.assign' => [
+                'label' => 'Assign sections',
+                'note'  => 'Decide which sections an instructor handles.',
+                'icon'  => 'bi-diagram-3',
+            ],
+            'instructors.assign' => [
+                'label' => 'Assign subjects to instructors',
+                'note'  => 'Decide which subjects an instructor teaches.',
+                'icon'  => 'bi-person-badge',
+            ],
+        ],
+    ],
+    'system' => [
+        'label' => 'System',
+        'icon'  => 'bi-sliders',
+        'items' => [
+            'attendance.lock' => [
+                'label' => 'Lock the attendance form',
+                'note'  => 'Stop or resume attendance submissions system-wide.',
+                'icon'  => 'bi-lock',
+            ],
+            'system.pagelock' => [
+                'label' => 'Lock the QR pages',
+                'note'  => 'Take the scanner, generator and tracker offline.',
+                'icon'  => 'bi-shield-lock',
+            ],
+            'settings.manage' => [
+                'label' => 'Change system settings',
+                'note'  => 'System name, logo, report header and footer.',
+                'icon'  => 'bi-gear',
+            ],
+            'backup.manage' => [
+                'label' => 'Database backup',
+                'note'  => 'Create, download and restore database backups.',
+                'icon'  => 'bi-database',
+            ],
+            'db.monitor' => [
+                'label' => 'Database monitor',
+                'note'  => 'Table sizes and storage usage.',
+                'icon'  => 'bi-activity',
             ],
         ],
     ],
@@ -107,6 +189,13 @@ const PERMISSION_CATALOG = [
  * What a brand-new instructor starts with, and the fallback when
  * user_permissions_tbl is missing. Deliberately equal to what every
  * instructor could do before per-user permissions existed.
+ *
+ * This is NOT "the whole catalog minus a few" — it is a snapshot of
+ * the old behaviour, and it must stay that way. Everything added to
+ * PERMISSION_CATALOG since (the Students, Academic Setup and System
+ * groups) was previously admin territory, so it starts off and is
+ * handed out one instructor at a time. Adding a key here would grant
+ * it to every instructor at once on the next deploy.
  */
 const INSTRUCTOR_DEFAULT_PERMISSIONS = [
     'attendance.view',
@@ -148,6 +237,12 @@ function allPermissionKeys(): array {
  * pages, so the connection is looked up when can() is first called
  * rather than when this file loads. db_connect.php stashes it in
  * $GLOBALS['__bcc_conn'].
+ *
+ * If no connection has been made yet, db_connect.php is included
+ * here rather than giving up: falling back to the defaults because a
+ * guard happened to run one line too early would silently grant or
+ * deny the wrong things. db_connect.php reuses the stashed handle,
+ * so this cannot open a second one.
  */
 function permissionsConn(): ?mysqli {
     foreach (['__bcc_conn', 'conn'] as $name) {
@@ -155,7 +250,12 @@ function permissionsConn(): ?mysqli {
             return $GLOBALS[$name];
         }
     }
-    return null;
+
+    include __DIR__ . '/db_connect.php';
+
+    return isset($GLOBALS['__bcc_conn']) && $GLOBALS['__bcc_conn'] instanceof mysqli
+        ? $GLOBALS['__bcc_conn']
+        : null;
 }
 
 /**
@@ -249,6 +349,20 @@ function requirePermission(string $permission, string $redirect = 'dashboard.php
 
     header("Location: " . $redirect);
     exit;
+}
+
+/**
+ * Page guard for a page that hosts several separately-permissioned
+ * things — settings.php is one page but three different rights.
+ * Getting in needs any one of them; each section then checks its own,
+ * so a permission is never granted but unreachable.
+ */
+function requireAnyPermission(array $permissions, string $redirect = 'dashboard.php'): void {
+    if (canAny($permissions)) {
+        return;
+    }
+    // Reuses requirePermission's alert and redirect for one message.
+    requirePermission($permissions[0] ?? '__none__', $redirect);
 }
 
 /**
