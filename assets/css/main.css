@@ -1182,6 +1182,29 @@ h4 {
   color: #f87171;
 }
 
+/* A read-only field reads as broken unless it says why. Used on the
+   email field for everyone except admins — see pages/profile.php. */
+#profilePage .profile-input[readonly] {
+  background: var(--surface-2);
+  color: var(--ink-4);
+  cursor: not-allowed;
+}
+
+#profilePage .profile-input[readonly]:focus {
+  background: var(--surface-2);
+  border-color: var(--surface-3);
+  box-shadow: none;
+}
+
+#profilePage .field-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 0.76rem;
+  color: var(--ink-4);
+}
+
 #profilePage .field-error.show {
   display: block;
 }

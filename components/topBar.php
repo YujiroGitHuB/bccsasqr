@@ -111,17 +111,14 @@ $__avatarUrl  = $__avatarFile !== '' && is_file($__avatarFile)
             <li>
                 <hr class="dropdown-divider my-2">
             </li>
-            <?php if (isAdmin()) { ?>
-                <li><a class="dropdown-item" href="../pages/profile.php"><i class="bi bi-person me-2"></i>My Profile</a></li>
-            <?php } ?>
+            <?php // Own profile: everyone with an account, not a permission. ?>
+            <li><a class="dropdown-item" href="../pages/profile.php"><i class="bi bi-person me-2"></i>My Profile</a></li>
             <?php if (canAny(['settings.manage', 'attendance.lock', 'system.pagelock'])) { ?>
                 <li><a class="dropdown-item" href="../pages/settings.php"><i class="bi bi-gear me-2"></i>Settings</a></li>
             <?php } ?>
-            <?php if (isAdmin() || canAny(['settings.manage', 'attendance.lock', 'system.pagelock'])) { ?>
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-            <?php } ?>
+            <li>
+                <hr class="dropdown-divider">
+            </li>
             <li>
                 <a class="dropdown-item text-danger" href="#" onclick="confirmLogout()">
                     <i class="bi bi-box-arrow-right me-2"></i>Logout

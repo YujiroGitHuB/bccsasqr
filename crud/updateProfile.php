@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 include __DIR__ . "/../includes/db_connect.php";
+include __DIR__ . "/../includes/permissions.php";
 header("Content-Type: application/json");
 
 $userId = $_SESSION['user_id'] ?? 0;
@@ -12,6 +13,14 @@ if (!$userId) {
     echo json_encode(["status" => "error", "message" => "Unauthorized."]);
     exit;
 }
+
+// Everyone may edit their own profile — there is no user_id in the
+// request, so "their own" is the only thing this endpoint can reach.
+// The email is the exception: it is the sign-in address, so only an
+// admin may change one. The field is rendered readonly in
+// pages/profile.php, but readonly is a hint to the browser and not a
+// guard, so it is enforced here too.
+$canChangeEmail = isAdmin();
 
 // ── Avatar constants ────────────────────────────────────────
 // What is stored in the DB is a path relative to the app root (the
@@ -43,6 +52,30 @@ if ($password !== '' && strlen($password) < MIN_PASSWORD_LEN) {
         "message" => "Password must be at least " . MIN_PASSWORD_LEN . " characters."
     ]);
     exit;
+}
+
+// Non-admins keep the email they signed in with. Compared against the
+// stored value rather than trusted from the form, so a tampered request
+// is caught. Matching values pass silently — the form always submits
+// the field, unchanged, which is not an attempt to change anything.
+if (!$canChangeEmail) {
+    $own = $conn->prepare("SELECT email FROM users WHERE id = ? LIMIT 1");
+    $own->bind_param("i", $userId);
+    $own->execute();
+    $currentEmail = (string)($own->get_result()->fetch_assoc()['email'] ?? '');
+    $own->close();
+
+    if (strcasecmp($email, $currentEmail) !== 0) {
+        echo json_encode([
+            "status"  => "warning",
+            "message" => "Your email address is your sign-in address. Please ask an administrator to change it."
+        ]);
+        exit;
+    }
+
+    // Use the stored value so a difference in letter case cannot slip
+    // through the comparison above and rewrite the row.
+    $email = $currentEmail;
 }
 
 // email is a UNIQUE KEY on users. Without checking here, the user

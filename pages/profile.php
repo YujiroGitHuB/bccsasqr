@@ -5,11 +5,15 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
-if(!isAdmin()){
-    header("Location: dashboard.php");
-    exit;
-}
 include __DIR__ . "/../includes/auth.php";
+
+// Everyone with an account gets their own profile — this page was
+// admin-only, which left instructors with no way to change their own
+// password even though crud/updateProfile.php already accepted them.
+// It is not a permission: the endpoint is hard-scoped to
+// $_SESSION['user_id'], so there is nobody else to edit and nothing to
+// escalate. Only the email is held back — see $canChangeEmail below.
+$canChangeEmail = isAdmin();
 include __DIR__ . "/../includes/db_connect.php";
 // Get system settings (optional)
 $systemQuery = mysqli_query($conn, "SELECT * FROM system_settings_tbl WHERE id = 1");
@@ -151,10 +155,24 @@ $system = mysqli_fetch_assoc($systemQuery);
                             <label for="emailField">Email Address</label>
                             <div class="input-icon">
                                 <i class="bi bi-envelope"></i>
+                                <?php
+                                // readonly, not disabled: a disabled input is not
+                                // submitted at all, and the endpoint requires the
+                                // field to be present. crud/updateProfile.php
+                                // rejects a changed value anyway — this is only so
+                                // the field does not invite the attempt.
+                                ?>
                                 <input type="email" name="email" id="emailField" class="profile-input"
                                     value="<?= htmlspecialchars($user['email'] ?? '') ?>"
-                                    autocomplete="email" required>
+                                    autocomplete="email" required
+                                    <?= $canChangeEmail ? '' : 'readonly' ?>>
                             </div>
+                            <?php if (!$canChangeEmail): ?>
+                                <small class="field-note">
+                                    <i class="bi bi-lock"></i>
+                                    This is your sign-in address. Contact the administrator to change it.
+                                </small>
+                            <?php endif; ?>
                         </div>
                     </div>
 
