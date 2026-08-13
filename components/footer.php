@@ -25,9 +25,12 @@ if (!empty($footerDeveloperUrl)) {
     }
 }
 ?>
+<!-- The colour is a token, not #fff: this footer sits on a white card
+     on the QR generator and tracker in light mode, where white text
+     was invisible — the copyright line simply vanished. -->
 <footer style="
     background-color: transparent;
-    color: #fff;
+    color: var(--ink-4, #fff);
     text-align: center;
     padding: 15px 10px;
     font-size: 0.9rem;

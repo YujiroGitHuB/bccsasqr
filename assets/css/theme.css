@@ -139,6 +139,93 @@ body {
     color: var(--ink-2);
 }
 
+/* ─── Accent "ink" on a light ground ─────────────────────────
+   Each page picks a pale tint of its accent for small text —
+   --stud-ink #7dd3fc, --att-ink #c4b5fd and so on. Those were
+   chosen to glow on a near-black card; on white they are barely
+   there, and they are used for the section labels and chips, which
+   are text people actually have to read.
+
+   Only the INK is darkened. The accents themselves (--stud, --att,
+   the gradients, the status greens and reds) are untouched: they
+   read on both grounds, and a brand colour that changes with the
+   theme stops being a brand colour.
+
+   These are declared on page classes (.stud-page, .qr-page, ...),
+   so a bare :root would lose on specificity — hence the descendant
+   selectors. */
+:root:not([data-theme="dark"]) .stud-page,
+:root:not([data-theme="dark"]) .qr-page,
+:root:not([data-theme="dark"]) .trk-page,
+:root:not([data-theme="dark"]) body,
+:root:not([data-theme="dark"]) .app-modal,
+:root:not([data-theme="dark"]) .app-swal {
+    --stud-ink: #0369a1;
+    --scan-ink: #0369a1;
+    --qr-ink: #0369a1;
+    --trk-ink: #0369a1;
+    --sp-ink: #0369a1;
+    --am-ink: #0369a1;
+    --att-ink: #6d28d9;
+    --lnk-ink: #6d28d9;
+    --ok-ink: #047857;
+    --warn-ink: #b45309;
+    --bad-ink: #b91c1c;
+}
+
+/* ─── Decorative particle field ──────────────────────────────
+   The QR generator, scanner and tracker sit on a particles.js
+   canvas whose colour is set in JavaScript (#1b1e34 at .3 alpha,
+   assets/js/shape.js). On a dark ground that is a faint texture; on
+   a light one it is a grey smear across the page. It cannot be
+   recoloured from CSS, so in light mode it is turned down instead. */
+:root:not([data-theme="dark"]) #particles-js {
+    opacity: .1;
+}
+
+/* ─── Floating theme switch ──────────────────────────────────
+   For the pages with no topbar to put it in (see
+   includes/theme_toggle.php). The topbar version is styled in
+   topbar.css; these are the extra rules that make it float, so the
+   two look the same wherever they appear. */
+.tb-theme.theme-floating {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 9997;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink-3);
+    font-size: 1.05rem;
+    cursor: pointer;
+    box-shadow: 0 6px 18px var(--shadow);
+    transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.tb-theme.theme-floating:hover {
+    background: var(--surface-3);
+    color: var(--ink);
+    border-color: var(--line-strong);
+}
+
+.tb-theme.theme-floating:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tb-theme.theme-floating {
+        transition: none;
+    }
+}
+
 /* SweetAlert2 dialogs are handed their colours by JavaScript —
    `background: '#16161a'`, `color: '#e0e0e0'` and friends, spread
    across 20 different files. SweetAlert writes those as INLINE

@@ -2,7 +2,7 @@
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="color-scheme" content="dark" />
+<?php include __DIR__ . "/theme_head.php"; ?>
 <title><?php echo $systemAcronym; ?> Code Generator</title>
 <link rel="icon" type="image/png" href="../<?php echo $systemLogo; ?>">
 <!-- Bootstrap Icons — the page uses `bi bi-*` classes (the

@@ -3,7 +3,7 @@
 
    The same language as the other admin pages (see
    students-page.css and dashboard.css): sky/cyan accent
-   (#0ea5e9 → #06b6d4), #16161a surfaces, rgba(255,255,255,.07)
+   (#0ea5e9 → #06b6d4), var(--surface) surfaces, rgba(var(--tint), .07)
    borders, a hero card with a 3px gradient bar on top, and pill
    chips.
 
@@ -16,8 +16,8 @@
        — and that was three render-blocking requests before the
        page could even start drawing.
      • a different palette: #63b3ed blue, #b794f4 violet, #4fd1c7
-       teal, and a #080c14 base — while every other page sits on
-       #16161a surfaces
+       teal, and a var(--bg) base — while every other page sits on
+       var(--surface) surfaces
      • the title was gradient text running cyan → teal → violet;
        no other title anywhere looks like that
      • two fixed radial gradients behind the whole content area
@@ -36,12 +36,12 @@
     --sp-line: rgba(14, 165, 233, .3);
     --sp-ink: #7dd3fc;
 
-    --sp-surface: #16161a;
-    --sp-raised: #0f0f13;
-    --sp-border: rgba(255, 255, 255, .07);
-    --sp-text: #f1f5f9;
-    --sp-muted: rgba(255, 255, 255, .45);
-    --sp-dim: rgba(255, 255, 255, .28);
+    --sp-surface: var(--surface);
+    --sp-raised: var(--bg);
+    --sp-border: rgba(var(--tint), .07);
+    --sp-text: var(--ink-2);
+    --sp-muted: rgba(var(--tint), .45);
+    --sp-dim: rgba(var(--tint), .28);
 
     /* Status, not decoration: has a photo / has none yet. */
     --sp-ok: #10b981;
@@ -67,7 +67,7 @@
     border: 1px solid var(--sp-border);
     background:
         radial-gradient(circle at 0% 0%, rgba(14, 165, 233, .16), transparent 55%),
-        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+        linear-gradient(135deg, rgba(var(--tint), .04), rgba(var(--tint), .015));
     overflow: hidden;
 }
 
@@ -88,7 +88,7 @@
     display: grid;
     place-items: center;
     font-size: 1.5rem;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--sp), var(--sp-deep));
     box-shadow: 0 8px 20px rgba(14, 165, 233, .35);
 }
@@ -105,7 +105,7 @@
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: -.02em;
-    color: #fff;
+    color: var(--ink);
 }
 
 .sp .sp-hero-text p {
@@ -148,7 +148,7 @@
     padding: 1.1rem 1.25rem;
     border-radius: 16px;
     border: 1px solid var(--sp-border);
-    background: linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+    background: linear-gradient(135deg, rgba(var(--tint), .04), rgba(var(--tint), .015));
     overflow: hidden;
 }
 
@@ -214,7 +214,7 @@
     line-height: 1;
     letter-spacing: -.02em;
     font-variant-numeric: tabular-nums;
-    color: #fff;
+    color: var(--ink);
 }
 
 .sp .sp-stat.has .sp-stat-val {
@@ -265,7 +265,7 @@
     height: 8px;
     margin-top: .85rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, .06);
+    background: rgba(var(--tint), .06);
     overflow: hidden;
 }
 
@@ -289,7 +289,7 @@
     top: 0;
     bottom: 0;
     width: 10px;
-    background: rgba(255, 255, 255, .35);
+    background: rgba(var(--tint), .35);
     filter: blur(3px);
 }
 
@@ -312,7 +312,7 @@
     margin-bottom: .9rem;
     border-radius: 14px;
     border: 1px solid var(--sp-border);
-    background: rgba(255, 255, 255, .02);
+    background: rgba(var(--tint), .02);
 }
 
 .sp .sp-srch {
@@ -338,7 +338,7 @@
     width: 100%;
     min-height: 42px;
     border-radius: 10px;
-    border: 1px solid #2a2a33;
+    border: 1px solid var(--surface-3);
     background: var(--sp-raised);
     color: var(--sp-text);
     font-family: inherit;
@@ -396,7 +396,7 @@
     border: 0;
     border-radius: 9px;
     background: transparent;
-    color: #94a3b8;
+    color: var(--ink-4);
     font-family: inherit;
     font-size: .8rem;
     font-weight: 600;
@@ -406,13 +406,13 @@
 }
 
 .sp .sp-pill:hover {
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, .05);
+    color: var(--ink-2);
+    background: rgba(var(--tint), .05);
 }
 
 .sp .sp-pill.on {
-    color: #fff;
-    background: rgba(255, 255, 255, .1);
+    color: var(--ink);
+    background: rgba(var(--tint), .1);
 }
 
 /* The two status filters wear the color of the status they select,
@@ -534,7 +534,7 @@
     font-size: 1.25rem;
     font-weight: 700;
     letter-spacing: -.02em;
-    color: rgba(255, 255, 255, .3);
+    color: rgba(var(--tint), .3);
 }
 
 /* Text */
@@ -542,7 +542,7 @@
     font-size: .8rem;
     font-weight: 700;
     line-height: 1.35;
-    color: #fff;
+    color: var(--ink);
 }
 
 .sp .sp-sn {
@@ -610,7 +610,7 @@
 }
 
 .sp .sp-card:hover .sp-x {
-    color: rgba(255, 255, 255, .5);
+    color: rgba(var(--tint), .5);
 }
 
 .sp .sp-x:hover {
@@ -643,8 +643,8 @@
     place-items: center;
     border-radius: 15px;
     font-size: 1.5rem;
-    color: rgba(255, 255, 255, .5);
-    background: rgba(255, 255, 255, .05);
+    color: rgba(var(--tint), .5);
+    background: rgba(var(--tint), .05);
     border: 1px solid var(--sp-border);
 }
 
@@ -667,7 +667,7 @@
 }
 
 .sp .sk {
-    background: linear-gradient(90deg, #16161a 25%, #23232b 50%, #16161a 75%);
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
     background-size: 200% 100%;
     animation: spShimmer 1.6s infinite;
     border-radius: 6px;
@@ -755,9 +755,9 @@
     min-height: 42px;
     padding: .55rem 1.35rem;
     border-radius: 11px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(255, 255, 255, .05);
-    color: #cbd5e1;
+    border: 1px solid rgba(var(--tint), .12);
+    background: rgba(var(--tint), .05);
+    color: var(--ink-3);
     font-family: inherit;
     font-size: .86rem;
     font-weight: 600;
@@ -766,8 +766,8 @@
 }
 
 .sp .sp-more:hover:not(:disabled) {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 .sp .sp-more:disabled {
@@ -783,11 +783,11 @@
     margin: 0;
     font-size: .88rem;
     line-height: 1.6;
-    color: rgba(255, 255, 255, .6);
+    color: rgba(var(--tint), .6);
 }
 
 .sp-del-msg strong {
-    color: #fff;
+    color: var(--ink);
 }
 
 /* ─── Responsive ──────────────────────────────────────────── */

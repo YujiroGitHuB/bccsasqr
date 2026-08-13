@@ -3,7 +3,7 @@
 
    Puts this page in the same language as the admin pages (see
    assets/css/students-page.css and modal-form.css): sky/cyan accent
-   (#0ea5e9 → #06b6d4), #16161a surfaces, rgba(255,255,255,.07)
+   (#0ea5e9 → #06b6d4), var(--surface) surfaces, rgba(var(--tint), .07)
    borders, a 3px gradient on top of each panel, and pill chips.
 
    The old look had its own vocabulary, found nowhere else in the
@@ -25,12 +25,12 @@ body {
     --scan-line: rgba(14, 165, 233, .3);
     --scan-ink: #7dd3fc;
 
-    --scan-bg: #0f0f13;
-    --scan-surface: #16161a;
-    --scan-raised: #1c1c22;
-    --scan-border: rgba(255, 255, 255, .07);
-    --scan-text: #f1f5f9;
-    --scan-dim: rgba(255, 255, 255, .45);
+    --scan-bg: var(--bg);
+    --scan-surface: var(--surface);
+    --scan-raised: var(--surface-2);
+    --scan-border: rgba(var(--tint), .07);
+    --scan-text: var(--ink-2);
+    --scan-dim: rgba(var(--tint), .45);
 
     font-family: system-ui, -apple-system, "Segoe UI", Roboto,
         "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -55,11 +55,11 @@ header {
     z-index: 1000;
     box-sizing: border-box;
     padding: .7rem 1.1rem;
-    color: #fff;
+    color: var(--on-accent);
     border-bottom: 1px solid var(--scan-border);
     background:
         radial-gradient(circle at 0% 0%, rgba(14, 165, 233, .12), transparent 60%),
-        rgba(22, 22, 26, .92);
+        var(--surface);
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, .45);
 }
@@ -95,7 +95,7 @@ header::before {
 
 header .header-title {
     margin: 0;
-    color: #fff;
+    color: var(--ink);
     text-align: left;
     /* This was `clamp(.625rem, …)` — a 10px floor, smaller than the
        body text, so the title was barely readable on a phone. */
@@ -110,7 +110,7 @@ header .header-title {
 .scan-head-text p {
     margin: 1px 0 0;
     font-size: .78rem;
-    color: rgba(255, 255, 255, .42);
+    color: rgba(var(--tint), .42);
 }
 
 /* A quiet way out — visible, but not competing with the camera,
@@ -123,9 +123,9 @@ header .header-title {
     min-height: 40px;
     padding: 0 .9rem;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(255, 255, 255, .05);
-    color: #cbd5e1;
+    border: 1px solid rgba(var(--tint), .12);
+    background: rgba(var(--tint), .05);
+    color: var(--ink-3);
     font-size: .82rem;
     font-weight: 600;
     text-decoration: none;
@@ -133,8 +133,8 @@ header .header-title {
 }
 
 .scan-head-back:hover {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 /* On a phone the title is what needs the width — the button's icon
@@ -158,10 +158,10 @@ header .header-title {
    assets/css/main.css (the sidebar). */
 .brand-logo {
     border-radius: 50%;
-    background: #fff;
+    background: var(--ink);
     object-fit: contain;
     padding: 3px;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 1px rgba(var(--tint), 0.25);
     flex-shrink: 0;
 }
 
@@ -231,7 +231,7 @@ h3 {
     margin: 0 0 .9rem;
     font-size: 1.05rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--ink);
 }
 
 #attendance h3 i {
@@ -259,7 +259,7 @@ h3 {
 table {
     width: 100%;
     border-collapse: collapse;
-    color: #cbd5e1;
+    color: var(--ink-3);
     margin-top: 10px;
     font-size: 0.95rem;
 }
@@ -278,7 +278,7 @@ th {
     font-size: .78rem;
     letter-spacing: .4px;
     text-transform: uppercase;
-    background: rgba(255, 255, 255, .03);
+    background: rgba(var(--tint), .03);
 }
 
 tr:hover td {
@@ -294,7 +294,7 @@ tr:hover td {
 .dataTables_length select {
     background: var(--scan-bg);
     color: var(--scan-text);
-    border: 1px solid #2a2a33;
+    border: 1px solid var(--surface-3);
     border-radius: 8px;
     padding: 6px 10px;
 }
@@ -624,11 +624,11 @@ tr:hover td {
 #result.card {
     margin-top: 15px;
     padding: 16px 18px;
-    background: rgba(255, 255, 255, .03);
+    background: rgba(var(--tint), .03);
     border-radius: 12px;
     border: 1px solid var(--scan-border);
     box-shadow: none;
-    color: #cbd5e1;
+    color: var(--ink-3);
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -644,7 +644,7 @@ tr:hover td {
     font-weight: 600;
     letter-spacing: .5px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .4);
+    color: rgba(var(--tint), .4);
     margin-bottom: 6px;
 }
 
@@ -666,7 +666,7 @@ tr:hover td {
 }
 
 /* This was `.15` white — quiet against the old near-black navy, but
-   on the new #16161a it made the box brighter than the panel holding
+   on the new var(--surface) it made the box brighter than the panel holding
    it. */
 #qrResult {
     display: block;
@@ -907,7 +907,7 @@ tr:hover td {
    shouted at once. The accent now lives only in the focus ring and
    the status line. */
 .subject-selection {
-    background: rgba(255, 255, 255, .03);
+    background: rgba(var(--tint), .03);
     padding: 16px;
     border-radius: 12px;
     margin: 15px 0;
@@ -917,7 +917,7 @@ tr:hover td {
 
 .subject-selection label {
     display: block;
-    color: #cbd5e1;
+    color: var(--ink-3);
     margin-bottom: .4rem;
     font-size: .78rem;
     font-weight: 600;
@@ -960,7 +960,7 @@ tr:hover td {
     min-height: 48px;
     padding: .6rem .9rem .6rem 2.6rem;
     background: var(--scan-bg);
-    border: 1px solid #2a2a33;
+    border: 1px solid var(--surface-3);
     border-radius: 11px;
     color: var(--scan-text);
     font-size: 14px;
@@ -990,8 +990,8 @@ tr:hover td {
     padding: .7rem .8rem;
     border-radius: 11px;
     border: 1px solid var(--scan-border);
-    background: rgba(255, 255, 255, .03);
-    color: #cbd5e1;
+    background: rgba(var(--tint), .03);
+    color: var(--ink-3);
     margin-bottom: 14px;
     text-align: left;
 }
@@ -1004,7 +1004,7 @@ tr:hover td {
     display: grid;
     place-items: center;
     font-size: 1.05rem;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--scan), var(--scan-deep));
     box-shadow: 0 6px 14px rgba(14, 165, 233, .3);
 }
@@ -1018,7 +1018,7 @@ tr:hover td {
     display: block;
     font-size: .9rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1050,9 +1050,9 @@ tr:hover td {
 /* Supporting detail only (id, counts) — this is not a status, so it
    carries no color. */
 .scan-chip-tag.is-quiet {
-    border-color: rgba(255, 255, 255, .1);
-    background: rgba(255, 255, 255, .04);
-    color: rgba(255, 255, 255, .45);
+    border-color: rgba(var(--tint), .1);
+    background: rgba(var(--tint), .04);
+    color: rgba(var(--tint), .45);
 }
 
 /* ── Status ─────────────────────────────────────────────── */
@@ -1068,9 +1068,9 @@ tr:hover td {
     gap: .45rem;
     padding: .55rem .8rem;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, .1);
-    background: rgba(255, 255, 255, .04);
-    color: rgba(255, 255, 255, .5);
+    border: 1px solid rgba(var(--tint), .1);
+    background: rgba(var(--tint), .04);
+    color: rgba(var(--tint), .5);
     text-align: center;
     margin-bottom: 0;
     font-size: .82rem;
@@ -1106,7 +1106,7 @@ tr:hover td {
 /* ── No Subjects Assigned Page ─────────────────────────── */
 .no-subjects-body {
     background: var(--scan-bg);
-    color: white;
+    color: var(--on-accent);
     /* This was `'Segoe UI', …` — a third typeface on one page (the
        body was serif, the initials Georgia). Just one now. */
     display: flex;
@@ -1159,13 +1159,13 @@ tr:hover td {
     display: grid;
     place-items: center;
     font-size: 1.5rem;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--scan), var(--scan-deep));
     box-shadow: 0 8px 20px rgba(14, 165, 233, .35);
 }
 
 .message-box h2 {
-    color: #fff;
+    color: var(--ink);
     font-size: 1.2rem;
     margin: 0 0 10px;
 }
@@ -1174,7 +1174,7 @@ tr:hover td {
     margin: 0 0 8px;
     font-size: .9rem;
     line-height: 1.55;
-    color: rgba(255, 255, 255, .55);
+    color: rgba(var(--tint), .55);
 }
 
 .message-id {
@@ -1182,10 +1182,10 @@ tr:hover td {
     margin-top: 4px !important;
     padding: .2rem .7rem;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, .1);
-    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(var(--tint), .1);
+    background: rgba(var(--tint), .04);
     font-size: .72rem !important;
-    color: rgba(255, 255, 255, .45) !important;
+    color: rgba(var(--tint), .45) !important;
 }
 
 /* This was white text on #38bdf8 — low contrast (2.3:1). Now the
@@ -1202,7 +1202,7 @@ tr:hover td {
     border-radius: 11px;
     background: linear-gradient(135deg, var(--scan), var(--scan-deep));
     box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
-    color: #fff;
+    color: var(--on-accent);
     font-size: .88rem;
     font-weight: 600;
     cursor: pointer;
@@ -1283,7 +1283,7 @@ tr:hover td {
     align-items: center;
     justify-content: center;
     font-size: .6rem;
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 700;
 }
 
@@ -1297,7 +1297,7 @@ tr:hover td {
 .student-name {
     font-weight: 700;
     font-size: .92rem;
-    color: #f1f5f9;
+    color: var(--ink-2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1305,7 +1305,7 @@ tr:hover td {
 
 .student-meta {
     font-size: .75rem;
-    color: #64748b;
+    color: var(--ink-4);
     margin: .15rem 0;
 }
 
@@ -1445,7 +1445,7 @@ tr:hover td {
     align-items: center;
     justify-content: center;
     font-size: 9px;
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 700;
 }
 
@@ -1460,7 +1460,7 @@ tr:hover td {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, .08);
+    border: 1px solid rgba(var(--tint), .08);
     cursor: default;
     transition:
         width         .45s cubic-bezier(.34, 1.56, .64, 1),
@@ -1526,7 +1526,7 @@ tr:hover td {
 
 #di-idle span {
     font-size: 11px;
-    color: rgba(255, 255, 255, .5);
+    color: rgba(var(--tint), .5);
     letter-spacing: .4px;
 }
 
@@ -1553,7 +1553,7 @@ tr:hover td {
 .di-student-name {
     font-size: 14px;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--ink-2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1756,7 +1756,7 @@ body {
         display: block;
         text-align: center;
         font-size: 11px;
-        color: #64748b;
+        color: var(--ink-4);
         margin-top: 6px;
     }
 
@@ -1800,7 +1800,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--ink-2);
     text-align: left;
 }
 
@@ -1809,9 +1809,9 @@ body {
     min-height: 36px;
     padding: 0 12px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, .2);
-    background: rgba(255, 255, 255, .08);
-    color: #e2e8f0;
+    border: 1px solid rgba(var(--tint), .2);
+    background: rgba(var(--tint), .08);
+    color: var(--ink-2);
     font-size: .78rem;
     font-weight: 600;
     cursor: pointer;

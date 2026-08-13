@@ -294,6 +294,7 @@ if (count($subjects) === 0 && $role !== 'admin') {
     </script>
     <script src="<?= asset('../assets/js/tts.js') ?>"></script>
     <script src="<?= asset('js/scriptV3.js') ?>"></script>
+<?php include __DIR__ . "/../includes/theme_toggle.php"; ?>
 </body>
 
 </html>

@@ -5,7 +5,7 @@
    the same product — so it speaks the same language as the admin
    pages (see assets/css/students-page.css and
    assets/css/modal-form.css): sky/cyan accent (#0ea5e9 → #06b6d4),
-   #16161a surfaces, rgba(255,255,255,.07) borders, a 3px gradient
+   var(--surface) surfaces, rgba(var(--tint), .07) borders, a 3px gradient
    on top of the card, and exactly ONE primary button per step.
 
    The old version had its own identity:
@@ -14,8 +14,8 @@
        (italic) for the word "Photo" in the title. There is no serif
        heading anywhere else in the app, and every other page uses
        the native font stack.
-     • a GitHub palette: #0d1117 base, #58a6ff blue, #3fb950 green,
-       #30363d borders — a different family from the admin sky.
+     • a GitHub palette: var(--surface) base, #58a6ff blue, #3fb950 green,
+       var(--surface-3) borders — a different family from the admin sky.
      • THREE radial gradients behind the body — blue, green, and
        blue again.
      • the "Use This Photo" button was GREEN. Green is reserved for
@@ -33,16 +33,15 @@
     --sp-line: rgba(14, 165, 233, .28);
     --sp-ink: #7dd3fc;
 
-    --bg: #0f172a;
-    --surface: #16161a;
-    --field: #0f0f13;
-    --raised: rgba(255, 255, 255, .05);
-    --border: rgba(255, 255, 255, .07);
-    --border-in: #2a2a33;
+    --bg: var(--surface-slate);
+    --field: var(--bg);
+    --raised: rgba(var(--tint), .05);
+    --border: rgba(var(--tint), .07);
+    --border-in: var(--surface-3);
 
-    --text: #f1f5f9;
-    --text-2: rgba(255, 255, 255, .5);
-    --text-3: rgba(255, 255, 255, .3);
+    --text: var(--ink-2);
+    --text-2: rgba(var(--tint), .5);
+    --text-3: rgba(var(--tint), .3);
 
     /* Status colors — not decoration. */
     --ok: #10b981;
@@ -107,7 +106,7 @@ h1 {
     line-height: 1.2;
     letter-spacing: -.02em;
     margin-bottom: .5rem;
-    color: #fff;
+    color: var(--ink);
 }
 
 .page-subtitle {
@@ -168,7 +167,7 @@ h1 {
 }
 
 .step-item.active .step-num {
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--sp), var(--sp-deep));
     border-color: transparent;
     box-shadow: 0 0 0 4px var(--sp-soft);
@@ -243,7 +242,7 @@ h1 {
     font-weight: 700;
     line-height: 1.3;
     letter-spacing: -.01em;
-    color: #fff;
+    color: var(--ink);
 }
 
 .card .desc {
@@ -254,7 +253,7 @@ h1 {
 }
 
 .card .desc strong {
-    color: #cbd5e1;
+    color: var(--ink-3);
 }
 
 /* ── FORM FIELDS ────────────────────────────────────────── */
@@ -271,7 +270,7 @@ h1 {
     font-weight: 600;
     letter-spacing: .3px;
     /* Full-strength color — a label has to be readable. */
-    color: #cbd5e1;
+    color: var(--ink-3);
 }
 
 .field-label i {
@@ -319,7 +318,7 @@ input[type=text]:focus {
 }
 
 input[type=text]::placeholder {
-    color: rgba(255, 255, 255, .25);
+    color: rgba(var(--tint), .25);
 }
 
 .field-hint {
@@ -328,7 +327,7 @@ input[type=text]::placeholder {
     gap: .3rem;
     margin-top: .4rem;
     font-size: .75rem;
-    color: rgba(255, 255, 255, .38);
+    color: rgba(var(--tint), .38);
 }
 
 /* ── BUTTONS ────────────────────────────────────────────── */
@@ -360,7 +359,7 @@ input[type=text]::placeholder {
    by "Use This Photo" — the second used to be green, competing
    with the genuinely green "Verified" badge. */
 .btn-primary {
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--sp), var(--sp-deep));
     box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
 }
@@ -378,15 +377,15 @@ input[type=text]::placeholder {
 /* A quiet way back — visible, but not competing for attention. */
 .btn-ghost,
 .btn-done {
-    color: #cbd5e1;
+    color: var(--ink-3);
     background: var(--raised);
-    border-color: rgba(255, 255, 255, .12);
+    border-color: rgba(var(--tint), .12);
 }
 
 .btn-ghost:hover:not(:disabled),
 .btn-done:hover:not(:disabled) {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 .btn:focus-visible {
@@ -417,7 +416,7 @@ input[type=text]::placeholder {
     padding: .85rem 1rem;
     border-radius: var(--r);
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, .03);
+    background: rgba(var(--tint), .03);
 }
 
 .v-avatar {
@@ -427,7 +426,7 @@ input[type=text]::placeholder {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--sp), var(--sp-deep));
     font-size: 1rem;
     font-weight: 700;
@@ -437,7 +436,7 @@ input[type=text]::placeholder {
 .v-name {
     font-size: .92rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--ink);
 }
 
 .v-meta {
@@ -484,7 +483,7 @@ input[type=text]::placeholder {
     border: none;
     border-radius: 9px;
     background: transparent;
-    color: #94a3b8;
+    color: var(--ink-4);
     font-size: .83rem;
     font-weight: 600;
     font-family: var(--font);
@@ -493,8 +492,8 @@ input[type=text]::placeholder {
 }
 
 .src-tab:hover {
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, .05);
+    color: var(--ink-2);
+    background: rgba(var(--tint), .05);
 }
 
 .src-tab.active {
@@ -551,7 +550,7 @@ input[type=text]::placeholder {
     margin-bottom: .3rem;
     font-size: .92rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--ink);
 }
 
 .drop-zone p {
@@ -630,9 +629,9 @@ input[type=text]::placeholder {
     flex: 1;
     padding: .72rem 1rem;
     border-radius: 11px;
-    border: 1px solid rgba(255, 255, 255, .12);
+    border: 1px solid rgba(var(--tint), .12);
     background: var(--raised);
-    color: #cbd5e1;
+    color: var(--ink-3);
     font-size: .85rem;
     font-weight: 600;
     font-family: var(--font);
@@ -645,8 +644,8 @@ input[type=text]::placeholder {
 }
 
 .btn-cam-action:hover:not(:disabled) {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 .btn-cam-action:disabled {
@@ -660,7 +659,7 @@ input[type=text]::placeholder {
     padding: .72rem 1rem;
     border: none;
     border-radius: 11px;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--sp), var(--sp-deep));
     box-shadow: 0 6px 16px rgba(14, 165, 233, .3);
     font-size: .88rem;
@@ -690,7 +689,7 @@ input[type=text]::placeholder {
 .cam-flash {
     position: absolute;
     inset: 0;
-    background: #fff;
+    background: var(--ink);
     opacity: 0;
     pointer-events: none;
     transition: opacity .06s;
@@ -708,10 +707,10 @@ input[type=text]::placeholder {
 .flashlight-toggle {
     width: 100%;
     padding: .72rem 1rem;
-    border: 1px solid rgba(255, 255, 255, .12);
+    border: 1px solid rgba(var(--tint), .12);
     border-radius: 11px;
     background: var(--raised);
-    color: #cbd5e1;
+    color: var(--ink-3);
     font-size: .85rem;
     font-weight: 600;
     font-family: var(--font);
@@ -724,8 +723,8 @@ input[type=text]::placeholder {
 }
 
 .flashlight-toggle:hover {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: rgba(var(--tint), .1);
+    color: var(--ink);
 }
 
 .flashlight-toggle.active {
@@ -790,7 +789,7 @@ input[type=text]::placeholder {
     padding: .9rem;
     border-radius: var(--r);
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, .03);
+    background: rgba(var(--tint), .03);
 }
 
 #crop-preview {
@@ -860,7 +859,7 @@ input[type=text]::placeholder {
     margin-bottom: .4rem;
     font-size: 1.2rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--ink);
 }
 
 .success-wrap p {
@@ -874,8 +873,8 @@ input[type=text]::placeholder {
 .spinner {
     width: 16px;
     height: 16px;
-    border: 2px solid rgba(255, 255, 255, .25);
-    border-top-color: #fff;
+    border: 2px solid rgba(var(--tint), .25);
+    border-top-color: var(--ink);
     border-radius: 50%;
     animation: spin .55s linear infinite;
     flex-shrink: 0;
@@ -919,7 +918,7 @@ input[type=text]::placeholder {
     left: 50%;
     transform: translateX(-50%) scale(0.4);
     z-index: 9999;
-    background: #0d0d0d;
+    background: var(--surface);
     border-radius: 999px;
     display: flex;
     align-items: center;
@@ -928,7 +927,7 @@ input[type=text]::placeholder {
     width: 110px;
     height: 34px;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, .75), 0 0 0 1px rgba(255, 255, 255, .07);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .75), 0 0 0 1px rgba(var(--tint), .07);
     opacity: 0;
     pointer-events: none;
     transition:
@@ -961,7 +960,7 @@ input[type=text]::placeholder {
     overflow: hidden;
     flex-shrink: 0;
     border: 2px solid rgba(16, 185, 129, .5);
-    background: #1a1a1a;
+    background: var(--surface);
     opacity: 0;
     transform: scale(0.4);
     transition: opacity .3s .2s ease, transform .4s .18s cubic-bezier(.34, 1.56, .64, 1);
@@ -1008,7 +1007,7 @@ input[type=text]::placeholder {
     font-size: .8rem;
     font-weight: 700;
     line-height: 1.25;
-    color: #f1f5f9;
+    color: var(--ink-2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

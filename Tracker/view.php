@@ -107,6 +107,7 @@ if ($locked) {
     <!-- THEN YOUR SCRIPT -->
     <script src="<?= asset('../assets/js/shape.js') ?>"></script>
 
+<?php include __DIR__ . "/../includes/theme_toggle.php"; ?>
 </body>
 
 </html>

@@ -316,6 +316,7 @@ if ($result && $result->num_rows > 0) {
             }, 5000);
         }
     </script>
+<?php include __DIR__ . "/../includes/theme_toggle.php"; ?>
 </body>
 
 </html>

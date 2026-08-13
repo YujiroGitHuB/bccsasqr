@@ -3,7 +3,7 @@
 
    Now speaks the same language as the admin pages (see
    students-page.css) and the QR Generator: sky/cyan accent
-   (#0ea5e9 → #06b6d4), dark surfaces (#16161a), a hero with a rule
+   (#0ea5e9 → #06b6d4), dark surfaces (var(--surface)), a hero with a rule
    on top, and round chips. A student now sees one product, from
    generating a QR through to checking their record.
 
@@ -11,7 +11,7 @@
    whole body (while every other page used the native stack), a
    violet-indigo gradient (#667eea / #764ba2 / #1a0b2e), and a neon
    cyan (#00f0ff) rule under the header found nowhere else in the
-   app. The subject boxes carried `border: 1px solid #e0e0e0` — a
+   app. The subject boxes carried `border: 1px solid var(--ink-2)` — a
    near-white edge on a dark card, left over from a design meant
    for a white page.
 
@@ -30,13 +30,12 @@
     --trk-line: rgba(14, 165, 233, .3);
     --trk-ink: #7dd3fc;
 
-    --surface: #16161a;
-    --surface-2: #0f0f13;
-    --border: rgba(255, 255, 255, .07);
+    --surface-2: var(--bg);
+    --border: rgba(var(--tint), .07);
 
-    --text: #e7e9ee;
-    --text-dim: rgba(255, 255, 255, .55);
-    --text-faint: rgba(255, 255, 255, .38);
+    --text: var(--ink-2);
+    --text-dim: rgba(var(--tint), .55);
+    --text-faint: rgba(var(--tint), .38);
 
     --ok: #10b981;
     --ok-ink: #34d399;
@@ -74,7 +73,7 @@ body.trk-page {
     margin: 0;
     min-height: 100vh;
     padding: clamp(12px, 3vw, 32px);
-    background: #0b0b0e;
+    background: var(--bg);
     color: var(--text);
     font-size: 16px;
     line-height: 1.5;
@@ -82,7 +81,7 @@ body.trk-page {
 }
 
 /* The particles are decoration only — behind everything, matching
-   the body color. The box used to be #2c2e43 while the body was
+   the body color. The box used to be var(--surface-2) while the body was
    violet: the seam was obvious at the edge of the screen whenever
    the page ran longer than the viewport. */
 #particles-js {
@@ -91,7 +90,7 @@ body.trk-page {
     width: 100vw;
     height: 100vh;
     height: 100dvh;
-    background-color: #0b0b0e;
+    background-color: var(--bg);
     z-index: 0;
     pointer-events: none;
 }
@@ -110,7 +109,7 @@ body.trk-page {
     padding: clamp(1rem, 2.5vw, 1.6rem);
     border-radius: 20px;
     border: 1px solid var(--border);
-    background: rgba(18, 18, 22, .92);
+    background: var(--surface);
     box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
     opacity: 0;
     transform: translateY(24px);
@@ -137,7 +136,7 @@ body.trk-page {
     border: 1px solid var(--border);
     background:
         radial-gradient(circle at 0% 0%, rgba(14, 165, 233, .16), transparent 55%),
-        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+        linear-gradient(135deg, rgba(var(--tint), .04), rgba(var(--tint), .015));
     overflow: hidden;
 }
 
@@ -179,7 +178,7 @@ body.trk-page {
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: -.02em;
-    color: #fff;
+    color: var(--ink);
 }
 
 .trk-hero-text p {
@@ -242,7 +241,7 @@ body.trk-page {
     font-size: .78rem;
     font-weight: 600;
     letter-spacing: .3px;
-    color: #cbd5e1;
+    color: var(--ink-3);
 }
 
 .field-hint {
@@ -264,9 +263,9 @@ body.trk-page {
     min-height: 54px;
     padding: .6rem 6.5rem .6rem 2.6rem;
     border-radius: var(--radius-sm);
-    border: 1px solid #2a2a33;
+    border: 1px solid var(--surface-3);
     background: var(--surface-2);
-    color: #f1f5f9;
+    color: var(--ink-2);
     font-size: 1.1rem;
     font-weight: 600;
     letter-spacing: .06em;
@@ -277,7 +276,7 @@ body.trk-page {
 .search-input::placeholder {
     font-weight: 400;
     letter-spacing: normal;
-    color: rgba(255, 255, 255, .25);
+    color: rgba(var(--tint), .25);
 }
 
 .search-input:focus {
@@ -439,8 +438,8 @@ body.trk-page {
     gap: .5rem;
     padding: 2.5rem 1.5rem;
     border-radius: var(--radius);
-    border: 1px dashed rgba(255, 255, 255, .13);
-    background: rgba(255, 255, 255, .015);
+    border: 1px dashed rgba(var(--tint), .13);
+    background: rgba(var(--tint), .015);
     text-align: center;
 }
 
@@ -454,7 +453,7 @@ body.trk-page {
     margin: .35rem 0 0;
     font-size: .95rem;
     font-weight: 700;
-    color: #e2e8f0;
+    color: var(--ink-2);
 }
 
 .trk-placeholder p {
@@ -499,7 +498,7 @@ body.trk-page {
     font-size: 1.05rem;
     font-weight: 700;
     letter-spacing: .02em;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--trk), var(--trk-deep));
     box-shadow: 0 8px 20px rgba(14, 165, 233, .3);
 }
@@ -514,7 +513,7 @@ body.trk-page {
     font-size: 1.15rem;
     font-weight: 700;
     letter-spacing: -.01em;
-    color: #fff;
+    color: var(--ink);
     overflow-wrap: anywhere;
 }
 
@@ -532,9 +531,9 @@ body.trk-page {
     border-radius: 999px;
     font-size: .75rem;
     font-weight: 600;
-    color: #cbd5e1;
-    background: rgba(255, 255, 255, .05);
-    border: 1px solid rgba(255, 255, 255, .1);
+    color: var(--ink-3);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .1);
 }
 
 .trk-meta span i {
@@ -582,7 +581,7 @@ body.trk-page {
     font-weight: 700;
     line-height: 1.1;
     letter-spacing: -.02em;
-    color: #fff;
+    color: var(--ink);
 }
 
 /* The date is text, not a number — it should not be as tall as the
@@ -627,14 +626,14 @@ body.trk-page {
     flex-wrap: wrap;
     padding: .9rem 1.05rem;
     border-bottom: 1px solid var(--border);
-    background: rgba(255, 255, 255, .02);
+    background: rgba(var(--tint), .02);
 }
 
 .subject-header h3 {
     margin: 0;
     font-size: .95rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--ink-2);
     overflow-wrap: anywhere;
 }
 
@@ -695,8 +694,8 @@ body.trk-page {
 .attendance-table td {
     padding: .65rem 1.05rem;
     font-size: .85rem;
-    color: #cbd5e1;
-    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    color: var(--ink-3);
+    border-bottom: 1px solid rgba(var(--tint), .05);
 }
 
 .attendance-table tbody tr:last-child td {
@@ -714,7 +713,7 @@ body.trk-page {
 }
 
 .attendance-table .cell-date {
-    color: #f1f5f9;
+    color: var(--ink-2);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -748,22 +747,22 @@ body.trk-page {
     gap: .5rem;
     padding: 2.5rem 1.5rem;
     border-radius: var(--radius);
-    border: 1px dashed rgba(255, 255, 255, .13);
-    background: rgba(255, 255, 255, .015);
+    border: 1px dashed rgba(var(--tint), .13);
+    background: rgba(var(--tint), .015);
     text-align: center;
 }
 
 .no-results svg {
     width: 44px;
     height: 44px;
-    color: rgba(255, 255, 255, .22);
+    color: rgba(var(--tint), .22);
 }
 
 .no-results h3 {
     margin: .25rem 0 0;
     font-size: .95rem;
     font-weight: 700;
-    color: #e2e8f0;
+    color: var(--ink-2);
 }
 
 .no-results p {
@@ -780,7 +779,7 @@ body.trk-page {
 /* ─── Footer ──────────────────────────────────────────────── */
 /* The colors are already written as inline styles in
    components/footer.php — all that is added here is a divider rule.
-   The old `footer { background: #0f172a }` never beat those inline
+   The old `footer { background: var(--surface-slate) }` never beat those inline
    styles: it was a dead rule. */
 .trk-page footer {
     border-top: 1px solid var(--border);
