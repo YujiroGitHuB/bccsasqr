@@ -171,6 +171,42 @@ body.attendance-page {
 }
 
 /* Locked banner — red is a status here, not decoration. */
+/* ─── Bilang pababa hanggang sa pagsara ───────────────────────
+   Nakikita ng estudyante ang natitirang oras BAGO pa siya
+   magsimulang mag-type, hindi pagkatapos niyang isumite. Berde
+   habang maluwag, amber sa huling limang minuto, pula kapag
+   sarado na — at ang teksto mismo ay nagsasabi ng pareho, hindi
+   lang ang kulay. */
+.attendance-page .att-expiry {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: 1rem;
+    padding: .45rem .9rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #6ee7b7;
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .28);
+}
+
+.attendance-page .att-expiry b {
+    font-variant-numeric: tabular-nums;
+}
+
+.attendance-page .att-expiry.is-soon {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, .12);
+    border-color: rgba(245, 158, 11, .3);
+}
+
+.attendance-page .att-expiry.is-over {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, .12);
+    border-color: rgba(239, 68, 68, .3);
+}
+
 .attendance-page .att-locked {
     display: inline-flex;
     align-items: center;

@@ -99,6 +99,8 @@ function buildCard(l) {
 
                     <div class="link-display" id="${uid}">${wbrUrl(link)}</div>
 
+                    ${buildExpiry(l)}
+
                     <div class="d-flex flex-wrap gap-2 mt-auto">
                         <button class="btn btn-sm btn-primary" onclick="copyLink('${uid}', this)">
                             <i class="bi bi-clipboard me-1"></i>Copy
@@ -124,6 +126,183 @@ function buildCard(l) {
         </div>
     `;
 }
+
+// ─── Expiry ───────────────────────────────────────────────────────────────────
+//
+// Ang buong estado ay galing sa server (tingnan ang
+// attach_link_expiry sa pages/get_links_ajax.php): ang expires_in ay
+// sinukat ng orasan ng database. Ang browser ay nagbibilang lamang
+// pababa mula sa bilang na iyon, kaya walang naipapasok na maling
+// oras ang telepono.
+//
+// Ang na-expire na link ay HINDI nawawala. Nananatili itong nakikita
+// na may "Expired" na tatak at may Extend, dahil ang unang tanong
+// pagkatapos ng isang klase ay "nakuha ba ang atendans?" at hindi
+// "nasaan ang link ko?".
+
+const EXPIRY_PRESETS = [
+    { label: '1h', minutes: 60 },
+    { label: '2h', minutes: 120 },
+    { label: '4h', minutes: 240 },
+    { label: 'End of day', preset: 'eod' }
+];
+
+function humanLeft(seconds) {
+    if (seconds <= 0) return 'closed';
+
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+
+    if (d > 0) return d + 'd ' + h + 'h';
+    if (h > 0) return h + 'h ' + m + 'm';
+    if (m > 0) return m + 'm';
+    return Math.floor(seconds) + 's';
+}
+
+function buildExpiry(l) {
+    const code = l.short_code;
+    const uid  = 'exp-' + code;
+
+    let status;
+    if (l.is_expired) {
+        status = `<span class="lnk-exp-badge is-over"><i class="bi bi-slash-circle"></i> Expired
+                      <small>${escHtml(l.expires_label || '')}</small></span>`;
+    } else if (l.expires_in !== null && l.expires_in !== undefined) {
+        const soon = l.expires_in <= 900 ? ' is-soon' : '';
+        status = `<span class="lnk-exp-badge${soon}" data-countdown="${l.expires_in}">
+                      <i class="bi bi-hourglass-split"></i>
+                      Closes in <b class="lnk-exp-clock">${humanLeft(l.expires_in)}</b>
+                      <small>${escHtml(l.expires_label || '')}</small>
+                  </span>`;
+    } else {
+        status = `<span class="lnk-exp-badge is-none"><i class="bi bi-infinity"></i> No expiry</span>`;
+    }
+
+    const presets = EXPIRY_PRESETS.map(p => {
+        const arg = p.preset ? `{preset:'${p.preset}'}` : `{minutes:${p.minutes}}`;
+        return `<button type="button" class="lnk-exp-preset"
+                    onclick="setExpiry('${code}', ${arg}, this)">${p.label}</button>`;
+    }).join('');
+
+    return `
+        <div class="lnk-exp" id="${uid}">
+            <div class="lnk-exp-row">
+                ${status}
+                <button type="button" class="lnk-exp-toggle" onclick="toggleExpiry('${uid}')">
+                    <i class="bi bi-clock-history"></i>
+                    ${l.is_expired ? 'Extend' : (l.expires_at ? 'Change' : 'Set expiry')}
+                </button>
+            </div>
+
+            <div class="lnk-exp-panel" hidden>
+                <div class="lnk-exp-presets">${presets}</div>
+                <div class="lnk-exp-custom">
+                    <input type="datetime-local" class="lnk-exp-at" aria-label="Custom expiry date and time">
+                    <button type="button" class="lnk-exp-set"
+                        onclick="setExpiry('${code}', {at: this.previousElementSibling.value}, this)">Set</button>
+                </div>
+                ${l.expires_at ? `<button type="button" class="lnk-exp-clear"
+                        onclick="setExpiry('${code}', {clear: 1}, this)">Remove expiry</button>` : ''}
+            </div>
+        </div>`;
+}
+
+function toggleExpiry(uid) {
+    const panel = document.getElementById(uid)?.querySelector('.lnk-exp-panel');
+    if (panel) panel.hidden = !panel.hidden;
+}
+
+function setExpiry(short_code, opts, btn) {
+    if (opts.at === '') {
+        Swal.fire({ icon: 'warning', title: 'Pick a date and time first', timer: 2000, showConfirmButton: false });
+        return;
+    }
+
+    const body = new URLSearchParams({ short_code });
+    Object.keys(opts).forEach(k => body.append(k, opts[k]));
+
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '…';
+
+    fetch('../crud/set_link_expiry.php', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body   : body.toString()
+    })
+        .then(r => r.json())
+        .then(res => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+
+            if (!res.success) {
+                Swal.fire({ icon: 'error', title: 'Could not set expiry', text: res.message || 'Please try again.' });
+                return;
+            }
+
+            // Ang sagot ng server ang bagong katotohanan — hindi ang
+            // hinuha ng browser tungkol sa kahihinatnan ng pindot.
+            const link = allLinks.find(l => l.short_code === short_code);
+            if (link) {
+                link.expires_at    = res.expires_at;
+                link.expires_label = res.expires_label;
+                link.expires_in    = res.expires_in;
+                link.is_expired    = res.is_expired;
+            }
+
+            renderCards(allLinks);
+            applyFilters();
+
+            Swal.fire({
+                icon : 'success',
+                title: res.expires_at ? 'Expiry updated' : 'Expiry removed',
+                text : res.expires_at ? ('Closes ' + res.expires_label) : 'This link will stay open until you deactivate it.',
+                timer: 2200,
+                showConfirmButton: false
+            });
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+            Swal.fire({ icon: 'error', title: 'Network error', text: 'Please try again.' });
+        });
+}
+
+// Isang orasan para sa lahat ng card, hindi isa kada card: dalawampung
+// link ay dalawampung setInterval na magigising kada segundo.
+let expiryRefreshPending = false;
+
+setInterval(function () {
+    document.querySelectorAll('.lnk-exp-badge[data-countdown]').forEach(el => {
+        let left = parseInt(el.dataset.countdown, 10) - 1;
+        el.dataset.countdown = left;
+
+        const clock = el.querySelector('.lnk-exp-clock');
+        if (clock) clock.textContent = humanLeft(left);
+
+        el.classList.toggle('is-soon', left <= 900);
+
+        if (left <= 0) {
+            // Huwag hulaan kung ano ang hitsura ng expired — tanungin
+            // ang server, na siya ring magsasabi kung nagbago pa ang
+            // ibang bagay habang bukas ang pahina.
+            //
+            // Isang hiling lang kahit ilang link ang sabay na magsara:
+            // iisang klase, iisang oras ng pagtatapos, at ang sagot ay
+            // pareho para sa lahat ng card.
+            el.removeAttribute('data-countdown');
+
+            if (!expiryRefreshPending) {
+                expiryRefreshPending = true;
+                setTimeout(() => {
+                    expiryRefreshPending = false;
+                    fetchLinks(true);
+                }, 1200);
+            }
+        }
+    });
+}, 1000);
 
 // ─── Populate section dropdown ────────────────────────────────────────────────
 function populateSectionFilter(links) {

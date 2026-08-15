@@ -36,6 +36,25 @@ try {
     //FIX: Support special characters like ñ, é, etc.
     $conn->set_charset("utf8mb4");
 
+    // ── Ang orasan ng koneksyon ─────────────────────────────
+    // Ang PHP ay nakatakda sa Asia/Manila (date_default_timezone_set),
+    // pero ang NOW() ng MySQL ay sumusunod sa server — sa isang
+    // shared host, karaniwang UTC. Walong oras ang pagitan, at
+    // hanggang ngayon ay tahimik lang itong nagkakamali: ang
+    // last_login, created_at at updated_at ay nakatatak sa maling
+    // oras.
+    //
+    // Naging mahalaga ito nang magkaroon ng expiration ang
+    // attendance links: kapag nag-type ang instructor ng "10:00 AM",
+    // ang ibig niyang sabihin ay 10:00 AM sa Pilipinas, at ang
+    // NOW() ang siyang magpapasya kung lumipas na ito.
+    //
+    // Numerong offset at hindi 'Asia/Manila': ang pangalan ay
+    // nangangailangan ng mga time-zone table ng MySQL na madalas
+    // walang laman sa shared hosting. Walang daylight saving ang
+    // Pilipinas mula 1978, kaya +08:00 ang tama — palagi.
+    @$conn->query("SET time_zone = '+08:00'");
+
     // Stash it so the next include in the same request reuses it.
     $GLOBALS['__bcc_conn'] = $conn;
 

@@ -7,13 +7,31 @@ include __DIR__ . "/../includes/db_connect.php";
 $attendance_data = null;
 $is_valid = false;
 
+$invalid_reason = 'unknown';
+$expires_in     = null;   // segundo hanggang mag-expire; null = walang expiry
+$short_code     = '';
+
 if (isset($_GET['c'])) {
     $short_code = trim($_GET['c']);
 
-    // Get link data from database
+    // Get link data from database.
+    //
+    // Kinukuha ang hilera kahit patay o expired na, para masabi ng
+    // pahina kung ALIN sa dalawa ang nangyari. Ang "wala ito" at ang
+    // "tapos na ang oras" ay magkaibang balita para sa estudyanteng
+    // nakatayo sa labas ng silid.
+    //
+    // Ang orasan ay sa database, hindi sa PHP: walang
+    // date_default_timezone_set ang file na ito samantalang meron ang
+    // crud/submit_attendance.php, kaya ang PHP na paghahambing ay
+    // maaaring magsabing bukas pa ang link na tatanggihan naman ng
+    // susunod na hakbang.
     $stmt = $conn->prepare("
-        SELECT * FROM attendance_links_tbl 
-        WHERE short_code = ? AND is_active = 1
+        SELECT *,
+               (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired,
+               TIMESTAMPDIFF(SECOND, NOW(), expires_at)         AS expires_in
+        FROM attendance_links_tbl
+        WHERE short_code = ?
     ");
     $stmt->bind_param("s", $short_code);
     $stmt->execute();
@@ -21,15 +39,23 @@ if (isset($_GET['c'])) {
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
-        $attendance_data = [
-            'subject_id' => $row['subject_id'],
-            'subject_code' => $row['subject_code'],
-            'subject_name' => $row['subject_name'],
-            'section' => $row['section'],
-            'instructor_id' => $row['instructor_id'],
-            'instructor_name' => $row['instructor_name']
-        ];
-        $is_valid = true;
+
+        if ((int) $row['is_active'] !== 1) {
+            $invalid_reason = 'inactive';
+        } elseif ((int) $row['is_expired'] === 1) {
+            $invalid_reason = 'expired';
+        } else {
+            $attendance_data = [
+                'subject_id' => $row['subject_id'],
+                'subject_code' => $row['subject_code'],
+                'subject_name' => $row['subject_name'],
+                'section' => $row['section'],
+                'instructor_id' => $row['instructor_id'],
+                'instructor_name' => $row['instructor_name']
+            ];
+            $expires_in = $row['expires_in'] === null ? null : (int) $row['expires_in'];
+            $is_valid   = true;
+        }
     }
 }
 // invalid link
@@ -96,6 +122,18 @@ if ($result && $result->num_rows > 0) {
                     <span>ATTENDANCE LOCKED</span>
                 </div>
             <?php endif; ?>
+
+            <?php if ($expires_in !== null): ?>
+                <!-- Ang bilang pababa ay pakikisama, hindi ang bantay: ang
+                     tunay na tseke ay nasa crud/submit_attendance.php, na
+                     tumitingin sa short_code sa bawat pagsusumite. Ito ay
+                     nariyan para hindi mabigla ang estudyante — nakikita
+                     niya ang natitirang oras bago pa siya magsimula. -->
+                <div class="att-expiry" id="attExpiry" data-seconds="<?php echo $expires_in; ?>">
+                    <i class="bi bi-hourglass-split"></i>
+                    <span id="attExpiryText">Closes in <span id="attExpiryClock">—</span></span>
+                </div>
+            <?php endif; ?>
         </div>
         <div class="card-body">
             <div id="alertContainer"></div>
@@ -155,6 +193,50 @@ if ($result && $result->num_rows > 0) {
     <script>
         const isFormLocked = <?php echo $is_locked ? 'true' : 'false'; ?>;
         const attendanceData = <?php echo json_encode($attendance_data); ?>;
+        const shortCode = <?php echo json_encode($short_code); ?>;
+
+        // ── Bilang pababa hanggang sa pagsara ────────────────────────
+        // Isinasara ang form sa zero para malinaw ang nangyari, pero ang
+        // server pa rin ang nagpapasya: kahit i-edit ang orasan ng
+        // telepono o pakialaman ang JavaScript, ang short_code ang
+        // sinusuri sa pagsusumite.
+        (function () {
+            const box = document.getElementById('attExpiry');
+            if (!box) return;
+
+            let left = parseInt(box.dataset.seconds, 10);
+            const clock = document.getElementById('attExpiryClock');
+            const text = document.getElementById('attExpiryText');
+
+            function paint() {
+                if (left <= 0) {
+                    box.classList.add('is-over');
+                    text.textContent = 'This attendance link has closed.';
+                    const btn = document.getElementById('submitBtn');
+                    const no = document.getElementById('studentNo');
+                    if (btn) btn.disabled = true;
+                    if (no) no.disabled = true;
+                    clearInterval(tick);
+                    return;
+                }
+
+                const h = Math.floor(left / 3600);
+                const m = Math.floor((left % 3600) / 60);
+                const s = left % 60;
+
+                clock.textContent = h > 0
+                    ? h + 'h ' + m + 'm'
+                    : (m > 0 ? m + 'm ' + s + 's' : s + 's');
+
+                // Ang huling limang minuto ay iba ang kulay — sapat pang
+                // panahon para magmadali, hindi pa huli.
+                box.classList.toggle('is-soon', left <= 300);
+                left--;
+            }
+
+            const tick = setInterval(paint, 1000);
+            paint();
+        })();
 
         let verifiedStudentNo = null;
         let typingTimer;
@@ -253,14 +335,15 @@ if ($result && $result->num_rows > 0) {
                 document.getElementById('submitText').style.display = 'none';
                 document.getElementById('loadingSpinner').style.display = 'inline';
 
+                // Ang short_code lamang ang ipinapadala para sa klase.
+                // Dati ay galing sa mga hidden field ang subject, section
+                // at instructor — na nangangahulugang kahit sino ay
+                // makakapag-POST ng kahit anong halaga nang hindi
+                // hawak ang link. Sa server na kinukuha ang mga ito
+                // ngayon, mula mismo sa hilera ng link.
                 const formData = new URLSearchParams();
                 formData.append('student_no', verifiedStudentNo);
-                formData.append('subject_id', attendanceData.subject_id);
-                formData.append('subject_code', attendanceData.subject_code);
-                formData.append('subject_name', attendanceData.subject_name);
-                formData.append('section', attendanceData.section);
-                formData.append('instructor_id', attendanceData.instructor_id);
-                formData.append('instructor_name', attendanceData.instructor_name);
+                formData.append('short_code', shortCode);
 
                 fetch('../crud/submit_attendance.php', {
                         method: 'POST',

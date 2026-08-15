@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Invalid Attendance Link</title>
+    <title><?= (($invalid_reason ?? '') === 'expired') ? 'Attendance Link Closed' : 'Invalid Attendance Link' ?></title>
     <link rel="shortcut icon" href="../assets/images/bcc logo.png" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -483,10 +483,44 @@
             </svg>
         </div>
 
-        <div class="badge"><span class="badge-dot"></span> Link Deactivated</div>
+        <?php
+        // Tatlong magkakaibang balita ang dating iisa ang teksto. Para sa
+        // estudyanteng nakatayo sa labas ng silid, malaki ang pagkakaiba
+        // ng "mali ang link" at ng "tapos na ang oras" — ang una ay
+        // ipapa-check muli ang URL, ang ikalawa ay dapat nang lumapit sa
+        // instructor. Nakatakda ng pages/daily_attendance.php ang
+        // $invalid_reason; nananatili ang lumang teksto kung hindi.
+        $reason = $invalid_reason ?? 'unknown';
 
-        <h1 data-text="Invalid Attendance Link">Invalid Attendance Link</h1>
-        <p>This link is either invalid or has been deactivated by your instructor.</p>
+        $copy = [
+            'expired'  => [
+                'badge' => 'Link Expired',
+                'title' => 'Attendance Link Closed',
+                'text'  => 'The time window for this attendance link has ended. It is no longer accepting submissions.',
+            ],
+            'inactive' => [
+                'badge' => 'Link Deactivated',
+                'title' => 'Attendance Link Deactivated',
+                'text'  => 'Your instructor has turned this link off.',
+            ],
+            'unknown'  => [
+                'badge' => 'Link Deactivated',
+                'title' => 'Invalid Attendance Link',
+                'text'  => 'This link is either invalid or has been deactivated by your instructor.',
+            ],
+        ][$reason] ?? null;
+
+        $copy = $copy ?? [
+            'badge' => 'Link Deactivated',
+            'title' => 'Invalid Attendance Link',
+            'text'  => 'This link is either invalid or has been deactivated by your instructor.',
+        ];
+        ?>
+
+        <div class="badge"><span class="badge-dot"></span> <?= htmlspecialchars($copy['badge']) ?></div>
+
+        <h1 data-text="<?= htmlspecialchars($copy['title']) ?>"><?= htmlspecialchars($copy['title']) ?></h1>
+        <p><?= htmlspecialchars($copy['text']) ?></p>
 
         <div class="divider"></div>
 

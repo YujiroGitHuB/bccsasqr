@@ -32,8 +32,61 @@ if (
     isset($_SESSION[$cache_key]) &&
     (time() - $_SESSION[$cache_key]['time']) < $cache_ttl
 ) {
-    echo json_encode(['success' => true, 'cached' => true, 'data' => $_SESSION[$cache_key]['data']]);
+    // Ang mabigat na JOIN ang naka-cache — HINDI ang expiry. Sampung
+    // minuto ang TTL, at ang link na may isang oras na buhay ay
+    // magpapakita ng maling countdown sa buong panahong iyon (o
+    // magmumukhang buhay pa gayong patay na). Isang magaan na tanong
+    // ang nagpapasariwa nito.
+    $cached = attach_link_expiry($conn, $_SESSION[$cache_key]['data']);
+    echo json_encode(['success' => true, 'cached' => true, 'data' => $cached]);
     exit;
+}
+
+/**
+ * Idinidikit ang kalagayan ng expiry sa bawat link.
+ *
+ * Ang bawat halaga ay galing sa database — kasama ang "ngayon". Ang
+ * file na ito, ang daily_attendance.php at ang deactivate_link.php
+ * ay walang date_default_timezone_set samantalang meron ang
+ * submit_attendance.php; kung PHP ang magkukwenta ng natitirang
+ * oras, ilang oras ang pagkakaiba ng sinasabi ng card sa aktuwal na
+ * tinatanggap ng server. Isang orasan lang: NOW().
+ */
+function attach_link_expiry(mysqli $conn, array $links): array {
+    if (empty($links)) return $links;
+
+    $codes = array_column($links, 'short_code');
+    $marks = implode(',', array_fill(0, count($codes), '?'));
+
+    $stmt = $conn->prepare("
+        SELECT short_code,
+               expires_at,
+               (expires_at IS NOT NULL AND expires_at <= NOW())  AS is_expired,
+               TIMESTAMPDIFF(SECOND, NOW(), expires_at)          AS expires_in,
+               DATE_FORMAT(expires_at, '%b %e, %Y %l:%i %p')     AS expires_label
+        FROM attendance_links_tbl
+        WHERE short_code IN ($marks)
+    ");
+    $stmt->bind_param(str_repeat('s', count($codes)), ...$codes);
+    $stmt->execute();
+
+    $byCode = [];
+    $res    = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $byCode[$row['short_code']] = $row;
+    }
+
+    foreach ($links as &$l) {
+        $e = $byCode[$l['short_code']] ?? null;
+
+        $l['expires_at']    = $e['expires_at']    ?? null;
+        $l['expires_label'] = $e['expires_label'] ?? null;
+        $l['expires_in']    = ($e && $e['expires_in'] !== null) ? (int) $e['expires_in'] : null;
+        $l['is_expired']    = $e ? ((int) $e['is_expired'] === 1) : false;
+    }
+    unset($l);
+
+    return $links;
 }
 
 function generateShortCode($length = 6) {
@@ -235,6 +288,9 @@ foreach ($subjects as $subject) {
 }
 
 // ─── 4. Cache + respond ───────────────────────────────────────────────────────
+// Naka-cache ang listahan nang WALANG expiry; idinidikit ito sa
+// bawat sagot (tingnan ang attach_link_expiry), kaya hindi kailanman
+// naipupundar ang isang lumang countdown sa session.
 $_SESSION[$cache_key] = ['data' => $links, 'time' => time()];
 
-echo json_encode(['success' => true, 'cached' => false, 'data' => $links]);
+echo json_encode(['success' => true, 'cached' => false, 'data' => attach_link_expiry($conn, $links)]);

@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // ── Validate required fields ──────────────────────────────────────────────────
-$required = ['student_no', 'subject_id', 'subject_code', 'subject_name', 'instructor_id', 'instructor_name', 'section'];
+$required = ['student_no', 'short_code'];
 foreach ($required as $field) {
     if (empty($_POST[$field])) {
         echo json_encode(['success' => false, 'message' => ucfirst(str_replace('_', ' ', $field)) . ' is required']);
@@ -31,14 +31,62 @@ foreach ($required as $field) {
     }
 }
 
-$student_no      = trim($_POST['student_no']);
-$subject_id      = trim($_POST['subject_id']);
-$subject_code    = trim($_POST['subject_code']);
-$subject_name    = trim($_POST['subject_name']);
-$full_section    = trim($_POST['section']);   // "BSIT-1A" from attendance_links_tbl
-$instructor_id   = (int)$_POST['instructor_id'];
-$instructor_name = trim($_POST['instructor_name']);
-$today           = date('Y-m-d');
+$student_no = trim($_POST['student_no']);
+$short_code = trim($_POST['short_code']);
+$today      = date('Y-m-d');
+
+// ── 0. Ang link ang nagsasabi kung anong klase ito ────────────────────────────
+//
+// Dati ay galing sa POST ang subject, section at instructor, at hindi
+// tinitingnan ng file na ito ang link kahit kailan. Dalawang bagay ang
+// naidudulot niyon:
+//
+//   1. Walang saysay ang deactivate. Ang estudyanteng nakabukas na ang
+//      form ay makakapagsumite pa rin pagkatapos mong patayin ang link.
+//   2. Hindi kailangan ng link. Sinumang minsang nakakita ng mga
+//      halaga ay makakapag-POST nito nang diretso, magpakailanman.
+//
+// Ang expiration ay walang kabuluhan kung hindi ito sinusuri dito —
+// kaya ang short_code na ang tanging pinagkakatiwalaan, at ang lahat
+// ng iba pa ay binabasa mula sa hilera nito.
+//
+// Ang paghahambing ng oras ay nasa SQL: ang orasan ng database ang
+// nagtakda ng expires_at (tingnan ang crud/set_link_expiry.php), kaya
+// ang parehong orasan din ang dapat magsabing lumipas na ito.
+$linkStmt = $conn->prepare("
+    SELECT subject_id, subject_code, subject_name, section, instructor_id, instructor_name,
+           is_active,
+           (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired
+    FROM attendance_links_tbl
+    WHERE short_code = ?
+");
+$linkStmt->bind_param("s", $short_code);
+$linkStmt->execute();
+$linkResult = $linkStmt->get_result();
+
+if ($linkResult->num_rows === 0) {
+    echo json_encode(['success' => false, 'message' => 'This attendance link is not valid.']);
+    exit();
+}
+
+$link = $linkResult->fetch_assoc();
+
+if ((int)$link['is_active'] !== 1) {
+    echo json_encode(['success' => false, 'message' => 'This attendance link has been deactivated by your instructor.']);
+    exit();
+}
+
+if ((int)$link['is_expired'] === 1) {
+    echo json_encode(['success' => false, 'message' => 'This attendance link has already closed. Please ask your instructor for a new one.']);
+    exit();
+}
+
+$subject_id      = $link['subject_id'];
+$subject_code    = trim($link['subject_code']);
+$subject_name    = trim($link['subject_name']);
+$full_section    = trim($link['section']);   // "BSIT-1A"
+$instructor_id   = (int)$link['instructor_id'];
+$instructor_name = trim($link['instructor_name']);
 
 // ── 1. Get student info from DB ───────────────────────────────────────────────
 $stmt = $conn->prepare("SELECT student_no, fullname, course, section FROM students_tbl WHERE student_no = ?");

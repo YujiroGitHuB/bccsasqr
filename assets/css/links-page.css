@@ -190,6 +190,172 @@
     color: var(--ink-4);
 }
 
+/* ─── Expiry ──────────────────────────────────────────────────
+   Ang estado ng oras ng link. Tatlong anyo: walang expiry (pinatay
+   ang kulay — normal ito, hindi babala), papalapit na ang pagsara
+   (amber sa huling labinlimang minuto), at sarado na (pula).
+
+   Ang mga kulay ng estado ay hindi galing sa --lnk na violet ng
+   pahina: ang violet ay pagkakakilanlan, ang mga ito ay kalagayan.
+   Hindi rin ang kulay lang ang nagsasabi — may salita at may icon
+   ang bawat isa. */
+.link-page .lnk-exp {
+    border-top: 1px solid rgba(var(--tint), .07);
+    padding-top: .65rem;
+}
+
+.link-page .lnk-exp-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.link-page .lnk-exp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .25rem .6rem;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--ok-ink, #34d399);
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .28);
+}
+
+.link-page .lnk-exp-badge b {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Ang eksaktong petsa ay nasa tabi ng bilang pababa: ang "1h 42m" ay
+   hindi masasagot ang "anong oras ba talaga ito magsasara?" */
+.link-page .lnk-exp-badge small {
+    font-weight: 500;
+    opacity: .7;
+    font-size: .68rem;
+}
+
+.link-page .lnk-exp-badge.is-soon {
+    color: var(--warn-ink, #fcd34d);
+    background: rgba(245, 158, 11, .12);
+    border-color: rgba(245, 158, 11, .3);
+}
+
+.link-page .lnk-exp-badge.is-over {
+    color: var(--bad-ink, #f87171);
+    background: rgba(239, 68, 68, .12);
+    border-color: rgba(239, 68, 68, .3);
+}
+
+.link-page .lnk-exp-badge.is-none {
+    color: rgba(var(--tint), .4);
+    background: rgba(var(--tint), .04);
+    border-color: rgba(var(--tint), .1);
+}
+
+.link-page .lnk-exp-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    margin-left: auto;
+    padding: .25rem .6rem;
+    border-radius: 8px;
+    font-size: .74rem;
+    font-weight: 600;
+    color: var(--lnk-ink);
+    background: var(--lnk-soft);
+    border: 1px solid var(--lnk-line);
+    cursor: pointer;
+    transition: filter .15s;
+}
+
+.link-page .lnk-exp-toggle:hover {
+    filter: brightness(1.15);
+}
+
+.link-page .lnk-exp-panel {
+    margin-top: .6rem;
+    padding: .65rem;
+    border-radius: 10px;
+    background: rgba(var(--tint), .04);
+    border: 1px solid rgba(var(--tint), .07);
+}
+
+.link-page .lnk-exp-panel[hidden] {
+    display: none;
+}
+
+.link-page .lnk-exp-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+}
+
+.link-page .lnk-exp-preset {
+    padding: .3rem .65rem;
+    border-radius: 8px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--ink-3);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .1);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+.link-page .lnk-exp-preset:hover {
+    color: var(--ink);
+    background: rgba(var(--tint), .1);
+}
+
+.link-page .lnk-exp-custom {
+    display: flex;
+    gap: .35rem;
+    margin-top: .5rem;
+}
+
+.link-page .lnk-exp-at {
+    flex: 1;
+    min-width: 0;
+    padding: .3rem .5rem;
+    border-radius: 8px;
+    font-size: .75rem;
+    color: var(--ink-2);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .1);
+}
+
+.link-page .lnk-exp-set {
+    padding: .3rem .8rem;
+    border-radius: 8px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--on-accent);
+    background: var(--lnk);
+    border: 1px solid var(--lnk-deep);
+    cursor: pointer;
+}
+
+.link-page .lnk-exp-clear {
+    display: block;
+    width: 100%;
+    margin-top: .5rem;
+    padding: .3rem;
+    border-radius: 8px;
+    font-size: .73rem;
+    font-weight: 600;
+    color: rgba(var(--tint), .45);
+    background: transparent;
+    border: 1px solid rgba(var(--tint), .1);
+    cursor: pointer;
+}
+
+.link-page .lnk-exp-clear:hover {
+    color: var(--ink-2);
+    border-color: rgba(var(--tint), .2);
+}
+
 .link-page .instructor-badge {
     background: rgba(var(--tint), .05);
     border: 1px solid rgba(var(--tint), .08);
