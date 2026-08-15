@@ -158,33 +158,13 @@
     box-shadow: 0 4px 14px rgba(139, 92, 246, .35) !important;
 }
 
-/* Ang labasan kapag nagkamali ang detector. Isang regex sa user
-   agent ang nagpapasya nito, at ang mali ay nangangahulugang hindi
-   makapag-attendance ang estudyante — kaya kailangang may daan
-   palabas, ngunit tahimik, para hindi ito ang unang piliin. */
-.det-popup .det-deny {
-    padding: .65rem 1.1rem !important;
-    border-radius: 10px !important;
-    font-size: .85rem !important;
-    font-weight: 600 !important;
-    color: var(--det-ink-soft) !important;
-    background: transparent !important;
-    border: 1px solid var(--det-line) !important;
-    box-shadow: none !important;
-}
-
 .det-popup .swal2-icon {
     border-color: var(--det-accent) !important;
     color: var(--det-accent) !important;
 }
 
 @media (max-width: 400px) {
-    .det-popup .swal2-actions {
-        flex-direction: column-reverse;
-    }
-
-    .det-popup .det-confirm,
-    .det-popup .det-deny {
+    .det-popup .det-confirm {
         width: 100%;
     }
 }

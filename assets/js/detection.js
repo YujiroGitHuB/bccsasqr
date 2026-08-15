@@ -31,9 +31,17 @@
  * ng Messenger sa iPhone, at walang Chrome ang karamihan sa kanila —
  * Safari ang nasa telepono nila. Sinusunod na nito ang platform.
  *
- * At may labasan na: isang regex sa user agent ang nagpapasya nito,
- * at ang mali ay nangangahulugang hindi makakapag-attendance ang
- * estudyante. Nariyan pa rin ang babala, may daan lang palabas.
+ * Ang babala ay hadlang at hindi paalala: walang "continue anyway",
+ * walang pagsasara sa labas, at bumabalik ito pagkatapos kumopya ng
+ * link. Sinasadya iyon — hindi gumagana ang camera at ang pag-upload
+ * sa loob ng in-app browser, at hindi sumusunod ang layout sa lapad
+ * ng telepono doon, kaya ang pagpapatuloy ay hindi mas mababang
+ * antas ng serbisyo kundi isang sirang pahina.
+ *
+ * Ang kapalit: isang regex sa user agent ang nagpapasya nito, kaya
+ * ang maling tama ay nangangahulugang hindi makakapag-attendance ang
+ * estudyante hangga't hindi siya lumilipat ng browser. Sa listahan sa
+ * itaas dapat idagdag ang anumang app na dapat payagan.
  */
 
 const BrowserDetector = (function () {
@@ -137,13 +145,17 @@ const BrowserDetector = (function () {
         document.body.removeChild(textArea);
     }
 
+    // Ibinabalik ang promise ng SweetAlert — nakasalalay dito ang
+    // muling pagbukas ng babala kapag natapos ang timer.
     function showCopied(target) {
-        Swal.fire({
+        return Swal.fire({
             icon: 'success',
             title: 'Link copied',
             text: 'Paste it into ' + target + ' to continue.',
             timer: 2600,
             showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
             customClass: { popup: 'det-popup' }
         });
     }
@@ -184,27 +196,36 @@ const BrowserDetector = (function () {
                     ${browserName}. You can also copy the link and paste it into ${guide.browser}.
                 </p>
             `,
-            showDenyButton: true,
+            // Walang "Continue anyway", at walang paraang isara ito:
+            // hindi gumagana ang camera at ang pag-upload sa loob ng
+            // in-app browser, at hindi rin sumusunod ang layout sa
+            // lapad ng telepono doon. Ang "makapagpatuloy" ay hindi
+            // isang mas mababang antas ng serbisyo kundi isang sirang
+            // pahina — kaya hindi ito inaalok bilang pagpipilian.
             confirmButtonText: 'Copy link',
-            denyButtonText: 'Continue anyway',
             allowOutsideClick: false,
+            allowEscapeKey: false,
             customClass: {
                 popup: 'det-popup',
                 title: 'det-title',
-                confirmButton: 'det-confirm',
-                denyButton: 'det-deny'
+                confirmButton: 'det-confirm'
             },
             buttonsStyling: false
         }).then(result => {
             if (result.isConfirmed) {
-                // Nananatili ang pahina. Isinasara ito dati —
-                // history.back(), window.close(), tapos about:blank —
-                // na madalas walang epekto sa isang in-app browser at
-                // nag-iiwan ng blangkong tab, at ilang app ang
-                // nagbubura ng clipboard sa paglabas. Ang pagkopya at
-                // ang pag-alis ay dalawang magkaibang pasya, at sa
-                // estudyante dapat ang pangalawa.
-                copyURL().then(() => showCopied(guide.browser));
+                // Nananatili ang pahina — hindi ito isinasara. Ang
+                // lumang daloy ay history.back(), window.close(), tapos
+                // about:blank, na madalas walang epekto sa isang in-app
+                // browser at nag-iiwan ng blangkong tab; may ilang app
+                // ding nagbubura ng clipboard sa paglabas.
+                //
+                // Bumabalik ang babala pagkatapos ng kumpirmasyon. Kung
+                // hindi, ang pagpindot ng "Copy link" ay magiging siya
+                // mismong "Continue anyway" na inalis — mananatiling
+                // bukas ang sirang pahina sa likod nito.
+                copyURL()
+                    .then(() => showCopied(guide.browser))
+                    .then(() => showWarning(browserName));
             }
         });
     }
