@@ -1,17 +1,45 @@
 /**
  * Universal In-App Browser Detector
- * Reusable across multiple pages
- * 
- * Usage:
- * 1. Load SweetAlert2 first: <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
- * 2. Load this script: <script src="browser-detector.js"></script>
- * 3. Initialize: <script>BrowserDetector.init();</script>
+ *
+ * Lumalabas kapag binuksan ang isang link ng sistema mula sa loob ng
+ * Messenger, Facebook, Instagram at iba pa — kung saan hindi
+ * mapagkakatiwalaan ang camera, ang clipboard at ang pag-download.
+ *
+ * Ginagamit ng: pages/daily_attendance.php, includes/invalid_link.php,
+ * QRgenerator/QRcode.php, student/StudentPhotoProfile.php,
+ * Tracker/view.php
+ *
+ * Paggamit (hindi nagbago):
+ *   1. SweetAlert2 muna
+ *   2. <link rel="stylesheet" href="assets/css/detection.css">
+ *   3. <script src="assets/js/detection.js"></script>   — kusang tumatakbo
+ *
+ * ── Ang binago sa anyo ──────────────────────────────────────
+ * Nasa loob ng file na ito dati ang buong disenyo: mga inline style
+ * sa bawat elemento ng HTML string, at dalawang <style> na
+ * idinidikit sa <head> sa TUWING bubukas ang modal — hindi kailanman
+ * inaalis, kaya naiipon. Walong magkakalapit na asul-lila ang
+ * naipon doon, wala ni isa sa palette ng app, at lahat ay
+ * nakakandado sa madilim: `background: '#0f172a'` kasabay ng
+ * `color: '#000000'`, samantalang may light mode na ang sistema.
+ *
+ * Nasa assets/css/detection.css na ang lahat ng iyon.
+ *
+ * ── Ang binago sa nilalaman ─────────────────────────────────
+ * Ang mga tagubilin ay Chrome at Android lamang: "Tap the 3 dots (⋮)
+ * in the upper right corner". Walang tatlong tuldok sa itaas-kanan
+ * ng Messenger sa iPhone, at walang Chrome ang karamihan sa kanila —
+ * Safari ang nasa telepono nila. Sinusunod na nito ang platform.
+ *
+ * At may labasan na: isang regex sa user agent ang nagpapasya nito,
+ * at ang mali ay nangangahulugang hindi makakapag-attendance ang
+ * estudyante. Nariyan pa rin ang babala, may daan lang palabas.
  */
 
-const BrowserDetector = (function() {
+const BrowserDetector = (function () {
     'use strict';
 
-    // Private methods
+    // ─── Detection ────────────────────────────────────────────
     function detectInAppBrowser() {
         const ua = navigator.userAgent || navigator.vendor || window.opera;
 
@@ -41,242 +69,159 @@ const BrowserDetector = (function() {
         return { isInApp: false, browserName: null };
     }
 
-    function copyURLAndClose() {
+    /**
+     * Kung saan sila dapat pumunta, at paano makarating doon.
+     *
+     * Ang lumang teksto ay isang tagubilin para sa lahat — Android at
+     * Chrome. Sa iPhone ay walang ⋮ sa itaas-kanan at walang Chrome:
+     * ang estudyanteng sumusunod nang literal ay hindi makakahanap ng
+     * anuman, at ang link ay hindi mabubuksan.
+     */
+    function platformGuide() {
+        const ua = navigator.userAgent || '';
+
+        if (/iPhone|iPad|iPod/i.test(ua)) {
+            return {
+                browser: 'Safari',
+                steps: [
+                    'Tap the <kbd>•••</kbd> or the compass icon at the corner of the screen',
+                    'Choose <kbd>Open in Safari</kbd> or <kbd>Open in browser</kbd>'
+                ]
+            };
+        }
+
+        if (/Android/i.test(ua)) {
+            return {
+                browser: 'Chrome',
+                steps: [
+                    'Tap the <kbd>⋮</kbd> (three dots) at the top right',
+                    'Choose <kbd>Open in Chrome</kbd> or <kbd>Open in browser</kbd>'
+                ]
+            };
+        }
+
+        return {
+            browser: 'your browser',
+            steps: [
+                'Open the app’s menu (usually <kbd>⋮</kbd> or <kbd>•••</kbd>)',
+                'Choose <kbd>Open in browser</kbd>'
+            ]
+        };
+    }
+
+    // ─── Clipboard ────────────────────────────────────────────
+    function copyURL() {
         const url = window.location.href;
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).then(() => {
-                showSuccessAlert();
-            }).catch(() => {
-                fallbackCopyAndClose(url);
-            });
-        } else {
-            fallbackCopyAndClose(url);
+            return navigator.clipboard.writeText(url).catch(() => fallbackCopy(url));
         }
+
+        return Promise.resolve(fallbackCopy(url));
     }
 
-    function showSuccessAlert() {
-        Swal.fire({
-            icon: 'success',
-            title: 'URL Copied!',
-            html: `
-                <div style="text-align: center; color: #cbd5e1;">
-                    <p style="margin: 0; font-size: 16px; color: #564ade;">
-                        Paste the URL into the Chrome browser
-                    </p>
-                    <p style="margin: 10px 0 0 0; font-size: 14px; color: #94a3b8;">
-                        Redirecting<span class="dots"></span>
-                    </p>
-                </div>
-                <style>
-                    .dots::after {
-                        content: '';
-                        animation: dots 1.5s steps(4, end) infinite;
-                    }
-                    @keyframes dots {
-                        0%, 20% { content: '.'; }
-                        40% { content: '..'; }
-                        60%, 100% { content: '...'; }
-                    }
-                </style>
-            `,
-            timer: 2000,
-            showConfirmButton: false,
-            background: '#0f172a',
-            color: '#e2e8f0',
-            customClass: {
-                popup: 'dark-swal-success'
-            },
-            didOpen: () => {
-                const style = document.createElement('style');
-                style.textContent = `
-                    .dark-swal-success {
-                        border: 1px solid #3022c5 !important;
-                        box-shadow: 0 25px 50px -12px rgba(45, 34, 197, 0.3) !important;
-                        border-radius: 16px !important;
-                    }
-                    .swal2-icon.swal2-success {
-                        border-color: #4522c5 !important;
-                    }
-                    .swal2-success-line-tip,
-                    .swal2-success-line-long {
-                        background-color: #2225c5 !important;
-                    }
-                    .swal2-success-ring {
-                        border-color: rgba(69, 34, 197, 0.3) !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            },
-            willClose: closeOrRedirect
-        });
-    }
-
-    function fallbackCopyAndClose(url) {
+    function fallbackCopy(url) {
         const textArea = document.createElement('textarea');
         textArea.value = url;
         textArea.style.position = 'fixed';
         textArea.style.opacity = '0';
         document.body.appendChild(textArea);
         textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
 
-        showSuccessAlert();
-    }
-
-    function closeOrRedirect() {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            window.close();
-            setTimeout(() => {
-                window.location.href = 'about:blank';
-            }, 100);
+        try {
+            document.execCommand('copy');
+        } catch (e) {
+            // Walang clipboard — nakikita pa rin nila ang URL sa address bar.
         }
+
+        document.body.removeChild(textArea);
     }
 
-    function showEnhancedBrowserWarning(browserName) {
-        // Check if Swal is available
+    function showCopied(target) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Link copied',
+            text: 'Paste it into ' + target + ' to continue.',
+            timer: 2600,
+            showConfirmButton: false,
+            customClass: { popup: 'det-popup' }
+        });
+    }
+
+    // ─── Ang babala ───────────────────────────────────────────
+    function showWarning(browserName) {
         if (typeof Swal === 'undefined') {
-            console.error('SweetAlert2 not loaded! Please include: <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>');
-            alert(`Please open this page in Chrome browser.\n\nDetected: ${browserName} In-App Browser`);
+            // Walang SweetAlert sa pahinang ito. Isang plain na alert ay
+            // pangit, pero mas mabuti kaysa sa tahimik na pagkabigo sa
+            // isang browser na hindi kayang buksan ang camera.
+            const g = platformGuide();
+            alert('Please open this page in ' + g.browser + '.\n\nDetected: ' + browserName + ' in-app browser');
             return;
         }
 
+        const guide = platformGuide();
+
         Swal.fire({
             icon: 'warning',
-            title: 'Browser Not Supported',
+            title: 'Open in ' + guide.browser,
             html: `
-                <div style="text-align: left; color: #e2e8f0;">
-                    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155;">
-                        <p style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
-                            <span style="background: #ef4444; width: 8px; height: 8px; border-radius: 50%; display: inline-block; animation: pulse 2s infinite;"></span>
-                            <strong style="color: #fefefe;">Detected:</strong> 
-                            <span style="color: #4a5bde;">${browserName} In-App Browser</span>
-                        </p>
-                        <p style="margin: 10px 0 0 0; color: #cbd5e1; font-size: 14px;">
-                            For a better experience and full functionality, open this in <strong style="color: #4a4ade;">Chrome Browser</strong>.
-                        </p>
-                    </div>
-                    
-                    <div style="background: #1e293b; padding: 18px; border-radius: 12px; border-left: 4px solid #3838f8; margin-bottom: 15px;">
-                        <p style="margin: 0 0 12px 0; color: #ffffff; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-                            </svg>
-                            How to open in Chrome:
-                        </p>
-                        <ol style="padding-left: 20px; margin: 0; color: #cbd5e1; line-height: 1.8;">
-                            <li style="margin-bottom: 8px;">
-                                Tap the <strong style="color: #544ade;">3 dots (⋮)</strong> in the upper right corner
-                            </li>
-                            <li style="margin-bottom: 8px;">
-                                Choose <strong style="color: #604ade;">"Open in Chrome"</strong> or <strong style="color: #6a4ade;">"Open in Browser"</strong>
-                            </li>
-                        </ol>
-                    </div>
-                    
-                    <div style="text-align: center; padding: 12px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 8px; border: 1px dashed #475569;">
-                        <p style="margin: 0; color: #94a3b8; font-size: 13px; font-style: italic;">
-                            Or tap the button below to copy the URL
-                        </p>
-                    </div>
+                <div class="det-found">
+                    <span class="det-dot"></span>
+                    <span>Detected: <b>${browserName}</b> in-app browser</span>
                 </div>
-                
-                <style>
-                    @keyframes pulse {
-                        0%, 100% { opacity: 1; }
-                        50% { opacity: 0.5; }
-                    }
-                </style>
+
+                <div class="det-steps">
+                    <p class="det-steps-title">
+                        <i class="bi bi-info-circle"></i> How to open it
+                    </p>
+                    <ol>
+                        ${guide.steps.map(s => '<li>' + s + '</li>').join('')}
+                    </ol>
+                </div>
+
+                <p class="det-note">
+                    Scanning, uploading and downloading do not work reliably inside
+                    ${browserName}. You can also copy the link and paste it into ${guide.browser}.
+                </p>
             `,
-            showCancelButton: false,
-            confirmButtonText: 'Copy URL & Close',
+            showDenyButton: true,
+            confirmButtonText: 'Copy link',
+            denyButtonText: 'Continue anyway',
             allowOutsideClick: false,
-            background: '#0f172a',
-            color: '#000000',
             customClass: {
-                popup: 'dark-swal-popup',
-                confirmButton: 'dark-swal-confirm',
-                title: 'dark-swal-title'
+                popup: 'det-popup',
+                title: 'det-title',
+                confirmButton: 'det-confirm',
+                denyButton: 'det-deny'
             },
-            didOpen: () => {
-                const style = document.createElement('style');
-                style.textContent = `
-                    .dark-swal-popup {
-                        border: 1px solid #334155 !important;
-                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
-                        border-radius: 16px !important;
-                    }
-                    
-                    .dark-swal-title {
-                        color: #2488fb !important;
-                        font-weight: 700 !important;
-                        font-size: 24px !important;
-                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-                    }
-                    
-                    .dark-swal-confirm {
-                        background: linear-gradient(135deg, #603bf6 0%, #4625eb 100%) !important;
-                        border: none !important;
-                        padding: 12px 32px !important;
-                        font-size: 16px !important;
-                        font-weight: 600 !important;
-                        border-radius: 10px !important;
-                        transition: all 0.3s ease !important;
-                        box-shadow: 0 4px 14px 0 rgba(59, 75, 246, 0.4) !important;
-                    }
-                    
-                    .dark-swal-confirm:hover {
-                        background: linear-gradient(135deg, #3c25eb 0%, #291dd8 100%) !important;
-                        transform: translateY(-2px) !important;
-                        box-shadow: 0 6px 20px 0 rgba(62, 59, 246, 0.5) !important;
-                    }
-                    
-                    .dark-swal-confirm:active {
-                        transform: translateY(0px) !important;
-                    }
-                    
-                    .swal2-icon.swal2-warning {
-                        border-color: #2488fb !important;
-                        color: #2488fb !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-        }).then((result) => {
+            buttonsStyling: false
+        }).then(result => {
             if (result.isConfirmed) {
-                copyURLAndClose();
+                // Nananatili ang pahina. Isinasara ito dati —
+                // history.back(), window.close(), tapos about:blank —
+                // na madalas walang epekto sa isang in-app browser at
+                // nag-iiwan ng blangkong tab, at ilang app ang
+                // nagbubura ng clipboard sa paglabas. Ang pagkopya at
+                // ang pag-alis ay dalawang magkaibang pasya, at sa
+                // estudyante dapat ang pangalawa.
+                copyURL().then(() => showCopied(guide.browser));
             }
         });
     }
 
-    // Public API
+    // ─── Public API (hindi nagbago) ───────────────────────────
     return {
-        init: function() {
-            // Prevent multiple initializations
-            if (window.__browserDetectorInitialized) {
-                console.log('BrowserDetector already initialized');
-                return;
-            }
+        init: function () {
+            if (window.__browserDetectorInitialized) return;
+            window.__browserDetectorInitialized = true;
 
             const detection = detectInAppBrowser();
-
             if (detection.isInApp) {
-                console.log(`In-app browser detected: ${detection.browserName}`);
-                showEnhancedBrowserWarning(detection.browserName);
-                console.log('User Agent:', navigator.userAgent);
-            } else {
-                console.log('Regular browser detected');
+                showWarning(detection.browserName);
             }
-
-            window.__browserDetectorInitialized = true;
         },
 
-        // Manual trigger (optional)
-        check: function() {
+        check: function () {
             return detectInAppBrowser();
         }
     };
@@ -284,7 +229,7 @@ const BrowserDetector = (function() {
 
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         BrowserDetector.init();
     });
 } else {

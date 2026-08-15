@@ -465,6 +465,9 @@
             font-weight: 500;
         }
     </style>
+<!-- In-app browser notice (assets/js/detection.js): ang anyo nito ay
+     nasa CSS na, hindi na sa loob ng JavaScript. -->
+<link rel="stylesheet" href="<?= asset('../assets/css/detection.css') ?>">
 </head>
 
 <body>

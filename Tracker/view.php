@@ -28,6 +28,9 @@ if ($locked) {
 <head>
     <?php include __DIR__ . "/../includes/headerTracker.php"; ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- In-app browser notice (assets/js/detection.js): ang anyo nito ay
+     nasa CSS na, hindi na sa loob ng JavaScript. -->
+<link rel="stylesheet" href="<?= asset('../assets/css/detection.css') ?>">
 </head>
 
 <body class="trk-page">

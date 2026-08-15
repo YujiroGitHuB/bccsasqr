@@ -1,0 +1,190 @@
+/* ============================================================
+   IN-APP BROWSER NOTICE   (assets/js/detection.js)
+
+   Ang dialog na lumalabas kapag binuksan ang isang link mula sa
+   loob ng Messenger, Facebook, Instagram, TikTok at iba pa.
+
+   Bakit may sariling file: ang buong anyo nito ay nasa loob ng
+   JavaScript dati — mga 120 linya ng inline style sa HTML string,
+   at dalawang <style> element na idinidikit sa <head> sa bawat
+   pagbukas ng modal at hindi na inaalis. Walong magkakalapit na
+   asul-lila ang naipon doon (#2488fb, #603bf6, #4625eb, #544ade,
+   #604ade, #6a4ade, #4a5bde, #4a4ade) na wala ni isa sa palette ng
+   app.
+
+   ── Bakit may fallback ang bawat token ─────────────────────
+   Limang pahina ang gumagamit ng detector, at APAT sa kanila ang
+   may theme.css (daily attendance, QR generator, tracker, student
+   photo profile). Ang panglima — includes/invalid_link.php — ay
+   nakatayong mag-isa: may sarili itong :root na madilim at walang
+   --tint o --ink. Kaya bawat var() dito ay may kapalit:
+
+       color: var(--ink-2, #e2e8f0);
+
+   Sa apat na pahina, sumusunod ito sa tema. Sa invalid_link,
+   nahuhulog sa maliwanag na teksto — tama, dahil madilim ang
+   ground doon. Kung walang fallback, ang buong deklarasyon ay
+   nagiging invalid at nawawala ang kulay.
+   ============================================================ */
+
+.det-popup {
+    /* Ang violet ng ATTENDANCE group — ito ang grupong pinanggagalingan
+       ng mga link na binubuksan ng mga estudyante. Sinusunod ang accent
+       ng pahina kung mayroon, para magkatugma ang dialog at ang kard sa
+       likod nito. */
+    --det-accent: var(--att, #8b5cf6);
+    --det-accent-deep: var(--att-deep, #7c3aed);
+    --det-accent-soft: rgba(139, 92, 246, .14);
+    --det-accent-line: rgba(139, 92, 246, .32);
+
+    --det-ink: var(--ink-2, #e2e8f0);
+    --det-ink-soft: var(--ink-4, rgba(255, 255, 255, .5));
+    --det-line: rgba(var(--tint, 255, 255, 255), .12);
+    --det-fill: rgba(var(--tint, 255, 255, 255), .05);
+
+    /* Kailangang isulat ang ground dito. Sa apat na pahinang may
+       theme.css, ito rin ang halagang ibinibigay ng .swal2-popup na
+       tuntunin doon — walang salungatan. Sa invalid_link.php na
+       walang theme.css, PUTI ang default na popup ng SweetAlert, at
+       ang mga token sa ibaba ay nahuhulog sa maliwanag na teksto:
+       puti sa puti. Ang --surface ng sarili nitong :root (#12161f)
+       ang sumasalo. */
+    background: var(--surface, #12161f) !important;
+    color: var(--det-ink) !important;
+
+    border: 1px solid var(--det-line) !important;
+    border-radius: 16px !important;
+    max-width: 30rem;
+}
+
+.det-popup .det-title,
+.det-popup .swal2-title {
+    color: var(--ink, var(--det-ink)) !important;
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
+}
+
+.det-popup .swal2-html-container {
+    color: var(--det-ink) !important;
+    margin-top: .5rem !important;
+    text-align: left !important;
+}
+
+/* ─── Ang natuklasan ──────────────────────────────────────── */
+.det-found {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .7rem .9rem;
+    border-radius: 12px;
+    background: var(--det-fill);
+    border: 1px solid var(--det-line);
+    font-size: .9rem;
+}
+
+/* Hindi kulay lang ang nagsasabi ng kalagayan: may salitang
+   "Detected" sa tabi, at ang pangalan ng app ay nakadiin. Ang tuldok
+   ay pandagdag, hindi ang mensahe. */
+.det-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f59e0b;
+}
+
+.det-found b {
+    color: var(--det-accent);
+    font-weight: 700;
+}
+
+/* ─── Ang mga hakbang ─────────────────────────────────────── */
+.det-steps {
+    margin: .9rem 0 0;
+    padding: .85rem .95rem;
+    border-radius: 12px;
+    background: var(--det-fill);
+    border-left: 3px solid var(--det-accent);
+}
+
+.det-steps-title {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin: 0 0 .5rem;
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--ink, var(--det-ink));
+}
+
+.det-steps ol {
+    margin: 0;
+    padding-left: 1.15rem;
+    font-size: .86rem;
+    line-height: 1.7;
+    color: var(--det-ink);
+}
+
+.det-steps kbd {
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: var(--det-accent-soft);
+    border: 1px solid var(--det-accent-line);
+    color: var(--det-accent);
+    font-family: inherit;
+    font-size: .85em;
+    font-weight: 700;
+}
+
+.det-note {
+    margin: .8rem 0 0;
+    font-size: .78rem;
+    color: var(--det-ink-soft);
+}
+
+/* ─── Mga pindutan ────────────────────────────────────────── */
+.det-popup .swal2-actions {
+    gap: .5rem;
+    margin-top: 1.1rem !important;
+}
+
+.det-popup .det-confirm {
+    padding: .65rem 1.5rem !important;
+    border-radius: 10px !important;
+    font-size: .95rem !important;
+    font-weight: 600 !important;
+    background: linear-gradient(135deg, var(--det-accent), var(--det-accent-deep)) !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, .35) !important;
+}
+
+/* Ang labasan kapag nagkamali ang detector. Isang regex sa user
+   agent ang nagpapasya nito, at ang mali ay nangangahulugang hindi
+   makapag-attendance ang estudyante — kaya kailangang may daan
+   palabas, ngunit tahimik, para hindi ito ang unang piliin. */
+.det-popup .det-deny {
+    padding: .65rem 1.1rem !important;
+    border-radius: 10px !important;
+    font-size: .85rem !important;
+    font-weight: 600 !important;
+    color: var(--det-ink-soft) !important;
+    background: transparent !important;
+    border: 1px solid var(--det-line) !important;
+    box-shadow: none !important;
+}
+
+.det-popup .swal2-icon {
+    border-color: var(--det-accent) !important;
+    color: var(--det-accent) !important;
+}
+
+@media (max-width: 400px) {
+    .det-popup .swal2-actions {
+        flex-direction: column-reverse;
+    }
+
+    .det-popup .det-confirm,
+    .det-popup .det-deny {
+        width: 100%;
+    }
+}
