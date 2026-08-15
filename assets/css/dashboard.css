@@ -1223,6 +1223,17 @@
     cursor: pointer;
 }
 
+/* The open dropdown is drawn by the browser, not from here. It takes
+   the select's own background, and this one is a translucent tint —
+   which Chrome cannot use, so it falls back to white while the options
+   keep the near-white colour they inherit from the control: white text
+   on a white list. Both are stated outright, the way every other select
+   in the app does it (management-pages.css). */
+.dash-page .dash-sort select option {
+    background: var(--surface-2);
+    color: var(--ink);
+}
+
 .dash-page .dash-cards-count {
     margin-left: auto;
     font-size: .76rem;
