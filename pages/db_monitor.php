@@ -1,4 +1,5 @@
-<?php
+<?php require_once __DIR__ . '/../includes/asset.php';
+
 session_start();
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/permissions.php";
@@ -13,7 +14,7 @@ requirePermission('db.monitor');
 $dbname = $conn->query("SELECT DATABASE()")->fetch_row()[0];
 
 // Get total database size in MB
-$sql = "SELECT 
+$sql = "SELECT
             table_schema AS 'Database',
             SUM(data_length + index_length) / 1024 / 1024 AS 'Size_MB',
             SUM(data_length) / 1024 / 1024 AS 'Data_MB',
@@ -23,10 +24,10 @@ $sql = "SELECT
         GROUP BY table_schema";
 
 $result = $conn->query($sql);
-$dbSize = $result->fetch_assoc();
+$dbSize = $result->fetch_assoc() ?: ['Size_MB' => 0, 'Data_MB' => 0, 'Index_MB' => 0];
 
 // Get per-table sizes
-$sql2 = "SELECT 
+$sql2 = "SELECT
             table_name AS 'Table',
             ROUND((data_length + index_length) / 1024 / 1024, 4) AS 'Size_MB',
             table_rows AS 'Rows'
@@ -36,83 +37,222 @@ $sql2 = "SELECT
 
 $tables = $conn->query($sql2);
 
+// Read into an array rather than straight into the markup: the stat
+// cards above the table need the count and the row total, and they
+// are printed before the table is.
+$tableList = [];
+$totalRows = 0;
+while ($row = $tables->fetch_assoc()) {
+    $tableList[] = $row;
+    $totalRows  += (int) $row['Rows'];
+}
+
 // Limit config (InfinityFree = 10MB)
 $limit_mb = 10;
-$used_mb = round($dbSize['Size_MB'], 4);
-$percent = round(($used_mb / $limit_mb) * 100, 2);
+$used_mb  = round($dbSize['Size_MB'], 4);
+$data_mb  = round($dbSize['Data_MB'], 4);
+$index_mb = round($dbSize['Index_MB'], 4);
+$free_mb  = round(max($limit_mb - $used_mb, 0), 4);
+$percent  = $limit_mb > 0 ? round(($used_mb / $limit_mb) * 100, 2) : 0;
 
-// Color based on usage
-if ($percent >= 90) $color = '#e74c3c';       // Red - danger
-elseif ($percent >= 70) $color = '#f39c12';   // Orange - warning
-else $color = '#2ecc71';                       // Green - safe
+// Share of the limit taken by each half, for the stacked bar.
+$dataPct  = $limit_mb > 0 ? min(($data_mb / $limit_mb) * 100, 100) : 0;
+$indexPct = $limit_mb > 0 ? min(($index_mb / $limit_mb) * 100, 100) : 0;
+$freePct  = max(100 - $dataPct - $indexPct, 0);
+
+// State drives the whole page — the ring, the alert strip, the
+// free-space card — through one class on the wrapper. See the note
+// at the top of assets/css/db-monitor.css.
+if ($percent >= 90) {
+    $state      = 'is-danger';
+    $stateCard  = 'red';
+    $stateIcon  = 'bi-exclamation-octagon-fill';
+    $stateTitle = 'CRITICAL:';
+    $stateText  = 'Database is almost full. Clean up old records or upgrade the plan immediately.';
+} elseif ($percent >= 70) {
+    $state      = 'is-warn';
+    $stateCard  = 'amber';
+    $stateIcon  = 'bi-exclamation-triangle-fill';
+    $stateTitle = 'WARNING:';
+    $stateText  = 'Usage is above 70%. Monitor closely and plan a cleanup.';
+} else {
+    $state      = 'is-safe';
+    $stateCard  = 'green';
+    $stateIcon  = 'bi-shield-check';
+    $stateTitle = 'SAFE:';
+    $stateText  = 'Database size is within acceptable limits.';
+}
+
+// Ring geometry. r=52 on a 120-unit box → circumference 2πr; the dash
+// length is the only figure that has to be printed inline, because no
+// stylesheet can know the percentage.
+$ringCirc = 2 * M_PI * 52;
+$ringDash = round($ringCirc * min($percent, 100) / 100, 2);
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Database Monitor</title>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial, sans-serif; background: #1e1e2e; color: #cdd6f4; padding: 30px; }
-        .card { background: #313244; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        h2 { color: #cba6f7; }
-        .bar-container { background: #45475a; border-radius: 10px; height: 30px; overflow: hidden; }
-        .bar { height: 100%; border-radius: 10px; transition: width 0.5s;
-               background: <?= $color ?>; width: <?= min($percent, 100) ?>%; }
-        .percent { font-size: 24px; font-weight: bold; color: <?= $color ?>; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #45475a; padding: 10px; text-align: left; }
-        td { padding: 8px 10px; border-bottom: 1px solid #45475a; }
-        tr:hover { background: #45475a; }
-        .alert { padding: 12px 16px; border-radius: 8px; margin-top: 10px; }
-        .alert-danger { background: #e74c3c33; border-left: 4px solid #e74c3c; }
-        .alert-warning { background: #f39c1233; border-left: 4px solid #f39c12; }
-        .alert-success { background: #2ecc7133; border-left: 4px solid #2ecc71; }
-    </style>
-</head>
-<body>
-    <h2>Database Monitor — <?= $dbname ?></h2>
+<!doctype html>
+<html lang="en">
 
-    <div class="card">
-        <h3>Overall Usage</h3>
-        <p class="percent"><?= $used_mb ?> MB / <?= $limit_mb ?> MB (<?= $percent ?>%)</p>
-        <div class="bar-container">
-            <div class="bar"></div>
+<head>
+    <?php include __DIR__ . "/../includes/header.php"; ?>
+    <link rel="stylesheet" href="<?= asset('../assets/css/settings.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/management-pages.css') ?>">
+    <link rel="stylesheet" href="<?= asset('../assets/css/db-monitor.css') ?>">
+</head>
+
+<body>
+    <?php include __DIR__ . "/../components/sidebar.php"; ?>
+    <div class="content dbm-page <?= $state ?>" id="content">
+        <?php include("../components/topBar.php"); ?>
+
+        <div class="backup-page-header">
+            <h2><i class="bi bi-activity"></i> Database Monitor</h2>
+            <span class="dbm-db-badge">
+                <i class="bi bi-hdd-fill"></i> <?= htmlspecialchars($dbname) ?>
+            </span>
         </div>
 
-        <?php if ($percent >= 90): ?>
-            <div class="alert alert-danger"><strong>CRITICAL:</strong> Database is almost full. Please clean up or upgrade immediately.</div>
-        <?php elseif ($percent >= 70): ?>
-            <div class="alert alert-warning"><strong>WARNING:</strong> Usage is above 70%. Monitor closely.</div>
-        <?php else: ?>
-            <div class="alert alert-success"><strong>SAFE:</strong> Database size is within acceptable limits.</div>
-        <?php endif; ?>
+        <!-- ── Usage hero ── -->
+        <div class="dbm-hero">
+            <div class="dbm-gauge">
+                <svg viewBox="0 0 120 120" role="img"
+                    aria-label="<?= $percent ?> percent of the <?= $limit_mb ?> MB limit used">
+                    <circle class="dbm-ring-track" cx="60" cy="60" r="52"></circle>
+                    <circle class="dbm-ring-value" cx="60" cy="60" r="52"
+                        style="stroke-dasharray: <?= $ringDash ?> 999"></circle>
+                </svg>
+                <div class="dbm-gauge-center" aria-hidden="true">
+                    <span class="dbm-gauge-pct"><?= $percent ?>%</span>
+                    <span class="dbm-gauge-sub">used</span>
+                </div>
+            </div>
 
-        <p>
-            Data: <strong><?= round($dbSize['Data_MB'], 4) ?> MB</strong> &nbsp;|&nbsp;
-            Index: <strong><?= round($dbSize['Index_MB'], 4) ?> MB</strong>
-        </p>
-    </div>
+            <div class="dbm-hero-body">
+                <div class="dbm-hero-label">Overall Usage</div>
+                <div class="dbm-hero-figure">
+                    <?= $used_mb ?> <small>MB of <?= $limit_mb ?> MB</small>
+                </div>
 
-    <div class="card">
-        <h3>Per Table Breakdown</h3>
-        <table>
-            <tr>
-                <th>Table Name</th>
-                <th>Size (MB)</th>
-                <th>Rows</th>
-            </tr>
-            <?php while ($row = $tables->fetch_assoc()): ?>
-            <tr>
-                <td><?= $row['Table'] ?></td>
-                <td><?= $row['Size_MB'] ?></td>
-                <td><?= number_format($row['Rows']) ?></td>
-            </tr>
-            <?php endwhile; ?>
-        </table>
-    </div>
+                <div class="dbm-stack" role="presentation">
+                    <div class="dbm-seg is-data" style="width: <?= $dataPct ?>%"></div>
+                    <div class="dbm-seg is-index" style="width: <?= $indexPct ?>%"></div>
+                    <div class="dbm-seg" style="width: <?= $freePct ?>%"></div>
+                </div>
 
-    <small style="color:#6c7086;">Last checked: <?= date('Y-m-d H:i:s') ?></small>
+                <ul class="dbm-legend">
+                    <li><span class="dbm-dot is-data"></span> Data <b><?= $data_mb ?> MB</b></li>
+                    <li><span class="dbm-dot is-index"></span> Index <b><?= $index_mb ?> MB</b></li>
+                    <li><span class="dbm-dot is-free"></span> Free <b><?= $free_mb ?> MB</b></li>
+                </ul>
+
+                <div class="dbm-alert">
+                    <i class="bi <?= $stateIcon ?>"></i>
+                    <div><strong><?= $stateTitle ?></strong> <?= $stateText ?></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Stat Cards ── -->
+        <div class="stat-grid">
+            <div class="stat-card blue">
+                <div class="stat-icon"><i class="bi bi-table"></i></div>
+                <div class="stat-label">Tables</div>
+                <div class="stat-value"><?= count($tableList) ?></div>
+            </div>
+            <div class="stat-card cyan">
+                <div class="stat-icon"><i class="bi bi-list-ol"></i></div>
+                <div class="stat-label">Total Rows</div>
+                <div class="stat-value"><?= number_format($totalRows) ?></div>
+            </div>
+            <div class="stat-card <?= $stateCard ?>">
+                <div class="stat-icon"><i class="bi bi-hdd-fill"></i></div>
+                <div class="stat-label">Free Space</div>
+                <div class="stat-value"><?= $free_mb ?><small> MB</small></div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-icon"><i class="bi bi-bar-chart-fill"></i></div>
+                <div class="stat-label">Largest Table</div>
+                <div class="stat-value sm" title="<?= $tableList ? htmlspecialchars($tableList[0]['Table']) . ' — ' . $tableList[0]['Size_MB'] . ' MB' : '' ?>">
+                    <?= $tableList ? htmlspecialchars($tableList[0]['Table']) : '—' ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Table Section ── -->
+        <div class="section-header">
+            <span class="section-title">
+                Per Table Breakdown
+                <span style="opacity:.5;font-size:.65rem"><?= count($tableList) ?> tables</span>
+            </span>
+            <a href="db_monitor.php" class="dbm-refresh">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </a>
+        </div>
+
+        <div class="table-card">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Table Name</th>
+                        <th>Size</th>
+                        <th>Share of DB</th>
+                        <th class="text-end">Rows</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($tableList)): ?>
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    No tables found in this database.
+                                </div>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($tableList as $i => $row): ?>
+                            <?php $share = $used_mb > 0 ? min(($row['Size_MB'] / $used_mb) * 100, 100) : 0; ?>
+                            <tr>
+                                <td class="dbm-rank"><?= $i + 1 ?></td>
+                                <td>
+                                    <span class="dbm-tname">
+                                        <i class="bi bi-table"></i><?= htmlspecialchars($row['Table']) ?>
+                                    </span>
+                                    <?php if ($i === 0): ?><span class="badge-largest">largest</span><?php endif; ?>
+                                </td>
+                                <td><span class="badge-size"><?= $row['Size_MB'] ?> MB</span></td>
+                                <td>
+                                    <div class="dbm-share">
+                                        <div class="dbm-share-track">
+                                            <div class="dbm-share-fill" style="width: <?= round($share, 2) ?>%"></div>
+                                        </div>
+                                        <span class="dbm-share-pct"><?= round($share, 1) ?>%</span>
+                                    </div>
+                                </td>
+                                <td class="text-end dbm-num"><?= number_format((int) $row['Rows']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="dbm-footnote">
+            <span><i class="bi bi-clock-history"></i> Last checked: <?= date('M d, Y h:i:s A') ?></span>
+            <span><i class="bi bi-info-circle"></i> Row counts are InnoDB estimates from information_schema.</span>
+        </div>
+
+    </div><!-- /content -->
+
+    <?php include __DIR__ . "/../includes/footer.php"; ?>
+
+    <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
+    <script src="<?= asset('../assets/js/logout.js') ?>"></script>
+    <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
+    <script src="<?= asset('../assets/js/lock.js') ?>"></script>
+    <script src="<?= asset('../assets/js/systemConfig.js') ?>"></script>
 </body>
+
 </html>
 
 <?php $conn->close(); ?>

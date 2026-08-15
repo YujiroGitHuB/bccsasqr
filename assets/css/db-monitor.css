@@ -1,0 +1,476 @@
+/* ============================================================
+   DATABASE MONITOR
+   Loads after management-pages.css and reuses everything that
+   already exists there — .stat-grid, .stat-card, .section-header,
+   .table-card, .badge-size, .empty-state. Only the parts that page
+   has no equivalent for live here: the usage gauge, the
+   data/index/free stack and the per-table share bars.
+
+   The page used to be a standalone dark-only document with its own
+   Catppuccin palette baked in (#1e1e2e, #313244, #45475a). Nothing
+   neutral is hardcoded now — the grounds and hairlines come from
+   the --tint channel in theme.css, so the page flips with the rest
+   of the app.
+
+   ── The state colour ────────────────────────────────────────
+   Safe / warning / critical used to be picked in PHP and printed
+   into a <style> block. It is a class on the page wrapper now
+   (.is-safe / .is-warn / .is-danger), which maps --gauge and
+   friends once; the gauge, the alert and the headline number all
+   read from those, so the three states can never drift apart.
+   ============================================================ */
+
+.dbm-page {
+    /* Status accents. Deliberately the same six values the QR
+       generator, tracker and student portal use, so "green means
+       fine" looks identical wherever it appears. */
+    --ok: #10b981;
+    --ok-rgb: 16, 185, 129;
+    --ok-ink: #34d399;
+    --warn: #f59e0b;
+    --warn-rgb: 245, 158, 11;
+    --warn-ink: #fcd34d;
+    --bad: #ef4444;
+    --bad-rgb: 239, 68, 68;
+    --bad-ink: #f87171;
+
+    /* The two halves of the stored bytes. */
+    --dbm-data: #3b82f6;
+    --dbm-index: #a78bfa;
+}
+
+/* Those pale inks were chosen to glow on a near-black card; on a
+   white one they are barely there, and they carry the percentage —
+   the one number on the page people actually read. theme.css does
+   this for the pages it knows about, but it targets the page class
+   directly, and a declaration on .dbm-page itself would beat an
+   inherited one from <body>. Hence the repeat here. */
+:root:not([data-theme="dark"]) .dbm-page {
+    --ok-ink: #047857;
+    --warn-ink: #b45309;
+    --bad-ink: #b91c1c;
+}
+
+.dbm-page.is-safe {
+    --gauge: var(--ok);
+    --gauge-rgb: var(--ok-rgb);
+    --gauge-ink: var(--ok-ink);
+}
+
+.dbm-page.is-warn {
+    --gauge: var(--warn);
+    --gauge-rgb: var(--warn-rgb);
+    --gauge-ink: var(--warn-ink);
+}
+
+.dbm-page.is-danger {
+    --gauge: var(--bad);
+    --gauge-rgb: var(--bad-rgb);
+    --gauge-ink: var(--bad-ink);
+}
+
+/* ─── Header ──────────────────────────────────────────────────── */
+.dbm-page .backup-page-header h2 i {
+    color: var(--gauge);
+}
+
+.dbm-db-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .3rem .75rem;
+    border-radius: 20px;
+    border: 1px solid rgba(var(--tint), .1);
+    background: rgba(var(--tint), .04);
+    color: rgba(var(--tint), .55);
+    font-family: ui-monospace, SFMono-Regular, 'Courier New', monospace;
+    font-size: .72rem;
+    font-weight: 600;
+}
+
+.dbm-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .5rem 1.1rem;
+    border-radius: 9px;
+    border: 1px solid rgba(var(--tint), .12);
+    background: rgba(var(--tint), .04);
+    color: var(--ink-3);
+    font-size: .8rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.dbm-refresh:hover {
+    background: rgba(var(--tint), .08);
+    border-color: rgba(var(--tint), .2);
+    color: var(--ink);
+}
+
+/* ─── Stat row ────────────────────────────────────────────────── */
+/* management-pages.css fixes the grid at three columns; this page
+   has four numbers and they should not be forced onto two rows on a
+   wide screen or squeezed on a narrow one. */
+.dbm-page .stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.dbm-page .stat-value small {
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: .55;
+}
+
+/* Table names are long enough to overflow the card (
+   student_subjects_tbl is 20 characters), so they wrap rather than
+   spill, and they read as identifiers rather than prose. */
+.dbm-page .stat-value.sm {
+    font-family: ui-monospace, SFMono-Regular, 'Courier New', monospace;
+    font-size: .92rem;
+    overflow-wrap: anywhere;
+}
+
+/* management-pages.css ships blue, green, cyan and red cards. The
+   free-space card turns amber between 70% and 90%, and that variant
+   did not exist yet. The ink comes from --warn-ink rather than a
+   literal so it darkens in light mode with everything else. */
+.dbm-page .stat-card.amber {
+    background: linear-gradient(135deg, rgba(245, 158, 11, .08) 0%, rgba(var(--tint), .02) 100%);
+}
+
+.dbm-page .stat-card.amber::before {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    box-shadow: 0 0 12px rgba(245, 158, 11, .6);
+}
+
+.dbm-page .stat-card.amber .stat-icon {
+    background: rgba(245, 158, 11, .15);
+    color: var(--warn-ink);
+}
+
+.dbm-page .stat-card.amber .stat-value {
+    color: var(--warn-ink);
+}
+
+/* ─── Usage hero ──────────────────────────────────────────────── */
+.dbm-hero {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 2.25rem;
+    padding: 1.75rem;
+    margin-bottom: 1.75rem;
+    border: 1px solid rgba(var(--tint), .07);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(var(--gauge-rgb), .07) 0%, rgba(var(--tint), .02) 60%);
+    overflow: hidden;
+}
+
+.dbm-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gauge);
+    box-shadow: 0 0 12px rgba(var(--gauge-rgb), .6);
+}
+
+/* ─── The ring ────────────────────────────────────────────────── */
+.dbm-gauge {
+    position: relative;
+    width: 168px;
+    height: 168px;
+    flex-shrink: 0;
+}
+
+.dbm-gauge svg {
+    width: 100%;
+    height: 100%;
+    /* Start the sweep at twelve o'clock instead of three. */
+    transform: rotate(-90deg);
+}
+
+.dbm-ring-track {
+    fill: none;
+    stroke: rgba(var(--tint), .08);
+    stroke-width: 12;
+}
+
+.dbm-ring-value {
+    fill: none;
+    stroke: var(--gauge);
+    stroke-width: 12;
+    stroke-linecap: round;
+    /* The dash length is the only thing PHP prints inline: it is the
+       percentage, and there is no CSS that can know it. */
+    animation: dbm-sweep .9s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Only `from` is declared — the `to` is whatever the element itself
+   carries, so the ring animates up to the real figure. */
+@keyframes dbm-sweep {
+    from {
+        stroke-dasharray: 0 999;
+    }
+}
+
+.dbm-gauge-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .15rem;
+}
+
+.dbm-gauge-pct {
+    font-size: 2.1rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--gauge-ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.dbm-gauge-sub {
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(var(--tint), .4);
+}
+
+/* ─── Hero body ───────────────────────────────────────────────── */
+.dbm-hero-label {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(var(--tint), .35);
+    margin-bottom: .35rem;
+}
+
+.dbm-hero-figure {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.dbm-hero-figure small {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(var(--tint), .45);
+}
+
+/* The stack: data, index and what is left, in proportion. The 2px
+   gap is the card ground showing through, which separates the
+   segments without a border on each one. */
+.dbm-stack {
+    display: flex;
+    gap: 2px;
+    height: 14px;
+    margin-top: 1.1rem;
+    border-radius: 999px;
+    background: rgba(var(--tint), .06);
+    overflow: hidden;
+}
+
+.dbm-seg {
+    height: 100%;
+    min-width: 0;
+    transition: width .6s cubic-bezier(.4, 0, .2, 1);
+}
+
+.dbm-seg.is-data {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.dbm-seg.is-index {
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+}
+
+.dbm-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin: .85rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dbm-legend li {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    font-size: .78rem;
+    color: rgba(var(--tint), .5);
+}
+
+.dbm-legend b {
+    color: var(--ink-2);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.dbm-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.dbm-dot.is-data {
+    background: var(--dbm-data);
+}
+
+.dbm-dot.is-index {
+    background: var(--dbm-index);
+}
+
+.dbm-dot.is-free {
+    background: rgba(var(--tint), .18);
+}
+
+/* ─── Status strip ────────────────────────────────────────────── */
+.dbm-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    margin-top: 1.1rem;
+    padding: .7rem .95rem;
+    border-radius: 10px;
+    border-left: 3px solid var(--gauge);
+    background: rgba(var(--gauge-rgb), .1);
+    font-size: .85rem;
+    color: var(--ink-2);
+}
+
+.dbm-alert i {
+    color: var(--gauge-ink);
+    font-size: 1rem;
+    line-height: 1.35;
+}
+
+.dbm-alert strong {
+    color: var(--gauge-ink);
+}
+
+/* ─── Table ───────────────────────────────────────────────────── */
+.dbm-rank {
+    font-size: .75rem;
+    color: rgba(var(--tint), .3);
+    font-variant-numeric: tabular-nums;
+    width: 40px;
+}
+
+.dbm-tname {
+    font-family: ui-monospace, SFMono-Regular, 'Courier New', monospace;
+    font-size: .82rem;
+    color: var(--ink-2);
+}
+
+.dbm-tname i {
+    color: rgba(var(--tint), .3);
+    margin-right: .45rem;
+}
+
+.badge-largest {
+    font-size: .65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: rgba(59, 130, 246, .15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, .25);
+    margin-left: 6px;
+}
+
+.dbm-num {
+    font-variant-numeric: tabular-nums;
+    color: rgba(var(--tint), .55);
+}
+
+/* Share of the whole database, so a table's size is readable
+   against the others without doing the arithmetic. */
+.dbm-share {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    min-width: 130px;
+}
+
+.dbm-share-track {
+    flex: 1;
+    min-width: 55px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(var(--tint), .07);
+    overflow: hidden;
+}
+
+.dbm-share-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.dbm-share-pct {
+    width: 44px;
+    text-align: right;
+    font-size: .74rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(var(--tint), .4);
+}
+
+/* ─── Footnote ────────────────────────────────────────────────── */
+.dbm-footnote {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem 1rem;
+    margin-top: -.75rem;
+    font-size: .75rem;
+    color: rgba(var(--tint), .35);
+}
+
+/* ─── Narrow screens ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .dbm-hero {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 1.5rem;
+        text-align: center;
+    }
+
+    .dbm-hero-body {
+        width: 100%;
+    }
+
+    .dbm-legend {
+        justify-content: center;
+    }
+
+    .dbm-alert {
+        text-align: left;
+    }
+
+    .dbm-share {
+        min-width: 90px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .dbm-ring-value,
+    .dbm-seg {
+        animation: none;
+        transition: none;
+    }
+}
