@@ -9,6 +9,7 @@ include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/links.php";
 
 ob_clean();
 header('Content-Type: application/json');
@@ -89,14 +90,9 @@ function attach_link_expiry(mysqli $conn, array $links): array {
     return $links;
 }
 
-function generateShortCode($length = 6) {
-    $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    $code  = '';
-    for ($i = 0; $i < $length; $i++) {
-        $code .= $chars[rand(0, strlen($chars) - 1)];
-    }
-    return $code;
-}
+// Ang generateShortCode() ay lumipat sa includes/links.php bilang
+// link_generate_code(): tatlong file na ang gumagawa ng code, at ang
+// pagsusuri kung libre pa ito ay dapat isang beses lang naisulat.
 
 // ─── 1. Fetch subjects ────────────────────────────────────────────────────────
 // JOIN now uses ss.section = ist.section (from student_subjects_tbl)
@@ -186,16 +182,19 @@ foreach ($subjects as $s) {
 // so we can deactivate orphaned links (enrollment deleted).
 $all_active_links = [];
 
+// is_stale: nag-expire sa NAUNANG araw. Tingnan ang 2c.
+$stale_sql = "(expires_at IS NOT NULL AND DATE(expires_at) < CURDATE()) AS is_stale";
+
 if ($user_role === 'admin') {
     $all_stmt = $conn->prepare("
-        SELECT subject_id, section, instructor_id, short_code
+        SELECT subject_id, section, instructor_id, short_code, $stale_sql
         FROM attendance_links_tbl
         WHERE is_active = 1
     ");
     $all_stmt->execute();
 } else {
     $all_stmt = $conn->prepare("
-        SELECT subject_id, section, instructor_id, short_code
+        SELECT subject_id, section, instructor_id, short_code, $stale_sql
         FROM attendance_links_tbl
         WHERE is_active = 1 AND instructor_id = ?
     ");
@@ -206,12 +205,36 @@ if ($user_role === 'admin') {
 $all_result = $all_stmt->get_result();
 while ($row = $all_result->fetch_assoc()) {
     $key = $row['subject_id'] . '|' . $row['section'] . '|' . $row['instructor_id'];
-    $all_active_links[$key] = $row['short_code'];
+    $all_active_links[$key] = [
+        'short_code' => $row['short_code'],
+        'is_stale'   => (int) $row['is_stale'] === 1,
+    ];
 }
 
 // ─── 2c. Auto-deactivate links with no more enrolled students ─────────────────
+//         + bagong code para sa mga nag-expire noong nakaraang araw
+//
+// Walang cron sa hosting na ito, kaya walang tumatakbo sa mismong
+// sandali ng pag-expire — isang WHERE clause lang ang expiry,
+// sinusuri kapag may nagtanong. Ang pinakamalapit na posibleng
+// "awtomatiko" ay ito: sa susunod na pagbukas ng pahina.
+//
+// Bakit sa naunang araw at hindi kaagad pagkatapos mag-expire: ang
+// link na nagsara kaninang alas-otso ay maaaring kailanganin pang
+// palawigin ngayong hapon (natagalan ang klase, may hindi
+// nakapag-scan) — at ang pagpapalawig ay may saysay lamang kung
+// kaparehong URL pa rin ang hawak ng mga estudyante. Ibang araw,
+// ibang klase: doon na dapat mamatay ang lumang URL.
+//
+// Walang expiry ang bagong code hangga't hindi ka nagtatakda —
+// hindi minana ang luma, dahil hindi alam ng sistema kung kailan
+// ang susunod mong klase.
 $existing_links = [];
-foreach ($all_active_links as $key => $short_code) {
+$rotated        = [];
+
+foreach ($all_active_links as $key => $info) {
+    $short_code = $info['short_code'];
+
     if (!in_array($key, $valid_keys)) {
         // No enrolled students anymore — deactivate
         $deactivate = $conn->prepare("
@@ -219,10 +242,26 @@ foreach ($all_active_links as $key => $short_code) {
         ");
         $deactivate->bind_param("s", $short_code);
         $deactivate->execute();
-    } else {
-        // Still valid — keep in map for Step 3
-        $existing_links[$key] = $short_code;
+        continue;
     }
+
+    if ($info['is_stale']) {
+        $new_code = link_generate_code($conn);
+        $rot = $conn->prepare("
+            UPDATE attendance_links_tbl
+            SET short_code = ?, expires_at = NULL
+            WHERE short_code = ?
+        ");
+        $rot->bind_param("ss", $new_code, $short_code);
+
+        if ($rot->execute()) {
+            $rotated[]  = ['old' => $short_code, 'new' => $new_code];
+            $short_code = $new_code;
+        }
+    }
+
+    // Still valid — keep in map for Step 3
+    $existing_links[$key] = $short_code;
 }
 
 // ─── 3. Build links ───────────────────────────────────────────────────────────
@@ -234,12 +273,9 @@ foreach ($subjects as $subject) {
     if (isset($existing_links[$key])) {
         $short_code = $existing_links[$key];
     } else {
-        do {
-            $short_code = generateShortCode(6);
-            $chk        = $conn->prepare("SELECT id FROM attendance_links_tbl WHERE short_code = ?");
-            $chk->bind_param("s", $short_code);
-            $chk->execute();
-        } while ($chk->get_result()->num_rows > 0);
+        // Ang pagsusuri kung libre pa ang code ay nasa loob na ng
+        // link_generate_code() — tingnan ang includes/links.php.
+        $short_code = link_generate_code($conn);
 
         $reuse = $conn->prepare("
             SELECT short_code FROM attendance_links_tbl
@@ -293,4 +329,12 @@ foreach ($subjects as $subject) {
 // naipupundar ang isang lumang countdown sa session.
 $_SESSION[$cache_key] = ['data' => $links, 'time' => time()];
 
-echo json_encode(['success' => true, 'cached' => false, 'data' => attach_link_expiry($conn, $links)]);
+echo json_encode([
+    'success' => true,
+    'cached'  => false,
+    'data'    => attach_link_expiry($conn, $links),
+    // Para masabi ng pahina kung ilang link ang binigyan ng bagong
+    // code habang wala ka — kung hindi, tahimik na magbabago ang mga
+    // URL at magtataka ka kung bakit patay na ang ipinadala mo kahapon.
+    'rotated' => $rotated,
+]);

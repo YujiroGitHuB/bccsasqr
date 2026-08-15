@@ -24,6 +24,7 @@ function fetchLinks(forceRefresh = false) {
             allLinks = res.data;
             renderCards(allLinks);
             populateSectionFilter(allLinks);
+            announceRotated(res.rotated);
         })
         .catch(err => {
             console.error('Failed to load links:', err);
@@ -127,6 +128,31 @@ function buildCard(l) {
     `;
 }
 
+/**
+ * Sinasabi kung ilang link ang binigyan ng bagong code habang wala
+ * ka — ang mga nag-expire noong nakaraang araw, pinalitan ng
+ * pages/get_links_ajax.php sa pagbukas ng pahinang ito.
+ *
+ * Kailangang sabihin: kung tahimik itong nangyari, ipadadala mo ang
+ * lumang URL na nasa kopya mo at magtataka ka kung bakit walang
+ * nakakapag-scan.
+ */
+function announceRotated(rotated) {
+    if (!rotated || !rotated.length) return;
+
+    const n = rotated.length;
+
+    Swal.fire({
+        icon : 'info',
+        title: n === 1 ? 'One link was renewed' : n + ' links were renewed',
+        html : `They expired on an earlier day, so they were given fresh codes.<br>
+                <span style="font-size:.9em;opacity:.75">
+                    The old URLs no longer work — copy the new ones before sending.
+                </span>`,
+        confirmButtonColor: '#8b5cf6'
+    });
+}
+
 // ─── Expiry ───────────────────────────────────────────────────────────────────
 //
 // Ang buong estado ay galing sa server (tingnan ang
@@ -185,14 +211,33 @@ function buildExpiry(l) {
                     onclick="setExpiry('${code}', ${arg}, this)">${p.label}</button>`;
     }).join('');
 
+    // Ang na-expire na link ay may DALAWANG sagot, at magkaiba sila:
+    //
+    //   Extend   — kaparehong klase, natagalan lang. Kailangang
+    //              manatili ang code: 'yon ang hawak ng mga estudyante
+    //              na nasa harap mo ngayon.
+    //   New link — bagong session. Dapat mamatay ang lumang URL, dahil
+    //              nasa group chat na 'yon at may screenshot na.
+    //
+    // "New link" ang pangunahin dahil 'yon ang mas madalas: mas
+    // marami ang susunod na klase kaysa sa lumagpas sa oras.
+    const actions = l.is_expired
+        ? `<button type="button" class="lnk-exp-new" onclick="newLinkCode('${code}', this)">
+               <i class="bi bi-arrow-repeat"></i> New link
+           </button>
+           <button type="button" class="lnk-exp-toggle" onclick="extendExpiry('${uid}', ${l.expires_in || 0})">
+               <i class="bi bi-clock-history"></i> Extend
+           </button>`
+        : `<button type="button" class="lnk-exp-toggle" onclick="toggleExpiry('${uid}')">
+               <i class="bi bi-clock-history"></i>
+               ${l.expires_at ? 'Change' : 'Set expiry'}
+           </button>`;
+
     return `
         <div class="lnk-exp" id="${uid}">
             <div class="lnk-exp-row">
                 ${status}
-                <button type="button" class="lnk-exp-toggle" onclick="toggleExpiry('${uid}')">
-                    <i class="bi bi-clock-history"></i>
-                    ${l.is_expired ? 'Extend' : (l.expires_at ? 'Change' : 'Set expiry')}
-                </button>
+                <span class="lnk-exp-actions">${actions}</span>
             </div>
 
             <div class="lnk-exp-panel" hidden>
@@ -211,6 +256,96 @@ function buildExpiry(l) {
 function toggleExpiry(uid) {
     const panel = document.getElementById(uid)?.querySelector('.lnk-exp-panel');
     if (panel) panel.hidden = !panel.hidden;
+}
+
+/**
+ * Extend, na may tanong kung matagal nang sarado ang link.
+ *
+ * Ang link na nag-expire dalawang oras na ang nakalipas ay malamang
+ * hindi na ang klaseng nasa harap mo — at ang pagpapalawig nito ay
+ * muling nagbubukas ng URL na ipinamigay mo na. Ang nag-expire lang
+ * kanina-kanina ay walang tanong: 'yon ang totoong "natagalan ang
+ * klase".
+ *
+ * Ang lampas-isang-araw ay hindi na umaabot dito — binigyan na 'yon
+ * ng bagong code ng pages/get_links_ajax.php bago pa maipakita.
+ */
+function extendExpiry(uid, expiresIn) {
+    const overFor = Math.abs(expiresIn || 0);   // negatibo ang expires_in kapag lumipas na
+
+    if (overFor < 7200) {
+        toggleExpiry(uid);
+        return;
+    }
+
+    const hours = Math.round(overFor / 3600);
+
+    Swal.fire({
+        icon : 'question',
+        title: 'Extend this same link?',
+        html : `Closed about <b>${hours} hour${hours === 1 ? '' : 's'}</b> ago.<br>
+                <span style="font-size:.9em;opacity:.75">
+                    Anyone who already has this URL — group chat, screenshot — can use it again.
+                    For a new class, choose <b>New link</b> instead.
+                </span>`,
+        showCancelButton : true,
+        confirmButtonText: 'Yes, extend the same link',
+        cancelButtonText : 'Cancel',
+        confirmButtonColor: '#8b5cf6'
+    }).then(r => {
+        if (r.isConfirmed) toggleExpiry(uid);
+    });
+}
+
+/**
+ * Bagong short_code para sa parehong klase. Walang expiry ang bagong
+ * link, kaya kusang bumubukas ang panel — ang susunod na hakbang ay
+ * ang pagtatakda ng oras, bago mo pa ito ipadala.
+ */
+function newLinkCode(short_code, btn) {
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '…';
+
+    fetch('../crud/new_link_code.php', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body   : 'short_code=' + encodeURIComponent(short_code)
+    })
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success) {
+                btn.disabled = false;
+                btn.innerHTML = original;
+                Swal.fire({ icon: 'error', title: 'Could not issue a new link', text: res.message || 'Please try again.' });
+                return;
+            }
+
+            // Nagbago ang code, kaya nagbago rin ang URL at ang id ng
+            // card. Ang buong listahan ang kinukuhang muli sa halip na
+            // tagpi-tagpiing ayusin ang isang card.
+            fetchLinks(true);
+
+            Swal.fire({
+                icon : 'success',
+                title: 'New link issued',
+                html : `The old URL no longer works.<br>
+                        <b style="letter-spacing:2px">${escHtml(res.short_code)}</b><br>
+                        <span style="font-size:.9em;opacity:.75">Set an expiry before you send it.</span>`,
+                confirmButtonColor: '#8b5cf6'
+            }).then(() => {
+                // Buksan ang panel ng BAGONG card kapag naipinta na.
+                setTimeout(() => {
+                    const panel = document.getElementById('exp-' + res.short_code)?.querySelector('.lnk-exp-panel');
+                    if (panel) panel.hidden = false;
+                }, 400);
+            });
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+            Swal.fire({ icon: 'error', title: 'Network error', text: 'Please try again.' });
+        });
 }
 
 function setExpiry(short_code, opts, btn) {
