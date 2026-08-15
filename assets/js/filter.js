@@ -39,4 +39,12 @@ $(document).ready(function () {
         $('#filterSection').val('');
         table.search('').columns().search('').draw();
     });
+
+    // The section can arrive preselected from a link (the dashboard
+    // section cards point here with ?section=2A). Marking the <option>
+    // selected server-side is not enough — the filter above only runs
+    // on `change`, so nothing would actually be filtered.
+    if ($('#filterSection').val()) {
+        $('#filterSection').trigger('change');
+    }
 });

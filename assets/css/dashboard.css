@@ -17,6 +17,26 @@
     --dash-line: rgba(var(--tint), .07);
     --dash-muted: rgba(var(--tint), .45);
     --dash-accent: #667eea;
+
+    /* ── Chart palette ────────────────────────────────────────
+       The trend line is drawn on a <canvas>, which cannot read a
+       stylesheet: its colours were literals, and in light mode the
+       axis labels and grid were white on a white card. They are
+       declared here and read back in JavaScript
+       (getComputedStyle → these already have --tint substituted),
+       so the chart and the page share one source and one theme.
+
+       The series colour itself is NOT here — #667eea is the brand
+       accent and reads on both grounds. */
+    --chart-ink: rgba(var(--tint), .45);
+    --chart-grid: rgba(var(--tint), .09);
+    --chart-axis: rgba(var(--tint), .16);
+    --chart-label: var(--ink);
+    --chart-surface: var(--surface);
+    --chart-tip-bg: var(--surface-3);
+    --chart-tip-line: rgba(var(--tint), .14);
+    --chart-tip-title: var(--ink);
+    --chart-tip-body: var(--ink-3);
 }
 
 /* ─── Hero ────────────────────────────────────────────────── */
@@ -284,7 +304,7 @@
 /* ─── KPI cards ───────────────────────────────────────────── */
 .dash-page .dash-kpis {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
     margin-bottom: 1.5rem;
 }
@@ -930,6 +950,365 @@
 }
 
 /* ─── Responsive ──────────────────────────────────────────── */
+/* ─── Change indicator on the Present card ────────────────
+   A count with nothing to compare it to is not information: 142
+   present is good or terrible depending on the day before. The
+   comparison is against the last day that HAD scans (see
+   dashboard.php), so a Monday is never measured against an empty
+   Sunday. Colour is not the only carrier — the arrow and the
+   tooltip say the same thing. */
+.dash-page .dash-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: .15rem;
+    margin-left: .35rem;
+    padding: .1rem .4rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+.dash-page .dash-delta.up {
+    color: var(--ok-ink, #34d399);
+    background: rgba(16, 185, 129, .14);
+}
+
+.dash-page .dash-delta.down {
+    color: var(--bad-ink, #f87171);
+    background: rgba(239, 68, 68, .14);
+}
+
+/* ─── Trend window switch ─────────────────────────────────── */
+.dash-page .dash-range {
+    display: inline-flex;
+    gap: 3px;
+    padding: 3px;
+    border-radius: 10px;
+    background: rgba(var(--tint), .05);
+    border: 1px solid var(--dash-line);
+}
+
+.dash-page .dash-range a {
+    padding: .28rem .6rem;
+    border-radius: 7px;
+    font-size: .75rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--dash-muted);
+    transition: background .15s, color .15s;
+}
+
+.dash-page .dash-range a:hover {
+    color: var(--ink);
+    background: rgba(var(--tint), .06);
+}
+
+.dash-page .dash-range a.active {
+    color: var(--on-accent);
+    background: var(--dash-accent);
+}
+
+/* ─── Students at risk ────────────────────────────────────── */
+.dash-page .dash-risk-panel {
+    padding: 1.15rem 1.35rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid var(--dash-line);
+    border-left: 3px solid #ef4444;
+    background: var(--dash-surface);
+}
+
+.dash-page .dash-risk-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: .85rem;
+}
+
+.dash-page .dash-risk-panel-head h5 {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin: 0 0 2px;
+    font-size: .98rem;
+    font-weight: 700;
+    color: var(--ink-2);
+}
+
+.dash-page .dash-risk-panel-head h5 i {
+    color: var(--bad-ink, #f87171);
+}
+
+.dash-page .dash-risk-panel-head small {
+    font-size: .78rem;
+    color: var(--dash-muted);
+}
+
+.dash-page .dash-risk-count {
+    padding: .3rem .75rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 700;
+    color: var(--bad-ink, #f87171);
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .28);
+    white-space: nowrap;
+}
+
+.dash-page .dash-risk-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dash-page .dash-risk-list li {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .55rem 0;
+    border-bottom: 1px solid rgba(var(--tint), .05);
+}
+
+.dash-page .dash-risk-list li:last-child {
+    border-bottom: none;
+}
+
+.dash-page .dash-risk-name {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.dash-page .dash-risk-name strong {
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--ink-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dash-page .dash-risk-name small {
+    font-size: .72rem;
+    color: rgba(var(--tint), .35);
+}
+
+/* Absences over sessions held — the count alone ("7 missed") means
+   nothing without knowing whether 8 or 40 classes ran. */
+.dash-page .dash-risk-miss {
+    display: flex;
+    align-items: baseline;
+    gap: .3rem;
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--warn-ink, #fcd34d);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.dash-page .dash-risk-miss.crit {
+    color: var(--bad-ink, #f87171);
+}
+
+.dash-page .dash-risk-miss small {
+    font-size: .68rem;
+    font-weight: 600;
+    opacity: .65;
+}
+
+.dash-page .dash-risk-open {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: .8rem;
+    color: var(--dash-muted);
+    background: rgba(var(--tint), .05);
+    transition: background .15s, color .15s;
+}
+
+.dash-page .dash-risk-open:hover {
+    color: var(--ink);
+    background: rgba(var(--tint), .1);
+}
+
+.dash-page .dash-risk-more {
+    margin: .75rem 0 0;
+    font-size: .76rem;
+    color: rgba(var(--tint), .35);
+}
+
+/* ─── Section toolbar ─────────────────────────────────────── */
+/* Ships `hidden` and is revealed by dashboard_sections.js — a search
+   box that cannot search is worse than no search box. */
+.dash-page .dash-cards-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.dash-page .dash-cards-toolbar[hidden] {
+    display: none;
+}
+
+.dash-page .dash-search {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex: 1 1 220px;
+    max-width: 320px;
+    padding: .45rem .75rem;
+    border-radius: 10px;
+    border: 1px solid var(--dash-line);
+    background: rgba(var(--tint), .04);
+    color: var(--dash-muted);
+}
+
+.dash-page .dash-search:focus-within {
+    border-color: rgba(102, 126, 234, .5);
+}
+
+.dash-page .dash-search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: .84rem;
+}
+
+.dash-page .dash-search input::placeholder {
+    color: rgba(var(--tint), .35);
+}
+
+/* Chrome draws its own clear button; it is a light-grey glyph that
+   disappears on a dark ground. */
+.dash-page .dash-search input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M12 4l-8 8' stroke='black' stroke-width='2' fill='none'/%3E%3C/svg%3E") center/contain no-repeat;
+    cursor: pointer;
+    opacity: .5;
+}
+
+.dash-page .dash-sort {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--dash-muted);
+}
+
+.dash-page .dash-sort select {
+    padding: .45rem .65rem;
+    border-radius: 10px;
+    border: 1px solid var(--dash-line);
+    background: rgba(var(--tint), .04);
+    color: var(--ink-2);
+    font-size: .82rem;
+    cursor: pointer;
+}
+
+.dash-page .dash-cards-count {
+    margin-left: auto;
+    font-size: .76rem;
+    font-weight: 600;
+    color: rgba(var(--tint), .3);
+    white-space: nowrap;
+}
+
+/* A card hidden by the filter must leave the grid, not just go
+   invisible — Bootstrap's columns are display:flex and would keep
+   holding their space. */
+.dash-page .dash-card-col[hidden],
+.dash-page [data-year-header][hidden] {
+    display: none;
+}
+
+/* ─── Section tag as a link ───────────────────────────────── */
+.dash-page a.dash-tag {
+    text-decoration: none;
+    transition: filter .15s, border-color .15s;
+}
+
+.dash-page a.dash-tag:hover {
+    filter: brightness(1.12);
+    border-color: var(--tag, #a5b4fc);
+}
+
+.dash-page a.dash-tag:focus-visible {
+    outline: 2px solid var(--dash-accent);
+    outline-offset: 2px;
+}
+
+/* One export button on a section card, where the subject cards have
+   two side by side. */
+.dash-page .dash-exports.single {
+    grid-template-columns: 1fr;
+    margin-top: .5rem;
+}
+
+/* ─── Activity panel extras ───────────────────────────────── */
+.dash-page .dash-act-live {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-left: .5rem;
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--ok-ink, #6ee7b7);
+}
+
+.dash-page .dash-act-live[hidden] {
+    display: none;
+}
+
+.dash-page .dash-act-live .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: dashPulse 2s ease-in-out infinite;
+}
+
+.dash-page .dash-act-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: .7rem;
+    border-top: 1px solid rgba(var(--tint), .06);
+    font-size: .8rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--dash-accent);
+    transition: background .15s;
+}
+
+.dash-page .dash-act-all:hover {
+    background: rgba(var(--tint), .04);
+}
+
+@media (max-width: 1200px) {
+    .dash-page .dash-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 992px) {
     .dash-page .dash-kpis {
         grid-template-columns: repeat(2, minmax(0, 1fr));

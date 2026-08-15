@@ -40,6 +40,18 @@
         // Bootstrap's own components read this one, not --data-theme.
         root.setAttribute('data-bs-theme', theme);
         paintButton(theme);
+
+        // Anything painted by JavaScript rather than CSS has to be told:
+        // a <canvas> keeps whatever colour it was drawn with, so the
+        // dashboard chart would stay dark-on-white until a reload.
+        // Fired on the document so a page can listen without this file
+        // knowing anything about it.
+        try {
+            document.dispatchEvent(new CustomEvent('themechange', { detail: { theme: theme } }));
+        } catch (e) {
+            // Older browsers without the CustomEvent constructor. The
+            // page is still themed; only the repaint hook is missed.
+        }
     }
 
     // The icon shows what you will GET, not what you are looking at:

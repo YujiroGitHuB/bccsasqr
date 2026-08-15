@@ -41,6 +41,12 @@ $to   = $validDate($_GET['to']   ?? null) ?? date('Y-m-d');
 if ($from > $to) {
     [$from, $to] = [$to, $from];
 }
+
+// A section can be preselected by a link — the dashboard section cards
+// point here. It only preselects the existing dropdown (which filters
+// the loaded rows in JavaScript); the rows fetched are still decided by
+// the date window alone.
+$preSection = cleanSection(trim($_GET['section'] ?? ''));
 ?>
 <!doctype html>
 <html lang="en">
@@ -198,7 +204,8 @@ if ($from > $to) {
                                         while ($sec = $secQ->fetch_assoc()) {
                                             $cleanSec = cleanSection($sec['section']);
                                             $full = htmlspecialchars($cleanSec);
-                                            echo "<option value='{$full}'>{$full}</option>";
+                                            $sel  = ($preSection !== '' && $cleanSec === $preSection) ? " selected" : "";
+                                            echo "<option value='{$full}'{$sel}>{$full}</option>";
                                         }
                                         ?>
                                     </select>
