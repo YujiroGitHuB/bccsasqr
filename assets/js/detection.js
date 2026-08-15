@@ -31,12 +31,14 @@
  * ng Messenger sa iPhone, at walang Chrome ang karamihan sa kanila —
  * Safari ang nasa telepono nila. Sinusunod na nito ang platform.
  *
- * Ang babala ay hadlang at hindi paalala: walang "continue anyway",
- * walang pagsasara sa labas, at bumabalik ito pagkatapos kumopya ng
- * link. Sinasadya iyon — hindi gumagana ang camera at ang pag-upload
- * sa loob ng in-app browser, at hindi sumusunod ang layout sa lapad
- * ng telepono doon, kaya ang pagpapatuloy ay hindi mas mababang
- * antas ng serbisyo kundi isang sirang pahina.
+ * Ang babala ay hadlang at hindi paalala: walang "continue anyway" at
+ * walang pagsasara sa labas. Pagkatapos kumopya ng link, sinusubukan
+ * nitong ilabas ang estudyante sa in-app browser — at kung hindi
+ * tumalab iyon, bumabalik ang babala. Sinasadya iyon: hindi gumagana
+ * ang camera at ang pag-upload sa loob ng in-app browser, at hindi
+ * sumusunod ang layout sa lapad ng telepono doon, kaya ang
+ * pagpapatuloy ay hindi mas mababang antas ng serbisyo kundi isang
+ * sirang pahina.
  *
  * Ang kapalit: isang regex sa user agent ang nagpapasya nito, kaya
  * ang maling tama ay nangangahulugang hindi makakapag-attendance ang
@@ -147,6 +149,35 @@ const BrowserDetector = (function () {
 
     // Ibinabalik ang promise ng SweetAlert — nakasalalay dito ang
     // muling pagbukas ng babala kapag natapos ang timer.
+    /**
+     * Sinusubukang ilabas ang estudyante sa in-app browser.
+     *
+     * history.back() muna: sa Messenger o Instagram, ang nauna ay ang
+     * mismong usapan o feed na pinanggalingan niya — kaya ito ang
+     * pinakamalapit sa "isara mo na ito" na aktuwal na gumagana.
+     *
+     * window.close() ang pangalawa, na madalas ay walang epekto: ang
+     * isang tab na hindi binuksan ng script ay hindi maisasara ng
+     * script. Sinusubukan pa rin dahil may ilang webview na sumusunod.
+     *
+     * HINDI na kasama ang lumang ikatlong hakbang — ang pagpunta sa
+     * about:blank kapag pareho silang nabigo. Iyon ay hindi pag-alis
+     * kundi pagpunta sa isang blangkong pahina: nawawala ang tagubilin
+     * at ang link, at wala nang mababalikan ang estudyante.
+     */
+    function leaveInAppBrowser() {
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        try {
+            window.close();
+        } catch (e) {
+            // Inaasahan. Ang babala ang babalik kapag nandito pa rin siya.
+        }
+    }
+
     function showCopied(target) {
         return Swal.fire({
             icon: 'success',
@@ -213,19 +244,25 @@ const BrowserDetector = (function () {
             buttonsStyling: false
         }).then(result => {
             if (result.isConfirmed) {
-                // Nananatili ang pahina — hindi ito isinasara. Ang
-                // lumang daloy ay history.back(), window.close(), tapos
-                // about:blank, na madalas walang epekto sa isang in-app
-                // browser at nag-iiwan ng blangkong tab; may ilang app
-                // ding nagbubura ng clipboard sa paglabas.
-                //
-                // Bumabalik ang babala pagkatapos ng kumpirmasyon. Kung
-                // hindi, ang pagpindot ng "Copy link" ay magiging siya
-                // mismong "Continue anyway" na inalis — mananatiling
-                // bukas ang sirang pahina sa likod nito.
                 copyURL()
                     .then(() => showCopied(guide.browser))
-                    .then(() => showWarning(browserName));
+                    .then(() => {
+                        leaveInAppBrowser();
+
+                        // Ang dalawang paraan ng pag-alis ay pareho
+                        // TAHIMIK kapag nabigo — walang error at walang
+                        // paraang tanungin kung tumalab ba. Kaya ganito
+                        // ang pagkakaalam: kung talagang umalis ang
+                        // pahina, hindi na tatakbo ang timer na ito
+                        // dahil na-unload na ang dokumento. Kung
+                        // tumakbo ito, ibig sabihin nandito pa rin siya
+                        // — at kailangang bumalik ang babala, dahil
+                        // kung hindi, ang "Copy link" ang magiging
+                        // siya mismong "Continue anyway" na inalis:
+                        // mananatiling bukas ang sirang pahina sa
+                        // likod nito.
+                        setTimeout(() => showWarning(browserName), 1200);
+                    });
             }
         });
     }

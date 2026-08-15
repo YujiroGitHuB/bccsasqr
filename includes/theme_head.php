@@ -1,4 +1,12 @@
-<?php require_once __DIR__ . '/asset.php'; ?>
+<?php require_once __DIR__ . '/asset.php';
+
+/* Where the including page sits relative to the project root. Pages
+   one folder down (the QR generator, scanner, tracker, pages/…) take
+   the default; index.php sits AT the root and sets $themeBase = ''
+   before including this. Without it the link would resolve above the
+   web root and the tokens would silently never load. */
+$themeBase = isset($themeBase) ? $themeBase : '../';
+?>
 <!-- Theme, resolved BEFORE any stylesheet loads.
 
      Inline and blocking on purpose: read from an external file this
@@ -10,14 +18,15 @@
      which have no media-query mode of their own and must be told
      explicitly.
 
-     Shared by includes/header.php (admin pages) and by the QR
-     generator, scanner, tracker and student photo profile heads. All
-     of those sit one directory below the project root, which is why
-     the path can be a fixed "../".
+     Shared by includes/header.php (admin pages), by the QR generator,
+     scanner, tracker and student photo profile heads, and by
+     index.php — which passes $themeBase = '' because it is the one
+     includer that is not a directory below the root.
 
-     NOT included by index.php or reg.php: the login and registration
-     pages are a full-bleed dark hero and stay dark in both themes —
-     see the note at the top of assets/css/login.css. -->
+     NOT included by reg.php: registration is still a full-bleed dark
+     hero and stays dark in both themes. The login page used to be the
+     same; it now follows the theme like the rest of the app — see the
+     note at the top of assets/css/login.css. -->
 <script>
     (function () {
         try {
@@ -37,4 +46,4 @@
     })();
 </script>
 <!-- Tokens first: every stylesheet below reads from them. -->
-<link rel="stylesheet" href="<?= asset('../assets/css/theme.css') ?>">
+<link rel="stylesheet" href="<?= asset($themeBase . 'assets/css/theme.css') ?>">
