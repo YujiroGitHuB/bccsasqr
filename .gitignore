@@ -1,0 +1,44 @@
+# Claude Code local config. The chrome-devtools MCP server is a per-machine
+# dev choice, not part of the app. It also matters for deploys: the FTP
+# exclude list in .github/workflows/deploy.yml uses `**/.git*`, which does
+# NOT match this filename, so a committed .mcp.json would be uploaded into
+# the live web root for no reason.
+.mcp.json
+.claude/settings.local.json
+
+# Editors
+.vscode/
+.idea/
+*.code-workspace
+
+# Windows / macOS shell droppings
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Database dumps written by the in-app backup feature. These carry real
+# student records and rows from `users` — they belong on the server, not in
+# version control. Note the narrow pattern: migrations/*.sql are tracked on
+# purpose and must stay that way, so never widen this to a bare *.sql.
+backups/*.sql
+
+# Student photos and avatars. deploy.yml already excludes uploads/** so that
+# server-side uploads survive a deploy; keeping the repo in step means the
+# same files are never carried in git either. Directories are re-included so
+# git can descend into them and keep the .gitkeep placeholders, which is what
+# makes the folders exist on a fresh clone.
+uploads/**
+!uploads/**/
+!uploads/**/.gitkeep
+
+# Local secrets. The FTP credentials live in GitHub Actions secrets under the
+# `Server` environment, but keep this here so a local file never slips into a
+# commit by accident.
+.env
+.env.local
+.env.*.local
+
+# Logs and scratch
+*.log
+error_log
+node_modules/

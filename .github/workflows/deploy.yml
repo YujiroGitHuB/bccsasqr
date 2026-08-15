@@ -29,9 +29,14 @@ jobs:
           # response attachment as an orphan and deletes it. An uploaded
           # banner only survived until the next push. Excluded paths are
           # skipped entirely — not uploaded, not deleted.
+          #
+          # backups/** is the same story: the in-app backup feature writes its
+          # .sql dumps on the server, so an unexcluded backups/ means every
+          # push wipes the dumps it finds there.
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
             **/README.md
             uploads/**
+            backups/**
