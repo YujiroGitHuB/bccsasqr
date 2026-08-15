@@ -54,7 +54,32 @@
 
     border: 1px solid var(--det-line) !important;
     border-radius: 16px !important;
-    max-width: 30rem;
+
+    /* ── Lapad ────────────────────────────────────────────────
+       Ang `max-width: 30rem` lamang ang nakasulat dati, at iyon ang
+       sumisira sa telepono.
+
+       Ang panuntunan ng SweetAlert ay:
+
+           div:where(.swal2-container) div:where(.swal2-popup) {
+               width: var(--swal2-width);      ... 32em = 512px
+               max-width: 100%;
+           }
+
+       Nakabalot ito sa :where(), na WALANG specificity. Kaya ang
+       payak na .det-popup (0,1,0) ay tumatalo sa max-width: 100%
+       nila at pinapalitan ito ng 480px — samantalang nananatili ang
+       width nilang 512px. Sa isang 360px na screen, 480px ang
+       nagiging popup. Hindi maliit na kahon sa loob ng pahina ang
+       lumalabas sa gilid: ang mismong dialog.
+
+       Ang width: 100% ay sumusunod sa .swal2-container (na may
+       sariling padding), at ang max-width ang naglalagay ng hangganan
+       sa malalaking screen. Sa ganitong ayos ay hindi kailanman mas
+       malapad ang popup kaysa sa hawak nito. */
+    width: 100% !important;
+    max-width: 30rem !important;
+    box-sizing: border-box;
 }
 
 .det-popup .det-title,
@@ -68,6 +93,9 @@
     color: var(--det-ink) !important;
     margin-top: .5rem !important;
     text-align: left !important;
+    /* Ang mahabang salitang walang puwang — isang URL, isang pangalan
+       ng app — ay hindi makakapagtulak sa gilid. */
+    overflow-wrap: anywhere;
 }
 
 /* ─── Ang natuklasan ──────────────────────────────────────── */
@@ -163,7 +191,33 @@
     color: var(--det-accent) !important;
 }
 
-@media (max-width: 400px) {
+/* ─── Telepono ────────────────────────────────────────────────
+   Nagsasalansan ang padding sa isang 360px na screen: ang
+   .swal2-container, ang popup, saka ang bawat kahon sa loob nito.
+   Pinapaliit dito ang dalawa sa tatlo, at ang pindutan ay buong
+   lapad — mas madaling tamaan ng hinlalaki, at hindi na nagmumukhang
+   naiwan sa isang tabi. */
+@media (max-width: 420px) {
+    .det-popup {
+        padding: 1rem .85rem !important;
+    }
+
+    .det-popup .det-title,
+    .det-popup .swal2-title {
+        font-size: 1.15rem !important;
+        padding: 0 !important;
+    }
+
+    .det-found,
+    .det-steps {
+        padding: .65rem .7rem;
+    }
+
+    .det-steps ol {
+        padding-left: 1rem;
+        font-size: .82rem;
+    }
+
     .det-popup .det-confirm {
         width: 100%;
     }
