@@ -204,11 +204,25 @@
     padding-top: .65rem;
 }
 
+/* Ang pill sa kaliwa, ang mga pindutan sa kanan. space-between at
+   hindi margin-left:auto: kapag makitid ang card at bumaba ng linya
+   ang mga pindutan, ang space-between ay nag-iiwan sa kanila sa
+   kaliwa — habang ang auto na margin ay itutulak sila sa kanang
+   dulo ng bagong linya, kung saan mukha silang naiwan. */
 .link-page .lnk-exp-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: .5rem;
     flex-wrap: wrap;
+}
+
+/* Ang eksaktong petsa. Nasa ilalim ng pill at hindi sa loob nito:
+   isang linyang mababasa kapag kailangan, at hindi humahati sa row. */
+.link-page .lnk-exp-when {
+    margin-top: .35rem;
+    font-size: .7rem;
+    color: rgba(var(--tint), .38);
 }
 
 .link-page .lnk-exp-badge {
@@ -224,16 +238,10 @@
     border: 1px solid rgba(16, 185, 129, .28);
 }
 
+/* tabular-nums: pare-pareho ang lapad ng bawat numero, kaya hindi
+   gumagalaw ang pill sa bawat tiktok ng segundo. */
 .link-page .lnk-exp-badge b {
     font-variant-numeric: tabular-nums;
-}
-
-/* Ang eksaktong petsa ay nasa tabi ng bilang pababa: ang "1h 42m" ay
-   hindi masasagot ang "anong oras ba talaga ito magsasara?" */
-.link-page .lnk-exp-badge small {
-    font-weight: 500;
-    opacity: .7;
-    font-size: .68rem;
 }
 
 .link-page .lnk-exp-badge.is-soon {

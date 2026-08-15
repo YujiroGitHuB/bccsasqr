@@ -179,28 +179,44 @@ function humanLeft(seconds) {
     const d = Math.floor(seconds / 86400);
     const h = Math.floor((seconds % 86400) / 3600);
     const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
 
-    if (d > 0) return d + 'd ' + h + 'h';
-    if (h > 0) return h + 'h ' + m + 'm';
-    if (m > 0) return m + 'm';
-    return Math.floor(seconds) + 's';
+    // Naka-pad ang segundo (at ang minuto kapag may oras) para hindi
+    // tumatalon ang lapad ng teksto kada tiktok — kasama ang
+    // tabular-nums sa CSS, nananatiling nakatigil ang bilang.
+    const pad = n => String(n).padStart(2, '0');
+
+    // Sa antas ng araw, ingay na ang segundo — walang nagbabantay ng
+    // link na may dalawang araw pang natitira.
+    if (d > 0) return d + 'd ' + h + 'h ' + pad(m) + 'm';
+    if (h > 0) return h + 'h ' + pad(m) + 'm ' + pad(s) + 's';
+    if (m > 0) return m + 'm ' + pad(s) + 's';
+    return s + 's';
 }
 
 function buildExpiry(l) {
     const code = l.short_code;
     const uid  = 'exp-' + code;
 
-    let status;
+    // Ang eksaktong petsa ay lumabas sa pill at naging sariling linya
+    // sa ibaba. Sa loob ng pill, dalawang bagay ang laman nito — ang
+    // bilang pababa at ang "Aug 15, 2026 11:59 PM" — at sa lapad ng
+    // isang card ay itinutulak niyon ang Change sa sarili nitong linya,
+    // kung saan mukha itong naiwan. Ang pill ang mabilis basahin; ang
+    // petsa ay ang sagot sa "anong oras ba talaga", at hindi
+    // kailangang nasa loob ng parehong hugis.
+    let status, when = '';
+
     if (l.is_expired) {
-        status = `<span class="lnk-exp-badge is-over"><i class="bi bi-slash-circle"></i> Expired
-                      <small>${escHtml(l.expires_label || '')}</small></span>`;
+        status = `<span class="lnk-exp-badge is-over"><i class="bi bi-slash-circle"></i> Expired</span>`;
+        when   = l.expires_label ? `Closed ${escHtml(l.expires_label)}` : '';
     } else if (l.expires_in !== null && l.expires_in !== undefined) {
         const soon = l.expires_in <= 900 ? ' is-soon' : '';
         status = `<span class="lnk-exp-badge${soon}" data-countdown="${l.expires_in}">
                       <i class="bi bi-hourglass-split"></i>
                       Closes in <b class="lnk-exp-clock">${humanLeft(l.expires_in)}</b>
-                      <small>${escHtml(l.expires_label || '')}</small>
                   </span>`;
+        when   = escHtml(l.expires_label || '');
     } else {
         status = `<span class="lnk-exp-badge is-none"><i class="bi bi-infinity"></i> No expiry</span>`;
     }
@@ -239,6 +255,7 @@ function buildExpiry(l) {
                 ${status}
                 <span class="lnk-exp-actions">${actions}</span>
             </div>
+            ${when ? `<div class="lnk-exp-when">${when}</div>` : ''}
 
             <div class="lnk-exp-panel" hidden>
                 <div class="lnk-exp-presets">${presets}</div>

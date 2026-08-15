@@ -224,9 +224,12 @@ if ($result && $result->num_rows > 0) {
                 const m = Math.floor((left % 3600) / 60);
                 const s = left % 60;
 
+                // Naka-pad para hindi tumatalon ang lapad kada segundo.
+                const pad = n => String(n).padStart(2, '0');
+
                 clock.textContent = h > 0
-                    ? h + 'h ' + m + 'm'
-                    : (m > 0 ? m + 'm ' + s + 's' : s + 's');
+                    ? h + 'h ' + pad(m) + 'm ' + pad(s) + 's'
+                    : (m > 0 ? m + 'm ' + pad(s) + 's' : s + 's');
 
                 // Ang huling limang minuto ay iba ang kulay — sapat pang
                 // panahon para magmadali, hindi pa huli.
