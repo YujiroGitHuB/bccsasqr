@@ -8,6 +8,17 @@ let faceDetectionInterval = null;
 let currentFaceDescriptor = null;
 let capturedDescriptors = []; // Store all 5 descriptors
 
+/* detectFace() runs every 100ms and rewrites faceStatus on every pass, so a
+   message written from anywhere else survived about a tenth of a second. The
+   "face already registered" warning was the one that mattered: it appeared
+   and was gone before it could be read, leaving the user with a green "Face
+   detected!" and no idea why nothing had been captured.
+
+   While this is set, the detector still tracks and still draws — it just
+   stops writing the status line. Pressing the capture button or reopening
+   the modal clears it, because both mean the user has moved on. */
+let statusLocked = false;
+
 const TOTAL_CAPTURES = 5; // Number of face images to capture
 const CAPTURE_DELAY = 800; // Delay between captures (ms)
 
@@ -151,19 +162,23 @@ async function detectFace() {
         
         ctx.restore();
         
-        if (capturedDescriptors.length === 0) {
-            faceStatus.textContent = 'Face detected! Ready to capture 5 images.';
-        } else {
-            faceStatus.textContent = `Captured ${capturedDescriptors.length}/${TOTAL_CAPTURES} images. Keep looking at camera...`;
+        if (!statusLocked) {
+            if (capturedDescriptors.length === 0) {
+                faceStatus.textContent = 'Face detected! Ready to capture 5 images.';
+            } else {
+                faceStatus.textContent = `Captured ${capturedDescriptors.length}/${TOTAL_CAPTURES} images. Keep looking at camera...`;
+            }
+            faceStatus.className = 'face-status success';
         }
-        faceStatus.className = 'face-status success';
-        
+
         captureFaceBtn.disabled = false;
         currentFaceDescriptor = detection.descriptor;
     } else {
-        faceStatus.textContent = 'Looking for face... Please face the camera.';
-        faceStatus.className = 'face-status detecting';
-        
+        if (!statusLocked) {
+            faceStatus.textContent = 'Looking for face... Please face the camera.';
+            faceStatus.className = 'face-status detecting';
+        }
+
         if (capturedDescriptors.length === 0) {
             captureFaceBtn.disabled = true;
         }
@@ -306,6 +321,7 @@ async function openModal() {
     faceStatus.textContent = 'Initializing...';
     faceStatus.className = 'face-status';
     captureFaceBtn.disabled = true;
+    statusLocked = false; // fresh session, nothing to hold on screen
     capturedDescriptors = []; // Reset captures
     
     captureFaceBtn.textContent = 'Start Capturing (5 Images)';
@@ -372,9 +388,13 @@ async function captureFace() {
         return;
     }
     
+    // Pressing capture is the user acknowledging whatever was on the status
+    // line, so the detector may write to it again from here.
+    statusLocked = false;
+
     // Disable button during capture process
     captureFaceBtn.disabled = true;
-    
+
     // Flash effect helper
     const flashEffect = () => {
         canvas.style.opacity = '0.3';
@@ -414,8 +434,13 @@ async function captureFace() {
                         confirmButtonColor: '#667eea'
                     });
                     
-                    faceStatus.textContent = 'Face already exists. Please try different face.';
+                    faceStatus.textContent = duplicateCheck.userName
+                        ? `Face already registered to ${duplicateCheck.userName}. Try a different face.`
+                        : 'Face already exists. Please try a different face.';
                     faceStatus.className = 'face-status error';
+                    // Hold it on screen. Without this the next detector pass,
+                    // at most 100ms away, replaces it with "Face detected!".
+                    statusLocked = true;
                     return;
                 }
             }

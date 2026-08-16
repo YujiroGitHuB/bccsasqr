@@ -60,6 +60,7 @@
     let captured = [];
     let liveDescriptor = null;
     let busy = false;
+    let statusLocked = false;
 
     // ── Card ────────────────────────────────────────────────────
 
@@ -101,15 +102,29 @@
         }
     }
 
-    function setStatus(text, kind) {
+    /* The detector loop rewrites the status line several times a second, so
+       anything written from outside it needs to say so or it is gone before
+       it can be read — which is exactly what happened to the "already
+       registered" warning. setStatus(..., true) holds a message until the
+       user does something that means they have seen it: pressing Capture, or
+       reopening the dialog. */
+    function setStatus(text, kind, hold) {
         statusEl.textContent = text;
         statusEl.className = 'pf-face-status' + (kind ? ' is-' + kind : '');
+        if (hold) statusLocked = true;
+    }
+
+    // What the detector uses. Never overwrites a held message.
+    function setLiveStatus(text, kind) {
+        if (statusLocked) return;
+        setStatus(text, kind);
     }
 
     async function openModal() {
         captured = [];
         liveDescriptor = null;
         busy = false;
+        statusLocked = false; // fresh session, nothing to hold on screen
         modal.hidden = false;
         document.body.style.overflow = 'hidden';
         dialogTitle.textContent = (enrolledOnServer || pending === 'capture')
@@ -154,7 +169,8 @@
                 err && err.name === 'NotAllowedError'
                     ? 'Camera permission was denied. Allow it in the browser, then try again.'
                     : 'Could not start the camera. ' + (err && err.message ? err.message : ''),
-                'bad'
+                'bad',
+                true
             );
         }
     }
@@ -188,7 +204,7 @@
         if (!detection) {
             liveDescriptor = null;
             if (captured.length === 0) captureBtn.disabled = true;
-            setStatus('Looking for a face…');
+            setLiveStatus('Looking for a face…');
             return;
         }
 
@@ -220,7 +236,7 @@
 
         liveDescriptor = detection.descriptor;
         captureBtn.disabled = false;
-        setStatus(
+        setLiveStatus(
             captured.length === 0
                 ? 'Face detected. Press Capture.'
                 : `Captured ${captured.length} of ${TOTAL_CAPTURES}. Keep looking at the camera.`,
@@ -233,11 +249,14 @@
     async function runCapture() {
         if (busy || !liveDescriptor) return;
         busy = true;
+        // Pressing Capture is the user acknowledging whatever was held on the
+        // status line, so the detector may write to it again.
+        statusLocked = false;
         captureBtn.disabled = true;
 
         for (let i = captured.length; i < TOTAL_CAPTURES; i++) {
             if (!liveDescriptor) {
-                setStatus('Lost your face — line up again and press Capture.', 'bad');
+                setStatus('Lost your face — line up again and press Capture.', 'bad', true);
                 busy = false;
                 return;
             }
@@ -265,7 +284,13 @@
             const data = await res.json();
 
             if (data && data.isDuplicate) {
-                setStatus(`This face is already registered to ${data.userName}.`, 'bad');
+                setStatus(
+                    data.userName
+                        ? `This face is already registered to ${data.userName}. Nothing was saved.`
+                        : 'This face is already registered to another account. Nothing was saved.',
+                    'bad',
+                    true // hold it — the detector would wipe it in ~150ms
+                );
                 captured = [];
                 drawPips();
                 busy = false;
@@ -275,7 +300,7 @@
             // A failed check must not silently pass as "unique" — the server
             // revalidates the shape but does not re-run the duplicate test.
             console.error(err);
-            setStatus('Could not verify the face against existing accounts. Try again.', 'bad');
+            setStatus('Could not check this face against existing accounts. Nothing was saved — try again.', 'bad', true);
             captured = [];
             drawPips();
             busy = false;
