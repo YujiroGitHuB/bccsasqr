@@ -76,14 +76,27 @@ function toggleTTS() {
 // ========================================
 // DRAW NAME LABEL ON CANVAS
 // ========================================
-function drawNameLabel(ctx, box, name, status = 'detecting') {
-    const colors = {
-        detecting: { bg: '#2196f3', text: '#ffffff' },
-        success: { bg: '#4caf50', text: '#ffffff' },
-        error: { bg: '#f44336', text: '#ffffff' }
-    };
+/* The overlay palette is pinned rather than read from the theme tokens, and
+   that is deliberate. --scan-ink/--ok-ink/--bad-ink flip to dark inks in the
+   light theme (#0369a1, #047857, #b91c1c) because they are meant for text on a
+   light surface. The camera preview is not a light surface — login.css holds
+   .face-video-wrapper-modal at #0b1220 in BOTH themes on purpose, since a white
+   frame around a live face is glare. So the overlay always sits on near-black
+   and always wants the bright variants.
 
-    const color = colors[status] || colors.detecting;
+   The three hues below are the same ones .face-login-status-modal already uses
+   for its detecting/success/error chips (sky 56,189,248 · emerald 16,185,129 ·
+   red 239,68,68). Previously the canvas drew Material colours — #2196f3,
+   #4caf50, #f44336 — so the box around the face never quite matched the status
+   bar directly beneath it. Now they agree. */
+const FACE_OVERLAY_COLORS = {
+    detecting: { bg: '#38bdf8', text: '#04263a' },
+    success: { bg: '#10b981', text: '#03251b' },
+    error: { bg: '#ef4444', text: '#2a0606' }
+};
+
+function drawNameLabel(ctx, box, name, status = 'detecting') {
+    const color = FACE_OVERLAY_COLORS[status] || FACE_OVERLAY_COLORS.detecting;
 
     ctx.font = 'bold 18px Arial, sans-serif';
     const textMetrics = ctx.measureText(name);
@@ -121,10 +134,73 @@ function drawNameLabel(ctx, box, name, status = 'detecting') {
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
 
+    /* The caller draws under ctx.scale(-1, 1) so the overlay lines up with the
+       mirrored selfie video. A rectangle survives that flip unchanged, but text
+       does not — the name rendered back-to-front on screen. Flipping a second
+       time around the label's own centre restores normal reading order while
+       leaving the label positioned over the face. */
+    ctx.save();
+    ctx.translate(labelX + labelWidth / 2, labelY + labelHeight / 2);
+    ctx.scale(-1, 1);
+
     ctx.fillStyle = color.text;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(name, labelX + labelWidth / 2, labelY + labelHeight / 2);
+    ctx.fillText(name, 0, 0);
+
+    ctx.restore();
+}
+
+/* Corner brackets instead of a closed rectangle. A full box reads as a crop
+   frame and fights the face inside it; brackets read as a reticle, which is
+   also what the QR scanner elsewhere in the system uses — same visual language
+   for "the camera is locked onto something".
+
+   `progress` (0..1) fills the bottom edge as the consecutive-match count
+   climbs, so the 1/3 → 3/3 countdown is visible on the video itself instead of
+   only as text in the status bar below. */
+function drawDetectionFrame(ctx, box, status = 'detecting', progress = 0) {
+    const color = (FACE_OVERLAY_COLORS[status] || FACE_OVERLAY_COLORS.detecting).bg;
+    const arm = Math.max(18, Math.min(box.width, box.height) * 0.22);
+    const r = 10;
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const corners = [
+        [box.x, box.y, 1, 1],
+        [box.x + box.width, box.y, -1, 1],
+        [box.x, box.y + box.height, 1, -1],
+        [box.x + box.width, box.y + box.height, -1, -1]
+    ];
+
+    for (const [cx, cy, dx, dy] of corners) {
+        ctx.beginPath();
+        ctx.moveTo(cx + dx * arm, cy);
+        ctx.lineTo(cx + dx * r, cy);
+        ctx.quadraticCurveTo(cx, cy, cx, cy + dy * r);
+        ctx.lineTo(cx, cy + dy * arm);
+        ctx.stroke();
+    }
+
+    if (progress > 0) {
+        const clamped = Math.max(0, Math.min(1, progress));
+        const span = box.width * 0.5 * clamped;
+        const midX = box.x + box.width / 2;
+        const y = box.y + box.height;
+
+        ctx.globalAlpha = 0.9;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(midX - span, y);
+        ctx.lineTo(midX + span, y);
+        ctx.stroke();
+    }
+
+    ctx.restore();
 }
 
 // ========================================
@@ -457,12 +533,10 @@ async function detectAndMatchFace() {
                     loginDetectionInterval = null;
                 }
 
-                ctx.strokeStyle = '#4caf50';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(box.x, box.y, box.width, box.height);
+                drawDetectionFrame(ctx, box, 'success', 1);
 
                 const landmarks = resizedDetection.landmarks.positions;
-                ctx.fillStyle = '#4caf50';
+                ctx.fillStyle = FACE_OVERLAY_COLORS.success.bg;
                 landmarks.forEach(point => {
                     ctx.beginPath();
                     ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
@@ -489,9 +563,7 @@ async function detectAndMatchFace() {
                 return;
 
             } else {
-                ctx.strokeStyle = '#2196f3';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(box.x, box.y, box.width, box.height);
+                drawDetectionFrame(ctx, box, 'detecting', consecutiveMatches / REQUIRED_CONSECUTIVE_MATCHES);
 
                 drawNameLabel(ctx, box, matchedUser.name, 'detecting');
 
@@ -508,9 +580,7 @@ async function detectAndMatchFace() {
             consecutiveMatches = 0;
             lastMatchedUserId = null;
 
-            ctx.strokeStyle = '#f44336';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(box.x, box.y, box.width, box.height);
+            drawDetectionFrame(ctx, box, 'error', 0);
 
             drawNameLabel(ctx, box, 'Unknown', 'error');
 
