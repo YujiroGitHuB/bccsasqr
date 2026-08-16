@@ -37,15 +37,20 @@ include __DIR__ . "/includes/systemConfig.php";
     <!-- Face-api.js for face recognition -->
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
+    <?php
+    /* index.php and reg.php are the two includers that sit AT the web root,
+       so both pass an empty base; every other includer is one folder down
+       and takes the default '../'. Must come before reg.css — that file
+       reads the tokens this one defines. */
+    $themeBase = '';
+    include __DIR__ . '/includes/theme_head.php';
+    ?>
+
     <!-- Custom Styles -->
     <link rel="stylesheet" href="<?= asset('assets/css/reg.css') ?>">
-
-    <style>
-
-    </style>
 </head>
 
-<body>
+<body class="reg-page">
     <!-- ========================================
          ALERT SYSTEM
     ========================================= -->
@@ -227,6 +232,12 @@ include __DIR__ . "/includes/systemConfig.php";
             <!-- SUBMIT BUTTON -->
             <button type="submit" class="btn">Register</button>
 
+            <!-- Without this the page was a dead end: nothing led back to
+                 sign-in except the browser's own back button. -->
+            <p class="reg-alt">
+                Already have an account? <a href="index.php">Sign in</a>
+            </p>
+
         </form>
 
         <!-- ========================================
@@ -276,6 +287,10 @@ include __DIR__ . "/includes/systemConfig.php";
 
     <!-- Face Recognition Script -->
     <script src="<?= asset('assets/js/faceRecognition.js') ?>"></script>
+
+    <!-- Floating light/dark switch. This page has no topbar, so it uses the
+         same bottom-left control as the login page and the scanner. -->
+    <?php include __DIR__ . '/includes/theme_toggle.php'; ?>
 
 </body>
 

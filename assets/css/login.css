@@ -19,7 +19,7 @@
 
    Which is the change worth knowing about: index.php now
    includes includes/theme_head.php, so the login page is no
-   longer dark-only. reg.php still is.
+   longer dark-only. reg.php has since followed.
 
    ── Everything is a token ───────────────────────────────────
    No hardcoded neutral anywhere below. The two accents that ARE

@@ -1,3 +1,45 @@
+/* ============================================================
+   REGISTER — Create Account.
+
+   This page used to be the one HTML page in the app that wrote
+   its own <head> and skipped includes/theme_head.php. That had
+   two consequences: no design tokens reached it (1,155 lines,
+   139 literal colours, zero var(--…)), and it could not see the
+   light/dark switch at all. A user who chose light on the login
+   page and clicked through to "Create Account" got a black page.
+
+   reg.php now includes theme_head.php — passing $themeBase = ''
+   like index.php, since both sit AT the web root — and the
+   floating theme_toggle.php, the same control the scanner and
+   the login page use.
+
+   ── What became a token, and what did not ───────────────────
+   Neutrals are all tokens now: grounds on --bg/--surface, text
+   on the --ink ramp, hairlines on --line, wells and raised
+   panels through rgba(var(--tint), …) so they invert with the
+   theme rather than being re-specified per mode.
+
+   What stays literal is deliberate, and follows the same rule
+   assets/css/login.css sets out: brand and status colours are
+   theme-independent. #38bdf8 (sky) and #8b5cf6 (violet) are the
+   page's brand pair — they are the wordmark gradient and the
+   accent line. The green/amber/red rgba tints are status, and
+   read the same either way.
+
+   Status TEXT is the exception that needs both: --ok-ink and
+   friends are only declared for light mode in theme.css, so
+   every use carries the dark value as its fallback —
+   var(--ok-ink, #86efac). That is the pattern login.css uses.
+
+   ── Known, not addressed here ───────────────────────────────
+   Several blocks are duplicated outright: .right-panel appears
+   4 times, .face-preview 4, .face-icon and .face-desc 3 each,
+   and @keyframes slideDown / fadeIn twice. Later copies win, so
+   the page renders correctly, but the file is carrying dead
+   weight. Removing them wants its own pass with a visual check,
+   not a drive-by.
+   ============================================================ */
+
 * {
     margin: 0;
     padding: 0;
@@ -10,7 +52,13 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1419 100%);
+    /* Was a fixed three-stop dark gradient (#0a0e27 → #1a1f3a → #0f1419),
+       which is what pinned this page to dark no matter what the user had
+       chosen. The ground now follows the theme; the atmosphere that gradient
+       was providing comes from the accent radials in body::before below,
+       which are brand colours at low alpha and read on either ground. */
+    background: var(--bg);
+    color: var(--ink);
     position: relative;
 }
 
@@ -73,14 +121,14 @@ body::before {
 }
 
 .panel-header p {
-    color: rgba(226, 232, 240, 0.6);
+    color: var(--ink-4);
     font-size: 12px;
 }
 
 .face-preview {
     text-align: center;
     padding: 30px 20px;
-    background: rgba(15, 23, 42, 0.4);
+    background: rgba(var(--tint), .05);
     border-radius: 10px;
     margin-bottom: 20px;
     border: 2px dashed rgba(56, 189, 248, 0.2);
@@ -89,10 +137,10 @@ body::before {
 .face-icon {
     font-size: 64px;
     margin-bottom: 15px;
-    animation: float 3s ease-in-out infinite;
+    animation: iconBob 3s ease-in-out infinite;
 }
 
-@keyframes float {
+@keyframes iconBob {
 
     0%,
     100% {
@@ -105,16 +153,16 @@ body::before {
 }
 
 .face-desc {
-    color: rgba(226, 232, 240, 0.7);
+    color: var(--ink-3);
     font-size: 13px;
     line-height: 1.5;
 }
 
 .face-status-box {
     padding: 12px;
-    background: rgba(15, 23, 42, 0.4);
+    background: rgba(var(--tint), .05);
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(var(--tint), .05);
     margin-top: 15px;
 }
 
@@ -124,27 +172,27 @@ body::before {
 }
 
 .status-text {
-    color: rgba(226, 232, 240, 0.6);
+    color: var(--ink-4);
     font-size: 12px;
     text-align: center;
     margin: 0;
 }
 
 .face-status-box.captured .status-text {
-    color: #86efac;
+    color: var(--ok-ink, #86efac);
 }
 
 /* Update face toggle container for right panel */
 .right-panel .face-toggle-container {
     margin: 0;
     padding: 15px;
-    background: rgba(15, 23, 42, 0.3);
+    background: rgba(var(--tint), .04);
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--line);
 }
 
 .right-panel .face-toggle-label {
-    color: rgba(226, 232, 240, 0.9);
+    color: var(--ink-2);
 }
 
 /* RESPONSIVE */
@@ -163,17 +211,17 @@ body::before {
 /* Glass morphism container */
 .container {
     position: relative;
-    background: rgba(15, 23, 42, 0.7);
+    background: rgba(var(--tint), .06);
     backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--line);
     border-radius: 24px;
     padding: 48px 40px;
     width: 1220px;
     max-width: 90%;
     box-shadow:
-        0 8px 32px 0 rgba(0, 0, 0, 0.37),
-        0 0 0 1px rgba(255, 255, 255, 0.05),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+        0 8px 32px 0 var(--shadow-lg),
+        0 0 0 1px rgba(var(--tint), .05),
+        inset 0 0 0 1px rgba(var(--tint), .03);
     animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 10;
 }
@@ -283,11 +331,11 @@ h2 {
 .input-group input {
     width: 100%;
     padding: 14px 45px 14px 16px;
-    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border: 1.5px solid var(--line);
     border-radius: 12px;
     outline: none;
-    background: rgba(15, 23, 42, 0.5);
-    color: #e2e8f0;
+    background: rgba(var(--tint), .05);
+    color: var(--ink-2);
     font-size: 15px;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
@@ -298,11 +346,11 @@ h2 {
 }
 
 .input-group input:focus {
-    background: rgba(30, 41, 59, 0.7);
+    background: rgba(var(--tint), .08);
     border-color: rgba(56, 189, 248, 0.5);
     box-shadow:
         0 0 0 4px rgba(56, 189, 248, 0.1),
-        0 8px 16px rgba(0, 0, 0, 0.2);
+        0 8px 16px var(--shadow);
     transform: translateY(-2px);
 }
 
@@ -316,7 +364,7 @@ h2 {
     border-color: rgba(34, 197, 94, 0.8);
     box-shadow:
         0 0 0 4px rgba(34, 197, 94, 0.15),
-        0 8px 16px rgba(0, 0, 0, 0.2);
+        0 8px 16px var(--shadow);
 }
 
 /* Invalid state - Red */
@@ -329,7 +377,7 @@ h2 {
     border-color: rgba(239, 68, 68, 0.8);
     box-shadow:
         0 0 0 4px rgba(239, 68, 68, 0.15),
-        0 8px 16px rgba(0, 0, 0, 0.2);
+        0 8px 16px var(--shadow);
 }
 
 .input-group label {
@@ -339,7 +387,7 @@ h2 {
     transform: translateY(-50%);
     pointer-events: none;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    color: rgba(226, 232, 240, 0.5);
+    color: var(--ink-5);
     font-size: 15px;
     background: transparent;
     padding: 0 4px;
@@ -353,8 +401,8 @@ h2 {
     background: linear-gradient(to bottom,
             transparent 0%,
             transparent 40%,
-            rgba(15, 23, 42, 0.9) 40%,
-            rgba(15, 23, 42, 0.9) 60%,
+            rgba(var(--tint), .08) 40%,
+            rgba(var(--tint), .08) 60%,
             transparent 60%,
             transparent 100%);
     font-weight: 600;
@@ -376,7 +424,7 @@ h2 {
     border: none;
     border-radius: 12px;
     background: linear-gradient(135deg, #38bdf8 0%, #8b5cf6 100%);
-    color: #ffffff;
+    color: var(--on-accent);
     font-weight: 600;
     font-size: 16px;
     cursor: pointer;
@@ -397,7 +445,7 @@ h2 {
     height: 100%;
     background: linear-gradient(90deg,
             transparent,
-            rgba(255, 255, 255, 0.2),
+            var(--line-strong),
             transparent);
     transition: left 0.6s;
 }
@@ -414,6 +462,34 @@ h2 {
 .btn:active {
     transform: translateY(0);
     box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
+}
+
+/* The way back to sign-in. Quiet on purpose — Register is the one action
+   this page exists for, and a second button-weight control beside it would
+   compete with it. */
+.reg-alt {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--ink-4);
+}
+
+.reg-alt a {
+    color: #38bdf8;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color .2s ease;
+}
+
+.reg-alt a:hover {
+    border-bottom-color: currentColor;
+}
+
+.reg-alt a:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 3px;
+    border-radius: 3px;
 }
 
 .message {
@@ -434,20 +510,20 @@ h2 {
 }
 
 .message.error {
-    color: #fca5a5;
+    color: var(--bad-ink, #fca5a5);
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .message.success {
-    color: #86efac;
+    color: var(--ok-ink, #86efac);
     background: rgba(34, 197, 94, 0.1);
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
 footer {
     background-color: transparent;
-    color: rgba(226, 232, 240, 0.7);
+    color: var(--ink-3);
     text-align: center;
     padding: 20px 10px;
     font-size: 13px;
@@ -493,14 +569,21 @@ footer a:hover {
 }
 
 /* Password strength indicator */
+/* Same story as .password-requirements below: opacity:0 hides the chip but
+   still reserves its line box. It has to collapse outright until there is a
+   password to rate. */
 .password-strength {
-    margin-top: 8px;
+    margin-top: 0;
+    max-height: 0;
+    overflow: hidden;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity .3s ease, max-height .3s ease, margin-top .3s ease;
     text-align: right;
 }
 
 .password-strength.show {
+    margin-top: 8px;
+    max-height: 60px;
     opacity: 1;
 }
 
@@ -516,19 +599,19 @@ footer a:hover {
 }
 
 .strength-weak {
-    color: #fca5a5;
+    color: var(--bad-ink, #fca5a5);
     background: rgba(239, 68, 68, 0.15);
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .strength-medium {
-    color: #fde047;
+    color: var(--warn-ink, #fde047);
     background: rgba(245, 158, 11, 0.15);
     border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .strength-strong {
-    color: #86efac;
+    color: var(--ok-ink, #86efac);
     background: rgba(34, 197, 94, 0.15);
     border: 1px solid rgba(34, 197, 94, 0.3);
 }
@@ -553,12 +636,18 @@ footer a:hover {
 }
 
 /* Password requirements list */
+/* max-height:0 collapsed the CONTENT but left the box's own margin, padding
+   and border behind — 38px of it, and .password-strength above added another
+   30px. Together they opened a ~96px hole between Password and Confirm
+   Password that was visible on first paint, before anything had been typed.
+   Everything that contributes height has to fold away too, and come back on
+   .show (which regScript.js already toggles). */
 .password-requirements {
-    margin-top: 12px;
-    padding: 12px;
-    background: rgba(15, 23, 42, 0.4);
+    margin-top: 0;
+    padding: 0 12px;
+    background: rgba(var(--tint), .05);
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 0 solid rgba(var(--tint), .05);
     opacity: 0;
     max-height: 0;
     overflow: hidden;
@@ -566,6 +655,9 @@ footer a:hover {
 }
 
 .password-requirements.show {
+    margin-top: 12px;
+    padding: 12px;
+    border-width: 1px;
     opacity: 1;
     max-height: 200px;
 }
@@ -575,7 +667,7 @@ footer a:hover {
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: rgba(226, 232, 240, 0.5);
+    color: var(--ink-5);
     margin-bottom: 6px;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -591,7 +683,7 @@ footer a:hover {
 }
 
 .requirement.met {
-    color: #86efac;
+    color: var(--ok-ink, #86efac);
 }
 
 .requirement.met .req-icon {
@@ -620,7 +712,7 @@ footer a:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(226, 232, 240, 0.5);
+    color: var(--ink-5);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     border-radius: 8px;
     z-index: 5;
@@ -700,7 +792,7 @@ canvas {
 }
 
 .panel-header p {
-    color: rgba(226, 232, 240, 0.6);
+    color: var(--ink-4);
     font-size: 12px;
     margin: 0;
 }
@@ -708,7 +800,7 @@ canvas {
 .face-preview {
     text-align: center;
     padding: 30px 20px;
-    background: rgba(15, 23, 42, 0.4);
+    background: rgba(var(--tint), .05);
     border-radius: 10px;
     margin-bottom: 20px;
     border: 2px dashed rgba(56, 189, 248, 0.2);
@@ -718,11 +810,11 @@ canvas {
 .face-icon {
     font-size: 64px;
     margin-bottom: 15px;
-    animation: float 3s ease-in-out infinite;
+    animation: iconBob 3s ease-in-out infinite;
     transition: all 0.3s;
 }
 
-@keyframes float {
+@keyframes iconBob {
 
     0%,
     100% {
@@ -735,7 +827,7 @@ canvas {
 }
 
 .face-desc {
-    color: rgba(226, 232, 240, 0.7);
+    color: var(--ink-3);
     font-size: 13px;
     line-height: 1.5;
     margin: 0;
@@ -743,9 +835,9 @@ canvas {
 
 .face-status-box {
     padding: 12px;
-    background: rgba(15, 23, 42, 0.4);
+    background: rgba(var(--tint), .05);
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(var(--tint), .05);
     margin-top: 15px;
     transition: all 0.3s;
 }
@@ -756,27 +848,27 @@ canvas {
 }
 
 .status-text {
-    color: rgba(226, 232, 240, 0.6);
+    color: var(--ink-4);
     font-size: 12px;
     text-align: center;
     margin: 0;
 }
 
 .face-status-box.captured .status-text {
-    color: #86efac;
+    color: var(--ok-ink, #86efac);
 }
 
 /* Update face toggle container for right panel */
 .right-panel .face-toggle-container {
     margin: 0;
     padding: 15px;
-    background: rgba(15, 23, 42, 0.3);
+    background: rgba(var(--tint), .04);
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--line);
 }
 
 .right-panel .face-toggle-label {
-    color: rgba(226, 232, 240, 0.9);
+    color: var(--ink-2);
 }
 
 .right-panel .face-toggle-label span {
@@ -799,7 +891,7 @@ canvas {
 .face-preview {
     text-align: center;
     padding: 20px;
-    background: rgba(15, 23, 42, 0.4);
+    background: rgba(var(--tint), .05);
     border-radius: 10px;
     margin-bottom: 20px;
     border: 2px dashed rgba(56, 189, 248, 0.2);
@@ -816,9 +908,9 @@ canvas {
 
 .face-icon {
     margin-bottom: 15px;
-    animation: float 3s ease-in-out infinite;
+    animation: iconBob 3s ease-in-out infinite;
     transition: all 0.3s;
-    color: rgb(14, 11, 185);
+    color: #38bdf8;
 }
 
 #facePreviewCanvas {
@@ -827,18 +919,18 @@ canvas {
     border-radius: 8px;
     max-height: 250px;
     object-fit: cover;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
 .face-desc {
-    color: rgba(226, 232, 240, 0.7);
+    color: var(--ink-3);
     font-size: 13px;
     line-height: 1.5;
     margin: 0;
 }
 
 .face-preview.has-image .face-desc {
-    color: #86efac;
+    color: var(--ok-ink, #86efac);
     font-weight: 600;
     margin-top: 10px;
 }
@@ -853,7 +945,7 @@ canvas {
     background: rgba(239, 68, 68, 0.9);
     border: none;
     border-radius: 50%;
-    color: white;
+    color: var(--on-accent);
     cursor: pointer;
     display: none;
     align-items: center;
@@ -876,7 +968,7 @@ canvas {
     position: relative;
     text-align: center;
     padding: 20px;
-    background: rgba(15, 23, 42, 0.4);
+    background: rgba(var(--tint), .05);
     border-radius: 10px;
     margin-bottom: 20px;
     border: 2px dashed rgba(56, 189, 248, 0.2);
@@ -907,7 +999,7 @@ canvas {
 
 .container>p {
     text-align: center;
-    color: rgba(226, 232, 240, 0.7);
+    color: var(--ink-3);
     font-size: 13px;
     margin: 0 0 20px 0;
     animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
@@ -941,13 +1033,13 @@ canvas {
 }
 
 .face-modal-content {
-    background: rgba(15, 23, 42, 0.7);
+    background: rgba(var(--tint), .06);
     margin: 20px;
     padding: 30px;
     border-radius: 20px;
     width: 90%;
     max-width: 500px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 40px var(--shadow-lg);
     animation: slideDown 0.3s;
     position: relative;
 }
@@ -958,10 +1050,10 @@ canvas {
     right: 15px;
     width: 35px;
     height: 35px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--line-strong);
     border: none;
     border-radius: 50%;
-    color: white;
+    color: var(--ink);
     font-size: 24px;
     cursor: pointer;
     display: flex;
@@ -972,7 +1064,7 @@ canvas {
 }
 
 .close-modal:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(var(--tint), .3);
     transform: rotate(90deg);
 }
 
@@ -982,13 +1074,13 @@ canvas {
 }
 
 .face-section-header h3 {
-    color: white;
+    color: var(--ink);
     margin: 0 0 8px 0;
     font-size: 24px;
 }
 
 .face-section-header p {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--ink-3);
     margin: 0;
     font-size: 14px;
 }
@@ -1000,7 +1092,7 @@ canvas {
     margin: 0 auto 20px;
     border-radius: 15px;
     overflow: hidden;
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 5px 25px var(--shadow-lg);
     background: #1d2443;
 }
 
@@ -1022,10 +1114,10 @@ canvas {
 .face-status {
     text-align: center;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(var(--tint), .08);
     border-radius: 10px;
     margin-bottom: 20px;
-    color: white;
+    color: var(--ink);
     font-size: 14px;
     border: 2px solid transparent;
     transition: all 0.3s;
@@ -1048,7 +1140,7 @@ canvas {
 
 .face-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 5px 20px var(--shadow-lg);
 }
 
 .face-btn:disabled {
@@ -1081,9 +1173,9 @@ canvas {
 .face-toggle-container {
     margin: 20px 0;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--tint), .05);
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--line);
 }
 
 .face-toggle-label {
@@ -1091,7 +1183,7 @@ canvas {
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
-    color: white;
+    color: var(--ink);
 }
 
 .face-toggle-label span {
@@ -1117,7 +1209,7 @@ canvas {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(var(--tint), .3);
     transition: 0.4s;
     border-radius: 24px;
 }
@@ -1129,7 +1221,7 @@ canvas {
     width: 18px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
+    background-color: var(--on-accent);
     transition: 0.4s;
     border-radius: 50%;
 }

@@ -20,13 +20,13 @@ $themeBase = isset($themeBase) ? $themeBase : '../';
 
      Shared by includes/header.php (admin pages), by the QR generator,
      scanner, tracker and student photo profile heads, and by
-     index.php — which passes $themeBase = '' because it is the one
-     includer that is not a directory below the root.
+     index.php and reg.php — the two includers that sit AT the web
+     root and so pass $themeBase = '' rather than the default '../'.
 
-     NOT included by reg.php: registration is still a full-bleed dark
-     hero and stays dark in both themes. The login page used to be the
-     same; it now follows the theme like the rest of the app — see the
-     note at the top of assets/css/login.css. -->
+     reg.php was the last holdout: it wrote its own <head>, never
+     loaded the tokens, and stayed dark whatever the user had picked.
+     It follows the theme now like everything else — see the note at
+     the top of assets/css/reg.css. -->
 <script>
     (function () {
         try {
