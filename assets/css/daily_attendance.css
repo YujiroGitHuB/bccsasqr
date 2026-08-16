@@ -362,6 +362,105 @@ body.attendance-page {
     /* verified = present-green, the same green the badges use */
 }
 
+/* ─── Profile strip ──────────────────────────────────────────
+   The face sits above the label/value rows because it answers a
+   different question: the rows confirm the *record*, the photo
+   confirms the *person*. Same avatar vocabulary as the scanner
+   (Qrscanner/css/style.css .avatar-*) — circle, initials fallback,
+   check badge — so a student who has been scanned in class
+   recognises what they are looking at. */
+.attendance-page .att-profile {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding-bottom: .85rem;
+    margin-bottom: .25rem;
+    border-bottom: 1px solid rgba(var(--tint), .05);
+}
+
+.attendance-page .att-avatar {
+    position: relative;
+    flex: 0 0 auto;
+    width: 60px;
+    height: 60px;
+}
+
+.attendance-page .att-avatar-img,
+.attendance-page .att-avatar-initials {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 1px solid var(--att-line);
+    background: rgba(var(--tint), .05);
+    box-shadow: 0 0 0 3px var(--att-soft);
+}
+
+.attendance-page .att-avatar-img {
+    object-fit: cover;
+    display: block;
+}
+
+.attendance-page .att-avatar-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--att-ink);
+}
+
+/* The `hidden` attribute loses to the display rules above, so the
+   two swappable halves say it again. */
+.attendance-page .att-avatar-img[hidden],
+.attendance-page .att-avatar-initials[hidden],
+.attendance-page .att-profile-note[hidden] {
+    display: none;
+}
+
+.attendance-page .att-avatar-check {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    font-size: .95rem;
+    line-height: 1;
+    color: #4ade80;
+    /* The ring is the card's own background, so the badge reads as
+       sitting on top of the circle rather than punched into it. */
+    background: var(--att-surface);
+    border-radius: 50%;
+}
+
+.attendance-page .att-profile-id {
+    min-width: 0;
+}
+
+.attendance-page .att-profile-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--ink);
+    word-break: break-word;
+}
+
+.attendance-page .att-profile-no {
+    margin: .2rem 0 0;
+    font-size: .82rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+    color: rgba(var(--tint), .45);
+}
+
+.attendance-page .att-profile-note {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    margin: .4rem 0 0;
+    font-size: .74rem;
+    font-weight: 600;
+    color: var(--warn-ink, #fbbf24);
+}
+
 .attendance-page .info-row {
     display: flex;
     justify-content: space-between;

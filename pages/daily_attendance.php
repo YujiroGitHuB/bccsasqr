@@ -159,14 +159,30 @@ if ($result && $result->num_rows > 0) {
 
                 <div id="studentInfo" class="student-info">
                     <h5><i class="bi bi-patch-check-fill"></i> Student Verified</h5>
-                    <div class="info-row">
-                        <span class="info-label">Student Number:</span>
-                        <span class="info-value" id="displayStudentNo"></span>
+
+                    <!-- Ang mukha muna bago ang mga datos: ito ang tinitingnan
+                         ng estudyante para malamang siya nga ang na-verify, at
+                         hindi ang kaklaseng iisang digit lang ang pagkakaiba ng
+                         numero. Kapag walang larawan, inisyal ang lumalabas —
+                         may kasamang sabing hindi iyon larawan, dahil sa unang
+                         sulyap ay mapagkakamalan itong mukha (ganito rin ang
+                         pananalita ng scanner). -->
+                    <div class="att-profile">
+                        <div class="att-avatar" id="studentAvatar">
+                            <img class="att-avatar-img" id="displayPhoto" alt="" hidden>
+                            <span class="att-avatar-initials" id="displayInitials"></span>
+                            <i class="bi bi-check-circle-fill att-avatar-check"></i>
+                        </div>
+                        <div class="att-profile-id">
+                            <p class="att-profile-name" id="displayFullname"></p>
+                            <p class="att-profile-no" id="displayStudentNo"></p>
+                            <p class="att-profile-note" id="displayPhotoNote" hidden>
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                No photo on file
+                            </p>
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Full Name:</span>
-                        <span class="info-value" id="displayFullname"></span>
-                    </div>
+
                     <div class="info-row">
                         <span class="info-label">Course:</span>
                         <span class="info-value" id="displayCourse"></span>
@@ -248,6 +264,49 @@ if ($result && $result->num_rows > 0) {
         let typingTimer;
         const typingDelay = 800;
 
+        // ── Larawan ng na-verify na estudyante ───────────────────────
+        // Inisyal ang laging nauuna, at ang larawan ay pinapalitan lamang
+        // ito kapag talagang na-load na. Kaya walang lumang mukhang
+        // naiiwan sa susunod na paghahanap, at walang sirang icon kapag
+        // nawala ang file sa uploads/ — ang mali sa mukha ang pinakamasama
+        // sa pahinang ito.
+        function initialsOf(fullname) {
+            const parts = String(fullname || '').trim().split(/\s+/).filter(Boolean);
+            if (!parts.length) return '?';
+            const first = parts[0][0];
+            const last  = parts.length > 1 ? parts[parts.length - 1][0] : '';
+            return (first + last).toUpperCase();
+        }
+
+        function showProfilePhoto(student) {
+            const img      = document.getElementById('displayPhoto');
+            const initials = document.getElementById('displayInitials');
+            const note     = document.getElementById('displayPhotoNote');
+
+            initials.textContent = initialsOf(student.fullname);
+            initials.hidden = false;
+            img.hidden = true;
+            img.removeAttribute('src');
+            note.hidden = !!student.photo_url;
+
+            if (!student.photo_url) return;
+
+            const probe = new Image();
+            probe.onload = () => {
+                img.src = student.photo_url;
+                img.alt = 'Photo of ' + (student.fullname || 'student');
+                img.hidden = false;
+                initials.hidden = true;
+            };
+            probe.onerror = () => {
+                // Nakatala ang larawan pero hindi ito mabuksan. Inisyal pa
+                // rin ang nakikita, at sinasabi nitong wala — mas mabuti
+                // ang kulang kaysa sa hindi mo alam kung ano ang tinitingnan.
+                note.hidden = false;
+            };
+            probe.src = student.photo_url;
+        }
+
         function verifyStudent(studentNo) {
             if (!studentNo || isFormLocked) return;
 
@@ -275,6 +334,7 @@ if ($result && $result->num_rows > 0) {
                         document.getElementById('displayFullname').textContent = data.student.fullname;
                         document.getElementById('displayCourse').textContent = data.student.course;
                         document.getElementById('displaySection').textContent = data.student.section;
+                        showProfilePhoto(data.student);
 
                         document.getElementById('studentInfo').style.display = 'block';
                         document.getElementById('submitBtn').disabled = false;

@@ -24,10 +24,16 @@ try {
     // the uniq_student_no index (a full scan of students_tbl). The
     // input is trimmed above, and a migration cleaned the stored
     // values.
+    //
+    // Kasama na ang photo_path sa tanong na ito: ito ang ipinapakita ng
+    // form sa tabi ng pangalan kapag na-verify na. Isang tanong lamang,
+    // kaya hindi na tinatawag ang student_photo_missing() sa ibaba —
+    // pareho ng ginagawa ng crud/save_attendance.php.
     $stmt = $conn->prepare("
-        SELECT student_no, fullname, course, section
-        FROM students_tbl
-        WHERE student_no = ?
+        SELECT s.student_no, s.fullname, s.course, s.section, p.photo_path
+        FROM students_tbl s
+        LEFT JOIN student_photos p ON p.s_id = s.id
+        WHERE s.student_no = ?
     ");
     $stmt->bind_param("s", $student_no);
     $stmt->execute();
@@ -46,6 +52,13 @@ try {
     // Build full section e.g. "BSIT-2A" from students_tbl course + section
     $student['section'] = $student['course'] . '-' . $student['section'];
 
+    // Ang path sa talaan ay mula sa ugat ng app ("uploads/photos/…"),
+    // samantalang ang pahinang humihingi nito ay nasa /pages — kaya
+    // "../" ang unahan, katulad ng isinasauli ng scanner.
+    $photo_path = $student['photo_path'] ?? null;
+    unset($student['photo_path']);
+    $student['photo_url'] = !empty($photo_path) ? '../' . $photo_path : null;
+
     // ── 1b. Photo requirement ─────────────────────────────────────────────────
     // Kapareho ng scanner: kapag naka-ON ang setting, walang larawan ay
     // walang attendance. Sinasabi na rito para hindi pa punan ng estudyante
@@ -54,7 +67,7 @@ try {
     //
     // Kapag naka-OFF naman, dumadaan pa rin siya at nakakakuha lamang ng
     // paalala. Ganoon din ang scanner: pumapasa ang scan, may babala.
-    $photo_missing = student_photo_missing($conn, $student_no);
+    $photo_missing = empty($photo_path);
 
     if ($photo_missing && photo_is_required($conn)) {
         echo json_encode([
