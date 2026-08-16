@@ -4,6 +4,11 @@ session_start();
 include __DIR__ . '/includes/db_connect.php';
 include __DIR__ . '/includes/systemConfig.php';
 
+/* The host runs on UTC, so an unqualified date() here rendered the previous
+   day's date in the plate footer for the whole 00:00-08:00 window in Manila.
+   Every other file that prints a date sets this the same way. */
+date_default_timezone_set('Asia/Manila');
+
 /* The descriptive line above the wordmark comes from Settings, so
    renaming the system renames it here too. 'None' is what
    systemConfig.php falls back to on an empty column, and a heading
