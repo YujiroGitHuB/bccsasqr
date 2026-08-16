@@ -6,6 +6,7 @@ session_start();
 include "../includes/db_connect.php";
 include "../includes/auth.php";
 include __DIR__ . "/../includes/permissions.php";
+require_once __DIR__ . "/../includes/photo_requirement.php";
 date_default_timezone_set('Asia/Manila');
 
 header('Content-Type: application/json');
@@ -103,20 +104,13 @@ try {
     // scan proceeds but a warning is sent to the scanner, so the
     // instructor knows they cannot confirm who is in front of them. The
     // default is OFF — see the migration for why.
+    // Ang photo_path ay nasa kamay na mula sa tanong sa itaas, kaya
+    // student_photo_missing() ang hindi ginagamit dito — ang setting
+    // lamang ang hinihiram, at iisa ang sagot nito sa scanner at sa
+    // attendance link.
     $photo_missing = empty($student_data['photo_path']);
 
-    $require_photo = false;
-    $photo_setting = $conn->query("
-        SELECT setting_value
-        FROM attendance_settings
-        WHERE setting_key = 'require_student_photo'
-        LIMIT 1
-    ");
-    if ($photo_setting && $photo_setting->num_rows > 0) {
-        $require_photo = ($photo_setting->fetch_assoc()['setting_value'] === '1');
-    }
-
-    if ($require_photo && $photo_missing) {
+    if (photo_is_required($conn) && $photo_missing) {
         echo json_encode([
             'success' => false,
             'message' => 'photo_required',

@@ -1,6 +1,7 @@
 <?php
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/photo_requirement.php";
 date_default_timezone_set('Asia/Manila');
 header('Content-Type: application/json');
 
@@ -99,6 +100,24 @@ if ($result->num_rows === 0) {
     exit();
 }
 $student = $result->fetch_assoc();
+
+// ── 1b. Photo requirement ─────────────────────────────────────────────────────
+// Ang parehong tuntuning ipinapatupad ng scanner (crud/save_attendance.php),
+// dahil ang link ay isa ring pintuan papasok ng attendance. Dito ang tunay
+// na tseke: ang tseke sa crud/verify_student.php ay para lamang maaga
+// malaman ng estudyante — maaari itong lampasan ng sinumang mag-POST nang
+// diretso rito.
+if (photo_is_required($conn) && student_photo_missing($conn, $student_no)) {
+    echo json_encode([
+        'success'    => false,
+        'code'       => 'photo_required',
+        'message'    => photo_required_message(),
+        // Kaugnay sa pages/daily_attendance.php, ang tanging tumatawag —
+        // gaya rin ng ibinabalik ng crud/verify_student.php.
+        'upload_url' => '../student/StudentPhotoProfile.php'
+    ]);
+    exit();
+}
 
 // ── 2. Check enrollment ───────────────────────────────────────────────────────
 $enroll = $conn->prepare("

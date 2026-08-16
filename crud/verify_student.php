@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/photo_requirement.php";
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
@@ -44,6 +45,26 @@ try {
 
     // Build full section e.g. "BSIT-2A" from students_tbl course + section
     $student['section'] = $student['course'] . '-' . $student['section'];
+
+    // ── 1b. Photo requirement ─────────────────────────────────────────────────
+    // Kapareho ng scanner: kapag naka-ON ang setting, walang larawan ay
+    // walang attendance. Sinasabi na rito para hindi pa punan ng estudyante
+    // ang form bago siya tanggihan — pero sa crud/submit_attendance.php ang
+    // harang na hindi malalampasan.
+    //
+    // Kapag naka-OFF naman, dumadaan pa rin siya at nakakakuha lamang ng
+    // paalala. Ganoon din ang scanner: pumapasa ang scan, may babala.
+    $photo_missing = student_photo_missing($conn, $student_no);
+
+    if ($photo_missing && photo_is_required($conn)) {
+        echo json_encode([
+            'success'    => false,
+            'code'       => 'photo_required',
+            'message'    => photo_required_message(),
+            'upload_url' => '../student/StudentPhotoProfile.php'
+        ]);
+        exit;
+    }
 
     // ── 2. Check if student is enrolled in this subject ───────────────────────
     if (!empty($subject_code)) {
@@ -114,9 +135,14 @@ try {
     }
 
     echo json_encode([
-        'success' => true,
-        'message' => 'Student found',
-        'student' => $student
+        'success'       => true,
+        'message'       => 'Student found',
+        'student'       => $student,
+        // Hindi kailangan ang larawan sa ngayon, pero wala pa rin siya —
+        // pinapaalala ng pahina habang maluwag pa, para may photo na siya
+        // bago pa i-ON ng admin ang tuntunin.
+        'photo_missing' => $photo_missing,
+        'upload_url'    => $photo_missing ? '../student/StudentPhotoProfile.php' : null
     ]);
 
     $stmt->close();

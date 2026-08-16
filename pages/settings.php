@@ -302,9 +302,12 @@ $systemLogo = $system['logo'] ?? '';
                         </h3>
                         <p>
                             When ON, students without an uploaded photo cannot record
-                            attendance — the instructor has no face to check against the
-                            QR being presented. When OFF, the scan still goes through but
-                            shows a warning that identity could not be verified.
+                            attendance — neither through the QR scanner, where the
+                            instructor has no face to check against the QR being
+                            presented, nor through an attendance link. When OFF, both
+                            still go through: the scan shows a warning that identity
+                            could not be verified, and the student is reminded to
+                            upload a photo.
                         </p>
 
                         <?php if ($photoMissing > 0): ?>

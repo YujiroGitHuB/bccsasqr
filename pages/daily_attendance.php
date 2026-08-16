@@ -280,13 +280,22 @@ if ($result && $result->num_rows > 0) {
                         document.getElementById('submitBtn').disabled = false;
                         verifiedStudentNo = data.student.student_no;
 
-                        showAlert('Student verified successfully!', 'success');
-                        TTSManager.speak('Student verified successfully!');
+                        if (data.photo_missing) {
+                            // Hindi pa kailangan ang larawan — puwede siyang
+                            // magpatuloy. Paalala lamang ito habang maluwag
+                            // pa ang tuntunin.
+                            const msg = 'Student verified. You have no photo on file yet — please upload one.';
+                            showAlert(msg, 'warning', data.upload_url, 'Upload my photo');
+                            TTSManager.speak(msg);
+                        } else {
+                            showAlert('Student verified successfully!', 'success');
+                            TTSManager.speak('Student verified successfully!');
+                        }
                     } else {
                         document.getElementById('studentInfo').style.display = 'none';
                         document.getElementById('submitBtn').disabled = true;
                         verifiedStudentNo = null;
-                        showAlert(data.message, 'danger');
+                        showAlert(data.message, 'danger', data.upload_url, 'Upload my photo');
                         TTSManager.speak(data.message);
                     }
                 })
@@ -372,7 +381,11 @@ if ($result && $result->num_rows > 0) {
                                 document.getElementById('alertContainer').innerHTML = '';
                             }, 2000);
                         } else {
-                            showAlert(data.message, 'warning');
+                            // Ang photo_required ay may kasamang daan palabas:
+                            // walang saysay ang sabihing kulang ang larawan
+                            // kung hindi mo naman sasabihin kung saan ito
+                            // ita-upload.
+                            showAlert(data.message, 'warning', data.upload_url, 'Upload my photo');
                             TTSManager.speak(data.message);
                         }
                     })
@@ -389,7 +402,10 @@ if ($result && $result->num_rows > 0) {
             });
         }
 
-        function showAlert(message, type) {
+        // Ang linkUrl ay hindi laging kasama — ang mga mensaheng may
+        // kasunod na gagawin lang (halimbawa, ang kulang na larawan) ang
+        // nagdadala nito.
+        function showAlert(message, type, linkUrl, linkLabel) {
             const alertContainer = document.getElementById('alertContainer');
             const alert = document.createElement('div');
             alert.className = `alert alert-${type} alert-dismissible fade show`;
@@ -397,12 +413,28 @@ if ($result && $result->num_rows > 0) {
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
+
+            if (linkUrl) {
+                // createElement at textContent — galing sa server ang URL,
+                // pero hindi ito idinidikit sa innerHTML sa itaas para
+                // manatiling datos ang datos.
+                const link = document.createElement('a');
+                link.href = linkUrl;
+                link.textContent = linkLabel || 'Open';
+                link.className = 'alert-link d-block mt-2';
+                alert.appendChild(link);
+            }
+
             alertContainer.innerHTML = '';
             alertContainer.appendChild(alert);
 
-            setTimeout(() => {
-                if (alert.parentNode) alert.remove();
-            }, 5000);
+            // Ang mensaheng may hakbang na susundan ay nananatili: hindi
+            // magandang mawala ang link bago pa ito mapindot.
+            if (!linkUrl) {
+                setTimeout(() => {
+                    if (alert.parentNode) alert.remove();
+                }, 5000);
+            }
         }
     </script>
 <?php include __DIR__ . "/../includes/theme_toggle.php"; ?>
