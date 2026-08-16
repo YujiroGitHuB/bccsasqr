@@ -1,4 +1,8 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 header('Content-Type: application/json');
 include __DIR__.'/../includes/db_connect.php';
 
@@ -11,6 +15,19 @@ if (!isset($input['descriptor'])) {
 }
 
 $currentDescriptor = $input['descriptor'];
+
+/* Re-enrolling from pages/profile.php would otherwise always fail: the
+   closest match to your new face is your own stored one, so the check
+   would report you as a duplicate of yourself and refuse the update.
+
+   `excludeSelf` only ever removes the id already in the session — a
+   caller cannot name someone else's id, so setting the flag by hand
+   buys nothing beyond skipping your own row, which is what it is for.
+   Registration does not send it, and so is unaffected. */
+$excludeUserId = 0;
+if (!empty($input['excludeSelf'])) {
+    $excludeUserId = (int) ($_SESSION['user_id'] ?? 0);
+}
 
 try {
     // Get all users with face recognition enabled
@@ -33,8 +50,12 @@ try {
     $closestUser = null;
     
     while ($user = mysqli_fetch_assoc($result)) {
+        if ($excludeUserId && (int) $user['id'] === $excludeUserId) {
+            continue;
+        }
+
         $savedDescriptor = json_decode($user['face_descriptor'], true);
-        
+
         if (!$savedDescriptor || !is_array($savedDescriptor)) {
             continue;
         }

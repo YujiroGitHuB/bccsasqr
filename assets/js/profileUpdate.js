@@ -52,6 +52,21 @@
         if (confirmEl) confirmEl.classList.toggle("is-invalid", !!msg);
     };
 
+    // The same contract for the "Confirm It's You" field. .field-error is
+    // display:none until it carries .show, so setting textContent on its own
+    // leaves the message in the DOM and invisible on screen.
+    const currentPwEl  = document.getElementById("currentPasswordField");
+    const currentPwErr = document.getElementById("currentPasswordError");
+    const showCurrentError = (msg) => {
+        if (!currentPwErr) return;
+        currentPwErr.textContent = msg;
+        currentPwErr.classList.toggle("show", !!msg);
+        if (currentPwEl) currentPwEl.classList.toggle("is-invalid", !!msg);
+    };
+    if (currentPwEl) {
+        currentPwEl.addEventListener("input", () => showCurrentError(""));
+    }
+
     const setPreview = (src) => {
         if (!avatarImg || !avatarBlock) return;
         if (src) {
@@ -132,6 +147,7 @@
         if (avatarInput) avatarInput.value = "";
         setPreview(initialSrc);
         showError("");
+        showCurrentError("");
     });
 
     // ── Submit ──────────────────────────────────────────────
@@ -155,6 +171,23 @@
         }
         showError("");
 
+        // crud/updateProfile.php re-authenticates a password or face change.
+        // Catching it here saves a round trip and, more to the point, saves
+        // the user from losing a five-shot face capture to a rejected save.
+        const faceEl   = document.getElementById("faceDescriptorField");
+        const removeEl = document.getElementById("removeFaceField");
+        const faceTouched =
+            (faceEl && faceEl.value !== "") ||
+            (removeEl && removeEl.value === "1");
+
+        showCurrentError("");
+
+        if ((pw !== "" || faceTouched) && currentPwEl && currentPwEl.value === "") {
+            showCurrentError("Enter your current password to confirm this change.");
+            currentPwEl.focus();
+            return;
+        }
+
         const formData = new FormData(this);
         const original = saveBtn ? saveBtn.innerHTML : "";
 
@@ -171,7 +204,16 @@
             .then((data) => {
                 toast(data.status, data.message);
 
-                if (data.status !== "success") return;
+                if (data.status !== "success") {
+                    // The server names the field it rejected, so the message
+                    // lands next to the input rather than only in a toast the
+                    // user has to remember.
+                    if (data.field === "current_password") {
+                        showCurrentError(data.message);
+                        if (currentPwEl) { currentPwEl.value = ""; currentPwEl.focus(); }
+                    }
+                    return;
+                }
 
                 // Clear the password fields — there is no reason for
                 // plaintext to sit in the DOM after saving.
@@ -179,6 +221,11 @@
                 if (confirmEl) confirmEl.value = "";
                 if (avatarInput) avatarInput.value = "";
                 if (removeFlag) removeFlag.value = "0";
+
+                // The confirmation is spent — it re-authorised this one save
+                // and must not sit in the DOM ready to authorise the next.
+                if (currentPwEl) currentPwEl.value = "";
+                showCurrentError("");
 
                 // Update the topbar alongside so no refresh is needed.
                 const topbarImg  = document.querySelector(".topbar .profile img");
@@ -199,6 +246,11 @@
                     if (topbarName) topbarName.textContent = nameEl.value;
                     if (nameLabel) nameLabel.textContent = nameEl.value;
                 }
+
+                // assets/js/profileFace.js keeps its own idea of what the
+                // server holds so it can tell "saved" from "staged". It has
+                // no other way to learn a save went through.
+                document.dispatchEvent(new CustomEvent("profile:saved", { detail: data }));
             })
             .catch(() => {
                 Swal.fire({

@@ -36,6 +36,56 @@ $email    = trim($_POST['email'] ?? '');
 $password = trim($_POST['password'] ?? '');
 $remove   = ($_POST['remove_avatar'] ?? '0') === '1';
 
+// ── Face recognition ────────────────────────────────────────
+// Same shape as registration writes (crud/reg_process.php): a JSON
+// array of descriptors, each 128 floats. The browser produced it, so
+// none of it is trusted — a descriptor that does not decode to that
+// exact shape is rejected rather than stored, because a malformed row
+// here would break face login for everyone: crud/get_face_users.php
+// hands the whole table to the client and one bad entry throws.
+$faceDescriptor = trim($_POST['faceDescriptor'] ?? '');
+$removeFace     = ($_POST['remove_face'] ?? '0') === '1';
+
+$faceChanged = false;
+$faceValue   = null;
+$faceEnabled = 0;
+
+if ($removeFace) {
+    $faceChanged = true;          // faceValue stays null, faceEnabled stays 0
+} elseif ($faceDescriptor !== '') {
+    $decoded = json_decode($faceDescriptor, true);
+
+    $shapeOk = is_array($decoded) && count($decoded) > 0 && count($decoded) <= 10;
+    if ($shapeOk) {
+        foreach ($decoded as $one) {
+            if (!is_array($one) || count($one) !== 128) {
+                $shapeOk = false;
+                break;
+            }
+            foreach ($one as $n) {
+                if (!is_numeric($n)) {
+                    $shapeOk = false;
+                    break 2;
+                }
+            }
+        }
+    }
+
+    if (!$shapeOk) {
+        echo json_encode([
+            "status"  => "error",
+            "message" => "The face data was not in the expected format. Please capture again."
+        ]);
+        exit;
+    }
+
+    // Re-encoded from the decoded value, so whatever reaches the column
+    // is canonical JSON and not the raw string off the wire.
+    $faceChanged = true;
+    $faceValue   = json_encode($decoded);
+    $faceEnabled = 1;
+}
+
 if ($name === '' || $email === '') {
     echo json_encode(["status" => "warning", "message" => "Name and email cannot be empty."]);
     exit;
@@ -52,6 +102,45 @@ if ($password !== '' && strlen($password) < MIN_PASSWORD_LEN) {
         "message" => "Password must be at least " . MIN_PASSWORD_LEN . " characters."
     ]);
     exit;
+}
+
+// ── Confirm it is really them ───────────────────────────────
+// The password and the face are the two ways into this account, so
+// changing either is re-authenticated here. Without it, anyone who
+// reaches an unattended signed-in browser can set their own face as a
+// login credential and keep access indefinitely — quietly, since it
+// changes nothing the owner would notice.
+//
+// Name, email and avatar deliberately do NOT ask: they are not
+// credentials, and prompting for every trivial edit trains people to
+// type their password without reading why.
+$currentPassword   = (string)($_POST['current_password'] ?? '');
+$needsConfirmation = ($password !== '') || $faceChanged;
+
+if ($needsConfirmation) {
+    $cred = $conn->prepare("SELECT password FROM users WHERE id = ? LIMIT 1");
+    $cred->bind_param("i", $userId);
+    $cred->execute();
+    $storedHash = (string)($cred->get_result()->fetch_assoc()['password'] ?? '');
+    $cred->close();
+
+    if ($currentPassword === '') {
+        echo json_encode([
+            "status"  => "warning",
+            "message" => "Enter your current password to change your password or your face.",
+            "field"   => "current_password"
+        ]);
+        exit;
+    }
+
+    if ($storedHash === '' || !password_verify($currentPassword, $storedHash)) {
+        echo json_encode([
+            "status"  => "warning",
+            "message" => "That is not your current password.",
+            "field"   => "current_password"
+        ]);
+        exit;
+    }
 }
 
 // Non-admins keep the email they signed in with. Compared against the
@@ -220,6 +309,19 @@ if ($avatarChanged) {
     $values[] = $avatarPath; // NULL when removed
 }
 
+if ($faceChanged) {
+    // Both columns move together. face_enabled on its own would leave a
+    // stale descriptor behind that crud/get_face_users.php still serves,
+    // and a descriptor without the flag would never be used.
+    $sets[]   = "face_descriptor = ?";
+    $types   .= "s";
+    $values[] = $faceValue; // NULL when removed
+
+    $sets[]   = "face_enabled = ?";
+    $types   .= "i";
+    $values[] = $faceEnabled;
+}
+
 $types   .= "i";
 $values[] = $userId;
 
@@ -239,6 +341,9 @@ if ($stmt->execute()) {
         "message"        => "Profile updated successfully!",
         "avatar_url"     => $avatarChanged && $avatarPath !== null ? $avatarPath : null,
         "avatar_removed" => $avatarRemoved,
+        // Lets pages/profile.php redraw the face card without a reload.
+        "face_changed"   => $faceChanged,
+        "face_enabled"   => $faceChanged ? (bool) $faceEnabled : null,
     ]);
 } else {
     echo json_encode(["status" => "error", "message" => "Update failed."]);

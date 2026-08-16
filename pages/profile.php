@@ -46,6 +46,12 @@ $system = mysqli_fetch_assoc($systemQuery);
             ? '../' . $avatarPath . '?v=' . @filemtime(__DIR__ . '/../' . $avatarPath)
             : '';
 
+        // Both columns have to agree before the card claims a face is on
+        // file: crud/get_face_users.php only serves rows where the flag is
+        // set AND the descriptor is non-empty, so anything else would show
+        // "enrolled" for a face that face login will never actually match.
+        $hasFace = !empty($user['face_enabled']) && trim((string)($user['face_descriptor'] ?? '')) !== '';
+
         // Initials bilang fallback — pareho ng lohika sa topBar.php.
         $initials = '';
         foreach (explode(' ', trim((string)($user['name'] ?? ''))) as $part) {
@@ -209,6 +215,74 @@ $system = mysqli_fetch_assoc($systemQuery);
                         </div>
                     </div>
 
+                    <hr class="profile-divider">
+
+                    <div class="profile-section-title">
+                        <i class="bi bi-person-bounding-box"></i>
+                        <div>
+                            <h4>Face Recognition</h4>
+                            <small>Sign in by looking at the camera instead of typing your password.</small>
+                        </div>
+                    </div>
+
+                    <?php
+                    /* data-enrolled is the single source of truth for this
+                       block's state. assets/js/profileFace.js flips it after a
+                       capture or a remove, and every label below is redrawn
+                       from it, so the markup and the script never disagree
+                       about whether a face is on file. */
+                    ?>
+                    <div class="face-enroll" id="faceEnroll" data-enrolled="<?= $hasFace ? '1' : '0' ?>">
+                        <div class="face-enroll-info">
+                            <span class="face-enroll-badge" id="faceEnrollBadge"></span>
+                            <small class="face-enroll-note" id="faceEnrollNote"></small>
+                        </div>
+
+                        <div class="face-enroll-actions">
+                            <button type="button" class="profile-btn-ghost" id="faceEnrollBtn">
+                                <i class="bi bi-camera"></i> <span id="faceEnrollBtnText">Set up</span>
+                            </button>
+                            <button type="button" class="profile-btn-ghost danger" id="faceRemoveBtn">
+                                <i class="bi bi-trash3"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+
+                    <?php
+                    /* Both ride along in the same FormData that
+                       assets/js/profileUpdate.js already builds from this
+                       form, so nothing new posts anywhere — crud/updateProfile.php
+                       simply gained two more fields to read. */
+                    ?>
+                    <input type="hidden" name="faceDescriptor" id="faceDescriptorField" value="">
+                    <input type="hidden" name="remove_face" id="removeFaceField" value="0">
+
+                    <hr class="profile-divider">
+
+                    <div class="profile-section-title">
+                        <i class="bi bi-shield-lock"></i>
+                        <div>
+                            <h4>Confirm It's You</h4>
+                            <small>
+                                Needed only when you change your password or your face — the two
+                                ways into this account. Leave it blank for anything else.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="profile-grid">
+                        <div class="field">
+                            <label for="currentPasswordField">Current Password</label>
+                            <div class="input-icon">
+                                <i class="bi bi-shield-lock"></i>
+                                <input type="password" name="current_password" id="currentPasswordField"
+                                    class="profile-input" placeholder="Your current password"
+                                    autocomplete="current-password">
+                            </div>
+                            <small class="field-error" id="currentPasswordError"></small>
+                        </div>
+                    </div>
+
                     <div class="profile-actions">
                         <button type="reset" class="profile-btn-ghost" id="profileResetBtn">
                             <i class="bi bi-arrow-counterclockwise"></i> Reset
@@ -219,12 +293,57 @@ $system = mysqli_fetch_assoc($systemQuery);
                     </div>
                 </section>
             </form>
+
+            <?php
+            /* Outside #profileForm but still inside #profilePage, and both
+               halves of that matter. Nested in the form, the dialog's buttons
+               would join the form's submit scope. Outside #profilePage, its
+               .profile-btn-ghost / .profile-btn-save would lose their styling
+               entirely — every button rule in main.css is scoped to that id.
+
+               Ids are prefixed pf- so none of them collide with the enrolment
+               modal on reg.php, which assets/js/faceRecognition.js binds to by
+               bare id. */
+            ?>
+            <div class="pf-face-modal" id="pfFaceModal" hidden>
+                <div class="pf-face-dialog" role="dialog" aria-modal="true" aria-labelledby="pfFaceTitle">
+                    <div class="pf-face-head">
+                        <h3 id="pfFaceTitle">
+                            <i class="bi bi-person-bounding-box"></i>
+                            <span id="pfFaceTitleText">Set up face recognition</span>
+                        </h3>
+                        <button type="button" class="pf-face-close" id="pfFaceClose" aria-label="Close">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="pf-face-stage">
+                        <video id="pfFaceVideo" autoplay muted playsinline></video>
+                        <canvas id="pfFaceCanvas"></canvas>
+                    </div>
+
+                    <div class="pf-face-pips" id="pfFacePips" aria-hidden="true"></div>
+
+                    <p class="pf-face-status" id="pfFaceStatus">Starting camera…</p>
+
+                    <div class="pf-face-actions">
+                        <button type="button" class="profile-btn-ghost" id="pfFaceCancel">Cancel</button>
+                        <button type="button" class="profile-btn-save" id="pfFaceCapture" disabled>
+                            <i class="bi bi-camera"></i> Capture
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
 
     </div>
 
     <?php include __DIR__ . "/../includes/footer.php"; ?>
+
+    <!-- face-api.js, same version the login and registration pages pin. -->
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="<?= asset('../assets/js/profileFace.js') ?>"></script>
 
     <script src="<?= asset('../assets/js/profileUpdate.js') ?>"></script>
     <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
