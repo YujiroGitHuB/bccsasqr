@@ -138,7 +138,10 @@ async function loadLoginModels() {
 
         faceLoginStatus.textContent = 'Loading AI models...';
         faceLoginStatus.className = 'face-login-status-modal';
-        await speak('Loading AI models', true);
+        /* Not awaited — this sat directly in front of the download, so the
+           7 MB of weights did not begin transferring until the sentence had
+           finished being spoken. */
+        speak('Loading AI models', true);
 
         await Promise.all([
             faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -148,7 +151,7 @@ async function loadLoginModels() {
 
         loginModelsLoaded = true;
         console.log('Models loaded successfully');
-        await speak('Models loaded successfully', true);
+        speak('Models loaded successfully', true);
         return true;
     } catch (error) {
         console.error('Error loading models:', error);
@@ -256,7 +259,11 @@ async function startLoginCamera() {
                 loginCanvas.width = loginVideo.videoWidth;
                 loginCanvas.height = loginVideo.videoHeight;
                 console.log('Camera started');
-                await speak('Camera started', true);
+                /* Not awaited: this promise is what startFaceLogin's
+                   Promise.all waits on, so awaiting the announcement here
+                   would hold the whole parallel group open until it finished
+                   speaking — reintroducing the delay the group removes. */
+                speak('Camera started', true);
                 resolve(true);
             };
         });
@@ -274,7 +281,7 @@ async function startLoginCamera() {
 // ========================================
 function stopFaceLogin() {
     if (loginDetectionInterval) {
-        clearInterval(loginDetectionInterval);
+        clearTimeout(loginDetectionInterval);
         loginDetectionInterval = null;
     }
 
@@ -446,7 +453,7 @@ async function detectAndMatchFace() {
                 isProcessingLogin = true;
 
                 if (loginDetectionInterval) {
-                    clearInterval(loginDetectionInterval);
+                    clearTimeout(loginDetectionInterval);
                     loginDetectionInterval = null;
                 }
 
@@ -593,33 +600,72 @@ async function loginWithFace(userId, userName, descriptor) {
 async function startFaceLogin() {
     faceLoginStatus.textContent = 'Loading...';
     faceLoginStatus.className = 'face-login-status-modal';
-    await speak('Starting face login', true);
+    /* Deliberately not awaited. speak() resolves on utterance.onend, so an
+       awaited announcement blocks for as long as it takes to say it out loud —
+       measured at 2.8s for this one line, 13.1s across the whole startup path.
+       The announcements still play; they just no longer gate the work. Later
+       calls pass force:true and cut off whatever is still speaking, which is
+       what you want from a status announcement: newest status wins. */
+    speak('Starting face login', true);
 
     console.log('\nStarting face login...\n');
 
-    const modelsReady = await loadLoginModels();
-    if (!modelsReady) return;
+    /* These three are independent: a ~7 MB model download, the descriptor
+       fetch (~1.4s against InfinityFree's remote MySQL), and the camera
+       permission prompt. Run in sequence the prompt only appeared after the
+       download had finished; overlapped, the user grants camera access while
+       the models are still streaming in. */
+    const [modelsReady, usersLoaded, cameraReady] = await Promise.all([
+        loadLoginModels(),
+        fetchRegisteredUsers(),
+        startLoginCamera()
+    ]);
 
-    const usersLoaded = await fetchRegisteredUsers();
-    if (!usersLoaded) return;
+    if (!modelsReady || !usersLoaded || !cameraReady) {
+        /* Whichever step failed has already written its own message. Release
+           the camera by hand rather than calling stopFaceLogin(), which would
+           reset that message back to the placeholder text. */
+        if (loginStream) {
+            loginStream.getTracks().forEach(track => track.stop());
+            loginStream = null;
+        }
+        return;
+    }
 
     if (registeredUsers.length === 0) {
         faceLoginStatus.textContent = 'No users with face recognition enabled. Please use password login.';
         faceLoginStatus.className = 'face-login-status-modal error';
-        await speak('No users with face recognition enabled. Please use password login.', true);
+        /* The camera is already live by the time we get here — it now starts
+           alongside the other two steps rather than after them, so bailing out
+           has to switch it off or the indicator light stays on. */
+        if (loginStream) {
+            loginStream.getTracks().forEach(track => track.stop());
+            loginStream = null;
+        }
+        speak('No users with face recognition enabled. Please use password login.', true);
         return;
     }
 
-    const cameraReady = await startLoginCamera();
-    if (!cameraReady) return;
-
     faceLoginStatus.textContent = 'Looking for face...';
     faceLoginStatus.className = 'face-login-status-modal detecting';
-    await speak('Looking for face. Please face the camera.', true);
+    speak('Looking for face. Please face the camera.', true);
 
     console.log('Face login ready - watching for faces...\n');
 
-    loginDetectionInterval = setInterval(async () => {
-        await detectAndMatchFace();
-    }, 500);
+    /* Self-scheduling instead of setInterval: setInterval does not wait for an
+       async callback, so on any device where a pass takes longer than the
+       delay — likely on a phone, where a single detect runs several times
+       slower than the 101ms measured on a desktop — the callbacks pile up and
+       the page degrades further with every tick. Chaining the next pass only
+       after the current one returns keeps exactly one detection in flight. */
+    const DETECT_DELAY_MS = 500;
+    const scheduleDetect = () => {
+        loginDetectionInterval = setTimeout(async () => {
+            await detectAndMatchFace();
+            /* A completed match or a stopped camera nulls the handle; without
+               this check the loop would resurrect itself after either. */
+            if (loginDetectionInterval !== null) scheduleDetect();
+        }, DETECT_DELAY_MS);
+    };
+    scheduleDetect();
 }
