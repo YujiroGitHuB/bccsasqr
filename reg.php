@@ -37,6 +37,13 @@ include __DIR__ . "/includes/systemConfig.php";
     <!-- Face-api.js for face recognition -->
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
+    <!-- Bootstrap Icons. This page draws its own icons as inline <svg>, so it
+         never needed the font — until the floating theme toggle arrived:
+         includes/theme_toggle.php renders <i class="bi">, and theme.js swaps
+         it between bi-sun-fill and bi-moon-stars-fill. Without this the button
+         renders as an empty circle. Same version as index.php. -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
     <?php
     /* index.php and reg.php are the two includers that sit AT the web root,
        so both pass an empty base; every other includer is one folder down
