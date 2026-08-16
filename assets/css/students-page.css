@@ -448,4 +448,21 @@
         flex: 1;
         justify-content: center;
     }
+
+    /* The overflow menu hung off the left edge of the screen: on a phone
+       the action row goes full width, and because "Add Student" is the
+       one that stretches, the "…" toggle ends up at the far left. The
+       menu is .dropdown-menu-end, so it right-aligns to that toggle —
+       210px of menu measured leftwards from x≈65px, which put Import
+       CSV, Promote Section and Delete All mostly off-screen. Popper
+       would normally shift it back, but data-bs-display="static" (set so
+       the menu is not clipped out of the toolbar) turns Popper off, so
+       nothing corrected it.
+
+       Left-aligning instead is enough: the toggle sits at the start of
+       the row, so the menu opens inwards and fits even at 320px. */
+    .stud-page .stud-more-menu {
+        right: auto;
+        left: 0;
+    }
 }
