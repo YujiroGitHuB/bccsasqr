@@ -392,14 +392,26 @@
    ============================================================ */
 
 /* The header tile takes the color of the dashboard card that was
-   clicked (.dash-risk.warn / .dash-risk.crit), so it is clear the
-   thing that opened and the thing it came from are the same. */
+   clicked (.dash-risk.warn / .dash-risk.crit, .dash-split
+   present/absent), so it is clear the thing that opened and the thing
+   it came from are the same. That is also why the title itself does
+   not need an icon: the tile has already said which list this is. */
 .app-modal-icon.is-warn {
     background: linear-gradient(135deg, #f59e0b, #d97706);
     box-shadow: 0 8px 20px rgba(245, 158, 11, .3);
 }
 
-.app-modal-icon.is-crit {
+/* Green is Present/Active everywhere in the app — it means the same
+   thing here. */
+.app-modal-icon.is-ok {
+    background: linear-gradient(135deg, #10b981, #047857);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, .3);
+}
+
+/* One red, two names: `is-crit` reads correctly on a risk threshold,
+   `is-bad` on the absent list. Defining it twice is how they drift. */
+.app-modal-icon.is-crit,
+.app-modal-icon.is-bad {
     background: linear-gradient(135deg, #ef4444, #b91c1c);
     box-shadow: 0 8px 20px rgba(239, 68, 68, .3);
 }
@@ -449,6 +461,16 @@
     border-radius: 12px;
     background: rgba(0, 0, 0, .2);
     overflow: auto;
+}
+
+/* That black film is a well behind the rows on a dark surface; on a
+   white one it is a grey slab with the list sitting on top of it. Only
+   light mode is corrected — dark keeps the look it was designed with.
+   `data-theme` is always stamped by includes/theme_head.php before the
+   first paint, so :not([data-theme="dark"]) is a safe "light" test —
+   the same one theme.css uses. */
+:root:not([data-theme="dark"]) .app-table-wrap {
+    background: rgba(var(--tint), .02);
 }
 
 .app-table {
@@ -511,6 +533,93 @@
     text-align: center;
     font-variant-numeric: tabular-nums;
     color: rgba(var(--tint), .6);
+}
+
+/* Roll-call times. Right-aligned on tabular figures so they stack into
+   a column you can run an eye down for the late arrivals — centred,
+   every row started in a slightly different place. Scoped to tbody:
+   `.app-table .app-time` would outrank `.app-table thead th` and take
+   the accent colour off the heading. */
+.app-table tbody .app-time {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: rgba(var(--tint), .6);
+}
+
+.app-table thead .app-time {
+    text-align: right;
+}
+
+/* ─── Filter over a rendered list ────────────────────────── */
+
+/* The attendance list is server-rendered in one piece, so its filter is
+   a plain text match over the rows already on screen — no second
+   request. It appears only past a handful of names (see $showFilter in
+   components/view_attendance.php): a search box over six rows is a
+   control that cannot help. */
+/* The attendance modal's body does not scroll (see the note in
+   components/view_attendance_modal.php), so its table has to fit
+   whatever is left after the header, chips, filter and footer —
+   measured at ~23rem of fixed furniture. The shared 58vh above assumes
+   a scrollable body, and at that height the Close button ended up
+   below the fold.
+
+   The floor is on the CAP, not on the height — `min-height: 11rem`
+   would pad a two-row list out with empty box. This way a short list
+   is exactly as tall as its rows, and a short laptop screen still
+   gets a usable window onto a long one (past that the page scrolls
+   the dialog, which is Bootstrap's own fallback). */
+#attendanceModal .app-table-wrap {
+    max-height: max(11rem, calc(100vh - 23rem));
+}
+
+.att-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .8rem;
+}
+
+.att-toolbar .app-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Smaller than a form field — this filters a list, it does not collect
+   an answer. */
+.att-toolbar .app-input .form-control {
+    min-height: 40px;
+    padding: .4rem .8rem .4rem 2.4rem;
+    font-size: .86rem;
+}
+
+/* Empty until something is typed. "Showing 34 of 34" before anyone has
+   filtered is a number that only asks to be read and then ignored. */
+.att-shown {
+    flex: 0 0 auto;
+    font-size: .78rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(var(--tint), .45);
+}
+
+@media (max-width: 575.98px) {
+    .att-toolbar {
+        flex-wrap: wrap;
+        gap: .45rem;
+    }
+
+    /* The house rule up in the FORM MODAL section hides
+       .app-modal-heading p on a phone, on the grounds that the title is
+       what matters. Here the subtitle IS what matters — which subject,
+       which section, which day. Hidden, the dialog reads "Present
+       students" and could be any class in the school; the old design at
+       least crammed all of it into the title. */
+    #attendanceModal .app-modal-heading p {
+        display: block;
+        font-size: .74rem;
+        line-height: 1.35;
+    }
 }
 
 /* ─── Subject filter and per-subject breakdown ──────────── */
@@ -872,16 +981,37 @@
     font-weight: 600;
 }
 
+/* The text colours come from the --*-ink tokens, which theme.css
+   darkens on a light ground (it declares them on .app-modal and
+   .app-swal, the two places chips appear). The literals are the dark
+   values, kept as fallbacks so a chip rendered outside either wrapper
+   still reads. #34d399 and #fcd34d were chosen to glow on near-black;
+   on white they are barely there, and these are numbers people act on. */
 .app-chip.is-ok {
     background: rgba(16, 185, 129, .12);
     border: 1px solid rgba(16, 185, 129, .25);
-    color: #34d399;
+    color: var(--ok-ink, #34d399);
 }
 
 .app-chip.is-warn {
     background: rgba(245, 158, 11, .12);
     border: 1px solid rgba(245, 158, 11, .28);
-    color: #fcd34d;
+    color: var(--warn-ink, #fcd34d);
+}
+
+.app-chip.is-bad {
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .28);
+    color: var(--bad-ink, #f87171);
+}
+
+/* No verdict attached — the class size, and an absent count of zero.
+   Colour on those would be claiming something about a number that is
+   only context. */
+.app-chip.is-plain {
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .12);
+    color: var(--ink-3);
 }
 
 /* The list of rows that were skipped. It scrolls inside its own

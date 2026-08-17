@@ -385,43 +385,11 @@ h4 {
   transition: transform 0.3s ease-out;
 }
 
-/* Table Styling */
-.table-modern {
-  border-collapse: separate;
-  border-spacing: 0 8px;
-}
-
-.table-modern tbody tr {
-  background: rgba(var(--tint), 0.05);
-  transition: all 0.3s ease;
-}
-
-.table-modern tbody tr:hover {
-  background: rgba(102, 126, 234, 0.2);
-  transform: scale(1.01);
-}
-
-.table-modern td {
-  border: none;
-  padding: 15px;
-  vertical-align: middle;
-}
-
-.table-modern td:first-child {
-  border-radius: 10px 0 0 10px;
-}
-
-.table-modern td:last-child {
-  border-radius: 0 10px 10px 0;
-}
-
-/* Badge Styling */
-.badge-modern {
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
+/* `.table-modern` and `.badge-modern` used to live here. Their only
+   caller was components/view_attendance.php, which now uses .app-table
+   from modal-form.css like every other list in the app — the two rule
+   sets were a second, near-identical table style that only one screen
+   could reach. */
 
 /* Scrollbar Styling */
 .modal-body::-webkit-scrollbar {
