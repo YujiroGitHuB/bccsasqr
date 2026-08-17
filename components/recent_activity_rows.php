@@ -11,7 +11,7 @@
  * Expects:
  *   $recentLogs  mysqli_result|null  rows with student_no, name, course,
  *                                    section, subject, time_in,
- *                                    instructor_name
+ *                                    instructor_name, photo_path
  *   $activityIsToday  bool           only changes the empty-state wording
  */
 $activityIsToday = $activityIsToday ?? true;
@@ -20,6 +20,16 @@ $activityIsToday = $activityIsToday ?? true;
     <?php while ($row = $recentLogs->fetch_assoc()): ?>
         <div class="dash-act-row">
             <div class="dash-act-avatar">
+                <?php // The initial stays underneath: `onerror` drops the <img>
+                      // when the file is gone, so a stale row in student_photos
+                      // degrades to the letter instead of a broken-image icon.
+                ?>
+                <?php if (!empty($row['photo_path'])): ?>
+                    <img src="../<?= htmlspecialchars($row['photo_path']) ?>"
+                         alt="<?= htmlspecialchars($row['name']) ?>"
+                         loading="lazy" decoding="async"
+                         onerror="this.remove()">
+                <?php endif; ?>
                 <?= htmlspecialchars(strtoupper(substr($row['name'], 0, 1))) ?>
             </div>
             <div class="dash-act-main">

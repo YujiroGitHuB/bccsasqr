@@ -130,11 +130,17 @@ $recent_where = $scope_tpl !== null ? str_replace('{a}', 'a.', $scope_tpl) : nul
 $fetch_recent = function (string $date) use ($conn, $recent_where) {
     if ($recent_where === null) return null;
 
+    // The two LEFT JOINs to students_tbl/student_photos are only for the
+    // avatar: attendance_tbl keeps its own copy of the name and section,
+    // so a student who has since been deleted still shows in the feed —
+    // just with the initial instead of a face.
     return $conn->query("
         SELECT a.student_no, a.name, a.course, a.section, a.subject, a.time_in,
-               u.name AS instructor_name
+               u.name AS instructor_name, p.photo_path
         FROM attendance_tbl a
         LEFT JOIN users u ON a.user_id = u.id
+        LEFT JOIN students_tbl s ON s.student_no = a.student_no
+        LEFT JOIN student_photos p ON p.s_id = s.id
         WHERE ($recent_where) AND DATE(a.date) = '$date'
         ORDER BY a.id DESC LIMIT 5
     ");

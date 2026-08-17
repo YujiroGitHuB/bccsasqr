@@ -852,6 +852,8 @@
 }
 
 .dash-page .dash-act-avatar {
+    position: relative;
+    overflow: hidden;
     flex-shrink: 0;
     width: 38px;
     height: 38px;
@@ -862,6 +864,17 @@
     font-weight: 700;
     color: var(--on-accent);
     background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+/* The photo covers the initial rather than replacing it, so the letter
+   is still there if the image 404s and the <img> removes itself. */
+.dash-page .dash-act-avatar img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .dash-page .dash-act-main {
