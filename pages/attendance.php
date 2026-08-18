@@ -279,6 +279,25 @@ $preSection = cleanSection(trim($_GET['section'] ?? ''));
                         <div class="att-toolbar-title">
                             <i class="bi bi-bar-chart"></i> Attendance Summary
                         </div>
+                        <?php if (can('attendance.export')): ?>
+                        <div class="att-actions">
+                            <!-- The three hidden inputs are filled from the
+                                 filter dropdowns on submit (assets/js/datatables.js),
+                                 so the PDF covers what is on screen. The rows
+                                 themselves are re-queried server-side; only the
+                                 filter values travel. -->
+                            <form action="../exports/export_summary_pdf.php" method="POST"
+                                  id="exportSummaryForm">
+                                <input type="hidden" name="course"  id="exportSummaryCourse">
+                                <input type="hidden" name="section" id="exportSummarySection">
+                                <input type="hidden" name="subject" id="exportSummarySubject">
+                                <button type="submit" class="att-btn primary">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                    <span class="btn-text">Export PDF</span>
+                                </button>
+                            </form>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <div class="att-card">
 

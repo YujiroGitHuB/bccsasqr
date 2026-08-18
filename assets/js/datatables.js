@@ -138,6 +138,20 @@ $(document).ready(function () {
             $('#filterSummaryCourse, #filterSummarySection, #filterSummarySubject').val('');
             summaryTable.search('').columns().search('').draw();
         });
+
+        // Export PDF — copy the live filter values into the form's hidden
+        // inputs at submit time. Read on submit rather than mirrored on
+        // every change so the two cannot drift apart, and only the three
+        // values travel: exports/export_summary_pdf.php re-runs the query
+        // itself rather than trusting rows from the page.
+        //
+        // The form is only rendered with the attendance.export permission,
+        // so guard on its presence.
+        $('#exportSummaryForm').on('submit', function () {
+            $('#exportSummaryCourse').val($('#filterSummaryCourse').val() || '');
+            $('#exportSummarySection').val($('#filterSummarySection').val() || '');
+            $('#exportSummarySubject').val($('#filterSummarySubject').val() || '');
+        });
     }
 
     // ================================================================
