@@ -74,6 +74,38 @@ function toggleTTS() {
 }
 
 // ========================================
+// SCAN EFFECT STATE
+// ========================================
+/* The sweeping beam, the grid and the corner guides over the preview are all
+   CSS (.face-scan-fx in login.css); this is the only thing that drives them.
+   The wrapper carries the state and the effect recolours itself from it, so
+   the beam, the brackets the canvas draws and the status chip below the video
+   are always the same colour as each other.
+
+   Re-applying the same state is a no-op on purpose: .is-success and .is-error
+   each fire a one-shot flash keyed off the class landing, and the detection
+   loop runs every 500ms — without this guard the flash would retrigger on
+   every pass for as long as the same face stayed in frame. */
+const SCAN_STATES = ['is-detecting', 'is-success', 'is-error'];
+let currentScanState = null;
+
+function setScanState(state) {
+    if (!faceVideoWrapper || state === currentScanState) return;
+
+    currentScanState = state;
+    faceVideoWrapper.classList.remove(...SCAN_STATES);
+
+    if (state) faceVideoWrapper.classList.add(state);
+}
+
+/* .is-live is what fades the whole effect in; kept separate from the state
+   above so switching states never has to remember to re-assert it. */
+function setScanLive(live) {
+    if (!faceVideoWrapper) return;
+    faceVideoWrapper.classList.toggle('is-live', live);
+}
+
+// ========================================
 // DRAW NAME LABEL ON CANVAS
 // ========================================
 /* The overlay palette is pinned rather than read from the theme tokens, and
@@ -335,6 +367,7 @@ async function startLoginCamera() {
                 loginCanvas.width = loginVideo.videoWidth;
                 loginCanvas.height = loginVideo.videoHeight;
                 console.log('Camera started');
+                setScanLive(true);
                 /* Not awaited: this promise is what startFaceLogin's
                    Promise.all waits on, so awaiting the announcement here
                    would hold the whole parallel group open until it finished
@@ -381,6 +414,9 @@ function stopFaceLogin() {
     if (loginVideo) {
         loginVideo.srcObject = null;
     }
+
+    setScanLive(false);
+    setScanState(null);
 
     faceLoginStatus.textContent = 'Initializing face recognition...';
     faceLoginStatus.className = 'face-login-status-modal';
@@ -545,6 +581,8 @@ async function detectAndMatchFace() {
 
                 drawNameLabel(ctx, box, matchedUser.name, 'success');
 
+                setScanState('is-success');
+
                 faceLoginStatus.textContent = `Identity confirmed! Logging in as ${matchedUser.name}`;
                 faceLoginStatus.className = 'face-login-status-modal success';
 
@@ -567,6 +605,8 @@ async function detectAndMatchFace() {
 
                 drawNameLabel(ctx, box, matchedUser.name, 'detecting');
 
+                setScanState('is-detecting');
+
                 faceLoginStatus.textContent = `Verifying ${matchedUser.name}... (${consecutiveMatches}/${REQUIRED_CONSECUTIVE_MATCHES})`;
                 faceLoginStatus.className = 'face-login-status-modal detecting';
             }
@@ -584,6 +624,8 @@ async function detectAndMatchFace() {
 
             drawNameLabel(ctx, box, 'Unknown', 'error');
 
+            setScanState('is-error');
+
             faceLoginStatus.textContent = 'Face not recognized. Please use password login.';
             faceLoginStatus.className = 'face-login-status-modal error';
         }
@@ -591,6 +633,10 @@ async function detectAndMatchFace() {
         consecutiveMatches = 0;
         lastMatchedUserId = null;
         lastSpokenName = null;
+
+        /* Back to the resting sweep: whatever verdict was on screen belonged
+           to a face that has since left the frame. */
+        setScanState(null);
 
         faceLoginStatus.textContent = 'Looking for face... Please face the camera.';
         faceLoginStatus.className = 'face-login-status-modal detecting';
@@ -699,6 +745,7 @@ async function startFaceLogin() {
             loginStream.getTracks().forEach(track => track.stop());
             loginStream = null;
         }
+        setScanLive(false);
         return;
     }
 
@@ -712,6 +759,7 @@ async function startFaceLogin() {
             loginStream.getTracks().forEach(track => track.stop());
             loginStream = null;
         }
+        setScanLive(false);
         speak('No users with face recognition enabled. Please use password login.', true);
         return;
     }

@@ -195,8 +195,20 @@ $themeBase = '';
                 </button>
             </div>
 
+            <!-- The wrapper carries the scan state: faceLogin.js swaps
+                 .is-live / .is-detecting / .is-success / .is-error on it and
+                 the effect below recolours and reacts. Purely decorative, so
+                 it sits under the detection canvas and is hidden from AT. -->
             <div class="face-video-wrapper-modal" id="faceVideoWrapper">
                 <video id="loginFaceVideo" autoplay muted playsinline></video>
+
+                <div class="face-scan-fx" aria-hidden="true">
+                    <span class="face-scan-grid"></span>
+                    <span class="face-scan-beam"></span>
+                    <span class="face-scan-guides"></span>
+                    <span class="face-scan-flash"></span>
+                </div>
+
                 <canvas id="loginFaceCanvas"></canvas>
             </div>
 

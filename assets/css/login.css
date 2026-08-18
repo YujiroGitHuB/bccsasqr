@@ -735,7 +735,189 @@ canvas {
        a white frame around a live face is glare, not a surface. */
     background: #0b1220;
     overflow: hidden;
+
+    /* Every colour in the scan effect below is mixed from this one
+       channel triple, so a state change is a single custom-property
+       swap rather than a dozen rules. Sky is the resting hue — the
+       same 56,189,248 the brand plate sweeps with, the status chip
+       tints with and the canvas draws its brackets in. */
+    --scan-rgb: 56, 189, 248;
+    --scan-speed: 2.4s;
 }
+
+.face-video-wrapper-modal.is-success { --scan-rgb: 16, 185, 129; }
+.face-video-wrapper-modal.is-error   { --scan-rgb: 239, 68, 68; }
+
+/* Verifying is the one state that should feel like it is working:
+   the beam speeds up as the consecutive-match count climbs. */
+.face-video-wrapper-modal.is-detecting { --scan-speed: 1.35s; }
+
+/* ─── Scan effect over the camera preview ────────────────────
+   Decorative only. It lives UNDER the detection canvas (z-index 10)
+   so the brackets and the name label faceLogin.js draws always win,
+   and it is invisible until .is-live goes on — before the camera
+   opens there is nothing to scan, and a beam sweeping over a black
+   rectangle just looks broken.
+
+   The whole thing is four spans rather than pseudo-elements on one,
+   because they animate on different clocks and .is-success has to
+   freeze the beam while the flash still plays. */
+
+.face-scan-fx {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    border-radius: inherit;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity .45s ease;
+    pointer-events: none;
+}
+
+.face-video-wrapper-modal.is-live .face-scan-fx {
+    opacity: 1;
+}
+
+/* Faint sensor grid — reads as "the camera is measuring", and gives
+   the beam something to travel across on an otherwise flat image. */
+.face-scan-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(var(--scan-rgb), .16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(var(--scan-rgb), .16) 1px, transparent 1px);
+    background-size: 34px 34px;
+    /* Strongest at the edges, clear over the middle where the face is. */
+    -webkit-mask-image: radial-gradient(ellipse 62% 58% at 50% 48%, transparent 40%, #000 100%);
+    mask-image: radial-gradient(ellipse 62% 58% at 50% 48%, transparent 40%, #000 100%);
+    opacity: .55;
+    transition: opacity .3s ease;
+}
+
+/* The sweep itself: a soft band with a bright filament at its centre,
+   same shape as .plate-scan on the brand plate. */
+.face-scan-beam {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 30%;
+    background:
+        linear-gradient(to bottom,
+            transparent,
+            rgba(var(--scan-rgb), .10) 42%,
+            rgba(var(--scan-rgb), .30) 50%,
+            rgba(var(--scan-rgb), .10) 58%,
+            transparent);
+    box-shadow: 0 0 22px rgba(var(--scan-rgb), .28);
+    animation: faceScanSweep var(--scan-speed) cubic-bezier(.45, 0, .55, 1) infinite;
+}
+
+.face-scan-beam::after {
+    content: "";
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    top: 50%;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(var(--scan-rgb), .95) 20%,
+            rgba(var(--scan-rgb), .95) 80%,
+            transparent);
+    box-shadow: 0 0 12px rgba(var(--scan-rgb), .8);
+}
+
+@keyframes faceScanSweep {
+    0%   { transform: translateY(-100%); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translateY(333%); opacity: 0; }
+}
+
+/* Viewfinder brackets on the frame corners — where to put your face.
+   Eight background layers, two per corner, so no extra elements. */
+.face-scan-guides {
+    position: absolute;
+    inset: 16px;
+    --g: rgba(var(--scan-rgb), .8);
+    --arm: 26px;
+    --thick: 2px;
+    background:
+        linear-gradient(var(--g) 0 0) left    top    / var(--thick) var(--arm) no-repeat,
+        linear-gradient(var(--g) 0 0) left    top    / var(--arm) var(--thick) no-repeat,
+        linear-gradient(var(--g) 0 0) right   top    / var(--thick) var(--arm) no-repeat,
+        linear-gradient(var(--g) 0 0) right   top    / var(--arm) var(--thick) no-repeat,
+        linear-gradient(var(--g) 0 0) left    bottom / var(--thick) var(--arm) no-repeat,
+        linear-gradient(var(--g) 0 0) left    bottom / var(--arm) var(--thick) no-repeat,
+        linear-gradient(var(--g) 0 0) right   bottom / var(--thick) var(--arm) no-repeat,
+        linear-gradient(var(--g) 0 0) right   bottom / var(--arm) var(--thick) no-repeat;
+    animation: faceScanPulse 2s ease-in-out infinite;
+}
+
+@keyframes faceScanPulse {
+    0%, 100% { opacity: .55; }
+    50%      { opacity: 1; }
+}
+
+/* Fires once when a state lands, by restarting the animation on a
+   class change. Off (scaled out, transparent) at rest. */
+.face-scan-flash {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: radial-gradient(circle at 50% 45%,
+            rgba(var(--scan-rgb), .28),
+            transparent 62%);
+}
+
+/* Locked on: the beam stops travelling and the frame holds steady —
+   the stillness is the signal that the scan is over. */
+.face-video-wrapper-modal.is-success .face-scan-beam,
+.face-video-wrapper-modal.is-error .face-scan-beam {
+    animation: none;
+    opacity: 0;
+}
+
+.face-video-wrapper-modal.is-success .face-scan-guides {
+    animation: none;
+    opacity: 1;
+    --arm: 40px;
+    --thick: 3px;
+}
+
+.face-video-wrapper-modal.is-success .face-scan-flash {
+    animation: faceScanFlash .7s ease-out 1;
+}
+
+.face-video-wrapper-modal.is-error .face-scan-guides {
+    animation: faceScanShake .4s ease-in-out 1;
+    opacity: 1;
+}
+
+.face-video-wrapper-modal.is-error .face-scan-flash {
+    animation: faceScanFlash .5s ease-out 1;
+}
+
+@keyframes faceScanFlash {
+    0%   { opacity: 0; transform: scale(1.06); }
+    35%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1); }
+}
+
+@keyframes faceScanShake {
+    0%, 100% { transform: translateX(0); }
+    25%      { transform: translateX(-5px); }
+    75%      { transform: translateX(5px); }
+}
+
+/* Grid off once a verdict is in — nothing left to measure. */
+.face-video-wrapper-modal.is-success .face-scan-grid,
+.face-video-wrapper-modal.is-error .face-scan-grid {
+    opacity: .2;
+}
+
 
 .face-video-wrapper-modal video {
     width: 100%;
