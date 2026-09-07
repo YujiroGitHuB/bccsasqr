@@ -1,0 +1,25 @@
+# ============================================================
+#  Pretty URLs for the QR generator API.
+#
+#  Optional. Without mod_rewrite the API still answers at
+#  index.php/students/019-464 and index.php?path=students/019-464
+#  (see api_path() in lib/http.php) — this file only removes the
+#  "index.php" from the middle of the URL.
+# ============================================================
+
+# MultiViews would happily serve index.php for /students, stealing
+# the request before the rewrite below ever runs.
+<IfModule mod_negotiation.c>
+    Options -MultiViews
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # No RewriteBase on purpose: the project may sit in a subfolder
+    # (/bccsasqr/api/v1) on one host and at the root on another.
+    # A relative substitution resolves against this directory either way.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>

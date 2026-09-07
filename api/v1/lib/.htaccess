@@ -1,0 +1,10 @@
+# These files only define functions — reaching them directly does
+# nothing useful and exposes paths. Everything enters through
+# api/v1/index.php.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
