@@ -33,6 +33,12 @@ jobs:
           # backups/** is the same story: the in-app backup feature writes its
           # .sql dumps on the server, so an unexcluded backups/ means every
           # push wipes the dumps it finds there.
+          #
+          # bccsasqr-mobile/** is the Flutter app. It is source for a phone,
+          # not files a web server ever serves — and android/ + ios/ alone are
+          # hundreds of files against InfinityFree's inode limit. Its build
+          # artifacts are already kept out of git by the Flutter project's own
+          # .gitignore; this keeps its source out of the web root.
           exclude: |
             **/.git*
             **/.git*/**
@@ -40,3 +46,4 @@ jobs:
             **/README.md
             uploads/**
             backups/**
+            bccsasqr-mobile/**
