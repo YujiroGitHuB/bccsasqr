@@ -82,6 +82,12 @@ class InMemoryStudentRepository implements StudentRepository {
     },
   ];
 
+  /// The seeded numbers, so the demo-mode banner can name them rather than
+  /// leaving whoever is testing to guess.
+  static List<String> get sampleNumbers => [
+    for (final json in _rawRecords) json['student_number'] as String,
+  ];
+
   @override
   Future<StudentRecord?> findByStudentNumber(StudentNumber number) async {
     await Future<void>.delayed(latency);

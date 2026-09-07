@@ -130,6 +130,37 @@ void main() {
     expect(exporter.lastFileStem, contains('019-464'));
   });
 
+  testWidgets('a connected build shows no demo notice', (tester) async {
+    await tester.pumpWidget(harness(_StubExportService()));
+
+    expect(find.text(AppStrings.demoModeTitle), findsNothing);
+  });
+
+  testWidgets('the demo fallback says so instead of lying', (tester) async {
+    // The failure this guards against: with no API_BASE_URL the app answers a
+    // real student number with "No verified record matches" — the same words
+    // an unknown number gets — so the API looks broken when it was never
+    // called. The notice must name the four numbers that do work.
+    await tester.pumpWidget(
+      BccSasqrApp(
+        repository: InMemoryStudentRepository(latency: Duration.zero),
+        exportService: _StubExportService(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.demoModeTitle), findsOneWidget);
+
+    // The seeded numbers also appear in the field hint and the format line,
+    // so anchor on the notice's own label rather than on a number.
+    final listed = find.textContaining(AppStrings.demoModeNumbers);
+    expect(listed, findsOneWidget);
+    expect(
+      tester.widget<Text>(listed).data,
+      contains(InMemoryStudentRepository.sampleNumbers.first),
+    );
+  });
+
   testWidgets('lays out on a small phone without overflowing', (tester) async {
     final view =
         TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;

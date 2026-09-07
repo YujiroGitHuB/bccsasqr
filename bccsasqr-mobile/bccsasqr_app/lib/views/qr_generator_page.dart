@@ -12,6 +12,7 @@ import '../services/qr_export_service.dart';
 import '../services/student_repository.dart';
 import 'widgets/app_footer.dart';
 import 'widgets/app_header_card.dart';
+import 'widgets/demo_mode_banner.dart';
 import 'widgets/details_panel.dart';
 import 'widgets/qr_preview_panel.dart';
 
@@ -196,6 +197,11 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const AppHeaderCard(),
+                        // Renders nothing when a backend was supplied.
+                        DemoModeBanner(
+                          active:
+                              widget.repository is InMemoryStudentRepository,
+                        ),
                         const SizedBox(height: 16),
                         if (wide)
                           IntrinsicHeight(

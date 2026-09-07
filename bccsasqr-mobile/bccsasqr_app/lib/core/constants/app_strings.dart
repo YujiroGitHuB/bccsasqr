@@ -51,6 +51,13 @@ abstract final class AppStrings {
       'No verified record matches that student number.';
   static const String errorLookupFailed =
       'We could not reach the records service. Try again in a moment.';
+  static const String demoModeTitle = 'Demo mode — not connected';
+  static const String demoModeBody =
+      'This build has no API_BASE_URL, so it is reading four bundled sample '
+      'records instead of the enrolment list on the server. A real student '
+      'number will report "not found" here.';
+  static const String demoModeNumbers = 'Numbers that work:';
+
   static const String errorGenerateFailed =
       'Could not generate your QR code. Try again in a moment.';
 
