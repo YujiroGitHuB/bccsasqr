@@ -2,6 +2,52 @@
 // Usage: import this file and use TTSManager.speak("Your message here")
 
 const TTSManager = {
+    /**
+     * Turn a record's name into something the voice will pronounce as a
+     * name. Names come out of the school's export in the form
+     * "DELA CRUZ, JUAN P." — and every speech engine reads an all-caps
+     * word as an initialism, so that gets spelled out letter by letter.
+     * Title case fixes the spelling; the rest just makes it sound like a
+     * person being called.
+     */
+    nameForSpeech(name) {
+        let s = String(name ?? '').trim().replace(/\s+/g, ' ');
+        if (!s) return '';
+
+        // "LAST, FIRST MIDDLE" → "FIRST MIDDLE LAST"
+        const comma = s.indexOf(',');
+        if (comma > -1) {
+            s = s.slice(comma + 1).trim() + ' ' + s.slice(0, comma).trim();
+        }
+
+        // A suffix is spelled out ("J-R", "I-I-I") by every engine, so it
+        // is said as the word instead — and it belongs after the
+        // surname, not stranded in the middle where the swap above left
+        // it.
+        const SUFFIX = {
+            jr: 'Junior', sr: 'Senior',
+            ii: 'the Second', iii: 'the Third', iv: 'the Fourth'
+        };
+
+        const words   = s.split(' ');
+        const spoken  = [];
+        let   suffix  = '';
+
+        for (const w of words) {
+            const bare = w.replace(/\.$/, '').toLowerCase();
+            if (SUFFIX[bare]) { suffix = SUFFIX[bare]; continue; }
+            // A lone initial ("P.") is read as a letter no matter what,
+            // and adds nothing when the name is spoken aloud.
+            if (/^[A-Za-z]\.?$/.test(w)) continue;
+            // Title case each part, so "DELA CRUZ-SANTOS" survives.
+            spoken.push(w.toLowerCase().replace(/(^|[-'’])([a-zà-ÿ])/g,
+                (_, sep, c) => sep + c.toUpperCase()));
+        }
+
+        if (suffix) spoken.push(suffix);
+        return spoken.join(' ').trim();
+    },
+
     // Speak a message with optional callback
     speak(text, onEnd = null) {
         if (!window.speechSynthesis) {
@@ -42,7 +88,11 @@ const TTSManager = {
             // Add callback if provided
             if (onEnd) utterance.onend = onEnd;
 
-            window.speechSynthesis.speak(utterance);
+            // Chrome drops the utterance when speak() lands in the same
+            // task as the cancel() above — the queue is still tearing
+            // down. One tick of breathing room is enough, and it is why
+            // back-to-back scans used to fall silent.
+            setTimeout(() => window.speechSynthesis.speak(utterance), 60);
         };
 
         // Check if voices are already loaded

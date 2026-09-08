@@ -8,11 +8,23 @@ const qrResult      = document.getElementById('qrResult');
 const subjectSelect = document.getElementById('subjectSelect');
 const scannerStatus = document.getElementById('scannerStatus');
 const beep          = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
+beep.preload = 'auto';
+
+/* A single Audio element ignores play() while it is still playing, so on
+   back-to-back scans the second scan used to go silent. Rewinding first
+   makes every scan sound. */
+function playBeep() {
+    try {
+        beep.currentTime = 0;
+        beep.play().catch(() => {});
+    } catch (e) { /* autoplay policy — the vibration still fires */ }
+}
 
 /* ── Scanner State ──────────────────────────────────────── */
 let stream           = null;
 let scanning         = false;
 let lastDetectedCode = '';
+let lastCodeTimer    = null;
 let lastErrorTime    = 0;
 const ERROR_COOLDOWN = 3000;
 let selectedSubject     = null;
@@ -334,7 +346,7 @@ function handleScanned(text) {
         qrResult.style.color  = '#f87171';
         qrResult.textContent  = 'Please select a subject first!';
         qrResult.className    = 'error';
-        beep.play();
+        playBeep();
         TTSManager.speak('Please select a subject first!');
         return;
     }
@@ -345,7 +357,7 @@ function handleScanned(text) {
         qrResult.style.color = '#f87171';
         qrResult.textContent = 'Invalid QR format!';
         qrResult.className   = 'error';
-        beep.play();
+        playBeep();
         navigator.vibrate?.(150);
         TTSManager.speak('Invalid QR Format!');
         return;
@@ -413,22 +425,26 @@ function handleScanned(text) {
                 qrResult.style.color = '#4ade80';
                 qrResult.className   = 'success';
             }
-            beep.play();
+            playBeep();
             navigator.vibrate?.([50, 30, 50]);
-            TTSManager.speak(`Time in recorded for ${response.name ?? student.id} in ${selectedSubjectName}.`);
+            // The name is read, not the raw record: the school export is
+            // all-caps, which every voice spells out letter by letter.
+            // Kept to one short phrase — the old sentence ran long
+            // enough that the next scan cut it off mid-name.
+            TTSManager.speak(`${TTSManager.nameForSpeech(response.name) || student.id}, recorded.`);
 
         } else if (response.message === 'already_marked') {
             qrResult.textContent = `⚠ Already marked: ${student.id}`;
             qrResult.style.color = '#facc15';
             qrResult.className   = 'warning';
-            beep.play(); navigator.vibrate?.(200);
+            playBeep(); navigator.vibrate?.(200);
             TTSManager.speak('Already marked today.');
 
         } else if (response.message === 'not_authorized') {
             qrResult.textContent = '✗ Subject not assigned to you';
             qrResult.style.color = '#f87171';
             qrResult.className   = 'error';
-            beep.play(); navigator.vibrate?.([100, 50, 100]);
+            playBeep(); navigator.vibrate?.([100, 50, 100]);
             TTSManager.speak('You are not authorized for this subject.');
             Swal.fire({ icon: 'error', title: 'Not Authorized',
                 html: `<p class="text-warning">This subject is not assigned to you.</p>`,
@@ -438,7 +454,7 @@ function handleScanned(text) {
             qrResult.textContent = `✗ Student ${student.id} not found`;
             qrResult.style.color = '#f87171';
             qrResult.className   = 'error';
-            beep.play(); navigator.vibrate?.([100, 50, 100]);
+            playBeep(); navigator.vibrate?.([100, 50, 100]);
             TTSManager.speak('Student not found in database.');
             Swal.fire({ icon: 'error', title: 'Student Not Found',
                 html: `<p>Student Number: <strong>${student.id}</strong></p>
@@ -449,7 +465,7 @@ function handleScanned(text) {
             qrResult.textContent = `✗ Section not covered by ${selectedSubjectName}`;
             qrResult.style.color = '#f87171';
             qrResult.className   = 'error';
-            beep.play(); navigator.vibrate?.([100, 50, 100]);
+            playBeep(); navigator.vibrate?.([100, 50, 100]);
             TTSManager.speak('Section mismatch.');
             Swal.fire({ icon: 'error', title: 'Section Not Covered',
                 html: `<p class="text-warning">Student's section is not covered by <strong>${selectedSubjectName}</strong>.</p>`,
@@ -461,7 +477,7 @@ function handleScanned(text) {
             qrResult.textContent = '✗ No photo on file — cannot verify identity';
             qrResult.style.color = '#f87171';
             qrResult.className   = 'error';
-            beep.play(); navigator.vibrate?.([100, 50, 100]);
+            playBeep(); navigator.vibrate?.([100, 50, 100]);
             TTSManager.speak('Student photo required.');
             Swal.fire({
                 icon: 'error',
@@ -475,7 +491,7 @@ function handleScanned(text) {
         } else if (response.message === 'not_enrolled') {
             qrResult.textContent = `✗ Student not enrolled in ${selectedSubjectName}`;
             qrResult.style.color = '#f87171';
-            beep.play();
+            playBeep();
             TTSManager.speak(`Student is not enrolled in ${selectedSubjectName}.`);
             Swal.fire({ icon: 'error', title: 'Not Enrolled',
                 html: `<p>Student <strong>${student.id}</strong> is not enrolled in <strong>${selectedSubjectName}</strong></p>`,
@@ -504,35 +520,72 @@ function handleScanned(text) {
 /* ============================================================
    SCAN LOOP
    ============================================================ */
-function tick() {
+/* The frame the decoder actually reads. It is built once and reused —
+   the old loop allocated a fresh 1280x720 canvas on every animation
+   frame, then asked jsQR to read all 900k pixels of it. That is what
+   made the camera stutter and each scan feel a beat late; a QR code
+   only needs a fraction of that resolution to decode. */
+const SCAN_WIDTH   = 480;   // downscaled frame sent to jsQR
+const SCAN_INTERVAL = 80;   // ms between decode attempts (~12/sec)
+
+const scanCanvas = document.createElement('canvas');
+const scanCtx    = scanCanvas.getContext('2d', { willReadFrequently: true });
+let   lastScanAt = 0;
+
+function tick(now = 0) {
     if (!scanning) return;
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        const canvas  = document.createElement('canvas');
-        canvas.width  = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx     = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-        if (typeof jsQR === 'undefined') {
-            debugLog('jsQR library not loaded!', 'error');
-            scanning = false;
-            return;
-        }
-
-        const code = jsQR(imgData.data, canvas.width, canvas.height);
-        if (code?.location) {
-            drawDetectionBox(code.location);
-            if (code.data !== lastDetectedCode) {
-                lastDetectedCode = code.data;
-                handleScanned(code.data);
-                setTimeout(() => { lastDetectedCode = ''; }, 1500);
-            }
-        } else {
-            clearDetectionBox();
-        }
-    }
     requestAnimationFrame(tick);
+
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+    if (now - lastScanAt < SCAN_INTERVAL) return;
+    lastScanAt = now;
+
+    if (typeof jsQR === 'undefined') {
+        debugLog('jsQR library not loaded!', 'error');
+        scanning = false;
+        return;
+    }
+
+    const scale = Math.min(1, SCAN_WIDTH / video.videoWidth);
+    const w     = Math.round(video.videoWidth  * scale);
+    const h     = Math.round(video.videoHeight * scale);
+    if (scanCanvas.width !== w || scanCanvas.height !== h) {
+        scanCanvas.width  = w;
+        scanCanvas.height = h;
+    }
+    scanCtx.drawImage(video, 0, 0, w, h);
+    const imgData = scanCtx.getImageData(0, 0, w, h);
+
+    // Student QRs are always printed dark-on-light, so the inverted pass
+    // is half the decode time spent on a case that never comes up.
+    const code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
+
+    if (code?.location) {
+        // The box is drawn over the full-size video, so the corners have
+        // to come back out of the downscaled frame.
+        drawDetectionBox(scaleLocation(code.location, 1 / scale));
+        if (code.data !== lastDetectedCode) {
+            lastDetectedCode = code.data;
+            handleScanned(code.data);
+            // One timer only: without this, the timer from the previous
+            // student would clear the guard for the current one and the
+            // same code would fire twice.
+            clearTimeout(lastCodeTimer);
+            lastCodeTimer = setTimeout(() => { lastDetectedCode = ''; }, 1500);
+        }
+    } else {
+        clearDetectionBox();
+    }
+}
+
+function scaleLocation(loc, k) {
+    const p = c => ({ x: c.x * k, y: c.y * k });
+    return {
+        topLeftCorner:     p(loc.topLeftCorner),
+        topRightCorner:    p(loc.topRightCorner),
+        bottomRightCorner: p(loc.bottomRightCorner),
+        bottomLeftCorner:  p(loc.bottomLeftCorner)
+    };
 }
 
 /* ============================================================
