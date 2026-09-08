@@ -151,6 +151,9 @@ $fetch_recent = function (string $date) use ($conn, $recent_where) {
 // re-running the KPI and absence queries every half minute.
 if (($_GET['ajax'] ?? '') === 'recent') {
     header('Content-Type: text/html; charset=utf-8');
+    // Says outright that this reply is the five rows and not a page.
+    // The panel checks for it before painting anything.
+    header('X-Activity-Rows: 1');
     $recentLogs      = $fetch_recent($selected_date);
     $activityIsToday = ($selected_date === $today);
     include __DIR__ . "/../components/recent_activity_rows.php";
@@ -1169,13 +1172,30 @@ $at_risk_top   = array_slice($at_risk, 0, 10);
                 const live = document.getElementById('activityLive');
                 if (!rows) return;
 
-                const URL_ = '<?= htmlspecialchars($dash_url(['ajax' => 'recent']), ENT_QUOTES) ?>';
+                // json_encode, not htmlspecialchars. Entities are not
+                // decoded inside a <script> element, so escaping turned
+                // the "&" into a literal "&amp;" and the query arrived
+                // as `amp;ajax=recent` — $_GET['ajax'] never matched,
+                // the fragment branch never ran, and the endpoint
+                // answered with the whole dashboard page.
+                const URL_ = <?= json_encode($dash_url(['ajax' => 'recent']),
+                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES) ?>;
                 const EVERY = 30000;
                 let timer = null;
 
                 function refresh() {
                     fetch(URL_, { headers: { 'X-Requested-With': 'fetch' } })
-                        .then(r => r.ok ? r.text() : Promise.reject(r.status))
+                        .then(r => {
+                            // The panel takes the fragment and nothing
+                            // else. An expired session answers with a
+                            // redirect to the login page, and fetch
+                            // follows redirects — so r.ok alone would
+                            // happily paint a whole page into five rows.
+                            if (!r.ok || !r.headers.get('X-Activity-Rows')) {
+                                return Promise.reject(r.status);
+                            }
+                            return r.text();
+                        })
                         .then(html => { rows.innerHTML = html; })
                         .catch(() => { /* A missed poll is not worth a message. */ });
                 }
