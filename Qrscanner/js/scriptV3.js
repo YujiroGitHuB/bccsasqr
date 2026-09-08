@@ -525,7 +525,7 @@ function handleScanned(text) {
    frame, then asked jsQR to read all 900k pixels of it. That is what
    made the camera stutter and each scan feel a beat late; a QR code
    only needs a fraction of that resolution to decode. */
-const SCAN_WIDTH   = 480;   // downscaled frame sent to jsQR
+const SCAN_WIDTH   = 640;   // downscaled frame sent to jsQR
 const SCAN_INTERVAL = 80;   // ms between decode attempts (~12/sec)
 
 const scanCanvas = document.createElement('canvas');
@@ -556,9 +556,12 @@ function tick(now = 0) {
     scanCtx.drawImage(video, 0, 0, w, h);
     const imgData = scanCtx.getImageData(0, 0, w, h);
 
-    // Student QRs are always printed dark-on-light, so the inverted pass
-    // is half the decode time spent on a case that never comes up.
-    const code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
+    // Both passes are needed. The generator draws the code light-on-dark
+    // (colorDark #38bdf8 on colorLight #0f172a in QRgenerator/js/
+    // scriptv2.js), so the inverted pass is the one that reads a BCC QR
+    // off a screen — while a photocopied or reprinted code comes in the
+    // usual dark-on-light. Skipping either one stops the scanner dead.
+    const code = jsQR(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
 
     if (code?.location) {
         // The box is drawn over the full-size video, so the corners have
