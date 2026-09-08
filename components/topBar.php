@@ -56,6 +56,21 @@ $__avatarUrl  = $__avatarFile !== '' && is_file($__avatarFile)
         <span><?php echo htmlspecialchars($systemAcronym ?? 'Home'); ?></span>
     </a>
 
+    <!-- What's New. Sits before the theme switch so the pair reads
+         left-to-right as "what changed" then "how it looks", and so
+         the unread dot is not the control closest to the avatar —
+         where it would be mistaken for a notification about the
+         account.
+
+         The dot is added by assets/js/whatsNew.js: whether this
+         browser has seen the newest release is answered from
+         localStorage, which the server cannot read. The modal is
+         rendered by includes/footer.php. -->
+    <button class="tb-news" id="whatsNewBtn" type="button"
+            aria-label="What's New" title="What's New">
+        <i class="bi bi-stars" aria-hidden="true"></i>
+    </button>
+
     <!-- Theme toggle. Sits beside the avatar rather than inside the
          dropdown: it is a switch, not a destination, and burying a
          one-click control behind a menu makes it a two-click one.

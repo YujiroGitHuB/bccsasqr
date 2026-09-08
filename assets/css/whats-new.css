@@ -1,0 +1,377 @@
+/* ============================================================
+   WHAT'S NEW — the release timeline, and the topbar button that
+   opens it.
+
+   Loaded after topbar.css and before mobile.css (see
+   includes/header.php), which is what lets the `.tb-news` rules
+   below adjust the topbar's own spacing without editing it.
+
+   The dialog itself is a plain .app-modal — the box, header, icon
+   tile, close button and footer all come from modal-form.css. Only
+   the timeline inside the body is new, so this file is short on
+   purpose: a second modal vocabulary is exactly what modal-form.css
+   was written to stop.
+
+   Colours: no literal neutrals. Surfaces and text come from the
+   theme tokens (assets/css/theme.css), and the three tag colours
+   reuse the --*-ink tokens that theme.css already darkens for a
+   light ground on .app-modal, with the dark value as the fallback —
+   the same pattern as .app-chip in modal-form.css.
+   ============================================================ */
+
+/* ─── The topbar button ──────────────────────────────────────
+   Styled as a sibling of .tb-theme, not a copy of it: same size,
+   same pill, same hover, so the two read as one pair of controls.
+   ─────────────────────────────────────────────────────────── */
+
+.topbar .tb-news {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    /* topbar.css puts `margin-left: auto` on .tb-theme to pin the
+       right-hand cluster (the topbar is space-between, so without it
+       a fourth child drifts into the middle). This button now comes
+       first in that cluster, so it takes the auto margin over — and
+       the rule below takes it back off .tb-theme, which would
+       otherwise push the two apart. */
+    margin-left: auto;
+    padding: 0;
+    border: 1px solid rgba(var(--tint), .12);
+    border-radius: 999px;
+    background: rgba(var(--tint), .04);
+    color: var(--ink-3);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.topbar .tb-news+.tb-theme {
+    margin-left: .4rem;
+}
+
+.topbar .tb-news:hover {
+    background: rgba(var(--tint), .1);
+    border-color: rgba(var(--tint), .2);
+    color: var(--ink);
+}
+
+.topbar .tb-news:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* The unread dot. Hidden until whatsNew.js finds a release this
+   browser has not seen — it is added by JS rather than rendered
+   here, because the answer lives in localStorage and the server
+   cannot know it. */
+.topbar .tb-news .tb-news-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #0ea5e9;
+    /* A ring in the bar's own colour, so the dot reads as separate
+       from the icon underneath it in both themes. */
+    box-shadow: 0 0 0 2px var(--surface);
+}
+
+.topbar .tb-news.is-unread {
+    color: var(--ink);
+    border-color: rgba(14, 165, 233, .35);
+    background: rgba(14, 165, 233, .12);
+}
+
+/* One slow pulse, not a loop: it should catch the eye once on
+   arrival and then stop asking for attention. */
+.topbar .tb-news.is-unread .tb-news-dot {
+    animation: wn-pulse 2s ease-out 3;
+}
+
+@keyframes wn-pulse {
+    0% {
+        box-shadow: 0 0 0 2px var(--surface), 0 0 0 0 rgba(14, 165, 233, .55);
+    }
+
+    70% {
+        box-shadow: 0 0 0 2px var(--surface), 0 0 0 8px rgba(14, 165, 233, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 2px var(--surface), 0 0 0 0 rgba(14, 165, 233, 0);
+    }
+}
+
+/* ─── The timeline ───────────────────────────────────────────
+   One rail down the left, a node per release, the items indented
+   beside it. The rail is drawn on the <ol> rather than per release
+   so it is one continuous line instead of a stack of segments that
+   have to meet exactly.
+   ─────────────────────────────────────────────────────────── */
+
+.wn-modal .modal-body {
+    padding-bottom: .5rem;
+}
+
+.wn-timeline {
+    position: relative;
+    list-style: none;
+    margin: .35rem 0 0;
+    /* Room for the 34px node plus its gap. The nodes are centred on
+       the rail, which sits at 17px. */
+    padding: 0 0 0 3rem;
+}
+
+.wn-timeline::before {
+    content: '';
+    position: absolute;
+    top: .4rem;
+    bottom: 1.6rem;
+    left: 17px;
+    width: 2px;
+    /* Solid at the top where the newest release is, fading out at
+       the bottom — the log has no end, it just stops being
+       interesting. */
+    background: linear-gradient(180deg,
+            var(--am, #0ea5e9),
+            rgba(var(--tint), .24) 18%,
+            rgba(var(--tint), .1));
+}
+
+.wn-release {
+    position: relative;
+    padding-bottom: 1.85rem;
+}
+
+.wn-release:last-child {
+    padding-bottom: .5rem;
+}
+
+.wn-node {
+    position: absolute;
+    top: -2px;
+    left: -3rem;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    border: 1px solid var(--am-border, rgba(var(--tint), .07));
+    background: var(--surface);
+    color: var(--ink-3);
+    font-size: .9rem;
+}
+
+/* Only the newest release gets the accent tile — everything below
+   it is history, and colouring all of them makes none of them
+   stand out. */
+.wn-release.is-latest .wn-node {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--am, #0ea5e9), var(--am-deep, #06b6d4));
+    color: var(--on-accent);
+    box-shadow: 0 6px 16px rgba(14, 165, 233, .35);
+}
+
+.wn-head {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .15rem;
+}
+
+.wn-date {
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-4);
+}
+
+.wn-latest {
+    display: inline-flex;
+    align-items: center;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(14, 165, 233, .3);
+    background: rgba(14, 165, 233, .12);
+    color: var(--am-ink, #7dd3fc);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.wn-title {
+    margin: 0 0 .2rem;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: var(--ink);
+}
+
+.wn-summary {
+    margin: 0 0 .75rem;
+    font-size: .83rem;
+    line-height: 1.55;
+    color: var(--ink-4);
+}
+
+/* ─── The items in a release ─────────────────────────────── */
+
+.wn-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: .5rem;
+}
+
+.wn-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    padding: .7rem .85rem;
+    border-radius: 13px;
+    border: 1px solid var(--am-border, rgba(var(--tint), .07));
+    background: rgba(var(--tint), .03);
+}
+
+.wn-item-icon {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: rgba(var(--tint), .06);
+    color: var(--ink-3);
+    font-size: .85rem;
+}
+
+.wn-item-body {
+    min-width: 0;
+}
+
+.wn-item-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin-bottom: .12rem;
+}
+
+.wn-item-head strong {
+    font-size: .88rem;
+    font-weight: 650;
+    color: var(--ink-2);
+}
+
+.wn-item-body p {
+    margin: 0;
+    font-size: .82rem;
+    line-height: 1.6;
+    color: var(--ink-4);
+}
+
+.wn-item-body code {
+    padding: .05rem .3rem;
+    border-radius: 4px;
+    background: rgba(var(--tint), .08);
+    color: var(--ink-3);
+    font-size: .95em;
+}
+
+/* The New / Improved / Fixed chip. Same shape as .app-chip, but its
+   own class: .app-chip carries a bigger pad meant for the import
+   counts, and next to a title this needs to be the smaller thing. */
+.wn-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: .08rem .5rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.wn-tag.is-new {
+    background: rgba(14, 165, 233, .12);
+    border: 1px solid rgba(14, 165, 233, .28);
+    color: var(--am-ink, #7dd3fc);
+}
+
+.wn-tag.is-improved {
+    background: rgba(139, 92, 246, .12);
+    border: 1px solid rgba(139, 92, 246, .28);
+    color: var(--att-ink, #c4b5fd);
+}
+
+.wn-tag.is-fixed {
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .25);
+    color: var(--ok-ink, #34d399);
+}
+
+.wn-tag.is-plain {
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .12);
+    color: var(--ink-3);
+}
+
+/* The full stop at the bottom of the rail. Without it the fade just
+   trails off and the list looks cut short rather than finished. */
+.wn-end {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin: 0;
+    padding-left: 3rem;
+    font-size: .78rem;
+    color: var(--ink-5);
+}
+
+/* ─── Phone ──────────────────────────────────────────────── */
+
+@media (max-width: 575.98px) {
+    .wn-timeline {
+        padding-left: 2.4rem;
+    }
+
+    .wn-timeline::before {
+        left: 13px;
+    }
+
+    .wn-node {
+        left: -2.4rem;
+        width: 27px;
+        height: 27px;
+        border-radius: 9px;
+        font-size: .78rem;
+    }
+
+    .wn-end {
+        padding-left: 2.4rem;
+    }
+
+    /* The icon tile is the first thing to go: at this width the text
+       beside it is down to a handful of words per line. */
+    .wn-item-icon {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .topbar .tb-news {
+        transition: none;
+    }
+
+    .topbar .tb-news.is-unread .tb-news-dot {
+        animation: none;
+    }
+}

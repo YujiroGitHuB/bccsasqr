@@ -22,5 +22,17 @@
      layout). -->
 <link rel="stylesheet" href="<?= asset('../assets/css/sidebar.css') ?>">
 <link rel="stylesheet" href="<?= asset('../assets/css/topbar.css') ?>">
+<!-- The house modal style. It used to be linked by the four pages
+     that had a modal (dashboard, settings, students, the photo
+     profile). The What's New dialog below is on EVERY page with a
+     topbar, so its stylesheet has to be too.
+     Those four pages still carry their own copy, deliberately: there
+     it loads after the page stylesheet, and that order is what
+     decides the look today. The browser fetches the file once
+     either way. -->
+<link rel="stylesheet" href="<?= asset('../assets/css/modal-form.css') ?>">
+<!-- What's New — the release timeline and its topbar button. After
+     topbar.css, which it adjusts the right-hand spacing of. -->
+<link rel="stylesheet" href="<?= asset('../assets/css/whats-new.css') ?>">
 <!-- Mobile/tablet layout — must STAY last to override main.css -->
 <link rel="stylesheet" href="<?= asset('../assets/css/mobile.css') ?>">
