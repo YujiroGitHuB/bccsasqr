@@ -42,8 +42,10 @@
  */
 
 // Raise this to the newest release's `id` when you want the dot to
-// come back for everyone.
-const WHATS_NEW_VERSION = '2026-09-08';
+// come back for everyone. A release that is added to again on the same
+// day takes a `.2`, `.3` suffix — the id stays the date, but the dot
+// only returns when this string changes.
+const WHATS_NEW_VERSION = '2026-09-08.2';
 
 /**
  * The changelog, newest release first.
@@ -58,8 +60,8 @@ function whats_new_releases(): array
             'id'      => '2026-09-08',
             'date'    => '2026-09-08',
             'icon'    => 'bi-lightning-charge-fill',
-            'title'   => 'Subject Enrollment opens straight away',
-            'summary' => 'The heaviest page in the system was doing all of its work before showing you anything.',
+            'title'   => 'Pages that keep up with you',
+            'summary' => 'The heaviest page in the system was doing all of its work before showing you anything, and the scanner was redoing all of its work on every single camera frame.',
             'items'   => [
                 [
                     'type'  => 'improved',
@@ -78,6 +80,24 @@ function whats_new_releases(): array
                     'icon'  => 'bi-quote',
                     'title' => 'Names with an apostrophe',
                     'text'  => 'The remove button on an enrollment broke on a name like O&rsquo;Brien. It does not any more.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-camera-video',
+                    'title' => 'A scanner that keeps up with back-to-back scans',
+                    'text'  => 'Every frame from the camera was being read at its full size, sixty times a second, which is what made the picture stutter and each scan land a beat late. It now reads a smaller frame about twelve times a second &mdash; more than enough for a QR code. The beep also went silent on the second scan of a queue; it sounds every time now.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-volume-up',
+                    'title' => 'Student names are spoken, not spelled out',
+                    'text'  => 'Names arrive from the school&rsquo;s export in capitals, and every voice reads a word in capitals letter by letter &mdash; so <code>DELA CRUZ, JUAN P.</code> was being spelled aloud. The scanner now says &ldquo;Juan Dela Cruz&rdquo;, and it no longer runs so long that the next scan cuts it off mid-name.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-window-stack',
+                    'title' => 'The dashboard no longer appears inside itself',
+                    'text'  => 'After half a minute, the Recent Activity panel refreshed itself with a whole second copy of the dashboard &mdash; topbar, cards and all &mdash; instead of the five scan rows. It asks for the rows correctly now, and it will only ever draw rows, so an expired sign-in cannot put a login page in there either.',
                 ],
                 [
                     'type'  => 'new',
