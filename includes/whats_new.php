@@ -43,7 +43,7 @@
 
 // Raise this to the newest release's `id` when you want the dot to
 // come back for everyone.
-const WHATS_NEW_VERSION = '2026-09-07';
+const WHATS_NEW_VERSION = '2026-09-08';
 
 /**
  * The changelog, newest release first.
@@ -53,6 +53,40 @@ const WHATS_NEW_VERSION = '2026-09-07';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-08',
+            'date'    => '2026-09-08',
+            'icon'    => 'bi-lightning-charge-fill',
+            'title'   => 'Subject Enrollment opens straight away',
+            'summary' => 'The heaviest page in the system was doing all of its work before showing you anything.',
+            'items'   => [
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-stopwatch',
+                    'title' => 'A much lighter Subject Enrollment page',
+                    'text'  => 'It used to write out all 1,586 enrollments and every student in the school — about 4.4&nbsp;MB — before the first five rows could appear. The rows now arrive as they are needed, which is roughly a thirteenth of that.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-search',
+                    'title' => 'A student picker that keeps up with typing',
+                    'text'  => 'The dropdown draws only the names your search actually matches instead of all 1,500 at once, so it no longer stutters on each keystroke.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-quote',
+                    'title' => 'Names with an apostrophe',
+                    'text'  => 'The remove button on an enrollment broke on a name like O&rsquo;Brien. It does not any more.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-stars',
+                    'title' => 'This page',
+                    'text'  => 'The What&rsquo;s New button in the topbar, and the timeline you are reading. The dot returns whenever there is something new to say.',
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-07',
