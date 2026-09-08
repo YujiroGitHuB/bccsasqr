@@ -5,6 +5,7 @@ include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/enrollment_scope.php";
 
 $user_role = $_SESSION['role'] ?? 'instructor';
 $user_id   = $_SESSION['user_id'] ?? 0;
@@ -22,67 +23,23 @@ $systemName    = $system['system_name']    ?? '';
 $systemAcronym = $system['system_acronym'] ?? '';
 $systemLogo    = $system['logo']           ?? '';
 
-if ($user_role === 'admin') {
-    $students_query = $conn->query("
-        SELECT student_no, fullname, course, section
-        FROM students_tbl
-        ORDER BY section, fullname
-    ");
-    $students = $students_query ? $students_query->fetch_all(MYSQLI_ASSOC) : [];
+// Sections and the section scope both come from
+// includes/enrollment_scope.php — an admin sees every section, an
+// instructor only their own, and that rule is written once there
+// because this page and get_enrollment_data_ajax.php must agree on
+// it exactly.
+$sections = enrollment_scope_sections($conn, $user_role, $user_id);
 
+// Subjects: the whole catalogue for an admin, only what they teach
+// for an instructor. Small either way, so it stays server-rendered.
+if ($user_role === 'admin') {
     $subjects_query = $conn->query("
         SELECT subject_code, subject_name
         FROM subjects_tbl
         ORDER BY subject_name
     ");
     $subjects = $subjects_query ? $subjects_query->fetch_all(MYSQLI_ASSOC) : [];
-
-    $sections_query = $conn->query("
-        SELECT DISTINCT course, section,
-               CONCAT(course, '-', section) as full_section
-        FROM students_tbl
-        ORDER BY course, section
-    ");
-    $sections = $sections_query ? $sections_query->fetch_all(MYSQLI_ASSOC) : [];
-
-    $enrollments_query = $conn->query("
-        SELECT ss.id, ss.student_no, st.fullname, st.course, ss.section,
-               ss.subject_code, sub.subject_name
-        FROM student_subjects_tbl ss
-        INNER JOIN students_tbl  st  ON st.student_no    = ss.student_no
-        INNER JOIN subjects_tbl  sub ON sub.subject_code = ss.subject_code
-        ORDER BY ss.section, st.fullname
-    ");
-    $enrollments = $enrollments_query ? $enrollments_query->fetch_all(MYSQLI_ASSOC) : [];
-
 } else {
-    $sec_q = $conn->prepare("
-        SELECT DISTINCT ist.course, ist.section,
-               CONCAT(ist.course, '-', ist.section) as full_section
-        FROM instructor_section_tbl ist
-        WHERE ist.instructor_id = ?
-        ORDER BY ist.course, ist.section
-    ");
-    $sec_q->bind_param("i", $user_id);
-    $sec_q->execute();
-    $sections = $sec_q->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    if (!empty($sections)) {
-        $sec_conditions = implode(' OR ', array_map(
-            fn($s) => "(course = '" . $conn->real_escape_string($s['course']) . "' AND section = '" . $conn->real_escape_string($s['section']) . "')",
-            $sections
-        ));
-        $students_q = $conn->query("
-            SELECT student_no, fullname, course, section
-            FROM students_tbl
-            WHERE $sec_conditions
-            ORDER BY course, section, fullname
-        ");
-        $students = $students_q ? $students_q->fetch_all(MYSQLI_ASSOC) : [];
-    } else {
-        $students = [];
-    }
-
     $subj_q = $conn->prepare("
         SELECT s.subject_code, s.subject_name
         FROM subjects_tbl s
@@ -93,26 +50,28 @@ if ($user_role === 'admin') {
     $subj_q->bind_param("i", $user_id);
     $subj_q->execute();
     $subjects = $subj_q->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    if (!empty($sections)) {
-        $sec_conditions = implode(' OR ', array_map(
-            fn($s) => "(st.course = '" . $conn->real_escape_string($s['course']) . "' AND ss.section = '" . $conn->real_escape_string($s['section']) . "')",
-            $sections
-        ));
-        $enroll_q = $conn->query("
-            SELECT ss.id, ss.student_no, st.fullname, st.course, ss.section,
-                   ss.subject_code, sub.subject_name
-            FROM student_subjects_tbl ss
-            INNER JOIN students_tbl  st  ON st.student_no    = ss.student_no
-            INNER JOIN subjects_tbl  sub ON sub.subject_code = ss.subject_code
-            WHERE $sec_conditions
-            ORDER BY st.course, ss.section, st.fullname
-        ");
-        $enrollments = $enroll_q ? $enroll_q->fetch_all(MYSQLI_ASSOC) : [];
-    } else {
-        $enrollments = [];
-    }
+    $subj_q->close();
 }
+
+// The enrollments and the student list are NOT loaded here any more.
+// Both used to be rendered into the page in full — 1,586 table rows
+// and every student in the school, about 4.4 MB of markup before the
+// first five rows could appear. They arrive as JSON from
+// pages/get_enrollment_data_ajax.php instead.
+//
+// Only the total is still counted server-side, so the two badges are
+// right in the first paint instead of jumping when the rows land. The
+// joins have to match the endpoint's, or the badge would promise rows
+// the table never shows.
+$countWhere = enrollment_scope_where($conn, $user_role, $sections, 'st.course', 'ss.section');
+$countResult = $conn->query("
+    SELECT COUNT(*) AS total
+    FROM student_subjects_tbl ss
+    INNER JOIN students_tbl  st  ON st.student_no    = ss.student_no
+    INNER JOIN subjects_tbl  sub ON sub.subject_code = ss.subject_code
+    WHERE $countWhere
+");
+$enrollmentCount = $countResult ? (int) $countResult->fetch_assoc()['total'] : 0;
 ?>
 
 <!doctype html>
@@ -255,7 +214,7 @@ if ($user_role === 'admin') {
             </div>
             <div class="acad-hero-meta">
                 <span class="acad-chip">
-                    <i class="bi bi-list-check"></i> <?= count($enrollments) ?> enrolled
+                    <i class="bi bi-list-check"></i> <span id="enrollCount"><?= $enrollmentCount ?></span> enrolled
                 </span>
                 <span class="acad-chip cyan">
                     <i class="bi bi-grid-3x3-gap"></i> <?= count($sections) ?> sections
@@ -354,35 +313,10 @@ if ($user_role === 'admin') {
                                             onkeydown="studentSearchKeydown(event)">
                                     </div>
                                     <div class="sd-list" id="studentList">
-                                        <?php
-                                        $grouped_students = [];
-                                        foreach ($students as $s) {
-                                            $full_sec = $s['course'] . '-' . $s['section'];
-                                            $grouped_students[$s['course']][$full_sec][] = $s;
-                                        }
-                                        ksort($grouped_students);
-                                        foreach ($grouped_students as $course => $sec_groups):
-                                            ksort($sec_groups);
-                                        ?>
-                                        <div class="sd-group" data-group="<?= htmlspecialchars($course) ?>">
-                                            <i class="bi bi-mortarboard me-1"></i><?= htmlspecialchars($course) ?>
-                                        </div>
-                                        <?php foreach ($sec_groups as $full_sec => $stu_list):
-                                            foreach ($stu_list as $s): ?>
-                                        <div class="sd-item"
-                                            data-value="<?= htmlspecialchars($s['student_no']) ?>"
-                                            data-name="<?= htmlspecialchars($s['fullname'], ENT_QUOTES) ?>"
-                                            data-full-section="<?= htmlspecialchars($full_sec) ?>"
-                                            data-course="<?= htmlspecialchars($s['course']) ?>"
-                                            data-section="<?= htmlspecialchars($s['section']) ?>"
-                                            data-group="<?= htmlspecialchars($course) ?>"
-                                            onclick="selectStudent(this)">
-                                            <span class="sd-sec-badge"><?= htmlspecialchars($full_sec) ?></span>
-                                            <span><?= htmlspecialchars($s['fullname']) ?></span>
-                                            <span class="sd-stuno"><?= htmlspecialchars($s['student_no']) ?></span>
-                                        </div>
-                                        <?php endforeach; endforeach; ?>
-                                        <?php endforeach; ?>
+                                        <?php // Filled in by assets/js/subject_enrollment.js from
+                                              // get_enrollment_data_ajax.php, and only with the
+                                              // students the search actually matches. Every student
+                                              // in the school used to be written out here. ?>
                                     </div>
                                 </div>
                             </div>
@@ -559,7 +493,7 @@ if ($user_role === 'admin') {
                     <div class="card-header-custom">
                         <i class="bi bi-list-check"></i>
                         <h4>Current Enrollments</h4>
-                        <span class="badge-count ms-auto" id="tableCount"><?= count($enrollments) ?></span>
+                        <span class="badge-count ms-auto" id="tableCount"><?= $enrollmentCount ?></span>
                     </div>
 
                     <div id="bulkActionBar" class="bulk-action-bar mb-3 rounded" style="display:none;">
@@ -594,7 +528,7 @@ if ($user_role === 'admin') {
                             <tbody>
                                 <?php
                                 // Show 8 skeleton rows (or match enrollment count, max 10)
-                                $skeletonRows = min(max(count($enrollments), 5), 10);
+                                $skeletonRows = min(max($enrollmentCount, 5), 10);
                                 for ($i = 0; $i < $skeletonRows; $i++):
                                 ?>
                                 <tr class="skeleton-row">
@@ -637,36 +571,9 @@ if ($user_role === 'admin') {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($enrollments as $e): ?>
-                                    <tr id="enroll-row-<?= $e['id'] ?>">
-                                        <td>
-                                            <div class="table-checkbox-container">
-                                                <input type="checkbox"
-                                                    class="table-checkbox-input row-check"
-                                                    id="chk-<?= $e['id'] ?>"
-                                                    data-id="<?= $e['id'] ?>"
-                                                    data-name="<?= htmlspecialchars($e['fullname'], ENT_QUOTES) ?>"
-                                                    data-subject="<?= htmlspecialchars($e['subject_name'], ENT_QUOTES) ?>">
-                                                <label class="table-checkbox-label" for="chk-<?= $e['id'] ?>">
-                                                    <div class="table-checkbox-box"><i class="bi bi-check"></i></div>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td><?= htmlspecialchars($e['student_no']) ?></td>
-                                        <td><?= htmlspecialchars($e['fullname']) ?></td>
-                                        <td><?= htmlspecialchars($e['course'] . '-' . $e['section']) ?></td>
-                                        <td>
-                                            <span class="badge-subject"><?= htmlspecialchars($e['subject_code']) ?></span>
-                                            <span class="ms-1"><?= htmlspecialchars($e['subject_name']) ?></span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-danger"
-                                                onclick="removeEnrollment(<?= $e['id'] ?>,'<?= htmlspecialchars($e['fullname'], ENT_QUOTES) ?>','<?= htmlspecialchars($e['subject_name'], ENT_QUOTES) ?>')">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
+                                    <?php // Rows are built by DataTables from
+                                          // get_enrollment_data_ajax.php — see
+                                          // assets/js/subject_enrollment.js. ?>
                                 </tbody>
                             </table>
                         </div>
@@ -723,8 +630,13 @@ if ($user_role === 'admin') {
                 $('#enrollTable').on('init.dt', function () {
                     revealTable();
                 });
-                // Safety fallback in case init.dt never fires
-                setTimeout(revealTable, 1500);
+                // Safety fallback in case init.dt never fires.
+                // Generous on purpose: the rows now arrive over the
+                // network, and init.dt only fires once they land. A
+                // short timer here would swap the skeleton for an
+                // empty table on a slow connection — which reads as
+                // "no enrollments", the one thing it must not say.
+                setTimeout(revealTable, 15000);
             }
         } else {
             // No DataTables — fallback timer

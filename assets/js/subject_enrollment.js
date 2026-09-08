@@ -10,14 +10,96 @@ const Toast = Swal.mixin({
 
 const swalTheme = { background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' };
 
+// Escapes a value on its way into an HTML attribute. The rows are
+// built here by hand now, so nothing else does it for us — and a
+// student called O'Brien used to break the old inline onclick.
+function esc(v) {
+    return String(v === null || v === undefined ? '' : v)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // ── DataTable ─────────────────────────────────────────────────────────
+// The rows arrive as JSON from get_enrollment_data_ajax.php instead of
+// being rendered into the page by PHP. At 1,586 enrollments that was
+// 3.1 MB of markup the browser had to parse before the first five rows
+// could show; DataTables now builds the DOM for the current page only.
+// Same treatment students.php already had.
 let enrollDT;
 $(document).ready(function () {
     if ($.fn.DataTable.isDataTable('#enrollTable')) {
         $('#enrollTable').DataTable().destroy();
     }
 
+    const escText = $.fn.dataTable.render.text();
+
     enrollDT = $('#enrollTable').DataTable({
+        ajax: {
+            url: 'get_enrollment_data_ajax.php?dataset=enrollments',
+            dataSrc: function (res) {
+                if (!res.success) {
+                    Swal.fire({
+                        icon: 'error', title: 'Error',
+                        text: res.message || 'Could not load the enrollments.',
+                        ...swalTheme
+                    });
+                    return [];
+                }
+                // The badges were counted server-side for the first
+                // paint; this keeps them honest if the roster changed
+                // between that count and this fetch.
+                setEnrollCount(res.data.length);
+                return res.data;
+            }
+        },
+        columns: [
+            {
+                data: null,
+                render: function (row) {
+                    const uid = 'chk-' + esc(row.id);
+                    return '<div class="table-checkbox-container">' +
+                        '<input type="checkbox" class="table-checkbox-input row-check"' +
+                        ' id="' + uid + '" data-id="' + esc(row.id) + '"' +
+                        ' data-name="' + esc(row.fullname) + '"' +
+                        ' data-subject="' + esc(row.subject_name) + '">' +
+                        '<label class="table-checkbox-label" for="' + uid + '">' +
+                        '<div class="table-checkbox-box"><i class="bi bi-check"></i></div>' +
+                        '</label></div>';
+                }
+            },
+            { data: 'student_no',   render: escText },
+            { data: 'fullname',     render: escText },
+            { data: 'full_section', render: escText },
+            {
+                data: null,
+                render: function (row, type) {
+                    // Sorting and searching run on the plain text —
+                    // otherwise a search for "ITE" would also match the
+                    // class names in the markup.
+                    if (type !== 'display') {
+                        return row.subject_code + ' ' + row.subject_name;
+                    }
+                    return '<span class="badge-subject">' + esc(row.subject_code) + '</span>' +
+                        ' <span class="ms-1">' + esc(row.subject_name) + '</span>';
+                }
+            },
+            {
+                data: null,
+                render: function (row) {
+                    // data-* rather than an inline onclick: an
+                    // apostrophe in a name cannot break it.
+                    return '<button class="btn btn-sm btn-danger btn-remove-enroll"' +
+                        ' data-id="' + esc(row.id) + '"' +
+                        ' data-name="' + esc(row.fullname) + '"' +
+                        ' data-subject="' + esc(row.subject_name) + '">' +
+                        '<i class="bi bi-trash"></i></button>';
+                }
+            }
+        ],
+        // The <tr> id the rest of this file removes rows by.
+        createdRow: function (row, data) {
+            row.id = 'enroll-row-' + data.id;
+        },
         responsive: true,
         pageLength: 5,
         lengthMenu: [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
@@ -25,11 +107,24 @@ $(document).ready(function () {
         columnDefs: [{ orderable: false, targets: [0, 5] }],
         language: {
             emptyTable: "No enrollments yet",
-            zeroRecords: "No matching records found"
+            zeroRecords: "No matching records found",
+            loadingRecords: "Loading enrollments..."
         }
     });
 
+    // Delegated, so they keep working on rows DataTables rebuilds on
+    // every draw — a handler bound to a row would not survive paging.
     $('#enrollTable').on('change', '.row-check', onRowCheckChange);
+    $('#enrollTable').on('click', '.btn-remove-enroll', function () {
+        removeEnrollment(Number(this.dataset.id), this.dataset.name, this.dataset.subject);
+    });
+
+    // The checkboxes are per page and the boxes are redrawn on every
+    // page change, so a leftover selection would count rows that are
+    // no longer on screen.
+    $('#enrollTable').on('page.dt search.dt order.dt length.dt', function () {
+        clearSelection();
+    });
 });
 
 // ── Select All ────────────────────────────────────────────────────────
@@ -248,7 +343,26 @@ document.addEventListener('click', function (e) {
 });
 
 // ── Student Dropdown ──────────────────────────────────────────────────
+// The roster is fetched once, the first time the dropdown is opened,
+// and only the students the search actually matches are ever put in
+// the DOM. Every student in the school used to be written into the
+// page as a <div> carrying seven data- attributes — 1.2 MB of markup,
+// nearly all of it never looked at, and re-scanned on every keystroke.
 let studentDropdownOpen = false;
+let enrollStudents = null;      // null = not fetched yet
+let studentsLoading = false;
+let studentsFailed = false;
+
+// The chosen student is kept HERE rather than read back off a
+// .selected element. The list is rebuilt on every keystroke now, so
+// the element that was clicked may well be gone by the time Assign is
+// pressed.
+let selectedStudent = null;
+
+// How many names to draw at once. Nobody scrolls 1,500 rows to find
+// someone — they type. Drawing the lot on every keystroke is what made
+// the old list stutter.
+const STUDENT_RENDER_LIMIT = 60;
 
 function toggleStudentDropdown() {
     studentDropdownOpen ? closeStudentDropdown() : openStudentDropdown();
@@ -258,9 +372,10 @@ function openStudentDropdown() {
     document.getElementById('studentPanel').classList.add('open');
     document.getElementById('studentTrigger').classList.add('open');
     document.getElementById('studentSearch').value = '';
-    filterStudentList('');
-    setTimeout(() => document.getElementById('studentSearch').focus(), 50);
     studentDropdownOpen = true;
+
+    loadStudents().then(() => filterStudentList(''));
+    setTimeout(() => document.getElementById('studentSearch').focus(), 50);
 }
 
 function closeStudentDropdown() {
@@ -269,15 +384,127 @@ function closeStudentDropdown() {
     studentDropdownOpen = false;
 }
 
-function selectStudent(el) {
-    const val = el.dataset.value;
-    const name = el.dataset.name;
-    const fullSec = el.dataset.fullSection;
+// Resolves once the roster is in memory. Safe to call again — the
+// second open does not re-fetch, and a call made while the first is
+// still in flight joins it instead of starting a race.
+function loadStudents() {
+    if (enrollStudents) return Promise.resolve();
+    if (studentsLoading) return studentsLoading;
 
-    document.getElementById('enrollStudentSelect').value = val;
+    studentListMessage('bi-hourglass-split', 'Loading students...');
+
+    studentsLoading = fetch('get_enrollment_data_ajax.php?dataset=students')
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success) throw new Error(res.message || 'refused');
+            enrollStudents = res.data;
+            studentsFailed = false;
+        })
+        .catch(() => {
+            // enrollStudents is left null, not [], so the next open
+            // tries again instead of insisting the school has nobody.
+            studentsFailed = true;
+        })
+        .finally(() => {
+            studentsLoading = false;
+        });
+
+    return studentsLoading;
+}
+
+function studentListMessage(icon, text) {
+    document.getElementById('studentList').innerHTML =
+        '<div class="sd-empty"><i class="bi ' + icon + '"></i>' + esc(text) + '</div>';
+}
+
+// Builds the list from scratch for the current search and section
+// filter. Replaces the old filterStudentList(), which walked ~1,500
+// existing nodes and toggled style.display on every one of them.
+function filterStudentList(query) {
+    const list = document.getElementById('studentList');
+
+    if (studentsFailed) {
+        studentListMessage('bi-wifi-off', 'Could not load the student list. Close and reopen this to retry.');
+        return;
+    }
+    if (!enrollStudents) {
+        studentListMessage('bi-hourglass-split', 'Loading students...');
+        return;
+    }
+
+    const q = query.toLowerCase().trim();
+    const sectionFilter = document.getElementById('filterSection').value;
+
+    const matches = enrollStudents.filter(s => {
+        const fullSec = s.course + '-' + s.section;
+        if (sectionFilter && fullSec !== sectionFilter) return false;
+        if (!q) return true;
+        return s.fullname.toLowerCase().includes(q) ||
+               s.student_no.toLowerCase().includes(q);
+    });
+
+    if (!matches.length) {
+        studentListMessage('bi-search', 'No students found');
+        return;
+    }
+
+    // The endpoint already sorts by course, section, then name, so a
+    // course heading is needed only where the course changes.
+    const shown = matches.slice(0, STUDENT_RENDER_LIMIT);
+    let html = '';
+    let course = null;
+
+    shown.forEach(s => {
+        if (s.course !== course) {
+            course = s.course;
+            html += '<div class="sd-group" data-group="' + esc(course) + '">' +
+                    '<i class="bi bi-mortarboard me-1"></i>' + esc(course) + '</div>';
+        }
+        const fullSec = s.course + '-' + s.section;
+        const isSel = selectedStudent && selectedStudent.student_no === s.student_no;
+        html += '<div class="sd-item' + (isSel ? ' selected' : '') + '"' +
+                ' data-value="' + esc(s.student_no) + '"' +
+                ' data-name="' + esc(s.fullname) + '"' +
+                ' data-full-section="' + esc(fullSec) + '"' +
+                ' data-course="' + esc(s.course) + '"' +
+                ' data-section="' + esc(s.section) + '"' +
+                ' data-group="' + esc(s.course) + '">' +
+                '<span class="sd-sec-badge">' + esc(fullSec) + '</span>' +
+                '<span>' + esc(s.fullname) + '</span>' +
+                '<span class="sd-stuno">' + esc(s.student_no) + '</span>' +
+                '</div>';
+    });
+
+    if (matches.length > shown.length) {
+        html += '<div class="sd-empty">Showing ' + shown.length + ' of ' +
+                matches.length + ' — keep typing to narrow it down</div>';
+    }
+
+    list.innerHTML = html;
+}
+
+// One delegated handler, because the items are replaced on every
+// keystroke and a listener bound to them would not survive. Bound at
+// the top level like the #selectAll handler above — this file runs at
+// the end of the body, so the element is already there.
+document.getElementById('studentList').addEventListener('click', function (e) {
+    const item = e.target.closest('.sd-item');
+    if (item) selectStudent(item);
+});
+
+function selectStudent(el) {
+    selectedStudent = {
+        student_no: el.dataset.value,
+        fullname: el.dataset.name,
+        course: el.dataset.course,
+        section: el.dataset.section,
+        full_section: el.dataset.fullSection
+    };
+
+    document.getElementById('enrollStudentSelect').value = selectedStudent.student_no;
 
     const trigText = document.getElementById('studentTriggerText');
-    trigText.textContent = `[${fullSec}] ${name}`;
+    trigText.textContent = `[${selectedStudent.full_section}] ${selectedStudent.fullname}`;
     trigText.classList.remove('sd-placeholder');
 
     document.querySelectorAll('#studentList .sd-item').forEach(i => i.classList.remove('selected'));
@@ -285,58 +512,21 @@ function selectStudent(el) {
 
     closeStudentDropdown();
 
-    const rawSec = el.dataset.section;
-    const crs = el.dataset.course;
-    const fullS = el.dataset.fullSection;
+    const rawSec = selectedStudent.section;
+    const crs = selectedStudent.course;
     if (rawSec && crs) {
-        sdSelectSection('enrollSectionSelect', 'enrollCourseSelect', rawSec, crs, fullS,
+        sdSelectSection('enrollSectionSelect', 'enrollCourseSelect', rawSec, crs, selectedStudent.full_section,
             document.querySelector(`#sd-list-enrollSectionSelect .sd-item[data-value="${rawSec}"][data-course="${crs}"]`)
         );
     }
 }
 
-function filterStudentList(query) {
-    const q = query.toLowerCase().trim();
-    const sectionFilter = document.getElementById('filterSection').value;
-    const list = document.getElementById('studentList');
-    let hasResults = false;
-
-    list.querySelector('.sd-empty')?.remove();
-
-    const items = list.querySelectorAll('.sd-item');
-    const groups = list.querySelectorAll('.sd-group');
-
-    items.forEach(item => {
-        const name = item.dataset.name.toLowerCase();
-        const stuno = item.dataset.value.toLowerCase();
-        const fullSec = item.dataset.fullSection;
-
-        const matchSearch = !q || name.includes(q) || stuno.includes(q);
-        const matchSection = !sectionFilter || fullSec === sectionFilter;
-
-        item.style.display = (matchSearch && matchSection) ? 'flex' : 'none';
-        if (matchSearch && matchSection) hasResults = true;
-    });
-
-    groups.forEach(grp => {
-        const groupName = grp.dataset.group;
-        const anyVisible = Array.from(items).some(item =>
-            item.dataset.group === groupName && item.style.display !== 'none'
-        );
-        grp.style.display = anyVisible ? 'block' : 'none';
-    });
-
-    if (!hasResults) {
-        const empty = document.createElement('div');
-        empty.className = 'sd-empty';
-        empty.innerHTML = '<i class="bi bi-search"></i>No students found';
-        list.appendChild(empty);
-    }
-}
-
 function studentSearchKeydown(e) {
-    const items = Array.from(document.querySelectorAll('#studentList .sd-item'))
-        .filter(i => i.style.display !== 'none');
+    // Everything rendered is visible now — the old version had to skip
+    // the ~1,500 items it had hidden with style.display.
+    const items = Array.from(document.querySelectorAll('#studentList .sd-item'));
+    if (!items.length) return;
+
     const focused = document.querySelector('#studentList .sd-item.focused');
     let idx = items.indexOf(focused);
 
@@ -363,18 +553,19 @@ function studentSearchKeydown(e) {
 // ── Filter by Section ─────────────────────────────────────────────────
 function filterEnrollStudents() {
     document.getElementById('enrollStudentSelect').value = '';
+    selectedStudent = null;
     const trigText = document.getElementById('studentTriggerText');
     trigText.textContent = '-- Select Student --';
     trigText.classList.add('sd-placeholder');
-    document.querySelectorAll('#studentList .sd-item').forEach(i => i.classList.remove('selected'));
     filterStudentList(document.getElementById('studentSearch')?.value || '');
 }
 
 // ── Assign Individual ─────────────────────────────────────────────────
 function assignIndividual() {
     const studentNo = document.getElementById('enrollStudentSelect').value;
-    const selectedItem = document.querySelector('#studentList .sd-item.selected');
-    const studentName = selectedItem ? selectedItem.dataset.name : '';
+    // From the tracked selection, not from the list: the item that was
+    // clicked is gone as soon as the search text changes.
+    const studentName = selectedStudent ? selectedStudent.fullname : '';
     const subjectCode = document.getElementById('enrollSubjectSelect').value;
     const subjectName = document.getElementById('sd-txt-enrollSubjectSelect')?.textContent.trim() || '';
     const section = document.getElementById('enrollSectionSelect').value;
@@ -501,36 +692,36 @@ function removeEnrollment(id, studentName, subjectName) {
 }
 
 // ── Add row to DataTable ──────────────────────────────────────────────
+// Takes the same shape the endpoint sends, so a row added here and a
+// row that arrived from the server render through the identical
+// column definitions — the markup is written in exactly one place.
 function addEnrollRow(id, studentNo, name, section, course, subjectCode, subjectName) {
-    const uid = `chk-${id}`;
-    const fullSection = course ? `${course}-${section}` : section;
-
-    const node = enrollDT.row.add([
-        `<div class="table-checkbox-container">
-                    <input type="checkbox" class="table-checkbox-input row-check"
-                        id="${uid}" data-id="${id}"
-                        data-name="${name}" data-subject="${subjectName}">
-                    <label class="table-checkbox-label" for="${uid}">
-                        <div class="table-checkbox-box"><i class="bi bi-check"></i></div>
-                    </label>
-                </div>`,
-        studentNo,
-        name,
-        fullSection,
-        `<span class="badge-subject">${subjectCode}</span> <span class="ms-1">${subjectName}</span>`,
-        `<button class="btn btn-sm btn-danger"
-                    onclick="removeEnrollment(${id},'${name}','${subjectName}')">
-                    <i class="bi bi-trash"></i>
-                </button>`
-    ]).draw(false).node();
-    $(node).attr('id', 'enroll-row-' + id);
-    $(node).find('.row-check').on('change', onRowCheckChange);
+    enrollDT.row.add({
+        id: id,
+        student_no: studentNo,
+        fullname: name,
+        course: course,
+        section: section,
+        full_section: course ? `${course}-${section}` : section,
+        subject_code: subjectCode,
+        subject_name: subjectName
+    }).draw(false);
 }
 
-// ── Update count badge ────────────────────────────────────────────────
+// ── Count badges ──────────────────────────────────────────────────────
+// Two of them: the chip in the hero and the one beside the table
+// heading. PHP counts them for the first paint; these keep them in
+// step afterwards.
+function setEnrollCount(total) {
+    ['enrollCount', 'tableCount'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = total;
+    });
+}
+
 function updateEnrollCount(delta) {
     ['enrollCount', 'tableCount'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.textContent = parseInt(el.textContent) + delta;
+        if (el) el.textContent = (parseInt(el.textContent, 10) || 0) + delta;
     });
 }
