@@ -11,10 +11,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
 
     try {
         // STEP 1: Check if student exists
+        //
+        // LEFT JOIN, not INNER: the photo is optional here. A student
+        // with no row in student_photos still has an attendance record
+        // to look at, and the identity card falls back to initials.
+        // Same join the dashboard, the scanner and the generator use.
         $check_student = $conn->prepare("
-            SELECT student_no, fullname, course, section 
-            FROM students_tbl 
-            WHERE student_no = ?
+            SELECT s.student_no, s.fullname, s.course, s.section,
+                   p.photo_path
+            FROM students_tbl s
+            LEFT JOIN student_photos p ON p.s_id = s.id
+            WHERE s.student_no = ?
         ");
         $check_student->bind_param("s", $student_no);
         $check_student->execute();
@@ -76,8 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
 
     if ($search_performed && isset($_POST['student_no'])) {
 
-        // Initials for the name tile. This student page has no photo,
-        // and an empty circle says nothing either.
+        // Initials for the name tile — now the FALLBACK behind the
+        // photo rather than the only thing shown, for the students who
+        // have not uploaded one. An empty tile says nothing either.
         $trk_initials = function ($name) {
             // fullname is formatted "Surname, First M." here, so the
             // first two words are taken rather than the first and last
@@ -91,6 +99,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
                 $letters .= mb_substr($parts[1], 0, 1);
             }
             return mb_strtoupper($letters);
+        };
+
+        // The identity tile, rendered by BOTH result states below (the
+        // one with a table under it and the "no attendance yet" one).
+        // One closure rather than two copies of the markup, so the
+        // photo cannot end up on only one of them.
+        //
+        // The <img> sits ON TOP of the initials rather than replacing
+        // them, and `onerror` removes it — student_photos can outlive
+        // the file on disk, and a stale row should degrade to the
+        // letters instead of a broken-image icon. Same trick as
+        // components/recent_activity_rows.php.
+        //
+        // photo_path is stored relative to the app root; the tracker is
+        // one folder down, hence "../".
+        $trk_avatar = function ($student) use ($trk_initials) {
+            $letters = htmlspecialchars($trk_initials($student['fullname']));
+            $name    = htmlspecialchars((string) $student['fullname']);
+            $html    = '<div class="trk-avatar">';
+            if (!empty($student['photo_path'])) {
+                $html .= '<img src="../' . htmlspecialchars($student['photo_path']) . '"'
+                    . ' alt="Photo of ' . $name . '"'
+                    . ' loading="lazy" decoding="async"'
+                    . ' onerror="this.remove()">';
+            }
+            return $html . $letters . '</div>';
         };
 
         // Last attendance. The query sorts by subject before date, so
@@ -110,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
                      confirm the right person; the rest are supporting
                      chips. -->
                 <div class="trk-identity">
-                    <div class="trk-avatar"><?= htmlspecialchars($trk_initials($student_info['fullname'])) ?></div>
+                    <?= $trk_avatar($student_info) ?>
                     <div class="trk-identity-text">
                         <h2><?= htmlspecialchars($student_info['fullname']) ?></h2>
                         <div class="trk-meta">
@@ -186,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
 
             <?php elseif ($status === 'no-attendance'): ?>
                 <div class="trk-identity">
-                    <div class="trk-avatar"><?= htmlspecialchars($trk_initials($student_info['fullname'])) ?></div>
+                    <?= $trk_avatar($student_info) ?>
                     <div class="trk-identity-text">
                         <h2><?= htmlspecialchars($student_info['fullname']) ?></h2>
                         <div class="trk-meta">

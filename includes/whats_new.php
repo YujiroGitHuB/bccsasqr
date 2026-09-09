@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-09';
+const WHATS_NEW_VERSION = '2026-09-09.2';
 
 /**
  * The changelog, newest release first.
@@ -59,10 +59,16 @@ function whats_new_releases(): array
         [
             'id'      => '2026-09-09',
             'date'    => '2026-09-09',
-            'icon'    => 'bi-lock-fill',
-            'title'   => 'A better closed sign',
-            'summary' => 'The page people land on when the QR generator, the scanner, the tracker or registration is switched off has been rebuilt to look like the rest of the system.',
+            'icon'    => 'bi-person-badge',
+            'title'   => 'Knowing who you are looking at',
+            'summary' => 'The tracker now shows the student\'s photo with their record, and the page people land on when a section is switched off has been rebuilt to look like the rest of the system.',
             'items'   => [
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-person-square',
+                    'title' => 'The tracker shows the student\'s photo',
+                    'text'  => 'The result card carried only the two initials, so <em>A. Aquino</em> and <em>A. Abad</em> looked alike at a glance. It now shows the uploaded photo, and still falls back to the initials for anyone who has not uploaded one.',
+                ],
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-palette',

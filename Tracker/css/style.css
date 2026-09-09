@@ -489,6 +489,8 @@ body.trk-page {
 }
 
 .trk-avatar {
+    position: relative;
+    overflow: hidden;
     flex-shrink: 0;
     width: 52px;
     height: 52px;
@@ -501,6 +503,25 @@ body.trk-page {
     color: var(--on-accent);
     background: linear-gradient(135deg, var(--trk), var(--trk-deep));
     box-shadow: 0 8px 20px rgba(14, 165, 233, .3);
+}
+
+/* The student's photo, when there is one. It COVERS the initials
+   rather than replacing them: att_display.php gives the <img> an
+   `onerror` that removes it, so a row in student_photos whose file
+   is gone falls back to the letters instead of showing a broken
+   image. Same arrangement as .dash-act-avatar on the dashboard.
+
+   The 1px inset ring keeps a pale photo from bleeding into a pale
+   card edge — the tile is the first thing you check to confirm the
+   search found the right person. */
+.trk-avatar img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgba(var(--tint), .12);
 }
 
 .trk-identity-text {
