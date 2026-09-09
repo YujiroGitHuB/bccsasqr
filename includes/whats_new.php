@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-09.5';
+const WHATS_NEW_VERSION = '2026-09-09.6';
 
 /**
  * The changelog, newest release first.
@@ -74,6 +74,12 @@ function whats_new_releases(): array
                     'icon'  => 'bi-shield-check',
                     'title' => 'A page showing what was turned away',
                     'text'  => '<strong>Attendance &rsaquo; Integrity</strong> lists every submission with the device and network it came from, flags each phone that was used for more than one student, and keeps the last 30 days.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-speedometer2',
+                    'title' => 'The attendance list loads about five times lighter',
+                    'text'  => 'It was sending <strong>every</strong> record in the date window to your phone as HTML &mdash; 710 records came to 1 MB, and it grew with every scan. The <em>Showing 1 to 5</em> was doing nothing but hiding the other 705. The records now arrive as data and only the page you are looking at is drawn, taking the page from 1 MB down to 210 KB. On a phone that is the difference between waiting nine seconds and about three.',
                 ],
                 [
                     'type'  => 'fixed',

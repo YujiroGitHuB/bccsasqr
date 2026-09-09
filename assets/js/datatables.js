@@ -16,10 +16,104 @@ $(document).ready(function () {
     // ATTENDANCE TABLE (#example)
     // ================================================================
     if ($('#example').length) {
-        $('#tableLoader').hide();
-        $('#tableContainer').show();
+        // Ang mga hilera ay dumarating na ngayong JSON, gaya ng
+        // #stud_tbl sa ibaba.
+        //
+        // Dati ay isinusulat ng attendance.php ang BAWAT hilera bilang
+        // HTML at ang DataTables ang nagtatago ng iba. Ang pageLength
+        // ay hindi kailanman naglimita ng kinukuha — 1,476 bytes kada
+        // hilera, 1 MB sa 710, at lumalaki sa bawat pumapasok. Sa
+        // hosting na naghahatid ng 60–120 KB kada segundo, iyon ay
+        // pito hanggang labingwalong segundong paghihintay bago pa
+        // may makita.
+        var att      = window.attendanceTable || {};
+        var mayDelete = att.delete === true;
+
+        var escAtt = $.fn.dataTable.render.text();
+
+        // Para sa markup na binubuo rito nang mano-mano, ang halaga ay
+        // dapat na-escape bago ipasok sa isang attribute — pareho ng
+        // ginagawa ng #stud_tbl.
+        var attrAtt = function (v) {
+            return String(v === null || v === undefined ? '' : v)
+                .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        };
 
         $('#example').DataTable({
+            ajax: {
+                url: 'get_attendance_ajax.php',
+                // Ang parehong bintanang nakasulat sa From at To.
+                // Kapag hindi ito ipinasa, ang sariling default ng
+                // endpoint (30 araw) ang susundin, at ang talahanayan
+                // ay hindi na tutugma sa mga petsang nasa itaas nito.
+                data: function (d) {
+                    d.from = att.from || '';
+                    d.to   = att.to   || '';
+                },
+                dataSrc: function (res) {
+                    $('#tableLoader').hide();
+                    $('#tableContainer').show();
+
+                    if (!res.success) {
+                        Swal.fire({
+                            icon: 'error', title: 'Error!',
+                            background: '#0f172a', color: '#e0e0e0',
+                            text: res.message || 'Could not load the attendance records.'
+                        });
+                        return [];
+                    }
+                    return res.data;
+                },
+                error: function () {
+                    // Kapag hindi umabot ang endpoint, ang loader ay
+                    // maiiwang umiikot magpakailanman at mukhang
+                    // mabagal lamang ang pahina. Mas mabuting sabihin.
+                    $('#tableLoader').hide();
+                    $('#tableContainer').show();
+                    Swal.fire({
+                        icon: 'error', title: 'Could not load the records',
+                        background: '#0f172a', color: '#e0e0e0',
+                        text: 'Please check your connection and refresh the page.'
+                    });
+                }
+            },
+            columns: [
+                {
+                    data: 'id',
+                    render: function (id) {
+                        // Nananatili ang hanay kahit walang permission —
+                        // ang columnDefs sa ibaba ay tumutukoy sa
+                        // pamamagitan ng index, at ang pagtanggal ng
+                        // hanay dito ay maghihiwa sa bawat target.
+                        if (!mayDelete) return '';
+                        return '<input type="checkbox" class="rowCheck" value="' + attrAtt(id) + '">';
+                    }
+                },
+                { data: null, defaultContent: '' },      // running No., punan ng drawCallback
+                { data: 'date',       render: escAtt },
+                { data: 'student_no', render: escAtt },
+                { data: 'name',       render: escAtt },
+                { data: 'course',     render: escAtt },
+                // Tinanggal na ng endpoint ang unahang course
+                // ("BSIT-2A" → "2A"), gaya ng dating ginagawa ng
+                // cleanSection() sa pahina.
+                { data: 'section',    render: escAtt },
+                { data: 'time_in',    render: escAtt },
+                { data: 'subject',    render: escAtt },
+                {
+                    data: 'id',
+                    render: function (id) {
+                        if (!mayDelete) return '';
+                        return '<button class="btn-delete" data-id="' + attrAtt(id) + '">' +
+                               '<i class="bi bi-trash"></i></button>';
+                    }
+                }
+            ],
+            createdRow: function (tr, data) {
+                // Ang delete_attendance.js ay umaasa sa id na ito.
+                tr.id = 'row-' + data.id;
+            },
             dom: 'lfrtip',
             lengthMenu: [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
             pageLength: 5,
@@ -30,7 +124,8 @@ $(document).ready(function () {
             // Column 0 = checkbox, column 1 = running No.
             columnDefs: [
                 { targets: 0, searchable: false, orderable: false, className: 'text-center' },
-                { targets: 1, searchable: false, orderable: false }
+                { targets: 1, searchable: false, orderable: false },
+                { targets: 9, searchable: false, orderable: false }   // Action
             ],
             drawCallback: function (settings) {
                 var api = this.api();

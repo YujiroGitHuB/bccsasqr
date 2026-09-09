@@ -126,28 +126,43 @@ $preSection = cleanSection(trim($_GET['section'] ?? ''));
                         </div>
 
                         <?php
-                        // Already bounded by $from..$to — see the date window above.
+                        // ── Bilang lamang, hindi na ang mga hilera ──────────
+                        //
+                        // Dati ay SELECT ng buong hilera rito, at isinusulat
+                        // ang bawat isa bilang <tr> sa ibaba. Ang `pageLength`
+                        // ng DataTables ay hindi naglilimita ng kinukuha —
+                        // ITINATAGO lamang nito ang iba, nasa pahina pa rin
+                        // silang lahat. Kaya ang "Showing 1 to 5" ay
+                        // panlinlang: 710 na hilera ang dumarating sa
+                        // telepono, hindi lima. 1,476 bytes kada hilera, 1 MB
+                        // kabuuan, at lumalaki sa bawat pumapasok.
+                        //
+                        // Sa pages/get_attendance_ajax.php na ang mga hilera.
+                        // Ang natira rito ay ang bilang para sa "N records
+                        // loaded" — isang tanong na dumadaan sa idx_date at
+                        // hindi humahawak ng kahit isang hilera.
+                        //
+                        // Bakit isinusulat pa rin ito ng PHP gayong
+                        // pinapalitan naman ito ng JavaScript sa unang draw:
+                        // tama ito bago pa tumakbo ang anumang script, kaya
+                        // hindi kailanman may sandaling walang laman o may
+                        // "…" ang nakikita.
                         if (isAdmin()) {
-                            $stmt = $conn->prepare("
-                                SELECT id, date, student_no, name, course, section, time_in, subject
-                                FROM attendance_tbl
+                            $cntStmt = $conn->prepare("
+                                SELECT COUNT(*) AS n FROM attendance_tbl
                                 WHERE date BETWEEN ? AND ?
-                                ORDER BY date DESC
                             ");
-                            $stmt->bind_param("ss", $from, $to);
+                            $cntStmt->bind_param("ss", $from, $to);
                         } else {
-                            $stmt = $conn->prepare("
-                                SELECT id, date, student_no, name, course, section, time_in, subject
-                                FROM attendance_tbl
-                                WHERE user_id = ?
-                                  AND date BETWEEN ? AND ?
-                                ORDER BY date DESC
+                            $cntStmt = $conn->prepare("
+                                SELECT COUNT(*) AS n FROM attendance_tbl
+                                WHERE user_id = ? AND date BETWEEN ? AND ?
                             ");
-                            $stmt->bind_param("iss", $user_id, $from, $to);
+                            $cntStmt->bind_param("iss", $user_id, $from, $to);
                         }
-                        $stmt->execute();
-                        $result   = $stmt->get_result();
-                        $rowCount = $result->num_rows;
+                        $cntStmt->execute();
+                        $rowCount = (int) $cntStmt->get_result()->fetch_assoc()['n'];
+                        $cntStmt->close();
                         ?>
 
                         <div id="tableContainer" style="display:none;">
@@ -247,29 +262,11 @@ $preSection = cleanSection(trim($_GET['section'] ?? ''));
                                             <th>Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <?php $counter = 1; while ($row = $result->fetch_assoc()): ?>
-                                            <?php $cleanSec = cleanSection($row['section']); ?>
-                                            <tr id="row-<?= $row['id'] ?>">
-                                                <td class="text-center"><?php if ($canDeleteAttendance): ?><input type="checkbox" class="rowCheck" value="<?= $row['id'] ?>"><?php endif; ?></td>
-                                                <td><?= $counter++ ?></td>
-                                                <td><?= htmlspecialchars($row['date']) ?></td>
-                                                <td><?= htmlspecialchars($row['student_no']) ?></td>
-                                                <td><?= htmlspecialchars($row['name']) ?></td>
-                                                <td><?= htmlspecialchars($row['course']) ?></td>
-                                                <td><?= htmlspecialchars($cleanSec) ?></td>
-                                                <td><?= htmlspecialchars($row['time_in']) ?></td>
-                                                <td><?= htmlspecialchars($row['subject']) ?></td>
-                                                <td>
-                                                    <?php if ($canDeleteAttendance): ?>
-                                                    <button class="btn-delete" data-id="<?= $row['id'] ?>">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-                                        <?php endwhile; ?>
-                                    </tbody>
+                                    <!-- Sinadyang walang laman: pinupunan ito ng
+                                         DataTables mula sa get_attendance_ajax.php,
+                                         at ang nakikitang pahina lamang ang
+                                         ginagawang DOM. -->
+                                    <tbody></tbody>
                                 </table>
                             </div>
                         </div>
@@ -373,6 +370,24 @@ $preSection = cleanSection(trim($_GET['section'] ?? ''));
         </div><!-- /tab-content -->
     </div><!-- /content -->
 
+    <!-- Ang alam ng talahanayan tungkol sa request na ito. Dapat mauna
+         sa datatables.js, na siyang bumubuo ng #example.
+
+         Ang bintana ng petsa ay ipinapasa pabalik sa endpoint para ang
+         hinihingi ng talahanayan ay eksaktong tumugma sa nakasulat sa
+         From at To sa itaas nito — hindi sa default ng endpoint.
+
+         Ang `delete` ay tumutugma sa can('attendance.delete'), at ang
+         crud/delete_attendance.php ay nagpapatupad ng parehong
+         permission. Ang tseke rito ay para sa hitsura lamang: ang
+         nawawalang pindutan ay hindi harang. -->
+    <script>
+        window.attendanceTable = {
+            from: <?= json_encode($from) ?>,
+            to: <?= json_encode($to) ?>,
+            delete: <?= $canDeleteAttendance ? 'true' : 'false' ?>
+        };
+    </script>
     <?php include __DIR__ . "/../includes/footer.php"; ?>
     <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>
     <script src="<?= asset('../assets/js/logout.js') ?>"></script>
