@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-08.2';
+const WHATS_NEW_VERSION = '2026-09-09';
 
 /**
  * The changelog, newest release first.
@@ -55,6 +55,40 @@ const WHATS_NEW_VERSION = '2026-09-08.2';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-09',
+            'date'    => '2026-09-09',
+            'icon'    => 'bi-lock-fill',
+            'title'   => 'A better closed sign',
+            'summary' => 'The page people land on when the QR generator, the scanner, the tracker or registration is switched off has been rebuilt to look like the rest of the system.',
+            'items'   => [
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-palette',
+                    'title' => 'The locked page follows your theme',
+                    'text'  => 'It was dark-only, with its styling written into the page itself. It now uses the same tokens, card and buttons as everything else, and carries the floating theme switch — so it is light on a light system and dark on a dark one.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-signpost-2',
+                    'title' => 'It says which page is locked, and offers a way back',
+                    'text'  => 'The heading now names the page you were trying to reach — <em>QR Generator</em>, <em>QR Scanner</em>, <em>Attendance Tracker</em> or <em>Registration</em> — and a <strong>Check again</strong> button lets a visitor find out that the lock has lifted without retyping the address.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-hand-index',
+                    'title' => 'One clear way to reach the developer',
+                    'text'  => 'Facebook and Messenger were two identical blue buttons competing for the same click. Messenger leads now, Facebook sits beside it as an outline, and the bouncing padlock emoji — drawn by the phone, so it was orange on every Android — is a proper icon.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-image',
+                    'title' => 'The school logo shows on the locked registration page',
+                    'text'  => 'The page assumed it was always one folder deep, so on <code>reg.php</code> the logo pointed above the site root and the browser tab came up blank.',
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-08',

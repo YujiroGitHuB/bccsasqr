@@ -1,0 +1,416 @@
+/* ============================================================
+   LOCK — the closed sign.
+
+   includes/lock.php is what a visitor gets instead of the QR
+   generator, the scanner, the tracker or the registration form
+   while an admin has that page switched off in Settings. It is
+   the only page some people will ever see of this system, so it
+   is worth it looking like the rest of the app.
+
+   What it used to be: a dark-only slate card with its CSS inline,
+   a 5em lock emoji bouncing on an infinite loop, a heading and
+   body text that each ran their own entrance animation, and two
+   identical sky-blue buttons — so "Facebook" and "Messenger"
+   competed for the same click with nothing to separate them.
+
+   What replaced it:
+
+   ── It follows the theme ────────────────────────────────────
+   Every neutral below is a token from theme.css, so the page is
+   light on a light system and dark on a dark one, and the
+   floating switch (includes/theme_toggle.php) works here like it
+   does on the scanner and the login page. Nothing is hardcoded
+   except the two accents, which are brand colours and are
+   deliberately theme-independent — same rule as login.css.
+
+   ── One primary action ──────────────────────────────────────
+   Messenger is the filled button because it is the one that
+   actually reaches the developer quickly; Facebook is an outline
+   beside it. A locked page has exactly one thing you might want
+   to do, and it should look like it.
+
+   ── The emoji is gone ───────────────────────────────────────
+   It was drawn by the operating system, so the page's accent
+   colour was whatever Apple, Google or Microsoft had decided a
+   padlock looks like — orange, on a blue card. It is an inline
+   SVG now, taking currentColor, and the only motion left is one
+   slow ring pulse that stops under prefers-reduced-motion.
+   ============================================================ */
+
+.lock-page {
+    /* Brand accents, literal on purpose (see the note above and
+       the one in theme.css). #667eea is the app's primary — the
+       sidebar, the dashboard and the login button share it. */
+    --accent: #667eea;
+    --accent-2: #5566d8;
+
+    /* Amber says "closed for now"; red would read as an error the
+       visitor had caused. */
+    --warn: #f59e0b;
+    --warn-soft: rgba(245, 158, 11, .14);
+
+    --r-card: 20px;
+    --r-btn: 12px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* main.css is not loaded here, so the font stack is repeated —
+   the same one, so this page and the admin pages match. */
+body.lock-page {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(16px, 5vw, 48px);
+    padding-top: max(clamp(16px, 5vw, 48px), env(safe-area-inset-top));
+    padding-bottom: max(clamp(16px, 5vw, 48px), env(safe-area-inset-bottom));
+    background: var(--bg);
+    color: var(--ink-2);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* A wash behind the card rather than a gradient on the body: it
+   keeps its shape whatever the card's height, and it sits at the
+   same low opacity in both themes because it is mixed from the
+   accents rather than from a neutral. */
+body.lock-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 12% -10%, rgba(102, 126, 234, .16), transparent 55%),
+        radial-gradient(circle at 92% 108%, rgba(245, 158, 11, .12), transparent 52%);
+}
+
+.lock-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 520px;
+    padding: clamp(26px, 5vw, 40px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    box-shadow: 0 24px 60px -20px var(--shadow-lg), 0 2px 6px var(--shadow);
+    text-align: center;
+    animation: lockCardIn .5s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes lockCardIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ─── Brand row ──────────────────────────────────────────────
+   The visitor may have arrived from a QR code with no idea whose
+   system this is. The seal and the name say so before the
+   apology does. */
+
+.lock-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: clamp(20px, 4vw, 28px);
+}
+
+/* --plate, not --surface: most school logos are dark ink on a
+   transparent background and vanish on a dark card. Same
+   reasoning as the logo picker in theme.css. */
+.lock-seal {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--plate);
+    border: 1px solid var(--line);
+    overflow: hidden;
+}
+
+.lock-seal img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+}
+
+.lock-brand-name {
+    text-align: left;
+    font-size: .82rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-4);
+}
+
+/* ─── The padlock ────────────────────────────────────────────
+   The SVG takes currentColor, so the icon is the same amber as
+   the badge under it — one accent on the page, instead of the
+   emoji's orange fighting the card's blue. */
+
+.lock-icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 22px;
+    border-radius: 50%;
+    background: var(--warn-soft);
+    color: var(--warn);
+}
+
+.lock-icon svg {
+    position: relative;
+    z-index: 1;
+    width: 38px;
+    height: 38px;
+}
+
+/* One ring, expanding out of the circle. Decorative, so it is a
+   pseudo-element and the first thing reduced motion turns off. */
+.lock-icon::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--warn);
+    opacity: 0;
+    animation: lockPulse 2.8s ease-out infinite;
+}
+
+@keyframes lockPulse {
+    0%   { transform: scale(1);    opacity: .5; }
+    70%  { transform: scale(1.35); opacity: 0; }
+    100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* ─── Copy ───────────────────────────────────────────────── */
+
+/* The badge is small, bold and uppercase — the size at which raw
+   #f59e0b on a pale amber fill falls under 4.5:1. In dark it keeps
+   the accent (the fill behind it is near-black); in light it takes
+   --warn-ink, the darkened amber theme.css already hands the rest
+   of the app for exactly this case. */
+.lock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--warn-soft);
+    color: var(--warn);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+:root:not([data-theme="dark"]) .lock-badge {
+    color: var(--warn-ink, #b45309);
+}
+
+.lock-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.lock-card h1 {
+    margin: 0 0 10px;
+    font-size: clamp(1.45rem, 4.6vw, 1.75rem);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.25;
+    color: var(--ink);
+}
+
+.lock-lede {
+    margin: 0 auto;
+    max-width: 42ch;
+    font-size: .95rem;
+    color: var(--ink-3);
+}
+
+/* ─── Contact ────────────────────────────────────────────── */
+
+.lock-contact {
+    margin-top: clamp(22px, 4vw, 28px);
+    padding-top: clamp(20px, 4vw, 24px);
+    border-top: 1px solid var(--line);
+}
+
+.lock-contact-label {
+    margin: 0 0 14px;
+    font-size: .82rem;
+    color: var(--ink-4);
+}
+
+.lock-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.lock-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 1 1 0;
+    min-height: 46px;
+    padding: 12px 18px;
+    border-radius: var(--r-btn);
+    font-size: .92rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .16s ease, box-shadow .16s ease,
+        filter .16s ease, background .16s ease,
+        border-color .16s ease, color .16s ease;
+}
+
+.lock-btn svg {
+    width: 17px;
+    height: 17px;
+    flex: none;
+}
+
+.lock-btn:hover {
+    transform: translateY(-1px);
+}
+
+.lock-btn:active {
+    transform: translateY(0);
+}
+
+.lock-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+.lock-btn.is-primary {
+    border: 1px solid transparent;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: var(--on-accent);
+    box-shadow: 0 8px 20px -8px rgba(102, 126, 234, .8);
+}
+
+.lock-btn.is-primary:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 12px 26px -10px rgba(102, 126, 234, .9);
+}
+
+.lock-btn.is-secondary {
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink-2);
+}
+
+.lock-btn.is-secondary:hover {
+    background: rgba(var(--tint), .05);
+    border-color: var(--accent);
+    color: var(--ink);
+}
+
+/* ─── Retry ──────────────────────────────────────────────────
+   A lock is temporary by definition, and the old page gave no way
+   at all to find out that it had lifted. Ghost styling: of the
+   three controls it is the least likely to be what someone
+   wants. */
+
+.lock-retry {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 16px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: var(--r-btn);
+    background: none;
+    color: var(--ink-4);
+    font: inherit;
+    font-size: .84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .16s ease, color .16s ease;
+}
+
+.lock-retry svg {
+    width: 14px;
+    height: 14px;
+}
+
+.lock-retry:hover {
+    background: rgba(var(--tint), .06);
+    color: var(--ink-2);
+}
+
+.lock-retry:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.lock-foot {
+    margin: 18px 0 0;
+    font-size: .76rem;
+    color: var(--ink-5);
+}
+
+.lock-foot a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line-strong);
+}
+
+.lock-foot a:hover {
+    color: var(--ink-3);
+}
+
+/* ─── Narrow phones ──────────────────────────────────────────
+   Below ~380px, two buttons side by side break "Messenger" and
+   "Facebook" across lines, so they stack instead. */
+
+@media (max-width: 380px) {
+    .lock-actions {
+        flex-direction: column;
+    }
+
+    .lock-icon {
+        width: 72px;
+        height: 72px;
+    }
+
+    .lock-icon svg {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition-duration: .01ms !important;
+    }
+}
