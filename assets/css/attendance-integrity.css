@@ -1,0 +1,422 @@
+/* ============================================================
+   ATTENDANCE INTEGRITY   (pages/attendance_integrity.php)
+
+   Kaparehong violet (#8b5cf6) ng Attendance at ng Attendance Links:
+   iisang grupo sila sa sidebar, at ang pahinang ito ay ang kasunod
+   ng tanong na sinisimulan ng dalawang iyon — sino ang nagsumite,
+   at mula saan. Tingnan ang attendance-page.css para sa buong
+   lohika ng sistema ng kulay.
+
+   Walang hardcoded na neutral dito: --tint, --ink-* at --surface
+   ang nagdadala ng light at dark. Ang tanging naka-pirming kulay ay
+   ang violet at ang pula ng babala, na pareho sa dalawang tema.
+   ============================================================ */
+
+.ati-page {
+    --ati: #8b5cf6;
+    --ati-deep: #7c3aed;
+    --ati-soft: rgba(139, 92, 246, .14);
+    --ati-line: rgba(139, 92, 246, .3);
+    --ati-ink: #c4b5fd;
+    --ati-border: rgba(var(--tint), .07);
+
+    /* Pula para sa naharang. Hindi "mali" ang ibig sabihin nito —
+       ang ibig sabihin ay "tingnan mo ito". */
+    --ati-hot: #f87171;
+    --ati-hot-soft: rgba(239, 68, 68, .12);
+    --ati-hot-line: rgba(239, 68, 68, .28);
+}
+
+/* ─── Hero ────────────────────────────────────────────────── */
+.ati-page .ati-hero {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.1rem;
+    border-radius: 16px;
+    border: 1px solid var(--ati-border);
+    background:
+        linear-gradient(135deg, var(--ati-soft), transparent 60%),
+        var(--surface);
+}
+
+.ati-page .ati-hero-icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 1.45rem;
+    color: var(--on-accent);
+    background: linear-gradient(135deg, var(--ati), var(--ati-deep));
+    box-shadow: 0 8px 20px rgba(139, 92, 246, .3);
+}
+
+.ati-page .ati-hero-text h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ink-2);
+}
+
+.ati-page .ati-hero-text p {
+    margin: .2rem 0 0;
+    font-size: .87rem;
+    color: var(--ink-4);
+}
+
+/* ─── Saklaw ng panahon ───────────────────────────────────── */
+.ati-page .ati-range {
+    display: flex;
+    gap: .35rem;
+    margin-left: auto;
+    padding: .3rem;
+    border-radius: 12px;
+    background: rgba(var(--tint), .05);
+}
+
+.ati-page .ati-range-btn,
+.ati-page .ati-tab {
+    padding: .4rem .85rem;
+    border-radius: 9px;
+    font-size: .82rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--ink-4);
+    transition: background .18s ease, color .18s ease;
+}
+
+.ati-page .ati-range-btn:hover,
+.ati-page .ati-tab:hover {
+    color: var(--ink-2);
+    background: rgba(var(--tint), .07);
+}
+
+.ati-page .ati-range-btn.is-on,
+.ati-page .ati-tab.is-on {
+    color: var(--on-accent);
+    background: linear-gradient(135deg, var(--ati), var(--ati-deep));
+}
+
+/* ─── Mga bilang ──────────────────────────────────────────── */
+.ati-page .ati-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: .85rem;
+    margin-bottom: 1.1rem;
+}
+
+.ati-page .ati-stat {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    padding: 1rem 1.15rem;
+    border-radius: 14px;
+    border: 1px solid var(--ati-border);
+    background: var(--surface);
+}
+
+/* Ang zero ay hindi nakukulayan: ang apat na tile na pulang-pula
+   ay hindi na babala kundi wallpaper. Kapag may naharang lamang
+   nagbabago ang hitsura. */
+.ati-page .ati-stat.is-alert {
+    border-color: var(--ati-hot-line);
+    background: linear-gradient(135deg, var(--ati-hot-soft), transparent 70%), var(--surface);
+}
+
+.ati-page .ati-stat-label {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(var(--tint), .45);
+}
+
+.ati-page .ati-stat-figure {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.ati-page .ati-stat.is-alert .ati-stat-figure {
+    color: var(--ati-hot);
+}
+
+.ati-page .ati-stat-note {
+    font-size: .76rem;
+    color: var(--ink-4);
+}
+
+/* ─── Mga kard ────────────────────────────────────────────── */
+.ati-page .ati-card {
+    margin-bottom: 1.1rem;
+    padding: 1.15rem 1.25rem 1rem;
+    border-radius: 16px;
+    border: 1px solid var(--ati-border);
+    background: var(--surface);
+}
+
+.ati-page .ati-card-head {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-bottom: .85rem;
+}
+
+.ati-page .ati-card-head h3 {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink-2);
+}
+
+.ati-page .ati-card-head h3 i {
+    color: var(--ati-ink);
+}
+
+.ati-page .ati-count {
+    padding: .15rem .6rem;
+    border-radius: 99px;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--ati-ink);
+    background: var(--ati-soft);
+    border: 1px solid var(--ati-line);
+}
+
+.ati-page .ati-tabs {
+    display: flex;
+    gap: .3rem;
+    margin-left: auto;
+    padding: .25rem;
+    border-radius: 11px;
+    background: rgba(var(--tint), .05);
+}
+
+.ati-page .ati-lede {
+    margin: 0 0 .9rem;
+    font-size: .83rem;
+    line-height: 1.6;
+    color: var(--ink-4);
+}
+
+.ati-page .ati-none {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+    padding: 1rem 0 .5rem;
+    font-size: .88rem;
+    color: var(--ink-4);
+}
+
+.ati-page .ati-none i {
+    color: #4ade80;
+    font-size: 1.05rem;
+}
+
+/* ─── Talahanayan ─────────────────────────────────────────── */
+.ati-page .ati-table {
+    margin: 0;
+    color: var(--ink-3);
+    font-size: .86rem;
+    vertical-align: middle;
+}
+
+.ati-page .ati-table thead th {
+    padding: .6rem .75rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: rgba(var(--tint), .45);
+    background: transparent;
+    border-bottom: 1px solid var(--ati-border);
+}
+
+.ati-page .ati-table tbody td {
+    padding: .7rem .75rem;
+    background: transparent;
+    border-bottom: 1px solid rgba(var(--tint), .05);
+    color: var(--ink-3);
+}
+
+/* Tatlo o higit pang estudyante sa isang telepono. Isang manipis na
+   guhit sa gilid at wala nang iba: ang buong hilerang pula ay
+   nagiging mahirap basahin, at ang teksto ang binabasa rito. */
+.ati-page .ati-table tbody tr.is-hot td:first-child {
+    box-shadow: inset 3px 0 0 var(--ati-hot);
+}
+
+.ati-page .ati-name,
+.ati-page .ati-device {
+    font-weight: 600;
+    color: var(--ink-2);
+}
+
+.ati-page .ati-sub {
+    margin-top: .15rem;
+    font-size: .76rem;
+    line-height: 1.45;
+    color: var(--ink-4);
+}
+
+.ati-page .ati-sub code {
+    padding: .05rem .3rem;
+    border-radius: 5px;
+    font-size: .72rem;
+    color: var(--ati-ink);
+    background: rgba(var(--tint), .06);
+}
+
+.ati-page .ati-when {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.ati-page .ati-pill {
+    display: inline-grid;
+    place-items: center;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 .4rem;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--ati-ink);
+    background: var(--ati-soft);
+    border: 1px solid var(--ati-line);
+}
+
+/* ─── Chip ng kahihinatnan ────────────────────────────────── */
+.ati-page .ati-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .25rem .65rem;
+    border-radius: 8px;
+    font-size: .76rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ati-page .ati-chip.is-ok {
+    color: #4ade80;
+    background: rgba(74, 222, 128, .12);
+    border: 1px solid rgba(74, 222, 128, .25);
+}
+
+.ati-page .ati-chip.is-blocked {
+    color: var(--ati-hot);
+    background: var(--ati-hot-soft);
+    border: 1px solid var(--ati-hot-line);
+}
+
+.ati-page .ati-chip.is-muted {
+    color: var(--ink-4);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .1);
+}
+
+/* ─── Selfie ──────────────────────────────────────────────── */
+.ati-page .ati-shot {
+    display: block;
+    width: 44px;
+    height: 44px;
+    margin-top: .4rem;
+    border-radius: 9px;
+    overflow: hidden;
+    border: 1px solid var(--ati-line);
+}
+
+.ati-page .ati-shot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ati-page .ati-foot {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: .9rem 0 0;
+    font-size: .76rem;
+    color: var(--ink-4);
+}
+
+/* ─── Wala pang talaan ────────────────────────────────────── */
+.ati-page .ati-empty {
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    border-radius: 16px;
+    border: 1px dashed rgba(var(--tint), .14);
+    background: var(--surface);
+}
+
+.ati-page .ati-empty i {
+    font-size: 2.2rem;
+    color: var(--ati-ink);
+}
+
+.ati-page .ati-empty h5 {
+    margin: .9rem 0 .4rem;
+    font-weight: 700;
+    color: var(--ink-2);
+}
+
+.ati-page .ati-empty p {
+    max-width: 460px;
+    margin: 0 auto;
+    font-size: .86rem;
+    line-height: 1.65;
+    color: var(--ink-4);
+}
+
+.ati-page .ati-empty code {
+    padding: .1rem .35rem;
+    border-radius: 5px;
+    color: var(--ati-ink);
+    background: rgba(var(--tint), .06);
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .ati-page .ati-hero {
+        padding: 1rem;
+    }
+
+    .ati-page .ati-hero-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .ati-page .ati-hero-text h2 {
+        font-size: 1.15rem;
+    }
+
+    /* Ang saklaw at ang mga tab ay bumababa sa sariling linya sa
+       halip na maipit sa gilid. */
+    .ati-page .ati-range,
+    .ati-page .ati-tabs {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .ati-page .ati-range-btn,
+    .ati-page .ati-tab {
+        flex: 1;
+        text-align: center;
+    }
+}

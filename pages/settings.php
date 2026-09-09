@@ -11,6 +11,7 @@ include __DIR__ . "/../includes/check_user_status.php";
 requireAnyPermission(['settings.manage', 'attendance.lock', 'system.pagelock']);
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/attendance_integrity.php";
 
 // Handle Page Lock Toggle
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lock_status'])) {
@@ -75,6 +76,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['require_photo_status'
     exit;
 }
 
+// Handle Device Binding Toggle
+//
+// Isang device, isang estudyante kada link kada araw. Ito ang
+// pinakamalaking harang laban sa pagsusumite para sa kaklase, at ito
+// rin ang tanging tsekeng maaaring makasagabal sa isang tunay na
+// estudyante: ang magkapatid na iisa ang telepono, o ang taong
+// nanghiram dahil naubusan ng baterya. Kaya may switch — hindi
+// dahil opsyonal, kundi dahil may araw na kailangang buksan ang
+// pintuan at ang admin lamang ang nakakaalam kung kailan iyon.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['device_binding_status'])) {
+    requirePermissionJson('settings.manage');
+    $newStatus = $_POST['device_binding_status'] === '1' ? '1' : '0';
+
+    $stmt = $conn->prepare("
+        INSERT INTO attendance_settings (setting_key, setting_value, updated_at)
+        VALUES ('device_binding', ?, NOW())
+        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()
+    ");
+    $stmt->bind_param("s", $newStatus);
+
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'status' => $newStatus]);
+    } else {
+        echo json_encode(['success' => false, 'error' => $stmt->error]);
+    }
+    exit;
+}
+
+// Handle Selfie Spot Check rate
+//
+// Bahagdan at hindi switch: ang paghingi ng mukha sa BAWAT
+// estudyante ay pagbabago ng buong karanasan para hulihin ang iilan,
+// at mabigat ang camera sa isang libreng hosting. Ang 0 ay patay.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selfie_rate'])) {
+    requirePermissionJson('settings.manage');
+
+    // Nakakulong sa 0–100. Ang halagang nasa labas ng saklaw ay
+    // hindi mali ng gumagamit — walang paraan para maabot iyon mula
+    // sa pahina — kaya tahimik itong ipinipilit sa loob imbes na
+    // maglabas ng mensaheng walang sinumang makakakita.
+    $rate = max(0, min(100, (int) $_POST['selfie_rate']));
+
+    $stmt = $conn->prepare("
+        INSERT INTO attendance_settings (setting_key, setting_value, updated_at)
+        VALUES ('selfie_spot_rate', ?, NOW())
+        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()
+    ");
+    $rateStr = (string) $rate;
+    $stmt->bind_param("s", $rateStr);
+
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'rate' => $rate]);
+    } else {
+        echo json_encode(['success' => false, 'error' => $stmt->error]);
+    }
+    exit;
+}
+
 // Get current page lock status
 $result = mysqli_query($conn, "SELECT setting_value FROM lock_settings_tbl WHERE setting_key = 'page_locked'");
 $current = mysqli_fetch_assoc($result)['setting_value'];
@@ -112,6 +171,39 @@ if ($photoStats && mysqli_num_rows($photoStats) > 0) {
     $row          = mysqli_fetch_assoc($photoStats);
     $photoTotal   = (int)$row['total'];
     $photoMissing = (int)$row['missing'];
+}
+
+// ── Mga bagong tuntunin sa pagkakakilanlan ──────────────────
+//
+// Default ang device binding sa ON at ang selfie sa 0: ang unang
+// tanong ay walang dagdag na hakbang para sa estudyante at
+// nahuhuli ang halos lahat ng pagsusumite para sa kaklase, samantalang
+// ang pangalawa ay bumubukas ng camera. Ang paaralang nagpapatakbo ng
+// migration ay binibigyan ng 15 — ang lahat ng iba ay nagsisimula sa
+// patay hangga't hindi sinasadyang buksan.
+$isDeviceBinding = integrity_setting($conn, 'device_binding',   '1') === '1';
+$selfieRate      = (int) integrity_setting($conn, 'selfie_spot_rate', '0');
+
+// Ilang pagsusumite ang naharang ngayong linggo. Isang numero lamang,
+// pero ito ang sagot sa tanong na "may ginagawa ba talaga ito?" —
+// walang saysay ang switch na hindi mo nakikitang gumagana.
+//
+// try/catch: ang attendance_audit_tbl ay dumarating kasama ng
+// migrations/2026-09-09_add_attendance_integrity.sql, at ang Settings
+// ay hindi dapat pahinang basag habang hindi pa ito napapatakbo.
+$blockedWeek = null;
+try {
+    $blockedRes = mysqli_query($conn, "
+        SELECT COUNT(*) AS n
+        FROM attendance_audit_tbl
+        WHERE result     = 'device_reuse'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    ");
+    if ($blockedRes && mysqli_num_rows($blockedRes) > 0) {
+        $blockedWeek = (int) mysqli_fetch_assoc($blockedRes)['n'];
+    }
+} catch (Throwable $e) {
+    $blockedWeek = null;   // hindi pa handa ang talaan
 }
 
 // Get current system configuration
@@ -371,6 +463,124 @@ $systemLogo = $system['logo'] ?? '';
                         </form>
                     </div>
                 </div>
+
+                <!-- One Device, One Student -->
+                <div class="set-row">
+                    <div class="set-icon"><i class="bi bi-phone-fill"></i></div>
+                    <div class="set-main">
+                        <h3>
+                            One Device, One Student
+                            <span class="set-badge <?= $isDeviceBinding ? 'strict' : 'muted' ?>" id="deviceBindingStatus">
+                                <i class="bi bi-<?= $isDeviceBinding ? 'shield-lock-fill' : 'shield-slash' ?>"></i>
+                                <?= $isDeviceBinding ? 'Enforced' : 'Off' ?>
+                            </span>
+                        </h3>
+                        <p>
+                            When ON, a phone that has already recorded attendance for one
+                            student cannot record it for a different student in the same class
+                            on the same day. This is what stops one person from submitting for
+                            the whole row — without it, holding the link and knowing a
+                            classmate's number is enough.
+                        </p>
+
+                        <?php if ($blockedWeek !== null && $blockedWeek > 0): ?>
+                            <div class="set-warn">
+                                <i class="bi bi-shield-check"></i>
+                                <span>
+                                    <strong><?= number_format($blockedWeek) ?></strong>
+                                    submission<?= $blockedWeek === 1 ? ' was' : 's were' ?> blocked this way in the
+                                    last 7 days. Review them under Attendance &rsaquo; Integrity.
+                                </span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="set-control">
+                        <form method="post" id="deviceBindingForm">
+                            <input type="hidden" name="device_binding_status" id="device_binding_status"
+                                value="<?= $isDeviceBinding ? '1' : '0' ?>">
+                            <div class="toggle-container">
+                                <div class="toggle-wrap">
+                                    <input class="toggle-input" id="device-binding-toggle" type="checkbox"
+                                        <?= $isDeviceBinding ? 'checked' : '' ?> />
+                                    <label class="toggle-track" for="device-binding-toggle">
+                                        <div class="track-lines">
+                                            <div class="track-line"></div>
+                                        </div>
+                                        <div class="toggle-thumb">
+                                            <div class="thumb-core"></div>
+                                            <div class="thumb-inner"></div>
+                                            <div class="thumb-scan"></div>
+                                            <div class="thumb-particles">
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                                <div class="thumb-particle"></div>
+                                            </div>
+                                        </div>
+                                        <div class="energy-rings">
+                                            <div class="energy-ring"></div>
+                                            <div class="energy-ring"></div>
+                                            <div class="energy-ring"></div>
+                                        </div>
+                                        <div class="interface-lines">
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                            <div class="interface-line"></div>
+                                        </div>
+                                        <div class="toggle-reflection"></div>
+                                        <div class="holo-glow"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Selfie Spot Check -->
+                <div class="set-row">
+                    <div class="set-icon"><i class="bi bi-camera-fill"></i></div>
+                    <div class="set-main">
+                        <h3>
+                            Selfie Spot Check
+                            <span class="set-badge <?= $selfieRate > 0 ? 'strict' : 'muted' ?>" id="selfieRateStatus">
+                                <i class="bi bi-<?= $selfieRate > 0 ? 'camera-fill' : 'camera-video-off' ?>"></i>
+                                <?= $selfieRate > 0 ? $selfieRate . '% of submissions' : 'Off' ?>
+                            </span>
+                        </h3>
+                        <p>
+                            Asks a share of students to take a quick photo of themselves before
+                            their attendance is saved. Who gets asked is decided by the server
+                            and stays the same for that student all day, so refreshing the page
+                            does not get them out of it. A device that has submitted for three
+                            or more different students in a week is always asked, whatever this
+                            is set to.
+                        </p>
+                        <div class="set-warn">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>
+                                The camera needs HTTPS and the student's permission. Set this to
+                                0 to turn it off entirely.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="set-control">
+                        <form method="post" id="selfieRateForm" class="set-inline-form">
+                            <label class="visually-hidden" for="selfie_rate">Percentage of submissions</label>
+                            <div class="set-number">
+                                <input type="number" class="form-control" id="selfie_rate" name="selfie_rate"
+                                    min="0" max="100" step="5" value="<?= $selfieRate ?>">
+                                <span class="set-number-unit">%</span>
+                            </div>
+                            <button type="submit" class="set-btn">
+                                <i class="bi bi-check2"></i> Save
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             <!-- ══ SYSTEM ══════════════════════════════════════ -->
@@ -406,6 +616,7 @@ $systemLogo = $system['logo'] ?? '';
     <script src="<?= asset('../assets/js/lock.js') ?>"></script>
     <script src="<?= asset('../assets/js/attendancelock.js') ?>"></script>
     <script src="<?= asset('../assets/js/requirePhoto.js') ?>"></script>
+    <script src="<?= asset('../assets/js/attendanceIntegrity.js') ?>"></script>
     <script src="<?= asset('../assets/js/systemConfig.js') ?>"></script>
     <script src="<?= asset('../assets/js/userManagement.js') ?>"></script>
 </body>

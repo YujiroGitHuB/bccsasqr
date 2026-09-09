@@ -59,9 +59,14 @@ function attach_link_expiry(mysqli $conn, array $links): array {
     $codes = array_column($links, 'short_code');
     $marks = implode(',', array_fill(0, count($codes), '?'));
 
+    // Kasama na rito ang require_room_code: parehong hilera, at ang
+    // card ay kailangang malaman kung nakabukas ang switch bago pa
+    // ito maipinta. Isang tanong pa para lamang sa isang tinyint ay
+    // isang round trip sa isang remote na database kada pag-load.
     $stmt = $conn->prepare("
         SELECT short_code,
                expires_at,
+               require_room_code,
                (expires_at IS NOT NULL AND expires_at <= NOW())  AS is_expired,
                TIMESTAMPDIFF(SECOND, NOW(), expires_at)          AS expires_in,
                DATE_FORMAT(expires_at, '%b %e, %Y %l:%i %p')     AS expires_label
@@ -84,6 +89,7 @@ function attach_link_expiry(mysqli $conn, array $links): array {
         $l['expires_label'] = $e['expires_label'] ?? null;
         $l['expires_in']    = ($e && $e['expires_in'] !== null) ? (int) $e['expires_in'] : null;
         $l['is_expired']    = $e ? ((int) $e['is_expired'] === 1) : false;
+        $l['room_code']     = $e ? ((int) $e['require_room_code'] === 1) : false;
     }
     unset($l);
 

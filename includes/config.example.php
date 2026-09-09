@@ -17,3 +17,14 @@ define('ALLOWED_ORIGIN', '*');
 // works today. Set a long random string to require an `X-API-Key` header
 // on every /api/v1 call, and ship the same string in the Flutter build.
 define('MOBILE_API_KEY', '');   // e.g. 'YOUR_LONG_RANDOM_KEY_HERE'
+
+// Ang HMAC key ng attendance integrity (includes/attendance_integrity.php):
+// pinipirmahan nito ang device cookie at binubuo ang code sa harapan ng
+// klase. Iwanang blangko at gagawa ang sistema ng isa at itatago sa
+// attendance_settings — gumagana iyon, pero nakikita ito ng sinumang
+// nakakabasa ng database. Sa isang tunay na deployment, itakda ito rito.
+//
+// Ang pagpapalit nito ay nagpapawalang-bisa sa bawat device cookie at sa
+// bawat bukas na room code. Walang mawawalang attendance; magsisimulang
+// muli lamang ang pagkilala sa bawat telepono.
+define('INTEGRITY_SECRET', '');   // hal. bin2hex(random_bytes(32))

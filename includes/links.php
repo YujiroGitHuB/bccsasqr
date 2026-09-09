@@ -12,6 +12,32 @@
 // ============================================================
 
 /**
+ * Kaya bang galawin ng nakalog-in na user ang link na ito?
+ *
+ * Ang admin ay nakakagalaw ng kahit ano; ang instructor ay sa kanya
+ * lamang. Apat nang endpoint ang nagtatanong nito — ang expiry, ang
+ * bagong code, ang room code at ang switch nito — at ang sagot ay
+ * dapat pare-pareho sa apat. Isang endpoint na nakalimot ng tseke ay
+ * pintuan papasok sa klase ng ibang instruktor.
+ */
+function link_owned_by(mysqli $conn, string $short_code, int $user_id, string $role): bool
+{
+    if ($role === 'admin') {
+        $own = $conn->prepare("SELECT id FROM attendance_links_tbl WHERE short_code = ?");
+        $own->bind_param("s", $short_code);
+    } else {
+        $own = $conn->prepare("SELECT id FROM attendance_links_tbl WHERE short_code = ? AND instructor_id = ?");
+        $own->bind_param("si", $short_code, $user_id);
+    }
+
+    $own->execute();
+    $found = $own->get_result()->num_rows > 0;
+    $own->close();
+
+    return $found;
+}
+
+/**
  * Anim na karakter mula sa isang alpabetong walang malabo:
  * hindi kasama ang 0/O at 1/I dahil binabasa at tinitipa ito ng
  * mga estudyante mula sa isang QR na naka-proyekta sa dingding.

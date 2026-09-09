@@ -597,6 +597,139 @@ body.attendance-page {
     background: rgba(var(--tint), .015);
 }
 
+/* ─── Code sa harapan ng klase ────────────────────────────
+   Anim na digit na nagpapalit kada 30 segundo, ipinapakita ng
+   instruktor sa projector. Lumalabas lamang ang field na ito sa mga
+   link na binuksan ang tampok (require_room_code).
+
+   Malaki at may agwat ang mga karakter: kinokopya ito ng estudyante
+   mula sa kabilang dulo ng silid, at ang maling digit na hindi
+   niya nakita ay pagtanggi na hindi niya maiintindihan. */
+.attendance-page .att-room {
+    margin-top: 1.1rem;
+}
+
+.attendance-page .att-room-input {
+    text-align: center;
+    padding: 0 1rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: .5em;
+    /* Ang letter-spacing ay naglalagay ng puwang sa HULI rin ng
+       huling karakter, kaya mukhang kaliwa ang naka-sentro. Ang
+       indent ang bumabawi. */
+    text-indent: .5em;
+}
+
+.attendance-page .att-room-input::-webkit-outer-spin-button,
+.attendance-page .att-room-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* ─── Selfie spot check ───────────────────────────────────
+   Hindi laging lumalabas — ang bahagdan ay nasa Settings, at ang
+   pagpili ay ginagawa ng server. Nakapatong sa buong screen dahil
+   ang isang maliit na video sa gitna ng form ay hindi nagsasabi
+   kung ano ang gagawin mo. */
+.attendance-page .att-selfie {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 20px 16px;
+    background: rgba(0, 0, 0, .82);
+    backdrop-filter: blur(6px);
+    animation: att-reveal .2s ease both;
+}
+
+.attendance-page .att-selfie-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink-2);
+    text-align: center;
+}
+
+.attendance-page .att-selfie-note {
+    margin: 0;
+    max-width: 320px;
+    font-size: .82rem;
+    line-height: 1.5;
+    text-align: center;
+    color: rgba(var(--tint), .55);
+}
+
+/* Parisukat at may hangganan: ang mukha ang hinahanap, hindi ang
+   silid sa likod. */
+.attendance-page .att-selfie-stage {
+    position: relative;
+    width: min(78vw, 300px);
+    aspect-ratio: 1;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 2px solid var(--att-line);
+    background: rgba(var(--tint), .05);
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, .12);
+}
+
+.attendance-page .att-selfie-stage video,
+.attendance-page .att-selfie-stage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Nakasalamin ang preview — ganito ang inaasahan ng tao kapag
+   tinitingnan ang sarili. Hindi nakasalamin ang naka-save na
+   larawan (tingnan ang JS): ang instruktor ang titingin doon. */
+.attendance-page .att-selfie-stage video {
+    transform: scaleX(-1);
+}
+
+.attendance-page .att-selfie-actions {
+    display: flex;
+    gap: .6rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.attendance-page .att-selfie-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    min-height: 46px;
+    padding: 0 1.3rem;
+    border-radius: 12px;
+    border: 1px solid var(--att-line);
+    background: linear-gradient(135deg, var(--att), var(--att-deep));
+    color: #fff;
+    font-size: .92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter .18s ease, opacity .18s ease;
+}
+
+.attendance-page .att-selfie-btn.ghost {
+    background: rgba(var(--tint), .06);
+    color: var(--ink-2);
+    border-color: rgba(var(--tint), .14);
+}
+
+.attendance-page .att-selfie-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
+
+.attendance-page .att-selfie-btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
 /* ─── Small phones ───────────────────────────────────────── */
 @media (max-width: 480px) {
     body.attendance-page {

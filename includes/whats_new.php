@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-09.2';
+const WHATS_NEW_VERSION = '2026-09-09.3';
 
 /**
  * The changelog, newest release first.
@@ -59,10 +59,40 @@ function whats_new_releases(): array
         [
             'id'      => '2026-09-09',
             'date'    => '2026-09-09',
-            'icon'    => 'bi-person-badge',
-            'title'   => 'Knowing who you are looking at',
-            'summary' => 'The tracker now shows the student\'s photo with their record, and the page people land on when a section is switched off has been rebuilt to look like the rest of the system.',
+            'icon'    => 'bi-shield-check',
+            'title'   => 'Knowing whose phone it is',
+            'summary' => 'Holding the attendance link and knowing a classmate\'s number used to be enough to sign them in. Five new checks close that, and a new page shows you every submission that was turned away.',
             'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-phone',
+                    'title' => 'One device, one student',
+                    'text'  => 'A phone that has recorded attendance for one student can no longer record it for a different student in the same class that day. This is the change that stops one person signing in the whole row &mdash; it is on by default, and there is a switch for it under <strong>Settings &rsaquo; Attendance rules</strong>.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-display',
+                    'title' => 'A code on the board that changes every 30 seconds',
+                    'text'  => 'Turn it on for a class from the <strong>Code</strong> button on its link card, and put the six digits on the projector. Students must type them to submit, so anyone who is not in the room cannot &mdash; by the time the code reaches the group chat, it has already changed.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-camera',
+                    'title' => 'Selfie spot checks',
+                    'text'  => 'A share of submissions &mdash; you choose the percentage &mdash; are asked for a quick photo before they are saved. Who gets asked is decided by the server and stays the same all day, so refreshing does not get anyone out of it. A phone that has submitted for three or more students in one week is always asked.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-shield-check',
+                    'title' => 'A page showing what was turned away',
+                    'text'  => '<strong>Attendance &rsaquo; Integrity</strong> lists every submission with the device and network it came from, flags each phone that was used for more than one student, and keeps the last 30 days.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-incognito',
+                    'title' => 'The student lookup no longer answers to everyone',
+                    'text'  => 'Typing a number on the attendance form returns a name, course, section and photo. That lookup did not check the link and was not rate limited, so it could be walked from <code>025-001</code> upward to read the whole school. It now requires a live attendance link, and counts how many numbers one device is asking about.',
+                ],
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-person-square',

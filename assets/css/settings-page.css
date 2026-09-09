@@ -265,6 +265,49 @@
     box-shadow: 0 10px 22px rgba(102, 126, 234, .38);
 }
 
+/* ─── Numerong may pindutan ───────────────────────────────
+   Ang Selfie Spot Check ay bahagdan at hindi switch, kaya may
+   isang kontrol dito na hindi toggle. Nasa isang linya ang input
+   at ang Save: ang bilang na naiwang hindi na-save ay bilang na
+   inaakalang naka-save na. */
+.set-page .set-inline-form {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.set-page .set-number {
+    position: relative;
+}
+
+.set-page .set-number .form-control {
+    width: 92px;
+    padding-right: 1.9rem;
+    text-align: center;
+    font-weight: 600;
+    border-radius: 11px;
+    border: 1px solid rgba(var(--tint), .12);
+    background: rgba(var(--tint), .05);
+    color: var(--ink-2);
+}
+
+.set-page .set-number .form-control:focus {
+    border-color: #667eea;
+    background: rgba(var(--tint), .07);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, .18);
+    color: var(--ink-2);
+}
+
+.set-page .set-number-unit {
+    position: absolute;
+    right: .7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .82rem;
+    color: var(--ink-4);
+    pointer-events: none;
+}
+
 /* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
     .set-page .set-hero {

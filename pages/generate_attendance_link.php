@@ -197,6 +197,55 @@ $user_role = $_SESSION['role'];
         </div>
     </div>
 
+    <!-- ══ Room code ═════════════════════════════════════════════
+         Ang anim na digit na ipinapakita sa harapan ng klase. Ito ang
+         tanging tsekeng humihingi ng bagay na hindi kayang dalhin
+         palabas ng silid — ang link ay naipapasa sa group chat, ang
+         code na may tatlumpung segundong buhay ay hindi.
+
+         Malaki ang teksto dahil binabasa ito mula sa likurang upuan.
+    -->
+    <div class="modal fade" id="roomCodeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content lnk-qr-modal">
+                <div class="modal-header border-0 pb-0">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0"><i class="bi bi-display me-2"></i>Code on the board</h5>
+                        <small class="text-muted" id="rcSubject"></small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+
+                    <div class="rc-code" id="rcCode">------</div>
+
+                    <div class="rc-bar"><div class="rc-bar-fill" id="rcBar"></div></div>
+                    <p class="rc-left mb-0" id="rcLeft">Changes every 30 seconds</p>
+
+                    <div class="rc-switch">
+                        <div class="rc-switch-text">
+                            <strong>Require this code</strong>
+                            <span id="rcState">Off — students can submit without it</span>
+                        </div>
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="rcToggle">
+                        </div>
+                    </div>
+
+                    <p class="rc-note">
+                        <i class="bi bi-info-circle"></i>
+                        Show this on the projector or write it on the board. Anyone who is not
+                        in the room cannot submit — by the time the code is forwarded, it has
+                        already changed.
+                    </p>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?php include __DIR__ . "/../includes/footer.php"; ?>
     <script src="<?= asset('../assets/js/profileUpdate.js') ?>"></script>
     <script src="<?= asset('../assets/js/comingSoon.js') ?>"></script>

@@ -568,6 +568,104 @@
     color: var(--ink-3);
 }
 
+/* ─── Room code modal ─────────────────────────────────────
+   Ang anim na digit na ipinapakita sa harapan ng klase. Gaya ng
+   .lnk-qr-modal, nasa labas ito ng .link-page (ang modal ay
+   inilalabas ng Bootstrap sa <body>), kaya rito rin idinedeklara
+   ang mga accent — kung hindi, walang kulay ang bawat rule sa
+   ibaba. */
+#roomCodeModal {
+    --lnk: #8b5cf6;
+    --lnk-deep: #7c3aed;
+    --lnk-soft: rgba(139, 92, 246, .14);
+    --lnk-line: rgba(139, 92, 246, .3);
+    --lnk-ink: #c4b5fd;
+}
+
+/* Binabasa ito mula sa likurang upuan, kaya clamp() at hindi
+   isang naka-pirming laki: sa isang laptop na nakakabit sa
+   projector, ang 3.4rem ay hindi sapat. */
+#roomCodeModal .rc-code {
+    font-size: clamp(2.75rem, 12vw, 4.25rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: .18em;
+    text-indent: .18em;
+    color: var(--lnk-ink);
+    font-variant-numeric: tabular-nums;
+    /* tabular-nums at hindi monospace na font: hindi tumatalon ang
+       lapad kada palit, at nananatiling pamilyar ang hugis ng
+       numero para sa taong nagko-kopya nito. */
+    text-shadow: 0 0 24px rgba(139, 92, 246, .45);
+}
+
+/* Ang natitirang oras, bilang haba at hindi bilang numero: mas
+   mabilis basahin ng taong nakatingin sa dingding kaysa sa
+   pagbibilang pababa. */
+#roomCodeModal .rc-bar {
+    height: 5px;
+    margin: 1rem auto .55rem;
+    max-width: 240px;
+    border-radius: 99px;
+    background: rgba(var(--tint), .1);
+    overflow: hidden;
+}
+
+#roomCodeModal .rc-bar-fill {
+    height: 100%;
+    width: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--lnk), var(--lnk-deep));
+    /* linear at 1s: kasabay ng orasan sa JS, kaya walang paurong na
+       galaw kapag dumating ang bagong sagot ng server. */
+    transition: width 1s linear;
+}
+
+#roomCodeModal .rc-left {
+    font-size: .8rem;
+    color: var(--ink-4);
+}
+
+#roomCodeModal .rc-switch {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.35rem 0 .85rem;
+    padding: .85rem 1rem;
+    text-align: left;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--tint), .1);
+    background: rgba(var(--tint), .04);
+}
+
+#roomCodeModal .rc-switch-text {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    font-size: .88rem;
+    color: var(--ink-3);
+}
+
+#roomCodeModal .rc-switch-text span {
+    font-size: .78rem;
+    color: var(--ink-4);
+}
+
+#roomCodeModal .form-check-input:checked {
+    background-color: var(--lnk);
+    border-color: var(--lnk);
+}
+
+#roomCodeModal .rc-note {
+    display: flex;
+    gap: .45rem;
+    margin: 0;
+    text-align: left;
+    font-size: .78rem;
+    line-height: 1.55;
+    color: var(--ink-4);
+}
+
 /* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
     .link-page .lnk-hero {

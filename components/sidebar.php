@@ -53,7 +53,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <!-- ATTENDANCE -->
         <small class="sidebar-label">ATTENDANCE</small>
         <div class="nav-item dropdown">
-            <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['attendance.php', 'generate_attendance_link.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#attendanceMenu" data-tip="Attendance">
+            <a href="#" class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['attendance.php', 'generate_attendance_link.php', 'attendance_integrity.php'])) ? 'active' : ''; ?>" data-bs-toggle="collapse" data-bs-target="#attendanceMenu" data-tip="Attendance">
                 <i class="bi bi-journal-text"></i> <span>Attendance</span>
             </a>
             <div class="collapse ps-3" id="attendanceMenu">
@@ -65,6 +65,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <?php if (can('links.manage')) { ?>
                     <a href="../pages/generate_attendance_link.php" class="nav-link submenu-item <?php echo ($current_page == 'generate_attendance_link.php') ? 'active' : ''; ?>">
                         <i class="bi bi-link-45deg"></i> Attendance Link
+                    </a>
+                    <?php /* Kasunod ng Attendance Link at hindi hiwalay na
+                            grupo: ang gumagawa ng link ang siya ring
+                            titingin kung paano ito ginamit. */ ?>
+                    <a href="../pages/attendance_integrity.php" class="nav-link submenu-item <?php echo ($current_page == 'attendance_integrity.php') ? 'active' : ''; ?>">
+                        <i class="bi bi-shield-check"></i> Integrity
                     </a>
                 <?php } ?>
             </div>

@@ -2,19 +2,101 @@
 header('Content-Type: application/json');
 include __DIR__ . "/../includes/db_connect.php";
 require_once __DIR__ . "/../includes/photo_requirement.php";
+require_once __DIR__ . "/../includes/attendance_integrity.php";
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
     exit;
 }
 
-$student_no       = trim($_POST['student_no']       ?? '');
-$subject_code     = trim($_POST['subject_code']     ?? '');
-$required_section = trim($_POST['required_section'] ?? '');
-$instructor_id    = trim($_POST['instructor_id']    ?? '');
+$student_no = trim($_POST['student_no'] ?? '');
+$short_code = trim($_POST['short_code'] ?? '');
 
 if (empty($student_no)) {
     echo json_encode(['success' => false, 'message' => 'Student number is required']);
+    exit;
+}
+
+// ── 0. Ang link muna, bago ang estudyante ─────────────────────────────────────
+//
+// Dati ay walang hinihinging link ang file na ito. Ang subject_code,
+// required_section at instructor_id ay galing sa POST, at ang epekto
+// niyon ay hindi lamang mahinang tseke — ito ay bukás na direktoryo:
+// isang loop mula 025-001 hanggang 025-2000 at nasa'yo na ang pangalan,
+// course, section at larawan ng bawat estudyante ng paaralan. Iyon
+// mismo ang kailangan para magsumite ng attendance para sa iba.
+//
+// Ang short_code na ngayon ang tanging pinagkakatiwalaan, at ang klase
+// ay binabasa mula sa hilera nito — parehong-pareho ng ginagawa na ng
+// crud/submit_attendance.php. Ang lookup ay para sa taong may hawak ng
+// link ng klase, at buhay pa ang link na iyon.
+if ($short_code === '') {
+    echo json_encode(['success' => false, 'message' => 'This attendance link is not valid.']);
+    exit;
+}
+
+// SELECT * — ang require_room_code ay dumarating kasama ng isang
+// migration, at ang nakalistang column na wala pa ay pumapatay ng
+// buong paghahanap. Binabasa ito sa ibaba na may ??.
+$linkStmt = $conn->prepare("
+    SELECT *,
+           (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired
+    FROM attendance_links_tbl
+    WHERE short_code = ?
+");
+$linkStmt->bind_param("s", $short_code);
+$linkStmt->execute();
+$link = $linkStmt->get_result()->fetch_assoc();
+$linkStmt->close();
+
+if (!$link) {
+    echo json_encode(['success' => false, 'message' => 'This attendance link is not valid.']);
+    exit;
+}
+
+if ((int) $link['is_active'] !== 1) {
+    echo json_encode(['success' => false, 'message' => 'This attendance link has been deactivated by your instructor.']);
+    exit;
+}
+
+if ((int) $link['is_expired'] === 1) {
+    echo json_encode(['success' => false, 'message' => 'This attendance link has already closed.']);
+    exit;
+}
+
+$subject_code     = trim((string) $link['subject_code']);
+$required_section = trim((string) $link['section']);
+$instructor_id    = (int) $link['instructor_id'];
+
+// ── 0b. Gaano karaming numero ang hinahanap mo? ───────────────────────────────
+//
+// Dalawang bilangan, magkaibang tanong.
+//
+// Ang device ay masikip: apatnapung paghahanap kada sampung minuto.
+// Isang tao lamang ang naghahanap ng SARILING numero — kahit ilang
+// beses siyang magkamali sa pagtipa, wala siyang dahilan para lumagpas
+// dito. Ang lumalagpas ay dumadaan sa listahan.
+//
+// Ang IP ay maluwag: isang public IP lamang ang buong silid sa likod ng
+// NAT ng paaralan, kaya ang apatnapung estudyanteng sabay-sabay na
+// nagsusumite ay iisang address. Ang hinuhuli ng bilang na ito ay ang
+// nag-iiskrip ng libu-libong numero — hindi ang klase.
+$device_id = integrity_device_id($conn);
+$ip        = integrity_client_ip();
+
+if (!integrity_rate_ok($conn, 'v:d:' . $device_id, 40, 600)) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Too many lookups from this device. Please wait a few minutes and try again.'
+    ]);
+    exit;
+}
+
+if ($ip !== '' && !integrity_rate_ok($conn, 'v:i:' . $ip, 400, 600)) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Too many lookups from this network. Please wait a few minutes and try again.'
+    ]);
     exit;
 }
 
@@ -155,7 +237,12 @@ try {
         // pinapaalala ng pahina habang maluwag pa, para may photo na siya
         // bago pa i-ON ng admin ang tuntunin.
         'photo_missing' => $photo_missing,
-        'upload_url'    => $photo_missing ? '../student/StudentPhotoProfile.php' : null
+        'upload_url'    => $photo_missing ? '../student/StudentPhotoProfile.php' : null,
+        // Sinasabi sa form kung kailangan pa ng code sa harapan bago
+        // buksan ang Submit. Ang tunay na tseke ay sa pagsusumite —
+        // ito ay para lamang malaman ng estudyante nang maaga kung ano
+        // pa ang hihingin sa kanya.
+        'room_code'     => (int) ($link['require_room_code'] ?? 0) === 1
     ]);
 
     $stmt->close();
@@ -169,4 +256,3 @@ try {
 }
 
 $conn->close();
-?>

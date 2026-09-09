@@ -2,14 +2,29 @@
 
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/attendance_integrity.php";
+
+// ── Ang cookie ng device, itinatanim bago ang anumang output ──
+//
+// Dito, at hindi sa crud/submit_attendance.php lamang: ang setcookie
+// ay header, at ang header ay dapat mauna sa unang byte ng HTML.
+// Kapag sa pagsusumite pa lamang ito unang naitanim, walang cookie
+// ang unang pagsusumite ng bawat browser — at ang unang pagsusumite
+// ang mismong hinuhuli ng device binding.
+//
+// Ang tumatawag na ito ang gumagawa rin ng integrity_secret sa
+// unang pagtakbo, kaya handa na ang lahat bago pa dumating ang
+// unang estudyante.
+$device_id = integrity_device_id($conn);
 
 // Check if short code is provided
 $attendance_data = null;
 $is_valid = false;
 
-$invalid_reason = 'unknown';
-$expires_in     = null;   // segundo hanggang mag-expire; null = walang expiry
-$short_code     = '';
+$invalid_reason  = 'unknown';
+$expires_in      = null;   // segundo hanggang mag-expire; null = walang expiry
+$short_code      = '';
+$needs_room_code = false;  // binuksan ba ang code sa harapan para sa link na ito
 
 if (isset($_GET['c'])) {
     $short_code = trim($_GET['c']);
@@ -53,8 +68,9 @@ if (isset($_GET['c'])) {
                 'instructor_id' => $row['instructor_id'],
                 'instructor_name' => $row['instructor_name']
             ];
-            $expires_in = $row['expires_in'] === null ? null : (int) $row['expires_in'];
-            $is_valid   = true;
+            $expires_in    = $row['expires_in'] === null ? null : (int) $row['expires_in'];
+            $needs_room_code = (int) ($row['require_room_code'] ?? 0) === 1;
+            $is_valid      = true;
         }
     }
 }
@@ -193,6 +209,31 @@ if ($result && $result->num_rows > 0) {
                     </div>
                 </div>
 
+                <?php if ($needs_room_code): ?>
+                    <!-- Ang tanging bagay sa pahinang ito na hindi kayang
+                         dalhin palabas ng silid. Ang link ay naipapasa sa
+                         group chat; ang anim na digit na ito ay may
+                         tatlumpung segundong buhay, kaya sa oras na
+                         maipadala mo ito, patay na.
+
+                         inputmode="numeric" — pambilang na keypad sa
+                         telepono. Ang pattern at maxlength ay pakikisama
+                         lamang; sa crud/submit_attendance.php ang tseke. -->
+                    <div class="att-field att-room">
+                        <label class="att-label" for="roomCode">Code on the board</label>
+                        <div class="att-input-wrap">
+                            <input type="text" id="roomCode" class="att-input att-room-input"
+                                placeholder="000000" required autocomplete="off"
+                                inputmode="numeric" pattern="[0-9]*" maxlength="6"
+                                <?php echo $is_locked ? 'disabled' : ''; ?> />
+                        </div>
+                        <p class="att-hint">
+                            <i class="bi bi-display"></i>
+                            Type the 6 digits your instructor is showing. It changes every 30 seconds.
+                        </p>
+                    </div>
+                <?php endif; ?>
+
                 <button type="submit" class="btn-submit" id="submitBtn" disabled>
                     <span id="submitText"><i class="bi bi-check-circle"></i> Submit Attendance</span>
                     <span id="loadingSpinner">
@@ -206,6 +247,40 @@ if ($result && $result->num_rows > 0) {
         <?php include __DIR__ . "/../components/footer.php"; ?>
     </div>
 
+    <!-- ── Selfie spot check ──────────────────────────────────
+         Nasa labas ng .attendance-card: position:fixed ito, at ang
+         card ay may overflow:hidden na puputol dito.
+
+         Nakatago hanggang sabihin ng server. Hindi nagpapasya ang
+         JavaScript kung sino ang tatanungin — kung ganoon, ang
+         kailangan lamang gawin ay patayin ang JavaScript. -->
+    <div class="att-selfie" id="selfieOverlay" hidden>
+        <h2 class="att-selfie-title"><i class="bi bi-camera-fill"></i> Quick photo check</h2>
+        <p class="att-selfie-note" id="selfieNote">
+            You were picked at random. Take a photo of yourself to finish submitting.
+        </p>
+
+        <div class="att-selfie-stage">
+            <video id="selfieVideo" playsinline muted autoplay></video>
+            <img id="selfieShot" alt="" hidden>
+        </div>
+
+        <div class="att-selfie-actions">
+            <button type="button" class="att-selfie-btn" id="selfieCapture">
+                <i class="bi bi-camera"></i> Take photo
+            </button>
+            <button type="button" class="att-selfie-btn ghost" id="selfieRetake" hidden>
+                <i class="bi bi-arrow-counterclockwise"></i> Retake
+            </button>
+            <button type="button" class="att-selfie-btn" id="selfieSend" hidden>
+                <i class="bi bi-send"></i> Use this photo
+            </button>
+            <button type="button" class="att-selfie-btn ghost" id="selfieCancel">
+                <i class="bi bi-x-lg"></i> Cancel
+            </button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?= asset('../assets/js/tts.js') ?>"></script>
     <script src="<?= asset('../assets/js/detection.js') ?>"></script>
@@ -213,6 +288,45 @@ if ($result && $result->num_rows > 0) {
         const isFormLocked = <?php echo $is_locked ? 'true' : 'false'; ?>;
         const attendanceData = <?php echo json_encode($attendance_data); ?>;
         const shortCode = <?php echo json_encode($short_code); ?>;
+        const needsRoomCode = <?php echo $needs_room_code ? 'true' : 'false'; ?>;
+
+        // ── Fingerprint ──────────────────────────────────────────────
+        // Hindi ito ang device binding — ang cookie iyon, at ang server
+        // ang may hawak. Ito ay pangalawang senyas lamang para sa
+        // pages/attendance_integrity.php: kapag binura ang cookie,
+        // nananatiling pareho ang hash na ito, at ang anim na
+        // "bagong device" na iisa ang fingerprint sa loob ng isang
+        // minuto ay may sinasabi.
+        //
+        // Sinasadyang mahina: hindi ito humaharang kahit kailan, dahil
+        // ang dalawang bagong teleponong magkapareho ang modelo ay
+        // magkapareho rin ang bawat sangkap dito. Ang paghaharang sa
+        // isang hulang ganito ay pagtanggi sa taong walang ginawa.
+        function deviceFingerprint() {
+            const bits = [
+                navigator.userAgent,
+                navigator.language,
+                (navigator.languages || []).join(','),
+                screen.width + 'x' + screen.height,
+                screen.colorDepth,
+                new Date().getTimezoneOffset(),
+                navigator.hardwareConcurrency || '',
+                navigator.maxTouchPoints || ''
+            ].join('|');
+
+            // FNV-1a — sapat para sa paghahambing, at walang
+            // kailangang i-load na library. Hindi ito lihim: ang
+            // gustong magpalit nito ay makakapagpalit.
+            let h = 0x811c9dc5;
+            for (let i = 0; i < bits.length; i++) {
+                h ^= bits.charCodeAt(i);
+                h = Math.imul(h, 0x01000193) >>> 0;
+            }
+
+            return ('0000000' + h.toString(16)).slice(-8);
+        }
+
+        const deviceFp = deviceFingerprint();
 
         // ── Bilang pababa hanggang sa pagsara ────────────────────────
         // Isinasara ang form sa zero para malinaw ang nangyari, pero ang
@@ -313,11 +427,17 @@ if ($result && $result->num_rows > 0) {
             const indicator = document.getElementById('verifyingIndicator');
             indicator.classList.add('verifying');
 
+            // Ang short_code lamang, gaya ng sa pagsusumite. Dati ay
+            // ipinapadala rito ang subject_code, section at
+            // instructor_id — at dahil doon, ang endpoint ay
+            // sumasagot sa kahit sinong nakakaalam ng tatlong halagang
+            // iyon, nang hindi hawak ang link. Isang loop mula 025-001
+            // pataas at nasa'yo na ang pangalan at larawan ng bawat
+            // estudyante. Sa server na binabasa ang klase ngayon, mula
+            // mismo sa hilera ng link.
             const formData = new URLSearchParams();
             formData.append('student_no', studentNo);
-            formData.append('subject_code', attendanceData.subject_code);
-            formData.append('required_section', attendanceData.section);
-            formData.append('instructor_id', attendanceData.instructor_id); // ← ADDED
+            formData.append('short_code', shortCode);
 
             fetch('../crud/verify_student.php', {
                     method: 'POST',
@@ -406,61 +526,254 @@ if ($result && $result->num_rows > 0) {
                     return;
                 }
 
-                document.getElementById('submitBtn').disabled = true;
-                document.getElementById('submitText').style.display = 'none';
-                document.getElementById('loadingSpinner').style.display = 'inline';
+                if (needsRoomCode) {
+                    const typed = (document.getElementById('roomCode').value || '').replace(/\D/g, '');
+                    if (typed.length !== 6) {
+                        showAlert('Enter the 6-digit code your instructor is showing.', 'warning');
+                        TTSManager.speak('Enter the six digit code your instructor is showing.');
+                        return;
+                    }
+                }
 
-                // Ang short_code lamang ang ipinapadala para sa klase.
-                // Dati ay galing sa mga hidden field ang subject, section
-                // at instructor — na nangangahulugang kahit sino ay
-                // makakapag-POST ng kahit anong halaga nang hindi
-                // hawak ang link. Sa server na kinukuha ang mga ito
-                // ngayon, mula mismo sa hilera ng link.
-                const formData = new URLSearchParams();
-                formData.append('student_no', verifiedStudentNo);
-                formData.append('short_code', shortCode);
-
-                fetch('../crud/submit_attendance.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showAlert(data.message, 'success');
-                            TTSManager.speak(data.message);
-
-                            setTimeout(() => {
-                                document.getElementById('attendanceForm').reset();
-                                document.getElementById('studentInfo').style.display = 'none';
-                                document.getElementById('submitBtn').disabled = true;
-                                verifiedStudentNo = null;
-                                document.getElementById('alertContainer').innerHTML = '';
-                            }, 2000);
-                        } else {
-                            // Ang photo_required ay may kasamang daan palabas:
-                            // walang saysay ang sabihing kulang ang larawan
-                            // kung hindi mo naman sasabihin kung saan ito
-                            // ita-upload.
-                            showAlert(data.message, 'warning', data.upload_url, 'Upload my photo');
-                            TTSManager.speak(data.message);
-                        }
-                    })
-                    .catch(error => {
-                        showAlert('An error occurred. Please try again.', 'danger');
-                        TTSManager.speak('An error occurred. Please try again.');
-                        console.error('Error:', error);
-                    })
-                    .finally(() => {
-                        document.getElementById('submitBtn').disabled = false;
-                        document.getElementById('submitText').style.display = 'inline';
-                        document.getElementById('loadingSpinner').style.display = 'none';
-                    });
+                sendAttendance(null);
             });
         }
+
+        // ── Ang pagsusumite, hiwalay sa pindot ───────────────────────
+        // Dalawa ang tumatawag nito: ang Submit, at ang selfie kapag
+        // hiniling ito ng server. Kung nasa loob ito ng submit handler,
+        // ang pangalawang pagpapadala ay magiging kopya — at ang
+        // kopyang iyon ang unang makakalimot ng bagong field.
+        function sendAttendance(selfieDataUrl) {
+            const btn     = document.getElementById('submitBtn');
+            const text    = document.getElementById('submitText');
+            const spinner = document.getElementById('loadingSpinner');
+
+            btn.disabled = true;
+            text.style.display = 'none';
+            spinner.style.display = 'inline';
+
+            // Ang short_code lamang ang ipinapadala para sa klase.
+            // Dati ay galing sa mga hidden field ang subject, section
+            // at instructor — na nangangahulugang kahit sino ay
+            // makakapag-POST ng kahit anong halaga nang hindi
+            // hawak ang link. Sa server na kinukuha ang mga ito
+            // ngayon, mula mismo sa hilera ng link.
+            const formData = new URLSearchParams();
+            formData.append('student_no', verifiedStudentNo);
+            formData.append('short_code', shortCode);
+            formData.append('fp', deviceFp);
+
+            if (needsRoomCode) {
+                formData.append('room_code', (document.getElementById('roomCode').value || '').replace(/\D/g, ''));
+            }
+
+            if (selfieDataUrl) {
+                formData.append('selfie', selfieDataUrl);
+            }
+
+            fetch('../crud/submit_attendance.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closeSelfie();
+                        showAlert(data.message, 'success');
+                        TTSManager.speak(data.message);
+
+                        setTimeout(() => {
+                            document.getElementById('attendanceForm').reset();
+                            document.getElementById('studentInfo').style.display = 'none';
+                            document.getElementById('submitBtn').disabled = true;
+                            verifiedStudentNo = null;
+                            document.getElementById('alertContainer').innerHTML = '';
+                        }, 2000);
+                        return;
+                    }
+
+                    // Hiniling ng server ang mukha. Hindi ito
+                    // pagtanggi — hakbang lamang na kulang pa, kaya
+                    // bumubukas ang camera imbes na maglabas ng
+                    // pulang mensaheng walang sinasabing gawin.
+                    if (data.code === 'selfie_required') {
+                        openSelfie(data.message);
+                        return;
+                    }
+
+                    // Ang photo_required ay may kasamang daan palabas:
+                    // walang saysay ang sabihing kulang ang larawan
+                    // kung hindi mo naman sasabihin kung saan ito
+                    // ita-upload.
+                    closeSelfie();
+                    showAlert(data.message, 'warning', data.upload_url, 'Upload my photo');
+                    TTSManager.speak(data.message);
+
+                    // Ang maling code ay malamang na typo o lumipas na
+                    // ang oras. Binubura ito at ibinabalik ang focus,
+                    // dahil ang susunod na gagawin ay tipahin itong
+                    // muli mula sa screen sa harapan.
+                    if (data.code === 'room_code_bad' || data.code === 'room_code_required') {
+                        const field = document.getElementById('roomCode');
+                        if (field) {
+                            field.value = '';
+                            field.focus();
+                        }
+                    }
+                })
+                .catch(error => {
+                    showAlert('An error occurred. Please try again.', 'danger');
+                    TTSManager.speak('An error occurred. Please try again.');
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    text.style.display = 'inline';
+                    spinner.style.display = 'none';
+                });
+        }
+
+        // ── Selfie spot check ────────────────────────────────────────
+        //
+        // Hindi kailanman nagpapasya ang JavaScript kung sino ang
+        // tatanungin — ang server, at deterministiko ito kada araw.
+        // Kaya walang mapapala sa pag-refresh: pareho pa rin ang
+        // itatanong. Ang tanging ginagawa rito ay ang camera.
+        let selfieStream = null;
+
+        function openSelfie(note) {
+            const box = document.getElementById('selfieOverlay');
+
+            if (note) document.getElementById('selfieNote').textContent = note;
+
+            box.hidden = false;
+            resetSelfieStage();
+
+            // Bukas na ang camera — tinanggihan ang unang larawan at
+            // ito ang pangalawang hiling. Ang muling paghingi ng
+            // stream dito ay mag-iiwan ng nakabukas na camera na
+            // walang sinumang nagsasara.
+            if (selfieStream) return;
+
+            // getUserMedia ay HTTPS lamang (at localhost). Ang sabihing
+            // "hindi ma-access ang camera" ay walang tulong; ang
+            // sasabihin ay kung ano ang gagawin.
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                closeSelfie();
+                showAlert('This browser cannot open the camera. Please ask your instructor to mark you manually.', 'danger');
+                return;
+            }
+
+            navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
+                    audio: false
+                })
+                .then(stream => {
+                    selfieStream = stream;
+                    const video = document.getElementById('selfieVideo');
+                    video.srcObject = stream;
+                    video.play().catch(() => {});
+                })
+                .catch(() => {
+                    closeSelfie();
+                    showAlert('Camera permission was denied. Allow the camera and submit again, or ask your instructor to mark you manually.', 'danger');
+                });
+        }
+
+        function resetSelfieStage() {
+            document.getElementById('selfieVideo').hidden   = false;
+            document.getElementById('selfieShot').hidden    = true;
+            document.getElementById('selfieCapture').hidden = false;
+            document.getElementById('selfieRetake').hidden  = true;
+            document.getElementById('selfieSend').hidden    = true;
+        }
+
+        function closeSelfie() {
+            const box = document.getElementById('selfieOverlay');
+            if (!box || box.hidden) return;
+
+            // Ang track na hindi tinigil ay ilaw ng camera na
+            // nananatiling bukas pagkatapos ng lahat — sapat na iyon
+            // para hindi na muling buksan ng estudyante ang link.
+            if (selfieStream) {
+                selfieStream.getTracks().forEach(t => t.stop());
+                selfieStream = null;
+            }
+
+            document.getElementById('selfieVideo').srcObject = null;
+            document.getElementById('selfieShot').removeAttribute('src');
+            box.hidden = true;
+        }
+
+        let selfieData = null;
+
+        document.getElementById('selfieCapture').addEventListener('click', function () {
+            const video = document.getElementById('selfieVideo');
+            if (!video.videoWidth) return;
+
+            // Parisukat mula sa gitna, 480px — kasinlaki ng ipinapakita
+            // ng .att-selfie-stage, at nasa ilalim ng hangganang
+            // tinatanggap ng selfie_store(). Ang buong 1080p na frame
+            // ay isang megabyte na hindi naman titingnan nang ganoon
+            // kalaki kahit kailan.
+            const side   = Math.min(video.videoWidth, video.videoHeight);
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 480;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(
+                video,
+                (video.videoWidth - side) / 2, (video.videoHeight - side) / 2, side, side,
+                0, 0, 480, 480
+            );
+
+            // Hindi sinasalamin ang naka-save na larawan kahit
+            // nakasalamin ang preview: ang instruktor ang titingin
+            // dito, at para sa kanya ay dapat itong kamukha ng
+            // nakatayo sa harap niya.
+            selfieData = canvas.toDataURL('image/jpeg', 0.75);
+
+            const shot = document.getElementById('selfieShot');
+            shot.src = selfieData;
+            shot.hidden = false;
+
+            document.getElementById('selfieVideo').hidden   = true;
+            document.getElementById('selfieCapture').hidden = true;
+            document.getElementById('selfieRetake').hidden  = false;
+            document.getElementById('selfieSend').hidden    = false;
+        });
+
+        document.getElementById('selfieRetake').addEventListener('click', function () {
+            selfieData = null;
+            resetSelfieStage();
+        });
+
+        document.getElementById('selfieSend').addEventListener('click', function () {
+            if (!selfieData) return;
+
+            this.disabled = true;
+            document.getElementById('selfieRetake').disabled = true;
+
+            sendAttendance(selfieData);
+
+            // Ibinabalik agad: kapag tinanggihan ang larawan, ang
+            // parehong overlay ang mananatili at kailangang magamit
+            // muli ang dalawang pindutan.
+            setTimeout(() => {
+                this.disabled = false;
+                document.getElementById('selfieRetake').disabled = false;
+            }, 1200);
+        });
+
+        document.getElementById('selfieCancel').addEventListener('click', function () {
+            selfieData = null;
+            closeSelfie();
+            showAlert('Attendance was not submitted — the photo check was cancelled.', 'warning');
+        });
 
         // Ang linkUrl ay hindi laging kasama — ang mga mensaheng may
         // kasunod na gagawin lang (halimbawa, ang kulang na larawan) ang
