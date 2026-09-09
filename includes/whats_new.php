@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-09.7';
+const WHATS_NEW_VERSION = '2026-09-10';
 
 /**
  * The changelog, newest release first.
@@ -55,6 +55,52 @@ const WHATS_NEW_VERSION = '2026-09-09.7';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-10',
+            'date'    => '2026-09-10',
+            'icon'    => 'bi-funnel',
+            'title'   => 'Reading the integrity log',
+            'summary' => 'The Integrity page listed everything at once and stopped at 200 rows without saying so. It now filters by class and by student, every number at the top opens the rows behind it, and it tells you when the device check is switched off.',
+            'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-funnel',
+                    'title' => 'Filter by class, and search a student',
+                    'text'  => 'An instructor with five classes was reading one mixed list. There is now a class picker and a search box that takes a student number or a name &mdash; and the filters live in the address, so the link you send a colleague shows them the same view you are looking at.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-person-dash',
+                    'title' => 'Numbers that are not in the class are shown',
+                    'text'  => '<em>Flagged</em> was hiding them. Somebody typing a student number that is not on the class list is worth seeing, so <strong>Not enrolled</strong> now has its own count and appears under Flagged beside the blocked phones.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-hand-index',
+                    'title' => 'The counts open the rows behind them',
+                    'text'  => 'The four tiles at the top are links now, and a shared phone has an <strong>Open</strong> that narrows the list to that one device. The student number and the device code in each row do the same, so you can follow one phone or one person without scrolling.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-shield-slash',
+                    'title' => 'It says when nothing is being blocked',
+                    'text'  => 'With <em>One Device, One Student</em> switched off the page looked exactly the same &mdash; the <em>turned away</em> count from last week was still sitting there, and nothing said the check had stopped running. A red bar now says so, with a way back to the switch.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-list-ol',
+                    'title' => 'The list no longer stops silently',
+                    'text'  => 'It showed the newest 200 submissions and 50 shared devices with no sign there were more, so a busy week looked like the whole story. It now pages through them and prints <em>Showing 1&ndash;50 of 431</em>.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-clipboard-pulse',
+                    'title' => 'The setup check is reachable when you need it',
+                    'text'  => 'The message about running the migration now links to the page that tells you exactly which part is missing.',
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-09',

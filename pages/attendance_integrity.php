@@ -5,6 +5,7 @@ include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/attendance_integrity.php";
 
 // links.manage at hindi bagong permission key.
 //
@@ -19,24 +20,56 @@ requirePermission('links.manage');
 $user_id   = (int) $_SESSION['user_id'];
 $is_admin  = ($_SESSION['role'] === 'admin');
 
+const ATI_PER_PAGE   = 50;   // hilera kada pahina ng mga pangyayari
+const ATI_DEVICE_CAP = 50;   // pinakamarami sa talahanayan ng device
+
+// ── Ang mga salaan ───────────────────────────────────────────
+//
+// Lahat ay nasa URL at wala sa session: ang isang natuklasan dito ay
+// isang bagay na ipinapadala mo sa kapwa guro o sa dean, at ang link
+// na binubuksan nila ay dapat parehong tanawin ang ipinapakita.
+
 // Ilang araw pabalik ang tinitingnan. Ang audit ay itinatago nang
 // tatlumpung araw (INTEGRITY_AUDIT_DAYS), kaya walang saysay ang
 // mas malayo pa rito.
 $days = (int) ($_GET['days'] ?? 7);
 if (!in_array($days, [1, 7, 30], true)) $days = 7;
 
+// flagged  — device_reuse at not_enrolled, ang dalawang sinubukan
+// all      — lahat
+// ang iba  — isang tiyak na kahihinatnan, galing sa pagpindot ng tile
 $show = $_GET['show'] ?? 'flagged';
-if (!in_array($show, ['flagged', 'all'], true)) $show = 'flagged';
+if (!in_array($show, ['flagged', 'all', 'ok', 'device_reuse', 'duplicate', 'not_enrolled'], true)) {
+    $show = 'flagged';
+}
 
-// ── Ang scope ────────────────────────────────────────────────
-// Ang admin ay nakikita ang lahat; ang instructor ay ang sarili
-// niyang klase lamang. Isang fragment ng SQL at isang parameter,
-// ipinapasok sa bawat tanong sa ibaba — kung isa rito ang
-// makakalimot nito, makikita ng instruktor ang mga estudyante ng
-// ibang guro.
-$scopeSql    = $is_admin ? '' : ' AND instructor_id = ? ';
-$scopeType   = $is_admin ? '' : 'i';
-$scopeParams = $is_admin ? [] : [$user_id];
+// Ang short_code ng isang attendance link. Ang instruktor na may
+// limang klase ay hindi naghahanap sa halo — isang klase ang
+// tinitingnan niya sa isang pagkakataon.
+$class = substr(trim((string) ($_GET['class'] ?? '')), 0, 10);
+
+// Numero o pangalan ng estudyante.
+$q = substr(trim((string) ($_GET['q'] ?? '')), 0, 60);
+
+// Ang pagbaba mula sa isang device papunta sa mismong mga hilera
+// nito. 32 hex na karakter ang buo, pero ang ipinapakita sa
+// talahanayan ay ang unang walo — kaya tinatanggap ang alinman.
+$device = (string) ($_GET['device'] ?? '');
+if (!preg_match('/^[0-9a-f]{1,32}$/', $device)) $device = '';
+
+$page = max(1, (int) ($_GET['page'] ?? 1));
+
+/** Ang kasalukuyang tanawin bilang URL, may isa o dalawang binago. */
+$filters = ['days' => $days, 'show' => $show, 'class' => $class, 'q' => $q, 'device' => $device];
+$url = function (array $over = []) use ($filters): string {
+    $next = array_merge($filters, $over);
+    // Ang page ay hindi kailanman nadadala maliban kung sadyang
+    // ibinigay: ang bagong salaan ay laging nagsisimula sa unang
+    // pahina, kung hindi ay mauuwi ka sa blangkong pahina 4 ng isang
+    // listahang may tatlo.
+    $next = array_filter($next, static fn($v) => $v !== '' && $v !== null);
+    return '?' . htmlspecialchars(http_build_query($next), ENT_QUOTES);
+};
 
 /**
  * Isang tanong sa attendance_audit_tbl, ligtas kahit wala pa ang
@@ -62,18 +95,85 @@ function audit_query(mysqli $conn, string $sql, string $types, array $params): ?
     }
 }
 
+// ── Ang saklaw, itinatayo nang isang beses ───────────────────
+//
+// Isang WHERE na pinagsasaluhan ng LAHAT ng tanong sa ibaba: ang mga
+// bilang sa itaas, ang mga device, ang bilang ng pahina at ang mga
+// hilera mismo. Isang kalipunan, kaya hindi maaaring magsalungat ang
+// tile at ang talahanayang nasa ilalim nito.
+//
+// Ang unang salaan ay hindi pinipili ng gumagamit: ang admin ay
+// nakikita ang lahat, ang instruktor ay ang sarili niyang klase
+// lamang. Kung makakalimutan ito ng isang tanong, makikita ng
+// instruktor ang mga estudyante ng ibang guro.
+$baseWhere  = ' a.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) ';
+$baseTypes  = 'i';
+$baseParams = [$days];
+
+if (!$is_admin) {
+    $baseWhere .= ' AND a.instructor_id = ? ';
+    $baseTypes .= 'i';
+    $baseParams[] = $user_id;
+}
+
+if ($class !== '') {
+    $baseWhere .= ' AND a.short_code = ? ';
+    $baseTypes .= 's';
+    $baseParams[] = $class;
+}
+
+if ($device !== '') {
+    // LIKE at hindi '=': ang ipinapakita sa talahanayan ay ang unang
+    // walong karakter, at iyon din ang dala ng link na pinindot.
+    $baseWhere .= ' AND a.device_id LIKE ? ';
+    $baseTypes .= 's';
+    $baseParams[] = $device . '%';
+}
+
+if ($q !== '') {
+    // EXISTS at hindi JOIN: ginagamit din ang salaang ito ng tanong sa
+    // mga device, at doon ay may COUNT(DISTINCT student_no) na hindi
+    // dapat maapektuhan ng anumang hilerang idinagdag ng isang join.
+    $baseWhere .= ' AND (a.student_no LIKE ?
+                         OR EXISTS (SELECT 1 FROM students_tbl sq
+                                    WHERE sq.student_no = a.student_no
+                                      AND sq.fullname LIKE ?)) ';
+    $baseTypes .= 'ss';
+    $baseParams[] = '%' . $q . '%';
+    $baseParams[] = '%' . $q . '%';
+}
+
+// Ang salaan ng kahihinatnan ay HIWALAY sa base: ang mga tile sa
+// itaas ay nagbibilang sa loob ng saklaw ngunit sa kabila ng
+// kahihinatnan — kung hindi, ang pagpindot sa "Same device" ay
+// gagawing 0 ang tatlong tile sa tabi nito.
+$resultWhere  = '';
+$resultTypes  = '';
+$resultParams = [];
+
+if ($show === 'flagged') {
+    // Ang dalawang ito ang sinubukan at hindi natuloy. Ang
+    // not_enrolled ay dating nakatago rito, gayong ito ang senyas ng
+    // taong nag-type ng numerong wala sa klase.
+    $resultWhere = " AND a.result IN ('device_reuse', 'not_enrolled') ";
+} elseif ($show !== 'all') {
+    $resultWhere  = ' AND a.result = ? ';
+    $resultTypes  = 's';
+    $resultParams = [$show];
+}
+
 $ready = true;
 
 // ── Mga bilang sa itaas ──────────────────────────────────────
 $totals = audit_query($conn, "
     SELECT
-        SUM(result = 'ok')           AS ok,
-        SUM(result = 'device_reuse') AS device_reuse,
-        SUM(result = 'duplicate')    AS duplicate
-    FROM attendance_audit_tbl
-    WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
-    $scopeSql
-", 'i' . $scopeType, array_merge([$days], $scopeParams));
+        SUM(a.result = 'ok')           AS ok,
+        SUM(a.result = 'device_reuse') AS device_reuse,
+        SUM(a.result = 'not_enrolled') AS not_enrolled,
+        SUM(a.result = 'duplicate')    AS duplicate
+    FROM attendance_audit_tbl a
+    WHERE $baseWhere
+", $baseTypes, $baseParams);
 
 if ($totals === null) {
     $ready  = false;
@@ -83,7 +183,43 @@ if ($totals === null) {
 $t = $totals[0] ?? [];
 $nOk    = (int) ($t['ok']           ?? 0);
 $nReuse = (int) ($t['device_reuse'] ?? 0);
+$nUnenr = (int) ($t['not_enrolled'] ?? 0);
 $nDup   = (int) ($t['duplicate']    ?? 0);
+
+// ── Naka-ON pa ba ang harang? ────────────────────────────────
+//
+// Kung wala ito, ang pahina ay pareho ang hitsura kung tumatakbo ang
+// device binding at kung pinatay ito kaninang umaga: nariyan pa rin
+// ang "6 turned away" mula sa nakaraan, at walang nagsasabing wala
+// nang humaharang ngayon. Ito ang pinakamadaling maling mabasa sa
+// buong pahina.
+$bindingOn = integrity_setting($conn, 'device_binding', '1') === '1';
+
+// ── Ang mga klase sa dropdown ────────────────────────────────
+//
+// Hindi apektado ng $class mismo, kung hindi ay mawawalan ng laman
+// ang dropdown pagkatapos ng unang pagpili.
+$classWhere  = ' a.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) ';
+$classTypes  = 'i';
+$classParams = [$days];
+
+if (!$is_admin) {
+    $classWhere .= ' AND a.instructor_id = ? ';
+    $classTypes .= 'i';
+    $classParams[] = $user_id;
+}
+
+$classes = audit_query($conn, "
+    SELECT a.short_code,
+           MAX(a.subject_name) AS subject_name,
+           MAX(a.section)      AS section,
+           COUNT(*)            AS n
+    FROM attendance_audit_tbl a
+    WHERE $classWhere
+    GROUP BY a.short_code
+    ORDER BY MAX(a.created_at) DESC
+    LIMIT 60
+", $classTypes, $classParams) ?? [];
 
 // ── Mga device na nagsilbi sa mahigit isang estudyante ───────
 //
@@ -94,40 +230,63 @@ $nDup   = (int) ($t['duplicate']    ?? 0);
 // Ang mga naharang ay kasama rito (result IN ok, device_reuse):
 // ang nasa likod ng harang ay mismong ang sinusubukang gawin, at
 // iyon ang gustong makita ng instruktor.
+$deviceWhere = " $baseWhere AND a.device_id IS NOT NULL AND a.result IN ('ok', 'device_reuse') ";
+
 $devices = audit_query($conn, "
-    SELECT device_id,
-           MAX(fingerprint)                 AS fingerprint,
-           MAX(ip)                          AS ip,
-           MAX(user_agent)                  AS user_agent,
-           COUNT(DISTINCT student_no)       AS students,
-           SUM(result = 'ok')               AS saved,
-           SUM(result = 'device_reuse')     AS blocked,
-           MAX(created_at)                  AS last_seen,
-           GROUP_CONCAT(DISTINCT student_no ORDER BY student_no SEPARATOR ', ') AS student_list
-    FROM attendance_audit_tbl
-    WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
-      AND device_id IS NOT NULL
-      AND result IN ('ok', 'device_reuse')
-      $scopeSql
-    GROUP BY device_id
+    SELECT a.device_id,
+           MAX(a.fingerprint)             AS fingerprint,
+           MAX(a.ip)                      AS ip,
+           MAX(a.user_agent)              AS user_agent,
+           COUNT(DISTINCT a.student_no)   AS students,
+           SUM(a.result = 'ok')           AS saved,
+           SUM(a.result = 'device_reuse') AS blocked,
+           MAX(a.created_at)              AS last_seen,
+           GROUP_CONCAT(DISTINCT a.student_no ORDER BY a.student_no SEPARATOR ', ') AS student_list
+    FROM attendance_audit_tbl a
+    WHERE $deviceWhere
+    GROUP BY a.device_id
     HAVING students > 1
     ORDER BY students DESC, last_seen DESC
-    LIMIT 50
-", 'i' . $scopeType, array_merge([$days], $scopeParams)) ?? [];
+    LIMIT " . ATI_DEVICE_CAP . "
+", $baseTypes, $baseParams) ?? [];
+
+// Ang tunay na bilang, at hindi count($devices): ang "50" sa isang
+// talahanayang pinutol sa 50 ay isang kasinungalingang mukhang
+// katotohanan.
+$deviceTotalRow = audit_query($conn, "
+    SELECT COUNT(*) AS n FROM (
+        SELECT a.device_id
+        FROM attendance_audit_tbl a
+        WHERE $deviceWhere
+        GROUP BY a.device_id
+        HAVING COUNT(DISTINCT a.student_no) > 1
+    ) t
+", $baseTypes, $baseParams);
+$deviceTotal = (int) ($deviceTotalRow[0]['n'] ?? count($devices));
 
 // ── Ang mga pangyayari ───────────────────────────────────────
-$filterSql = ($show === 'flagged') ? " AND result = 'device_reuse' " : '';
+$eventTypes  = $baseTypes . $resultTypes;
+$eventParams = array_merge($baseParams, $resultParams);
+
+$eventTotalRow = audit_query($conn, "
+    SELECT COUNT(*) AS n
+    FROM attendance_audit_tbl a
+    WHERE $baseWhere $resultWhere
+", $eventTypes, $eventParams);
+$eventTotal = (int) ($eventTotalRow[0]['n'] ?? 0);
+
+$lastPage = max(1, (int) ceil($eventTotal / ATI_PER_PAGE));
+if ($page > $lastPage) $page = $lastPage;
+$offset = ($page - 1) * ATI_PER_PAGE;
 
 $events = audit_query($conn, "
     SELECT a.*, s.fullname
     FROM attendance_audit_tbl a
     LEFT JOIN students_tbl s ON s.student_no = a.student_no
-    WHERE a.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
-      $filterSql
-      " . ($is_admin ? '' : ' AND a.instructor_id = ? ') . "
+    WHERE $baseWhere $resultWhere
     ORDER BY a.id DESC
-    LIMIT 200
-", 'i' . $scopeType, array_merge([$days], $scopeParams)) ?? [];
+    LIMIT ? OFFSET ?
+", $eventTypes . 'ii', array_merge($eventParams, [ATI_PER_PAGE, $offset])) ?? [];
 
 /** Ang label at kulay ng bawat kahihinatnan. */
 function result_chip(string $result): array
@@ -136,7 +295,7 @@ function result_chip(string $result): array
         case 'ok':            return ['Saved',           'ok',      'bi-check-circle-fill'];
         case 'device_reuse':  return ['Same device',     'blocked', 'bi-phone-fill'];
         case 'duplicate':     return ['Already in',      'muted',   'bi-arrow-repeat'];
-        case 'not_enrolled':  return ['Not enrolled',    'muted',   'bi-person-dash'];
+        case 'not_enrolled':  return ['Not enrolled',    'warn',    'bi-person-dash'];
         default:              return [ucfirst($result),  'muted',   'bi-question-circle'];
     }
 }
@@ -171,6 +330,24 @@ function device_label(?string $ua): string
 
     return trim($os) . ' · ' . $browser;
 }
+
+// Ang pangalan ng klaseng pinili, para sa chip ng salaan.
+$classLabel = $class;
+foreach ($classes as $c) {
+    if ($c['short_code'] === $class) {
+        $classLabel = trim(trim((string) $c['subject_name']) . ' · ' . trim((string) $c['section']), ' ·') ?: $class;
+        break;
+    }
+}
+
+/** Ang mga salaang aktibo ngayon, bilang matatanggal na chip. */
+$activeChips = [];
+if ($class !== '')  $activeChips[] = ['bi-journal-text', $classLabel,         ['class'  => '']];
+if ($q !== '')      $activeChips[] = ['bi-search',       '"' . $q . '"',      ['q'      => '']];
+if ($device !== '') $activeChips[] = ['bi-phone',        'Device ' . $device, ['device' => '']];
+if (!in_array($show, ['flagged', 'all'], true)) {
+    $activeChips[] = ['bi-funnel', result_chip($show)[0], ['show' => 'all']];
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -201,7 +378,7 @@ function device_label(?string $ua): string
                 <div class="ati-range">
                     <?php foreach ([1 => 'Today', 7 => '7 days', 30 => '30 days'] as $d => $label): ?>
                         <a class="ati-range-btn <?= $days === $d ? 'is-on' : '' ?>"
-                           href="?days=<?= $d ?>&show=<?= htmlspecialchars($show) ?>"><?= $label ?></a>
+                           href="<?= $url(['days' => $d]) ?>"><?= $label ?></a>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -215,45 +392,123 @@ function device_label(?string $ua): string
                         database. Until then attendance keeps working exactly as before — nothing is
                         being blocked, and nothing is being recorded here.
                     </p>
+                    <p class="ati-empty-cta">
+                        <a href="../pages/integrity_check.php">
+                            <i class="bi bi-clipboard-pulse"></i> Run the setup check
+                        </a>
+                    </p>
                 </div>
             <?php else: ?>
 
-                <!-- ── Mga bilang ── -->
+                <?php if (!$bindingOn): ?>
+                    <!-- Ang pahinang ito ay nagpapakita ng nakaraan. Kapag patay ang
+                         harang, ang nakaraang iyon ay hindi na ang kasalukuyan. -->
+                    <div class="ati-warn">
+                        <i class="bi bi-shield-slash"></i>
+                        <div>
+                            <strong>One Device, One Student is switched off.</strong>
+                            Nothing below is being blocked right now — one phone can record
+                            attendance for as many students as it likes. The log keeps running, so
+                            submissions are still listed here.
+                            <a href="../pages/settings.php">Turn it back on</a>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- ── Mga bilang ──
+                     Bawat tile ay isang link papunta sa sarili nitong mga hilera. Ang
+                     "6 turned away" na hindi mapipindot ay isang bilang na kailangan
+                     mo pang hanapin sa listahan sa ibaba. -->
                 <div class="ati-stats">
-                    <div class="ati-stat">
+                    <a class="ati-stat <?= $show === 'ok' ? 'is-picked' : '' ?>"
+                       href="<?= $url(['show' => 'ok']) ?>">
                         <span class="ati-stat-label">Recorded</span>
                         <span class="ati-stat-figure"><?= number_format($nOk) ?></span>
                         <span class="ati-stat-note">submissions saved</span>
-                    </div>
-                    <div class="ati-stat <?= $nReuse > 0 ? 'is-alert' : '' ?>">
+                    </a>
+                    <a class="ati-stat <?= $nReuse > 0 ? 'is-alert' : '' ?> <?= $show === 'device_reuse' ? 'is-picked' : '' ?>"
+                       href="<?= $url(['show' => 'device_reuse']) ?>">
                         <span class="ati-stat-label">Same device</span>
                         <span class="ati-stat-figure"><?= number_format($nReuse) ?></span>
                         <span class="ati-stat-note">turned away as a second student</span>
-                    </div>
-                    <div class="ati-stat">
+                    </a>
+                    <a class="ati-stat <?= $nUnenr > 0 ? 'is-warn' : '' ?> <?= $show === 'not_enrolled' ? 'is-picked' : '' ?>"
+                       href="<?= $url(['show' => 'not_enrolled']) ?>">
+                        <span class="ati-stat-label">Not enrolled</span>
+                        <span class="ati-stat-figure"><?= number_format($nUnenr) ?></span>
+                        <span class="ati-stat-note">a number that is not in the class</span>
+                    </a>
+                    <a class="ati-stat <?= $show === 'duplicate' ? 'is-picked' : '' ?>"
+                       href="<?= $url(['show' => 'duplicate']) ?>">
                         <span class="ati-stat-label">Repeats</span>
                         <span class="ati-stat-figure"><?= number_format($nDup) ?></span>
                         <span class="ati-stat-note">already recorded today</span>
-                    </div>
+                    </a>
                 </div>
+
+                <!-- ── Ang mga salaan ── -->
+                <form class="ati-filters" method="get">
+                    <input type="hidden" name="days" value="<?= $days ?>">
+                    <input type="hidden" name="show" value="<?= htmlspecialchars($show) ?>">
+                    <?php if ($device !== ''): ?>
+                        <input type="hidden" name="device" value="<?= htmlspecialchars($device) ?>">
+                    <?php endif; ?>
+
+                    <label class="ati-field">
+                        <i class="bi bi-journal-text"></i>
+                        <select name="class">
+                            <option value="">All classes</option>
+                            <?php foreach ($classes as $c): ?>
+                                <?php $label = trim(trim((string) $c['subject_name']) . ' · ' . trim((string) $c['section']), ' ·'); ?>
+                                <option value="<?= htmlspecialchars($c['short_code']) ?>"
+                                    <?= $c['short_code'] === $class ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($label ?: $c['short_code']) ?> (<?= (int) $c['n'] ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+
+                    <label class="ati-field ati-field-grow">
+                        <i class="bi bi-search"></i>
+                        <input type="search" name="q" value="<?= htmlspecialchars($q) ?>"
+                               placeholder="Student number or name — 025-002, Angeles">
+                    </label>
+
+                    <button type="submit" class="ati-go">Apply</button>
+                    <?php if ($activeChips): ?>
+                        <a class="ati-clear"
+                           href="<?= $url(['class' => '', 'q' => '', 'device' => '', 'show' => 'flagged']) ?>">Clear</a>
+                    <?php endif; ?>
+                </form>
+
+                <?php if ($activeChips): ?>
+                    <div class="ati-chips">
+                        <?php foreach ($activeChips as [$chipIcon, $chipLabel, $off]): ?>
+                            <a class="ati-fchip" href="<?= $url($off) ?>">
+                                <i class="bi <?= $chipIcon ?>"></i><?= htmlspecialchars($chipLabel) ?>
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
 
                 <!-- ── Mga device na nagsilbi sa mahigit isang tao ── -->
                 <div class="ati-card">
                     <div class="ati-card-head">
                         <h3><i class="bi bi-phone"></i> Devices used by more than one student</h3>
-                        <span class="ati-count"><?= count($devices) ?></span>
+                        <span class="ati-count"><?= number_format($deviceTotal) ?></span>
                     </div>
 
                     <?php if (empty($devices)): ?>
                         <p class="ati-none">
                             <i class="bi bi-check2-circle"></i>
-                            Every device in this period submitted for one student only.
+                            Every device in this view submitted for one student only.
                         </p>
                     <?php else: ?>
                         <p class="ati-lede">
                             One phone with two names on it may be a borrowed phone. One with five is
                             not. The count below includes attempts that were blocked — that is the
-                            part worth reading.
+                            part worth reading. Open a row to see only that phone's submissions.
                         </p>
                         <div class="table-responsive">
                             <table class="table ati-table">
@@ -264,18 +519,20 @@ function device_label(?string $ua): string
                                         <th>Saved</th>
                                         <th>Blocked</th>
                                         <th>Last seen</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($devices as $d): ?>
+                                        <?php /* Ang unang walong karakter lamang: sapat para ihambing
+                                                ang dalawang hilera, at hindi buong cookie value na
+                                                nakalatag sa screen. Ito rin ang dala ng link. */ ?>
+                                        <?php $short = substr((string) $d['device_id'], 0, 8); ?>
                                         <tr class="<?= (int) $d['students'] >= 3 ? 'is-hot' : '' ?>">
                                             <td>
                                                 <div class="ati-device"><?= htmlspecialchars(device_label($d['user_agent'])) ?></div>
                                                 <div class="ati-sub">
-                                                    <?php /* Ang unang walong karakter lamang: sapat para
-                                                            ihambing ang dalawang hilera, at hindi buong
-                                                            cookie value na nakalatag sa screen. */ ?>
-                                                    <code><?= htmlspecialchars(substr((string) $d['device_id'], 0, 8)) ?></code>
+                                                    <code><?= htmlspecialchars($short) ?></code>
                                                     · <?= htmlspecialchars((string) $d['ip']) ?>
                                                 </div>
                                             </td>
@@ -286,11 +543,24 @@ function device_label(?string $ua): string
                                             <td><?= (int) $d['saved'] ?></td>
                                             <td><?= (int) $d['blocked'] ?></td>
                                             <td class="ati-when"><?= date('M j, g:i A', strtotime($d['last_seen'])) ?></td>
+                                            <td class="text-end">
+                                                <a class="ati-open" href="<?= $url(['device' => $short, 'show' => 'all']) ?>">
+                                                    Open <i class="bi bi-arrow-right-short"></i>
+                                                </a>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
+
+                        <?php if ($deviceTotal > count($devices)): ?>
+                            <p class="ati-foot">
+                                <i class="bi bi-three-dots"></i>
+                                Showing the <?= count($devices) ?> most-shared of <?= number_format($deviceTotal) ?>.
+                                Narrow the class or the date range to see the rest.
+                            </p>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
 
@@ -298,10 +568,11 @@ function device_label(?string $ua): string
                 <div class="ati-card">
                     <div class="ati-card-head">
                         <h3><i class="bi bi-list-ul"></i> Submissions</h3>
+                        <span class="ati-count"><?= number_format($eventTotal) ?></span>
                         <div class="ati-tabs">
                             <?php foreach (['flagged' => 'Flagged', 'all' => 'Everything'] as $key => $label): ?>
                                 <a class="ati-tab <?= $show === $key ? 'is-on' : '' ?>"
-                                   href="?days=<?= $days ?>&show=<?= $key ?>"><?= $label ?></a>
+                                   href="<?= $url(['show' => $key]) ?>"><?= $label ?></a>
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -310,10 +581,16 @@ function device_label(?string $ua): string
                         <p class="ati-none">
                             <i class="bi bi-check2-circle"></i>
                             <?= $show === 'flagged'
-                                ? 'Nothing was turned away in this period.'
-                                : 'Nothing recorded in this period.' ?>
+                                ? 'Nothing was turned away in this view.'
+                                : 'Nothing recorded in this view.' ?>
                         </p>
                     <?php else: ?>
+                        <?php if ($show === 'flagged'): ?>
+                            <p class="ati-lede">
+                                Two things end up here: a phone that had already signed in someone
+                                else, and a number that is not on the class list.
+                            </p>
+                        <?php endif; ?>
                         <div class="table-responsive">
                             <table class="table ati-table">
                                 <thead>
@@ -328,11 +605,14 @@ function device_label(?string $ua): string
                                 <tbody>
                                     <?php foreach ($events as $e): ?>
                                         <?php [$chipText, $chipKind, $chipIcon] = result_chip($e['result']); ?>
+                                        <?php $short = substr((string) $e['device_id'], 0, 8); ?>
                                         <tr>
                                             <td class="ati-when"><?= date('M j, g:i A', strtotime($e['created_at'])) ?></td>
                                             <td>
                                                 <div class="ati-name"><?= htmlspecialchars($e['fullname'] ?? $e['student_no']) ?></div>
-                                                <div class="ati-sub"><?= htmlspecialchars($e['student_no']) ?></div>
+                                                <div class="ati-sub">
+                                                    <a href="<?= $url(['q' => $e['student_no'], 'show' => 'all', 'device' => '']) ?>"><?= htmlspecialchars($e['student_no']) ?></a>
+                                                </div>
                                             </td>
                                             <td>
                                                 <div><?= htmlspecialchars((string) $e['subject_name']) ?></div>
@@ -341,8 +621,11 @@ function device_label(?string $ua): string
                                             <td>
                                                 <div><?= htmlspecialchars(device_label($e['user_agent'])) ?></div>
                                                 <div class="ati-sub">
-                                                    <code><?= htmlspecialchars(substr((string) $e['device_id'], 0, 8)) ?></code>
-                                                    · <?= htmlspecialchars((string) $e['ip']) ?>
+                                                    <?php if ($short !== ''): ?>
+                                                        <a href="<?= $url(['device' => $short, 'show' => 'all']) ?>"><code><?= htmlspecialchars($short) ?></code></a>
+                                                        ·
+                                                    <?php endif; ?>
+                                                    <?= htmlspecialchars((string) $e['ip']) ?>
                                                 </div>
                                             </td>
                                             <td>
@@ -354,6 +637,31 @@ function device_label(?string $ua): string
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <div class="ati-pager">
+                            <span class="ati-pager-count">
+                                Showing <?= number_format($offset + 1) ?>–<?= number_format($offset + count($events)) ?>
+                                of <?= number_format($eventTotal) ?>
+                            </span>
+
+                            <?php if ($lastPage > 1): ?>
+                                <div class="ati-pager-links">
+                                    <?php if ($page > 1): ?>
+                                        <a href="<?= $url(['page' => $page - 1]) ?>"><i class="bi bi-chevron-left"></i> Newer</a>
+                                    <?php else: ?>
+                                        <span class="is-off"><i class="bi bi-chevron-left"></i> Newer</span>
+                                    <?php endif; ?>
+
+                                    <span class="ati-pager-at">Page <?= $page ?> of <?= $lastPage ?></span>
+
+                                    <?php if ($page < $lastPage): ?>
+                                        <a href="<?= $url(['page' => $page + 1]) ?>">Older <i class="bi bi-chevron-right"></i></a>
+                                    <?php else: ?>
+                                        <span class="is-off">Older <i class="bi bi-chevron-right"></i></span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <p class="ati-foot">

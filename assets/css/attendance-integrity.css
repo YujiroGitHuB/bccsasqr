@@ -25,6 +25,14 @@
     --ati-hot: #f87171;
     --ati-hot-soft: rgba(239, 68, 68, .12);
     --ati-hot-line: rgba(239, 68, 68, .28);
+
+    /* Amber para sa "not enrolled". Hiwalay sa pula: ang numerong
+       wala sa klase ay karaniwang mali lamang ang pagkaka-type, at
+       ang parehong pula ng naharang na telepono ay nagsasabing mas
+       malala ito kaysa sa totoo. */
+    --ati-warn: #fbbf24;
+    --ati-warn-soft: rgba(251, 191, 36, .12);
+    --ati-warn-line: rgba(251, 191, 36, .3);
 }
 
 /* ─── Hero ────────────────────────────────────────────────── */
@@ -370,6 +378,281 @@
     background: rgba(var(--tint), .06);
 }
 
+/* ─── Ang harang ay patay ─────────────────────────────────── */
+/* Nasa itaas ng lahat, at pula: ang buong pahina sa ilalim nito ay
+   nagpapakita ng nakaraan, at ang nakaraang iyon ay hindi na ang
+   kasalukuyan kapag naka-OFF ang device binding. */
+.ati-page .ati-warn {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    margin-bottom: 1.1rem;
+    padding: .85rem 1.1rem;
+    border-radius: 14px;
+    font-size: .85rem;
+    line-height: 1.6;
+    color: var(--ink-3);
+    border: 1px solid var(--ati-hot-line);
+    background: linear-gradient(135deg, var(--ati-hot-soft), transparent 70%), var(--surface);
+}
+
+.ati-page .ati-warn>i {
+    flex-shrink: 0;
+    margin-top: .1rem;
+    font-size: 1.1rem;
+    color: var(--ati-hot);
+}
+
+.ati-page .ati-warn strong {
+    color: var(--ink-2);
+}
+
+.ati-page .ati-warn a {
+    margin-left: .35rem;
+    font-weight: 600;
+    color: var(--ati-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ─── Mga bilang bilang link ──────────────────────────────── */
+.ati-page a.ati-stat {
+    text-decoration: none;
+    transition: border-color .18s ease, transform .18s ease;
+}
+
+.ati-page a.ati-stat:hover {
+    transform: translateY(-1px);
+    border-color: var(--ati-line);
+}
+
+/* Ang tile na siyang kasalukuyang salaan. Hindi ito hover state:
+   nananatili ito habang ito ang tinitingnan. */
+.ati-page a.ati-stat.is-picked {
+    border-color: var(--ati);
+    box-shadow: 0 0 0 1px var(--ati) inset;
+}
+
+.ati-page .ati-stat.is-warn {
+    border-color: var(--ati-warn-line);
+    background: linear-gradient(135deg, var(--ati-warn-soft), transparent 70%), var(--surface);
+}
+
+.ati-page .ati-stat.is-warn .ati-stat-figure {
+    color: var(--ati-warn);
+}
+
+/* ─── Mga salaan ──────────────────────────────────────────── */
+.ati-page .ati-filters {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: .8rem;
+}
+
+.ati-page .ati-field {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+    padding: 0 .8rem;
+    height: 40px;
+    border-radius: 11px;
+    border: 1px solid var(--ati-border);
+    background: var(--surface);
+}
+
+.ati-page .ati-field-grow {
+    flex: 1 1 240px;
+}
+
+.ati-page .ati-field>i {
+    font-size: .9rem;
+    color: rgba(var(--tint), .4);
+}
+
+.ati-page .ati-field select,
+.ati-page .ati-field input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-size: .84rem;
+    color: var(--ink-2);
+}
+
+/* Ang mga pagpipilian ay iginuguhit ng OS at hindi ng pahina, kaya
+   dito lamang naibabalik ang surface — kung hindi, puting teksto sa
+   puting listahan sa dark mode ng ilang browser. */
+.ati-page .ati-field select option {
+    color: var(--ink-2);
+    background: var(--surface);
+}
+
+.ati-page .ati-go {
+    height: 40px;
+    padding: 0 1.1rem;
+    border: 0;
+    border-radius: 11px;
+    font-size: .83rem;
+    font-weight: 600;
+    color: var(--on-accent);
+    background: linear-gradient(135deg, var(--ati), var(--ati-deep));
+}
+
+.ati-page .ati-clear {
+    padding: 0 .6rem;
+    font-size: .82rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--ink-4);
+}
+
+.ati-page .ati-clear:hover {
+    color: var(--ink-2);
+}
+
+/* ─── Mga aktibong salaan ─────────────────────────────────── */
+/* Ang bawat isa ay matatanggal. Ang salaang hindi mo makita ay ang
+   dahilan kung bakit "walang laman" ang isang pahinang may laman. */
+.ati-page .ati-chips {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.ati-page .ati-fchip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .3rem .7rem;
+    border-radius: 99px;
+    font-size: .78rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--ati-ink);
+    background: var(--ati-soft);
+    border: 1px solid var(--ati-line);
+}
+
+.ati-page .ati-fchip:hover {
+    color: var(--ati-ink);
+    border-color: var(--ati);
+}
+
+.ati-page .ati-fchip .bi-x-lg {
+    font-size: .62rem;
+    opacity: .7;
+}
+
+/* ─── Pagbaba sa isang device ─────────────────────────────── */
+.ati-page .ati-open {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    font-size: .79rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--ati-ink);
+}
+
+.ati-page .ati-open:hover {
+    color: var(--ati);
+}
+
+.ati-page .ati-sub a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(var(--tint), .25);
+}
+
+.ati-page .ati-sub a:hover {
+    color: var(--ati-ink);
+    border-bottom-color: var(--ati);
+}
+
+.ati-page .ati-chip.is-warn {
+    color: var(--ati-warn);
+    background: var(--ati-warn-soft);
+    border: 1px solid var(--ati-warn-line);
+}
+
+/* ─── Pahina-pahina ───────────────────────────────────────── */
+/* Ang bilang ay laging nakikita, kahit isang pahina lamang: ang
+   "Showing 1–50 of 431" ang nagsasabing may 381 pang hindi mo
+   nakikita — iyon ang dating nawawala nang tahimik. */
+.ati-page .ati-pager {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-top: .9rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--ati-border);
+}
+
+.ati-page .ati-pager-count {
+    font-size: .78rem;
+    color: var(--ink-4);
+    font-variant-numeric: tabular-nums;
+}
+
+.ati-page .ati-pager-links {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    margin-left: auto;
+}
+
+.ati-page .ati-pager-links a,
+.ati-page .ati-pager-links .is-off {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    padding: .35rem .75rem;
+    border-radius: 9px;
+    font-size: .8rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--ink-3);
+    border: 1px solid var(--ati-border);
+}
+
+.ati-page .ati-pager-links a:hover {
+    color: var(--ati-ink);
+    border-color: var(--ati-line);
+    background: var(--ati-soft);
+}
+
+.ati-page .ati-pager-links .is-off {
+    opacity: .35;
+}
+
+.ati-page .ati-pager-at {
+    padding: 0 .4rem;
+    font-size: .78rem;
+    color: var(--ink-4);
+}
+
+.ati-page .ati-empty-cta {
+    margin-top: 1.1rem !important;
+}
+
+.ati-page .ati-empty-cta a {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .5rem 1rem;
+    border-radius: 11px;
+    font-size: .83rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--on-accent);
+    background: linear-gradient(135deg, var(--ati), var(--ati-deep));
+}
+
 /* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
     .ati-page .ati-hero {
@@ -400,5 +683,23 @@
     .ati-page .ati-tab {
         flex: 1;
         text-align: center;
+    }
+
+    /* Ang salaan ay isang hanay sa telepono. Ang tatlong kontrol na
+       pinipiga sa isang linya ay tatlong bagay na walang kayang
+       basahin. */
+    .ati-page .ati-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ati-page .ati-field-grow {
+        flex: 1 1 auto;
+    }
+
+    .ati-page .ati-pager-links {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
     }
 }
