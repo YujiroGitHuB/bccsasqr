@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-10';
+const WHATS_NEW_VERSION = '2026-09-10.2';
 
 /**
  * The changelog, newest release first.
@@ -61,8 +61,20 @@ function whats_new_releases(): array
             'date'    => '2026-09-10',
             'icon'    => 'bi-funnel',
             'title'   => 'Reading the integrity log',
-            'summary' => 'The Integrity page listed everything at once and stopped at 200 rows without saying so. It now filters by class and by student, every number at the top opens the rows behind it, and it tells you when the device check is switched off.',
+            'summary' => 'Six things could happen at the attendance form without leaving a trace anywhere, including the loudest signal the system has. They are recorded now — and the Integrity page it feeds filters by class and by student, opens the rows behind every number, and tells you when the device check is switched off.',
             'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-binoculars',
+                    'title' => 'Somebody working through the numbers is now visible',
+                    'text'  => 'The lookup limit &mdash; the thing that stops one device asking about forty student numbers in ten minutes &mdash; used to stop them <em>silently</em>. It was the clearest signal the system can produce and it appeared nowhere. <strong>Looking around</strong> at the top of the Integrity page counts it now.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-eye-slash',
+                    'title' => 'Five more attempts that used to leave no trace',
+                    'text'  => 'A submission to a link code that does not exist, to a link you had switched off, to one that had already closed, with a student number that is not in the school, or from someone who has not uploaded their photo &mdash; all of these ended the request without recording anything. Each one is a person who tried, and the log said nothing happened. They are all listed now, and <strong>Flagged</strong> carries the ones that look deliberate.',
+                ],
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-funnel',

@@ -81,7 +81,41 @@ $instructor_id    = (int) $link['instructor_id'];
 $device_id = integrity_device_id($conn);
 $ip        = integrity_client_ip();
 
+/**
+ * Isinusulat sa attendance_audit_tbl na may umabot sa hangganan.
+ *
+ * Ang bilangan ay humaharang nang tahimik noon: `exit` lamang, at
+ * walang natitirang bakas kahit saan. Ang lumalagpas sa apatnapung
+ * paghahanap ay ang pinakamalinaw na senyas na kayang ibigay ng
+ * sistemang ito — may dumadaan sa listahan ng mga numero — at ito
+ * ang tanging bagay na hindi nakikita ng instruktor.
+ *
+ * ISANG hilera kada window at hindi kada request: ang naharang ay
+ * patuloy pa ring sumusubok, at hindi dapat maging aklat niya ang
+ * audit. Ang parehong talaan ng bilangan ang nagbabantay nito —
+ * hangganang isa sa loob ng sampung minuto, kaya ang una lamang ang
+ * naisusulat.
+ */
+$limit_seen = function (string $bucket) use ($conn, $student_no, $short_code, $subject_code, $required_section, $instructor_id, $device_id, $ip) {
+    if (!integrity_rate_ok($conn, 'lg:' . $bucket, 1, 600)) return;
+
+    integrity_log($conn, [
+        'student_no'    => $student_no,
+        'short_code'    => $short_code,
+        // Code at hindi pangalan: ang tanong na ito ay hindi
+        // kumukuha ng subject_name mula sa link, at ang code ay
+        // nakikilala pa rin ng gurong tumitingin sa listahan.
+        'subject_name'  => $subject_code,
+        'section'       => $required_section,
+        'instructor_id' => $instructor_id,
+        'device_id'     => $device_id,
+        'ip'            => $ip,
+        'result'        => 'lookup_limit',
+    ]);
+};
+
 if (!integrity_rate_ok($conn, 'v:d:' . $device_id, 40, 600)) {
+    $limit_seen('d:' . $device_id);
     echo json_encode([
         'success' => false,
         'message' => 'Too many lookups from this device. Please wait a few minutes and try again.'
@@ -90,6 +124,7 @@ if (!integrity_rate_ok($conn, 'v:d:' . $device_id, 40, 600)) {
 }
 
 if ($ip !== '' && !integrity_rate_ok($conn, 'v:i:' . $ip, 400, 600)) {
+    $limit_seen('i:' . $ip);
     echo json_encode([
         'success' => false,
         'message' => 'Too many lookups from this network. Please wait a few minutes and try again.'

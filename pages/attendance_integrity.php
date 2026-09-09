@@ -39,7 +39,7 @@ if (!in_array($days, [1, 7, 30], true)) $days = 7;
 // all      — lahat
 // ang iba  — isang tiyak na kahihinatnan, galing sa pagpindot ng tile
 $show = $_GET['show'] ?? 'flagged';
-if (!in_array($show, ['flagged', 'all', 'ok', 'device_reuse', 'duplicate', 'not_enrolled'], true)) {
+if (!in_array($show, ['flagged', 'all', 'ok', 'device_reuse', 'duplicate', 'not_enrolled', 'lookup_limit'], true)) {
     $show = 'flagged';
 }
 
@@ -152,10 +152,13 @@ $resultTypes  = '';
 $resultParams = [];
 
 if ($show === 'flagged') {
-    // Ang dalawang ito ang sinubukan at hindi natuloy. Ang
-    // not_enrolled ay dating nakatago rito, gayong ito ang senyas ng
-    // taong nag-type ng numerong wala sa klase.
-    $resultWhere = " AND a.result IN ('device_reuse', 'not_enrolled') ";
+    // Lima, at hindi ang dating isa. Ang pinagsasaluhan ng mga ito ay
+    // hindi ang pagkabigo — ang pagkukusa: may nagtangkang gawin ang
+    // isang bagay na hindi kanya. Ang sarado nang link at ang kulang
+    // na larawan ay pagkabigo rin, pero pang-araw-araw na hadlang
+    // iyon, at ang pagsasama sa kanila rito ay paglibing sa lima.
+    $resultWhere = " AND a.result IN
+        ('device_reuse', 'not_enrolled', 'lookup_limit', 'no_student', 'bad_link') ";
 } elseif ($show !== 'all') {
     $resultWhere  = ' AND a.result = ? ';
     $resultTypes  = 's';
@@ -170,6 +173,7 @@ $totals = audit_query($conn, "
         SUM(a.result = 'ok')           AS ok,
         SUM(a.result = 'device_reuse') AS device_reuse,
         SUM(a.result = 'not_enrolled') AS not_enrolled,
+        SUM(a.result = 'lookup_limit') AS lookup_limit,
         SUM(a.result = 'duplicate')    AS duplicate
     FROM attendance_audit_tbl a
     WHERE $baseWhere
@@ -184,6 +188,7 @@ $t = $totals[0] ?? [];
 $nOk    = (int) ($t['ok']           ?? 0);
 $nReuse = (int) ($t['device_reuse'] ?? 0);
 $nUnenr = (int) ($t['not_enrolled'] ?? 0);
+$nHunt  = (int) ($t['lookup_limit'] ?? 0);
 $nDup   = (int) ($t['duplicate']    ?? 0);
 
 // ── Naka-ON pa ba ang harang? ────────────────────────────────
@@ -292,11 +297,27 @@ $events = audit_query($conn, "
 function result_chip(string $result): array
 {
     switch ($result) {
-        case 'ok':            return ['Saved',           'ok',      'bi-check-circle-fill'];
-        case 'device_reuse':  return ['Same device',     'blocked', 'bi-phone-fill'];
-        case 'duplicate':     return ['Already in',      'muted',   'bi-arrow-repeat'];
-        case 'not_enrolled':  return ['Not enrolled',    'warn',    'bi-person-dash'];
-        default:              return [ucfirst($result),  'muted',   'bi-question-circle'];
+        // Ang pumasa.
+        case 'ok':            return ['Saved',            'ok',      'bi-check-circle-fill'];
+
+        // Ang may pagkukusa. Pula: tingnan mo ito.
+        case 'device_reuse':  return ['Same device',      'blocked', 'bi-phone-fill'];
+        case 'lookup_limit':  return ['Lookup limit',     'blocked', 'bi-binoculars-fill'];
+
+        // Ang kayang maging pagkakamali sa pagtipa, at kayang hindi.
+        case 'not_enrolled':  return ['Not enrolled',     'warn',    'bi-person-dash'];
+        case 'no_student':    return ['No such number',   'warn',    'bi-question-circle'];
+        case 'bad_link':      return ['Link not valid',   'warn',    'bi-link-45deg'];
+        case 'save_failed':   return ['Save failed',      'warn',    'bi-exclamation-triangle'];
+
+        // Ang pang-araw-araw na hadlang. Walang kulay: hindi ito balita.
+        case 'duplicate':     return ['Already in',       'muted',   'bi-arrow-repeat'];
+        case 'link_expired':  return ['Link had closed',  'muted',   'bi-clock-history'];
+        case 'link_off':      return ['Link switched off', 'muted',  'bi-toggle-off'];
+        case 'form_locked':   return ['Form locked',      'muted',   'bi-lock-fill'];
+        case 'photo_missing': return ['No photo yet',     'muted',   'bi-image'];
+
+        default:              return [ucfirst($result),   'muted',   'bi-question-circle'];
     }
 }
 
@@ -437,6 +458,12 @@ if (!in_array($show, ['flagged', 'all'], true)) {
                         <span class="ati-stat-label">Not enrolled</span>
                         <span class="ati-stat-figure"><?= number_format($nUnenr) ?></span>
                         <span class="ati-stat-note">a number that is not in the class</span>
+                    </a>
+                    <a class="ati-stat <?= $nHunt > 0 ? 'is-alert' : '' ?> <?= $show === 'lookup_limit' ? 'is-picked' : '' ?>"
+                       href="<?= $url(['show' => 'lookup_limit']) ?>">
+                        <span class="ati-stat-label">Looking around</span>
+                        <span class="ati-stat-figure"><?= number_format($nHunt) ?></span>
+                        <span class="ati-stat-note">stopped for too many lookups</span>
                     </a>
                     <a class="ati-stat <?= $show === 'duplicate' ? 'is-picked' : '' ?>"
                        href="<?= $url(['show' => 'duplicate']) ?>">
@@ -587,8 +614,12 @@ if (!in_array($show, ['flagged', 'all'], true)) {
                     <?php else: ?>
                         <?php if ($show === 'flagged'): ?>
                             <p class="ati-lede">
-                                Two things end up here: a phone that had already signed in someone
-                                else, and a number that is not on the class list.
+                                Someone meant to do this: a phone that had already signed in a
+                                classmate, a number that is not on the class list or not in the
+                                school at all, a link code that does not exist, and anyone stopped
+                                for working through too many numbers at once. Everything else —
+                                a closed link, a missing photo, a repeat — is under
+                                <em>Everything</em>.
                             </p>
                         <?php endif; ?>
                         <div class="table-responsive">

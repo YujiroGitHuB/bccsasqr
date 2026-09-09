@@ -6,18 +6,10 @@ require_once __DIR__ . "/../includes/attendance_integrity.php";
 date_default_timezone_set('Asia/Manila');
 header('Content-Type: application/json');
 
-// ── Check if form is locked ───────────────────────────────────────────────────
-$result    = $conn->query("SELECT setting_value FROM attendance_settings WHERE setting_key = 'form_locked'");
-$is_locked = 0;
-if ($result && $result->num_rows > 0) {
-    $row       = $result->fetch_assoc();
-    $is_locked = (int)$row['setting_value'];
-}
-
-if ($is_locked) {
-    echo json_encode(['success' => false, 'message' => 'Attendance form is currently locked. Please contact your instructor.']);
-    exit();
-}
+// Ang tseke ng nakasarang form ay nasa ibaba na, pagkatapos ng
+// $audit: ang labasang hindi naitatala ay isang bagay na nangyari
+// nang hindi nakikita ng instruktor, at wala nang dahilan para
+// maunang tumakbo ito kaysa sa dalawang linyang naghahanda ng talaan.
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
@@ -44,6 +36,73 @@ $today      = date('Y-m-d');
 $device_id   = integrity_device_id($conn);
 $fingerprint = substr(preg_replace('/[^a-f0-9]/', '', strtolower($_POST['fp'] ?? '')), 0, 16);
 $client_ip   = integrity_client_ip();
+
+/**
+ * Isang hilera sa attendance_audit_tbl para sa pagsusumiteng ito.
+ *
+ * Nakatayo ito BAGO ang lahat ng tseke, at hindi pagkatapos ng link.
+ * Noong nasa ibaba pa ito, anim na labasan ang dumaraan nang walang
+ * naiiwang bakas — hindi valid na link, patay na link, sarado nang
+ * link, walang ganoong numero, kulang ang larawan, at ang nabigong
+ * INSERT. Ang bawat isa sa mga iyon ay isang tao na sumubok, at ang
+ * pahinang tumitingin sa talaan ay nagsasabing walang nangyari.
+ *
+ * Ang tatlong hawak ng klase ay reference: hindi pa alam ang mga ito
+ * habang tumatakbo ang unang tseke, at napupuno kapag nabasa na ang
+ * hilera ng link. Ang naunang naitala ay may NULL doon — tama iyon,
+ * dahil sa mga labasang iyon ay wala pang klaseng masasabi.
+ */
+$subject_name  = null;
+$full_section  = null;
+$instructor_id = null;
+
+$audit = function (string $result) use (
+    $conn, $student_no, $short_code, &$subject_name, &$full_section,
+    &$instructor_id, $device_id, $fingerprint, $client_ip
+) {
+    // Dalawa sa mga kahihinatnan ang kayang ulitin ng isang script
+    // nang walang hangganan: walang bilangan ang pagsusumite, hindi
+    // tulad ng paghahanap sa crud/verify_student.php. Kung walang
+    // takip dito, ang mismong talaang ginawa para makita ang
+    // pang-aabuso ay siyang magiging sasakyan nito — sampung
+    // megabyte lamang ang database.
+    //
+    // Limang hilera kada sampung minuto kada device: sapat para
+    // makita mong may nangyayari, at kulang para maging pinsala.
+    // Ang bilang sa tile ay maliit kaysa sa totoo kapag umabot dito;
+    // ang mas mabuting sagot ay bilangan sa pagsusumite mismo, at
+    // wala pa iyon.
+    if (in_array($result, ['no_student', 'bad_link'], true)
+        && !integrity_rate_ok($conn, 'lg:s:' . $result . ':' . $device_id, 5, 600)) {
+        return;
+    }
+
+    integrity_log($conn, [
+        'student_no'    => $student_no,
+        'short_code'    => $short_code,
+        'subject_name'  => $subject_name,
+        'section'       => $full_section,
+        'instructor_id' => $instructor_id,
+        'device_id'     => $device_id,
+        'fingerprint'   => $fingerprint,
+        'ip'            => $client_ip,
+        'result'        => $result,
+    ]);
+};
+
+// ── Check if form is locked ───────────────────────────────────────────────────
+$result    = $conn->query("SELECT setting_value FROM attendance_settings WHERE setting_key = 'form_locked'");
+$is_locked = 0;
+if ($result && $result->num_rows > 0) {
+    $row       = $result->fetch_assoc();
+    $is_locked = (int)$row['setting_value'];
+}
+
+if ($is_locked) {
+    $audit('form_locked');
+    echo json_encode(['success' => false, 'message' => 'Attendance form is currently locked. Please contact your instructor.']);
+    exit();
+}
 
 // ── 0. Ang link ang nagsasabi kung anong klase ito ────────────────────────────
 //
@@ -75,6 +134,10 @@ $linkStmt->execute();
 $linkResult = $linkStmt->get_result();
 
 if ($linkResult->num_rows === 0) {
+    // Walang ganoong short_code. Ang link ay ibinibigay bilang QR at
+    // hindi tinitipa, kaya ang paulit-ulit nito ay hindi pagkakamali
+    // sa pagtipa — may humuhula.
+    $audit('bad_link');
     echo json_encode(['success' => false, 'message' => 'This attendance link is not valid.']);
     exit();
 }
@@ -82,11 +145,14 @@ if ($linkResult->num_rows === 0) {
 $link = $linkResult->fetch_assoc();
 
 if ((int)$link['is_active'] !== 1) {
+    $audit('link_off');
     echo json_encode(['success' => false, 'message' => 'This attendance link has been deactivated by your instructor.']);
     exit();
 }
 
 if ((int)$link['is_expired'] === 1) {
+    // Ang tanong na hindi masasagot noon: sino ang dumating pagkasara.
+    $audit('link_expired');
     echo json_encode(['success' => false, 'message' => 'This attendance link has already closed. Please ask your instructor for a new one.']);
     exit();
 }
@@ -98,30 +164,9 @@ $full_section    = trim($link['section']);   // "BSIT-1A"
 $instructor_id   = (int)$link['instructor_id'];
 $instructor_name = trim($link['instructor_name']);
 
-/**
- * Isang hilera sa attendance_audit_tbl para sa pagsusumiteng ito.
- *
- * Isinusulat sa bawat labasang may kinalaman sa pagkakakilanlan —
- * hindi lamang ang pumasa. Ang tinanggihan ang siyang balita: ang
- * anim na 'device_reuse' sa loob ng isang minuto ay hindi hinuha ng
- * instruktor, nakasulat iyon.
- */
-$audit = function (string $result) use (
-    $conn, $student_no, $short_code, $subject_name, $full_section,
-    $instructor_id, $device_id, $fingerprint, $client_ip
-) {
-    integrity_log($conn, [
-        'student_no'    => $student_no,
-        'short_code'    => $short_code,
-        'subject_name'  => $subject_name,
-        'section'       => $full_section,
-        'instructor_id' => $instructor_id,
-        'device_id'     => $device_id,
-        'fingerprint'   => $fingerprint,
-        'ip'            => $client_ip,
-        'result'        => $result,
-    ]);
-};
+// Mula rito ay alam na ng $audit kung anong klase ito: reference ang
+// hawak nito sa tatlong variable sa itaas, kaya may pangalan na ng
+// asignatura ang bawat hilerang isusulat pagkatapos ng puntong ito.
 
 // ── 1. Get student info from DB ───────────────────────────────────────────────
 $stmt = $conn->prepare("SELECT student_no, fullname, course, section FROM students_tbl WHERE student_no = ?");
@@ -130,6 +175,10 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
+    // Walang ganoong numero sa buong paaralan. Ang estudyanteng
+    // nagkamali ng isang digit ay isa nito; ang tatlumpu nito sa loob
+    // ng limang minuto mula sa isang device ay hindi na.
+    $audit('no_student');
     echo json_encode(['success' => false, 'message' => 'Student not found']);
     exit();
 }
@@ -142,6 +191,7 @@ $student = $result->fetch_assoc();
 // malaman ng estudyante — maaari itong lampasan ng sinumang mag-POST nang
 // diretso rito.
 if (photo_is_required($conn) && student_photo_missing($conn, $student_no)) {
+    $audit('photo_missing');
     echo json_encode([
         'success'    => false,
         'code'       => 'photo_required',
@@ -273,6 +323,10 @@ if ($insert->execute()) {
     $audit('ok');
     echo json_encode(['success' => true, 'message' => 'Attendance submitted successfully for ' . $subject_name . '!']);
 } else {
+    // Pumasa siya sa bawat tseke at hindi pa rin siya naitala. Kung
+    // wala ito, ang estudyanteng nagrereklamong nagsumite siya ay
+    // walang katunayan, at ang talaan ay mukhang hindi siya sumubok.
+    $audit('save_failed');
     echo json_encode(['success' => false, 'message' => 'Failed to submit attendance. Please try again.']);
 }
 

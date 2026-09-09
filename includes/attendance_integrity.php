@@ -315,6 +315,32 @@ function integrity_rate_ok(mysqli $conn, string $bucket, int $limit, int $window
  * Hindi kailanman humihinto ang pagsusumite dahil sa file na ito.
  * Tagapagmasid ang audit, hindi bantay — kapag nabigo ang INSERT,
  * tahimik itong dumaraan.
+ *
+ * ── Ang mga kahihinatnan ────────────────────────────────────
+ *
+ * Nakalista rito at hindi sa migration: ang migration ay isang
+ * petsa na hindi na muling binubuksan, at ang talasalitaang ito ay
+ * lumalaki. Ang pages/attendance_integrity.php ang nagbibigay ng
+ * label at kulay sa bawat isa; ang hindi kilalang halaga ay
+ * lumalabas pa rin doon, kulay-abo, at hindi nawawala.
+ *
+ *   Ang pumasa
+ *     ok             naitala
+ *
+ *   May pagkukusa — ito ang Flagged
+ *     device_reuse   ibang estudyante na ang naisumite ng teleponong ito ngayong araw
+ *     lookup_limit   umabot sa hangganan ng paghahanap ng numero
+ *     not_enrolled   umiiral ang estudyante, wala lamang sa klaseng ito
+ *     no_student     walang ganoong numero sa buong paaralan
+ *     bad_link       walang ganoong short_code
+ *
+ *   Pang-araw-araw na hadlang
+ *     duplicate      naitala na siya sa asignaturang ito ngayong araw
+ *     link_expired   sarado na ang link nang siya ay dumating
+ *     link_off       pinatay ang link
+ *     form_locked    nakasara ang buong form
+ *     photo_missing  hinihingi ang larawan at wala pa siyang na-upload
+ *     save_failed    pumasa sa lahat, at hindi pa rin naitala
  */
 function integrity_log(mysqli $conn, array $r): void
 {
