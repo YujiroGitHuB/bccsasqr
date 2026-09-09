@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-10.3';
+const WHATS_NEW_VERSION = '2026-09-10.4';
 
 /**
  * The changelog, newest release first.
@@ -128,6 +128,12 @@ function whats_new_releases(): array
                     'icon'  => 'bi-rulers',
                     'title' => 'It says what the numbers cover',
                     'text'  => '<strong>Recorded</strong> counts submissions through the attendance link &mdash; not every attendance record. Scans from the QR scanner and rows brought in by import never pass through this log, and the page now says so instead of letting the number be read as a school-wide total.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-speedometer2',
+                    'title' => 'The Integrity page stays quick as the log fills up',
+                    'text'  => 'Three things were fixed before they could bite. The page asked the server for its table layout on <em>every</em> load &mdash; a question that is cheap on your laptop and slow on shared hosting, where it walks every table on the machine; it now asks about one table and remembers the answer. The migration adds the three indexes the page had been searching without, including the one behind <em>show me only my classes</em>. And the export was building a second copy of every row in memory before writing a single line, which is exactly what would fail on the busiest month &mdash; it writes as it reads now.',
                 ],
                 [
                     'type'  => 'improved',

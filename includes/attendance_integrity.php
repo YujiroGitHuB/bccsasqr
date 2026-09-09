@@ -87,6 +87,44 @@ function integrity_secret(mysqli $conn): string
 }
 
 /**
+ * May ganitong column ba ang attendance_audit_tbl?
+ *
+ * Lumalaki ang talahanayang ito sa pamamagitan ng migration, at ang
+ * mga pahinang bumabasa nito ay kailangang gumana kahit hindi pa
+ * napapatakbo ang pinakabago — nawawala lamang ang isang hanay,
+ * hindi ang buong pahina.
+ *
+ * SHOW COLUMNS at hindi information_schema.columns: sa isang shared
+ * hosting na may libu-libong talahanayan ng ibang account, ang
+ * information_schema ay isang tanong na kayang tumagal nang mas
+ * matagal kaysa sa lahat ng tunay na tanong ng pahina — magkasama.
+ * Ang SHOW COLUMNS ay tumitingin lamang sa isang talahanayan.
+ *
+ * Static ang cache: minsan kada request, gaano man karaming
+ * tumawag.
+ */
+function integrity_has_column(mysqli $conn, string $column): bool
+{
+    static $cache = [];
+    if (isset($cache[$column])) return $cache[$column];
+
+    try {
+        // Walang placeholder ang SHOW COLUMNS. Ang pangalan ay
+        // laging nakasulat sa code at hindi galing sa gumagamit,
+        // ngunit ini-escape pa rin — ang susunod na tumawag nito ay
+        // hindi nakakabasa ng talatang ito.
+        $res = $conn->query(
+            "SHOW COLUMNS FROM attendance_audit_tbl LIKE '"
+            . $conn->real_escape_string($column) . "'"
+        );
+        return $cache[$column] = ($res && $res->num_rows > 0);
+    } catch (Throwable $e) {
+        // Wala pa ang buong talahanayan. Wala rin ang column.
+        return $cache[$column] = false;
+    }
+}
+
+/**
  * Ang halaga ng isang setting sa attendance_settings, may kasamang
  * default kapag wala pang hilera. Kapareho ng ginagawa ng
  * photo_is_required(), pangkalahatan lamang.

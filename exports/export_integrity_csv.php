@@ -24,6 +24,7 @@ include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/attendance_integrity.php";
 
 // '../pages/dashboard.php' at hindi ang default na 'dashboard.php':
 // nasa exports/ ang file na ito, kaya ang default ay magtuturo sa
@@ -96,18 +97,7 @@ if ($show === 'flagged') {
 // May review columns ba? Ang export ay dapat gumana kahit hindi pa
 // napapatakbo ang 2026-09-10_add_audit_review.sql — ang tanging
 // mawawala ay tatlong hanay.
-$hasReview = false;
-try {
-    $chk = $conn->query("
-        SELECT COUNT(*) AS n FROM information_schema.columns
-        WHERE table_schema = DATABASE()
-          AND table_name   = 'attendance_audit_tbl'
-          AND column_name  = 'reviewed_at'
-    ");
-    $hasReview = $chk && ((int) $chk->fetch_assoc()['n'] > 0);
-} catch (Throwable $e) {
-    error_log('export_integrity_csv: ' . $e->getMessage());
-}
+$hasReview = integrity_has_column($conn, 'reviewed_at');
 
 $reviewCols = $hasReview
     ? ', a.reviewed_at, a.note, ru.name AS reviewed_by_name'
@@ -116,7 +106,19 @@ $reviewJoin = $hasReview
     ? ' LEFT JOIN users ru ON ru.id = a.reviewed_by '
     : '';
 
-$rows = [];
+// Walang fetch_all dito, at ito ang dahilan: ang tanong na ito ay
+// ang tanging bagay sa buong sistema na sadyang walang LIMIT.
+//
+// Ang fetch_all ay gumagawa ng PHP array ng BAWAT hilera bago pa
+// maisulat ang unang linya — at ang PHP array ay ilang beses na
+// mas mabigat kada hilera kaysa sa buffer ng mysqli na hawak na.
+// Ang isa-isang paghila ay hindi nag-aalis ng buffer na iyon (ang
+// get_result ay buffered; ang tunay na streaming ay hindi kayang
+// gawin nang maayos ng prepared statement dito), ngunit inaalis
+// nito ang PANGALAWANG kopya — at iyon ang kopyang bumabasag ng
+// memory_limit sa libreng hosting kapag ang pinakaabalang buwan
+// ang ini-export.
+$res    = null;
 $failed = false;
 
 try {
@@ -132,8 +134,7 @@ try {
     ");
     $stmt->bind_param($types, ...$params);
     $stmt->execute();
-    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
+    $res = $stmt->get_result();
 } catch (Throwable $e) {
     error_log('export_integrity_csv: ' . $e->getMessage());
     $failed = true;
@@ -172,7 +173,7 @@ fputcsv($out, [
     'Class',      $class !== '' ? $class : 'all',
     'Search',     $q !== '' ? $q : '—',
     'Device',     $device !== '' ? $device : 'all',
-    'Rows',       count($rows),
+    'Rows',       $res->num_rows,
     'Scope',      $is_admin ? 'all instructors' : 'own classes only',
 ]);
 fputcsv($out, []);
@@ -225,7 +226,7 @@ function ua_parts(?string $ua): array
     return [trim($os), $browser];
 }
 
-foreach ($rows as $r) {
+while ($r = $res->fetch_assoc()) {
     [$os, $browser] = ua_parts($r['user_agent'] ?? '');
 
     // Buong device_id dito at hindi ang unang walo: ang pahina ay

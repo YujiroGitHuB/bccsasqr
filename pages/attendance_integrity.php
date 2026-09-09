@@ -312,18 +312,7 @@ $prints = audit_query($conn, "
 // napapatakbo, ang pahina ay gumagana pa rin — nawawala lamang ang
 // isang hanay. Kaparehong tuntunin ng buong pahina: ang tampok na
 // hindi pa handa ay hindi dapat maging basag na pahina.
-$hasReview = false;
-try {
-    $chk = $conn->query("
-        SELECT COUNT(*) AS n FROM information_schema.columns
-        WHERE table_schema = DATABASE()
-          AND table_name   = 'attendance_audit_tbl'
-          AND column_name  = 'reviewed_at'
-    ");
-    $hasReview = $chk && ((int) $chk->fetch_assoc()['n'] > 0);
-} catch (Throwable $e) {
-    error_log('attendance_integrity (review cols): ' . $e->getMessage());
-}
+$hasReview = integrity_has_column($conn, 'reviewed_at');
 
 // ── Ang mga pangyayari ───────────────────────────────────────
 $eventTypes  = $baseTypes . $resultTypes;
