@@ -269,6 +269,62 @@ $deviceTotalRow = audit_query($conn, "
 ", $baseTypes, $baseParams);
 $deviceTotal = (int) ($deviceTotalRow[0]['n'] ?? count($devices));
 
+// ── Isang telepono, maraming cookie ──────────────────────────
+//
+// Ang device_id ay cookie, at ang cookie ay kayang burahin — iyon
+// ang inaming hangganan ng buong tampok. Ang fingerprint ang natira
+// kapag nangyari iyon: user agent, wika, laki ng screen, time zone.
+// Naitatala ito mula pa noong unang araw at wala pang bumabasa.
+//
+// MAHINA ito, at sinasadya: ang dalawang bagong teleponong
+// magkapareho ang modelo ay magkapareho rin ang bawat sangkap nito.
+// Kaya HINDI ito humaharang at hindi ito nagsasabing may nangyaring
+// mali — ang ipinapakita ay ang hugis, at ang ORAS ang nagsasabi ng
+// pagkakaiba. Ang dalawang kaklaseng may parehong telepono ay
+// magsusumite nang magkalayo ang oras; ang isang teleponong
+// binubura ang cookie sa pagitan ng bawat pangalan ay tapos na sa
+// loob ng ilang minuto.
+$prints = audit_query($conn, "
+    SELECT a.fingerprint,
+           COUNT(DISTINCT a.device_id)  AS devices,
+           COUNT(DISTINCT a.student_no) AS students,
+           MAX(a.user_agent)            AS user_agent,
+           MAX(a.ip)                    AS ip,
+           MAX(a.created_at)            AS last_seen,
+           TIMESTAMPDIFF(MINUTE, MIN(a.created_at), MAX(a.created_at)) AS span_min,
+           GROUP_CONCAT(DISTINCT a.student_no ORDER BY a.student_no SEPARATOR ', ') AS student_list
+    FROM attendance_audit_tbl a
+    WHERE $baseWhere
+      AND a.fingerprint IS NOT NULL
+      AND a.fingerprint <> ''
+      AND a.device_id IS NOT NULL
+      AND a.result IN ('ok', 'device_reuse')
+    GROUP BY a.fingerprint
+    HAVING devices > 1 AND students > 1
+    ORDER BY span_min ASC, devices DESC
+    LIMIT 25
+", $baseTypes, $baseParams) ?? [];
+
+// ── May pagsusuri na ba ang talahanayan? ─────────────────────
+//
+// Ang tatlong column ay dumarating kasama ng
+// migrations/2026-09-10_add_audit_review.sql. Kapag hindi pa
+// napapatakbo, ang pahina ay gumagana pa rin — nawawala lamang ang
+// isang hanay. Kaparehong tuntunin ng buong pahina: ang tampok na
+// hindi pa handa ay hindi dapat maging basag na pahina.
+$hasReview = false;
+try {
+    $chk = $conn->query("
+        SELECT COUNT(*) AS n FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name   = 'attendance_audit_tbl'
+          AND column_name  = 'reviewed_at'
+    ");
+    $hasReview = $chk && ((int) $chk->fetch_assoc()['n'] > 0);
+} catch (Throwable $e) {
+    error_log('attendance_integrity (review cols): ' . $e->getMessage());
+}
+
 // ── Ang mga pangyayari ───────────────────────────────────────
 $eventTypes  = $baseTypes . $resultTypes;
 $eventParams = array_merge($baseParams, $resultParams);
@@ -284,10 +340,15 @@ $lastPage = max(1, (int) ceil($eventTotal / ATI_PER_PAGE));
 if ($page > $lastPage) $page = $lastPage;
 $offset = ($page - 1) * ATI_PER_PAGE;
 
+// a.* ay dala na ang reviewed_at at note kapag naroon ang mga ito;
+// ang pangalan lamang ng sumuri ang nangangailangan ng join, at
+// idinadagdag lamang kapag may column na hahanapin.
 $events = audit_query($conn, "
     SELECT a.*, s.fullname
+           " . ($hasReview ? ', ru.name AS reviewed_by_name' : '') . "
     FROM attendance_audit_tbl a
     LEFT JOIN students_tbl s ON s.student_no = a.student_no
+    " . ($hasReview ? ' LEFT JOIN users ru ON ru.id = a.reviewed_by ' : '') . "
     WHERE $baseWhere $resultWhere
     ORDER BY a.id DESC
     LIMIT ? OFFSET ?
@@ -393,7 +454,14 @@ if (!in_array($show, ['flagged', 'all'], true)) {
                 <div class="ati-hero-icon"><i class="bi bi-shield-check"></i></div>
                 <div class="ati-hero-text">
                     <h2>Attendance Integrity</h2>
-                    <p>Which device each submission came from, and what was turned away.</p>
+                    <?php /* Sinasabi kung ANO ang saklaw. Ang link lamang ang dumadaan
+                            dito: ang QR scanner (crud/save_attendance.php) at ang import
+                            (crud/upload_attendance.php) ay sumusulat sa attendance_tbl
+                            nang hindi nagdaraan sa talaang ito, at pareho silang hawak ng
+                            taong naka-log in. Ang "Recorded 24" na binabasa bilang bilang
+                            ng lahat ng pagpasok ay isang maling bilang. */ ?>
+                    <p>Every submission through the <strong>attendance link</strong> — the device it
+                       came from, and what was turned away. Scans and imports are not listed here.</p>
                 </div>
 
                 <div class="ati-range">
@@ -445,7 +513,7 @@ if (!in_array($show, ['flagged', 'all'], true)) {
                        href="<?= $url(['show' => 'ok']) ?>">
                         <span class="ati-stat-label">Recorded</span>
                         <span class="ati-stat-figure"><?= number_format($nOk) ?></span>
-                        <span class="ati-stat-note">submissions saved</span>
+                        <span class="ati-stat-note">saved from the link</span>
                     </a>
                     <a class="ati-stat <?= $nReuse > 0 ? 'is-alert' : '' ?> <?= $show === 'device_reuse' ? 'is-picked' : '' ?>"
                        href="<?= $url(['show' => 'device_reuse']) ?>">
@@ -506,6 +574,13 @@ if (!in_array($show, ['flagged', 'all'], true)) {
                         <a class="ati-clear"
                            href="<?= $url(['class' => '', 'q' => '', 'device' => '', 'show' => 'flagged']) ?>">Clear</a>
                     <?php endif; ?>
+
+                    <?php /* Kaparehong salaan, walang LIMIT. Ang dinadala mo sa ibang
+                            tao ay ang tanawing tinitingnan mo ngayon — at hindi ang
+                            unang limampu nito. */ ?>
+                    <a class="ati-export" href="../exports/export_integrity_csv.php<?= $url() ?>">
+                        <i class="bi bi-filetype-csv"></i> Export
+                    </a>
                 </form>
 
                 <?php if ($activeChips): ?>
@@ -591,6 +666,73 @@ if (!in_array($show, ['flagged', 'all'], true)) {
                     <?php endif; ?>
                 </div>
 
+                <!-- ── Isang telepono, maraming cookie ── -->
+                <?php if (!empty($prints)): ?>
+                    <div class="ati-card">
+                        <div class="ati-card-head">
+                            <h3><i class="bi bi-fingerprint"></i> Same phone signature, different device</h3>
+                            <span class="ati-count"><?= count($prints) ?></span>
+                        </div>
+
+                        <p class="ati-lede">
+                            The device check works off a cookie, and a cookie can be cleared. This
+                            groups by what stays the same when it is — the phone model, screen,
+                            language and time zone. <strong>Two classmates with the same model of
+                            phone look identical here</strong>, so this is not proof of anything.
+                            Read the <em>Within</em> column: submissions spread across a day are
+                            ordinary, several in a few minutes are one person clearing a cookie.
+                        </p>
+
+                        <div class="table-responsive">
+                            <table class="table ati-table">
+                                <thead>
+                                    <tr>
+                                        <th>Phone signature</th>
+                                        <th>Devices</th>
+                                        <th>Students</th>
+                                        <th>Within</th>
+                                        <th>Last seen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($prints as $p): ?>
+                                        <?php
+                                        // Mainit lamang kapag masikip ang oras AT marami ang
+                                        // device. Alinman sa dalawa nang mag-isa ay ordinaryo.
+                                        $span = (int) $p['span_min'];
+                                        $hot  = ($span <= 15 && (int) $p['devices'] >= 3);
+                                        ?>
+                                        <tr class="<?= $hot ? 'is-hot' : '' ?>">
+                                            <td>
+                                                <div class="ati-device"><?= htmlspecialchars(device_label($p['user_agent'])) ?></div>
+                                                <div class="ati-sub">
+                                                    <code><?= htmlspecialchars((string) $p['fingerprint']) ?></code>
+                                                    · <?= htmlspecialchars((string) $p['ip']) ?>
+                                                </div>
+                                            </td>
+                                            <td><span class="ati-pill"><?= (int) $p['devices'] ?></span></td>
+                                            <td>
+                                                <span class="ati-pill"><?= (int) $p['students'] ?></span>
+                                                <div class="ati-sub"><?= htmlspecialchars((string) $p['student_list']) ?></div>
+                                            </td>
+                                            <td class="ati-when">
+                                                <?php if ($span < 60): ?>
+                                                    <?= $span ?> min
+                                                <?php elseif ($span < 1440): ?>
+                                                    <?= round($span / 60) ?> hr
+                                                <?php else: ?>
+                                                    <?= round($span / 1440) ?> d
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="ati-when"><?= date('M j, g:i A', strtotime($p['last_seen'])) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <!-- ── Ang mga pangyayari ── -->
                 <div class="ati-card">
                     <div class="ati-card-head">
@@ -631,6 +773,7 @@ if (!in_array($show, ['flagged', 'all'], true)) {
                                         <th>Class</th>
                                         <th>Device</th>
                                         <th>Result</th>
+                                        <?php if ($hasReview): ?><th>Reviewed</th><?php endif; ?>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -664,6 +807,33 @@ if (!in_array($show, ['flagged', 'all'], true)) {
                                                     <i class="bi <?= $chipIcon ?>"></i><?= $chipText ?>
                                                 </span>
                                             </td>
+
+                                            <?php if ($hasReview): ?>
+                                                <?php /* Ang cell na ito ay muling iginuguhit ng
+                                                        assets/js/integrityReview.js pagkatapos ng
+                                                        bawat pindot — magkatugma dapat ang hugis
+                                                        nito at ang revRender() doon. */ ?>
+                                                <td class="ati-review" data-id="<?= (int) $e['id'] ?>">
+                                                    <?php if (!empty($e['reviewed_at'])): ?>
+                                                        <div class="ati-rev-done">
+                                                            <span class="ati-rev-mark"
+                                                                  title="Reviewed by <?= htmlspecialchars((string) ($e['reviewed_by_name'] ?? 'someone')) ?>">
+                                                                <i class="bi bi-check-circle-fill"></i><?= date('M j, g:i A', strtotime($e['reviewed_at'])) ?>
+                                                            </span>
+                                                            <?php if (!empty($e['note'])): ?>
+                                                                <span class="ati-rev-note"><?= htmlspecialchars((string) $e['note']) ?></span>
+                                                            <?php endif; ?>
+                                                            <button type="button" class="ati-rev-undo"
+                                                                    data-act="undo" data-id="<?= (int) $e['id'] ?>">Undo</button>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <button type="button" class="ati-rev"
+                                                                data-act="do" data-id="<?= (int) $e['id'] ?>">
+                                                            <i class="bi bi-check2"></i> Review
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </td>
+                                            <?php endif; ?>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -712,6 +882,9 @@ if (!in_array($show, ['flagged', 'all'], true)) {
     <script src="<?= asset('../assets/js/logout.js') ?>"></script>
     <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
     <script src="<?= asset('../assets/js/lock.js') ?>"></script>
+    <?php if ($ready && $hasReview): ?>
+        <script src="<?= asset('../assets/js/integrityReview.js') ?>"></script>
+    <?php endif; ?>
 </body>
 
 </html>

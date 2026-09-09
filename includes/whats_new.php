@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-10.2';
+const WHATS_NEW_VERSION = '2026-09-10.3';
 
 /**
  * The changelog, newest release first.
@@ -104,6 +104,30 @@ function whats_new_releases(): array
                     'icon'  => 'bi-list-ol',
                     'title' => 'The list no longer stops silently',
                     'text'  => 'It showed the newest 200 submissions and 50 shared devices with no sign there were more, so a busy week looked like the whole story. It now pages through them and prints <em>Showing 1&ndash;50 of 431</em>.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-check2-square',
+                    'title' => 'You can answer a flagged row',
+                    'text'  => 'A shared phone is often just a shared phone, and only the person who asked knows that. Each row now takes a <strong>Review</strong> with a note &mdash; <em>&ldquo;borrowed, confirmed with the student&rdquo;</em> &mdash; so the same six rows are not re-investigated every week and the next teacher sees what was already settled. Needs <code>migrations/2026-09-10_add_audit_review.sql</code>.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-filetype-csv',
+                    'title' => 'Export what you are looking at',
+                    'text'  => 'A screenshot of a table is not evidence. <strong>Export</strong> writes the current view to a CSV &mdash; the same filters, no row limit, with the range and scope printed at the top of the file &mdash; for the conversation with a student or a program head.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-fingerprint',
+                    'title' => 'One phone that keeps arriving as a new device',
+                    'text'  => 'The device check runs on a cookie, and a cookie can be cleared. A new table groups submissions by what survives that &mdash; phone model, screen, language, time zone &mdash; and shows how long the group took. Two classmates with the same phone look identical here, so it proves nothing on its own; several students in a few minutes is the shape worth reading.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-rulers',
+                    'title' => 'It says what the numbers cover',
+                    'text'  => '<strong>Recorded</strong> counts submissions through the attendance link &mdash; not every attendance record. Scans from the QR scanner and rows brought in by import never pass through this log, and the page now says so instead of letting the number be read as a school-wide total.',
                 ],
                 [
                     'type'  => 'improved',
