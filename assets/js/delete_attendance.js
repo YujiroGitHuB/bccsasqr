@@ -58,8 +58,13 @@ $(document).ready(function () {
      * maghiwalay.
      */
     function refreshCount() {
-        var n = table.rows().count();
-        $('#attCount').text(n.toLocaleString() + ' record' + (n === 1 ? '' : 's') + ' loaded');
+        // page.info().recordsTotal at hindi rows().count(): sa
+        // server-side ay ang nakabukas na pahina lamang ang hawak ng
+        // browser, kaya ang rows().count() ay 25 — hindi ang kabuuan.
+        // Ang bilang ng server ang totoo.
+        var info = table.page.info();
+        var n = info ? info.recordsTotal : 0;
+        $('#attCount').text(n.toLocaleString() + ' record' + (n === 1 ? '' : 's') + ' total');
     }
 
     function refreshSelectBar() {
@@ -111,8 +116,10 @@ $(document).ready(function () {
                 success: function (response) {
                     var res = parseRes(response);
                     if (res.success) {
-                        ids.forEach(function (id) { table.row($('#row-' + id)).remove(); });
-                        table.draw(false);
+                        // Gaya ng isahang delete: ang server ang may
+                        // hawak ng listahan, kaya ito ang tinatanong
+                        // muli sa halip na tanggalin ang nasa pahina.
+                        table.ajax.reload(null, false);
                         refreshSelectBar();
                         Swal.fire({
                             ...selSwal, icon: 'success', title: 'Deleted!',
@@ -165,26 +172,24 @@ $(document).ready(function () {
                     success: function (response) {
                         const res = parseRes(response);
                         if (res.success) {
-                            // Sa DataTables, hindi sa DOM lamang.
+                            // Muling tanong sa server, hindi pagtanggal
+                            // sa nasa pahina.
                             //
-                            // Ang $(tr).remove() ay nagtatanggal ng hilera sa
-                            // pahina pero HINDI sa DataTables: may sariling
-                            // kopya ito ng bawat hilera, at ang <tr> na
-                            // nakikita mo ay itinatayo mula roon sa bawat
-                            // draw. Kaya ang nawalang hilera ay bumabalik sa
-                            // susunod na paghahanap, pag-uuri o paglipat ng
-                            // pahina — at ang bilang sa ibaba ("Showing 1 to 5
-                            // of 40") ay hindi kailanman nagbabago.
+                            // Sa server-side ay ang server ang may hawak ng
+                            // buong listahan; ang browser ay may dalawampu't
+                            // limang hilera lamang. Ang pagtanggal ng isa
+                            // rito ay mag-iiwan ng pahinang may dalawampu't
+                            // apat, mali ang kabuuang bilang, at walang
+                            // kapalit na hilera mula sa susunod na pahina.
+                            // Ang reload ang kumukuha ng bagong pahina —
+                            // tama ang bilang, puno ang pahina.
                             //
-                            // Ito rin ang nagpapabalik ng numero sa hanay na
-                            // "No." at nagtatawag ng kapalit na hilera mula sa
-                            // susunod na pahina: pareho silang gawa ng draw.
-                            //
-                            // Ganito na ang ginagawa ng Delete Selected sa
-                            // itaas at ng assets/js/delStudent.js — ang
-                            // isahang delete lamang ang naiwan.
+                            // `false` ang pangalawang argumento: manatili sa
+                            // kasalukuyang pahina. Hindi ito paghahanap
+                            // kundi pagbura ng isang hilera; walang dahilan
+                            // para ibalik ang tao sa pahina 1.
                             $('#row-' + id).fadeOut(300, function () {
-                                table.row(this).remove().draw(false);
+                                table.ajax.reload(null, false);
                                 refreshSelectBar();
                             });
                             Swal.fire({
@@ -263,10 +268,12 @@ $(document).ready(function () {
                             // kahon — walang sinasabi kung nabura nga ba o
                             // nasira lang ang pahina.
                             $('#example tbody').fadeOut(300, function () {
-                                table.clear().draw();
+                                // Wala nang natira, kaya pahina 1 —
+                                // `true` ang pangalawang argumento.
+                                table.ajax.reload(null, true);
                                 // Ibinabalik ang display: naiwan itong
                                 // display:none ng fadeOut, at ang tbody na ito
-                                // rin ang pinupunan ng draw sa itaas.
+                                // rin ang pinupunan ng reload sa itaas.
                                 $(this).show();
                                 refreshSelectBar();
                             });

@@ -142,6 +142,10 @@ $preSection = cleanSection(trim($_GET['section'] ?? ''));
                         // loaded" — isang tanong na dumadaan sa idx_date at
                         // hindi humahawak ng kahit isang hilera.
                         //
+                        // "total" at hindi "loaded": hindi na lahat ang
+                        // niloload. Dalawampu't lima ang dumarating,
+                        // ang bilang na ito ay kung ilan ang mayroon.
+                        //
                         // Bakit isinusulat pa rin ito ng PHP gayong
                         // pinapalitan naman ito ng JavaScript sa unang draw:
                         // tama ito bago pa tumakbo ang anumang script, kaya
@@ -236,7 +240,7 @@ $preSection = cleanSection(trim($_GET['section'] ?? ''));
                                      ang totoo bago pa tumakbo ang anumang
                                      JavaScript. -->
                                 <span class="att-count" id="attCount">
-                                    <?= number_format($rowCount) ?> record<?= $rowCount === 1 ? '' : 's' ?> loaded
+                                    <?= number_format($rowCount) ?> record<?= $rowCount === 1 ? '' : 's' ?> total
                                 </span>
                             </div>
 
@@ -250,7 +254,7 @@ $preSection = cleanSection(trim($_GET['section'] ?? ''));
                                             // config in assets/js/datatables.js addresses columns by
                                             // index, and dropping one here would shift every target.
                                             ?>
-                                            <th class="text-center"><?php if ($canDeleteAttendance): ?><input type="checkbox" id="selectAllAttendance" title="Select all"><?php endif; ?></th>
+                                            <th class="text-center"><?php if ($canDeleteAttendance): ?><input type="checkbox" id="selectAllAttendance" title="Select all on this page"><?php endif; ?></th>
                                             <th>No.</th>
                                             <th>Date</th>
                                             <th>Student Number</th>

@@ -41,25 +41,37 @@ $(document).ready(function () {
         };
 
         $('#example').DataTable({
+            // serverSide: ang hinihingi lamang ng nakabukas na pahina
+            // ang umaalis ng database. Kasama rito ang search, ang sort
+            // at ang section filter — wala silang pagpipilian, dahil
+            // hindi mahahanap ng browser ang hilerang hindi naman nito
+            // hawak.
+            serverSide: true,
+            // Ang paghahanap ay isang tanong sa server kada pindot ng
+            // letra kung walang antala. 400ms: sapat para matapos ang
+            // isang salita, hindi pa nararamdamang mabagal.
+            searchDelay: 400,
             ajax: {
                 url: 'get_attendance_ajax.php',
-                // Ang parehong bintanang nakasulat sa From at To.
-                // Kapag hindi ito ipinasa, ang sariling default ng
-                // endpoint (30 araw) ang susundin, at ang talahanayan
-                // ay hindi na tutugma sa mga petsang nasa itaas nito.
+                // Ang parehong bintanang nakasulat sa From at To, at
+                // ang section mula sa dropdown. Kapag hindi ipinasa
+                // ang mga ito, ang sariling default ng endpoint ang
+                // susundin, at ang talahanayan ay hindi na tutugma sa
+                // mga kontrol sa itaas nito.
                 data: function (d) {
-                    d.from = att.from || '';
-                    d.to   = att.to   || '';
+                    d.from    = att.from || '';
+                    d.to      = att.to   || '';
+                    d.section = $('#filterSection').val() || '';
                 },
                 dataSrc: function (res) {
                     $('#tableLoader').hide();
                     $('#tableContainer').show();
 
-                    if (!res.success) {
+                    if (res.error) {
                         Swal.fire({
                             icon: 'error', title: 'Error!',
                             background: '#0f172a', color: '#e0e0e0',
-                            text: res.message || 'Could not load the attendance records.'
+                            text: res.error
                         });
                         return [];
                     }
@@ -115,8 +127,17 @@ $(document).ready(function () {
                 tr.id = 'row-' + data.id;
             },
             dom: 'lfrtip',
-            lengthMenu: [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
-            pageLength: 5,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            // 25 at hindi 5. Noong nasa pahina na ang lahat ng hilera,
+            // ang laki ng pahina ay tungkol sa haba ng screen. Ngayong
+            // isang tanong sa server ang bawat pahina, ito ay tungkol
+            // sa dami ng paghihintay: ang 25 ay mga limang kilobyte pa
+            // rin, at limang beses na mas kaunti ang pagpindot.
+            pageLength: 25,
+            // Pinakabago muna, gaya ng dating ORDER BY date DESC ng
+            // pahina. Kung walang nakatakda, ang hanay 0 (ang checkbox)
+            // ang susundin ng DataTables.
+            order: [[2, 'desc']],
             processing: true,
             language: {
                 processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>'

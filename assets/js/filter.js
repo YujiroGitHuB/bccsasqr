@@ -21,30 +21,43 @@ $(document).ready(function () {
     // fetched from the database. Set From = To for a single day.
 
     // Filter by Section (exact match)
+    //
+    // Sa SERVER na ito ginagawa ngayon. Dati ay isang regex search sa
+    // hanay 6, na gumagana lamang habang hawak ng browser ang lahat ng
+    // hilera — hindi masasala ng DataTables ang hindi naman nito
+    // hawak. Ang halaga ay ipinapasa ng assets/js/datatables.js sa
+    // bawat request (ang `d.section`), kaya ang kailangan lamang dito
+    // ay ang muling pagtatanong.
+    //
+    // ajax.reload(null, false): ang `false` ay nagpapanatili ng
+    // kasalukuyang pahina. Sa isang PAGSASALA ay dapat itong bumalik
+    // sa una — ang pahina 8 ng isang bagong, mas maikling listahan ay
+    // madalas na wala nang laman — kaya `true` ang ipinapasa rito.
     $('#filterSection').on('change', function () {
-        const section = $(this).val();
-        if (!section) {
-            table.column(6).search('', true, false).draw();
-            return;
-        }
-        // Exact match (case-insensitive handled by DataTables if server-side config allows,
-        // otherwise we can use regex with case-insensitive flag if supported by your version)
-        const regex = '^' + section.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$';
-        table.column(6).search(regex, true, false).draw();
+        table.ajax.reload(null, true);
     });
+
     // Optional reset button (add a #resetFilters button in your HTML)
     // This only clears the filters within the loaded window. To change
     // the window itself, use From/To or "Last 30 days".
     $('#resetFilters').on('click', function () {
         $('#filterSection').val('');
-        table.search('').columns().search('').draw();
+        // Isang draw lamang, hindi dalawa: ang .search('') ay
+        // nagtatakda nang hindi nagtatanong, at ang reload ang
+        // nagdadala ng pareho sa server nang sabay.
+        table.search('');
+        table.ajax.reload(null, true);
     });
 
-    // The section can arrive preselected from a link (the dashboard
-    // section cards point here with ?section=2A). Marking the <option>
-    // selected server-side is not enough — the filter above only runs
-    // on `change`, so nothing would actually be filtered.
-    if ($('#filterSection').val()) {
-        $('#filterSection').trigger('change');
-    }
+    // Ang section ay maaaring naka-preselect na mula sa isang link
+    // (ang mga section card ng dashboard ay tumuturo rito na may
+    // ?section=2A).
+    //
+    // WALA nang ginagawa rito ngayon, at sinasadya: ang `data` callback
+    // sa assets/js/datatables.js ay binabasa ang halaga ng dropdown sa
+    // BAWAT request, kasama ang pinakauna — kaya nakasala na ito bago
+    // pa may makita. Noong nasa browser ang pagsasala, kailangan ng
+    // manwal na `change` dito dahil sa `change` lamang tumatakbo ang
+    // filter; ang pag-uulit niyon ngayon ay pangalawang tanong sa
+    // server para sa eksaktong parehong sagot.
 });

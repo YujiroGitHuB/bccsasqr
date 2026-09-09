@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-09.6';
+const WHATS_NEW_VERSION = '2026-09-09.7';
 
 /**
  * The changelog, newest release first.
@@ -78,8 +78,8 @@ function whats_new_releases(): array
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-speedometer2',
-                    'title' => 'The attendance list loads about five times lighter',
-                    'text'  => 'It was sending <strong>every</strong> record in the date window to your phone as HTML &mdash; 710 records came to 1 MB, and it grew with every scan. The <em>Showing 1 to 5</em> was doing nothing but hiding the other 705. The records now arrive as data and only the page you are looking at is drawn, taking the page from 1 MB down to 210 KB. On a phone that is the difference between waiting nine seconds and about three.',
+                    'title' => 'The attendance list only loads the page you are on',
+                    'text'  => 'It was sending <strong>every</strong> record in the date window to your phone &mdash; 710 records came to 1 MB of HTML, and it grew with every scan. The <em>Showing 1 to 5</em> was doing nothing but hiding the other 705. Each page of records is now fetched on its own: <strong>4.5 KB instead of 1 MB</strong>, and it stays that size whether you have 700 records or 70,000. Searching, sorting and the section filter moved to the server with it, so they cover every record rather than only what your phone happened to be holding. Sorting by <em>Time In</em> is also correct now &mdash; it used to put 1:00 PM before 9:00 AM.',
                 ],
                 [
                     'type'  => 'fixed',
