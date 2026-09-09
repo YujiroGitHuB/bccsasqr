@@ -1,6 +1,28 @@
 $(document).ready(function () {
     var table = $('#example').DataTable();
 
+    /**
+     * Ang sagot ng server, object man o teksto.
+     *
+     * Ang JSON.parse(response) nang diretso ay tumatakbo lamang kapag
+     * TEKSTO ang natanggap ni jQuery. Kapag nagpadala ang endpoint ng
+     * `Content-Type: application/json` — gaya ng ginagawa ng
+     * crud/delete_attendance.php at crud/delete_selected_attendance.php —
+     * ay object na ang ibinibigay ni jQuery, at ang JSON.parse(object)
+     * ay nagiging JSON.parse("[object Object]"): SyntaxError.
+     *
+     * Tahimik itong sumasabog. Ang exception ay nangyayari sa loob ng
+     * success handler, kaya walang error dialog na lumalabas — nawawala
+     * lang ang confirm at walang nangyayari sa hilera. Ganito naging
+     * "walang epekto" ang isahang Delete nang matagal.
+     *
+     * Isang lugar na lamang ang paghawak nito, para hindi na maulit ang
+     * pagkakaiba: dati ay tama ang Delete Selected at mali ang dalawa.
+     */
+    function parseRes(response) {
+        return typeof response === 'string' ? JSON.parse(response) : response;
+    }
+
     // ── Select + Delete Selected ────────────────────────────
     var selSwal = {
         background: '#121212', color: '#e0e0e0', iconColor: '#00e5ff',
@@ -19,6 +41,25 @@ $(document).ready(function () {
             ids.push($(this).val());
         });
         return ids;
+    }
+
+    /**
+     * Ang "709 records loaded" sa tabi ng Reset Filters.
+     *
+     * Isinusulat ito ng PHP sa pag-load at hindi na muling ginagalaw,
+     * kaya matapos ang isang pagbura ay sinasabi nitong 709 habang
+     * 708 na ang nasa talahanayan sa ibaba — at matapos ang Delete
+     * All ay 709 pa rin habang wala nang natitira. Isa itong maliit
+     * na numero, pero ito ang unang tinitingnan ng taong nagtatanong
+     * kung tumalab ba ang pagbura.
+     *
+     * Ang bilang ng DataTables ang pinagkukunan, hindi ang sariling
+     * pagbabawas: iisang pinagmumulan, kaya hindi sila maaaring
+     * maghiwalay.
+     */
+    function refreshCount() {
+        var n = table.rows().count();
+        $('#attCount').text(n.toLocaleString() + ' record' + (n === 1 ? '' : 's') + ' loaded');
     }
 
     function refreshSelectBar() {
@@ -41,7 +82,16 @@ $(document).ready(function () {
     });
 
     $(document).on('change', '.rowCheck', refreshSelectBar);
-    table.on('draw', refreshSelectBar);
+
+    // Isang kawit para sa lahat ng tatlong pagbura: dumadaan silang
+    // lahat sa isang draw, kaya hindi na kailangang tandaan ng bawat
+    // isa na i-update ang bilang. Tumatakbo rin ito sa paghahanap at
+    // pag-uuri, kung saan walang nagbabago sa bilang — muling
+    // isinusulat lamang ang parehong teksto.
+    table.on('draw', function () {
+        refreshSelectBar();
+        refreshCount();
+    });
 
     $('#deleteSelected').on('click', function () {
         var ids = selectedIds();
@@ -59,7 +109,7 @@ $(document).ready(function () {
                 method: 'POST',
                 data: { ids: ids },
                 success: function (response) {
-                    var res = typeof response === 'string' ? JSON.parse(response) : response;
+                    var res = parseRes(response);
                     if (res.success) {
                         ids.forEach(function (id) { table.row($('#row-' + id)).remove(); });
                         table.draw(false);
@@ -113,10 +163,29 @@ $(document).ready(function () {
                     method: 'POST',
                     data: { id: id },
                     success: function (response) {
-                        const res = JSON.parse(response);
+                        const res = parseRes(response);
                         if (res.success) {
-                            $('#row-' + id).fadeOut(500, function () {
-                                $(this).remove();
+                            // Sa DataTables, hindi sa DOM lamang.
+                            //
+                            // Ang $(tr).remove() ay nagtatanggal ng hilera sa
+                            // pahina pero HINDI sa DataTables: may sariling
+                            // kopya ito ng bawat hilera, at ang <tr> na
+                            // nakikita mo ay itinatayo mula roon sa bawat
+                            // draw. Kaya ang nawalang hilera ay bumabalik sa
+                            // susunod na paghahanap, pag-uuri o paglipat ng
+                            // pahina — at ang bilang sa ibaba ("Showing 1 to 5
+                            // of 40") ay hindi kailanman nagbabago.
+                            //
+                            // Ito rin ang nagpapabalik ng numero sa hanay na
+                            // "No." at nagtatawag ng kapalit na hilera mula sa
+                            // susunod na pahina: pareho silang gawa ng draw.
+                            //
+                            // Ganito na ang ginagawa ng Delete Selected sa
+                            // itaas at ng assets/js/delStudent.js — ang
+                            // isahang delete lamang ang naiwan.
+                            $('#row-' + id).fadeOut(300, function () {
+                                table.row(this).remove().draw(false);
+                                refreshSelectBar();
                             });
                             Swal.fire({
                                 ...swalOptions,
@@ -178,10 +247,28 @@ $(document).ready(function () {
                     url: '../crud/delete_all_attendance.php',
                     method: 'POST',
                     success: function (response) {
-                        const res = JSON.parse(response);
+                        const res = parseRes(response);
                         if (res.success) {
-                            $('#example tbody').fadeOut(500, function () {
-                                $(this).empty().fadeIn(300);
+                            // clear() at hindi .empty(): pareho ang dahilan ng
+                            // isahang delete sa itaas, mas malaki lamang ang
+                            // epekto rito. Ang binabakante ng .empty() ay ang
+                            // tbody; buo pa rin ang kopya ng DataTables, kaya
+                            // ang buong talahanayang "binura" ay muling
+                            // lumilitaw sa unang pag-click sa isang column
+                            // header.
+                            //
+                            // May kapalit pa: sa clear() ay ang sariling
+                            // "No data available in table" ng DataTables ang
+                            // lumalabas. Sa .empty() ay puting bakanteng
+                            // kahon — walang sinasabi kung nabura nga ba o
+                            // nasira lang ang pahina.
+                            $('#example tbody').fadeOut(300, function () {
+                                table.clear().draw();
+                                // Ibinabalik ang display: naiwan itong
+                                // display:none ng fadeOut, at ang tbody na ito
+                                // rin ang pinupunan ng draw sa itaas.
+                                $(this).show();
+                                refreshSelectBar();
                             });
                             Swal.fire({
                                 ...swalOptions,

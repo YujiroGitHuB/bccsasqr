@@ -215,7 +215,12 @@ $preSection = cleanSection(trim($_GET['section'] ?? ''));
                                     <i class="bi bi-recycle"></i> Reset Filters
                                 </button>
 
-                                <span class="att-count">
+                                <!-- May id ito para maiakma ng delete_attendance.js
+                                     matapos ang isang pagbura. Nananatiling
+                                     nakasulat dito ng PHP ang unang halaga: iyon
+                                     ang totoo bago pa tumakbo ang anumang
+                                     JavaScript. -->
+                                <span class="att-count" id="attCount">
                                     <?= number_format($rowCount) ?> record<?= $rowCount === 1 ? '' : 's' ?> loaded
                                 </span>
                             </div>

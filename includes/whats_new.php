@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-09.4';
+const WHATS_NEW_VERSION = '2026-09-09.5';
 
 /**
  * The changelog, newest release first.
@@ -74,6 +74,12 @@ function whats_new_releases(): array
                     'icon'  => 'bi-shield-check',
                     'title' => 'A page showing what was turned away',
                     'text'  => '<strong>Attendance &rsaquo; Integrity</strong> lists every submission with the device and network it came from, flags each phone that was used for more than one student, and keeps the last 30 days.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-trash',
+                    'title' => 'Deleting an attendance record updates the page',
+                    'text'  => 'The row Delete button removed the record from the database but the page never changed &mdash; the count stayed the same and the row stayed on screen, so it looked like nothing had happened and the record was easy to delete twice. <strong>Delete All</strong> had the matching problem: the table looked empty until you sorted a column, and everything came back. Both now update the table itself, and the <em>records loaded</em> count moves with them.',
                 ],
                 [
                     'type'  => 'fixed',
