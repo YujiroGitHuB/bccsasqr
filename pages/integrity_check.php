@@ -1,21 +1,19 @@
 <?php require_once __DIR__ . '/../includes/asset.php';
 
 // ============================================================
-// "Bakit hindi lumalabas ang selfie?"
+// "Tumatakbo na ba ang device check?"
 //
-// Ang tampok na ito ay may anim na bagay na dapat sabay-sabay na
-// totoo: ang migration, ang setting, ang folder, ang HTTPS, ang
-// camera ng telepono, at ang pagkakataong mapili ang estudyante.
-// Kapag isa rito ang kulang, WALANG lumalabas — walang error,
-// walang mensahe, dumadaan lang ang pagsusumite na parang walang
-// tampok. Sinadya iyon (mas mabuti ang tahimik na patay kaysa sa
-// basag na attendance), pero ang kapalit ay walang masabing
-// dahilan ang sistema.
+// Ang tampok ay may dalawang bagay na dapat sabay na totoo: ang
+// migration at ang setting. Kapag isa rito ang kulang, WALANG
+// lumalabas — walang error, walang mensahe, dumadaan lang ang
+// pagsusumite na parang walang tampok. Sinadya iyon (mas mabuti ang
+// tahimik na patay kaysa sa basag na attendance), pero ang kapalit
+// ay walang masabing dahilan ang sistema.
 //
-// Ito ang nagsasabi. Isang pahina, anim na sagot.
+// Ito ang nagsasabi.
 //
-// Hindi ito bahagi ng pang-araw-araw na paggamit — kasangkapan
-// ito sa pag-setup. Ligtas itong tanggalin kapag tumatakbo na ang
+// Hindi ito bahagi ng pang-araw-araw na paggamit — kasangkapan ito
+// sa pag-setup. Ligtas itong tanggalin kapag tumatakbo na ang
 // lahat; walang ibang file na tumatawag dito.
 // ============================================================
 
@@ -48,24 +46,6 @@ function has_table(mysqli $conn, string $name): bool
     }
 }
 
-/** Umiiral ba ang column? */
-function has_column(mysqli $conn, string $table, string $col): bool
-{
-    try {
-        $stmt = $conn->prepare("
-            SELECT 1 FROM information_schema.columns
-            WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ? LIMIT 1
-        ");
-        $stmt->bind_param("ss", $table, $col);
-        $stmt->execute();
-        $found = $stmt->get_result()->num_rows > 0;
-        $stmt->close();
-        return $found;
-    } catch (Throwable $e) {
-        return false;
-    }
-}
-
 /** May hilera ba ang setting, at ano ang laman? */
 function setting_row(mysqli $conn, string $key): ?string
 {
@@ -86,131 +66,45 @@ $checks = [];
 // ── 1. Ang migration ─────────────────────────────────────────
 $hasAudit = has_table($conn, 'attendance_audit_tbl');
 $hasRate  = has_table($conn, 'attendance_ratelimit_tbl');
-$hasRoom  = has_column($conn, 'attendance_links_tbl', 'require_room_code');
-$hasSeed  = has_column($conn, 'attendance_links_tbl', 'room_code_secret');
-$migrated = $hasAudit && $hasRate && $hasRoom && $hasSeed;
+$migrated = $hasAudit && $hasRate;
 
 $checks[] = [
     'ok'    => $migrated,
     'title' => 'The migration has been run',
-    'good'  => 'All four pieces are in the database.',
+    'good'  => 'Both tables are in the database.',
     'bad'   => 'Open phpMyAdmin, select this database, go to the SQL tab, paste the whole of '
              . '<code>migrations/2026-09-09_add_attendance_integrity.sql</code> and press Go. '
              . 'Uploading the file does not run it.',
     'detail' => 'attendance_audit_tbl: ' . ($hasAudit ? 'yes' : 'MISSING')
-              . ' · attendance_ratelimit_tbl: ' . ($hasRate ? 'yes' : 'MISSING')
-              . ' · require_room_code: ' . ($hasRoom ? 'yes' : 'MISSING')
-              . ' · room_code_secret: ' . ($hasSeed ? 'yes' : 'MISSING'),
+              . ' · attendance_ratelimit_tbl: ' . ($hasRate ? 'yes' : 'MISSING'),
 ];
 
 // ── 2. Ang setting ───────────────────────────────────────────
-$rateRaw = setting_row($conn, 'selfie_spot_rate');
-$rate    = (int) ($rateRaw ?? 0);
+$bindRaw = setting_row($conn, 'device_binding');
+$binding = $bindRaw === null ? true : $bindRaw === '1';
 
 $checks[] = [
-    'ok'    => $rateRaw !== null && $rate > 0,
-    'title' => 'Selfie Spot Check is switched on',
-    'good'  => 'Set to ' . $rate . '% of submissions.',
-    'bad'   => $rateRaw === null
-             ? 'There is no <code>selfie_spot_rate</code> row at all, so it falls back to 0 — off. This comes from the migration above.'
-             : 'It is set to 0, which turns the feature off. Raise it under Settings &rsaquo; Attendance rules.',
-    'detail' => 'attendance_settings.selfie_spot_rate = ' . ($rateRaw === null ? '(no row)' : $rateRaw),
+    'ok'    => $binding,
+    'title' => 'One Device, One Student is switched on',
+    'good'  => 'A phone that has recorded attendance for one student cannot record it for another today.',
+    'bad'   => 'It is switched off, so one phone can submit for as many students as it likes. '
+             . 'Turn it back on under Settings &rsaquo; Attendance rules.',
+    'detail' => 'attendance_settings.device_binding = ' . ($bindRaw === null ? '(no row — defaults to on)' : $bindRaw),
 ];
 
-// ── 3. Ang folder ────────────────────────────────────────────
-//
-// Ito ang tahimik na pumapalya sa isang shared host: tama ang
-// lahat, pero hindi makasulat ang PHP sa uploads/, kaya ang
-// larawang naipadala na ay hindi na-save.
-$uploadsDir = __DIR__ . '/../uploads';
-$selfieDir  = $uploadsDir . '/selfies';
-$canWrite   = false;
-$writeNote  = '';
-
-if (!is_dir($uploadsDir)) {
-    $writeNote = 'uploads/ does not exist on the server.';
-} elseif (!is_writable($uploadsDir)) {
-    $writeNote = 'uploads/ exists but PHP cannot write into it.';
-} else {
-    // Ang tunay na tseke ay ang pagsulat mismo, hindi ang
-    // is_writable(): magkaiba ang sinasabi ng dalawa sa ilang
-    // shared host.
-    if (!is_dir($selfieDir)) @mkdir($selfieDir, 0755, true);
-
-    if (!is_dir($selfieDir)) {
-        $writeNote = 'uploads/selfies/ could not be created.';
-    } else {
-        $probe = $selfieDir . '/.probe';
-        if (@file_put_contents($probe, 'x') !== false) {
-            @unlink($probe);
-            $canWrite  = true;
-            $writeNote = 'uploads/selfies/ exists and a test file was written and removed.';
-        } else {
-            $writeNote = 'uploads/selfies/ exists but a test file could not be written.';
-        }
-    }
-}
-
-$checks[] = [
-    'ok'     => $canWrite,
-    'title'  => 'The server can save the photos',
-    'good'   => $writeNote,
-    'bad'    => $writeNote . ' Set the folder permission to 755 in the file manager.',
-    'detail' => 'uploads/selfies/',
-];
-
-// ── 4. Ang gamit sa larawan ──────────────────────────────────
-$hasGd = function_exists('getimagesizefromstring');
-
-$checks[] = [
-    'ok'     => $hasGd,
-    'title'  => 'PHP can check that an upload really is a photo',
-    'good'   => 'getimagesizefromstring() is available.',
-    'bad'    => 'getimagesizefromstring() is missing, so every selfie is rejected as "not a photo".',
-    'detail' => 'PHP ' . PHP_VERSION,
-];
-
-// ── 5. HTTPS ────────────────────────────────────────────────
+// ── 3. HTTPS ────────────────────────────────────────────────
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
       || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 
 $checks[] = [
     'ok'     => $https,
     'title'  => 'The page is served over HTTPS',
-    'good'   => 'Browsers will allow the camera here.',
-    'bad'    => 'You opened this over plain http. No browser will open a camera on http, '
-              . 'so the photo check can never appear. Use the https:// address.',
+    'good'   => 'The device cookie is set with the Secure flag.',
+    'bad'    => 'You opened this over plain http. Attendance still works, but the device '
+              . 'cookie cannot be marked Secure. Use the https:// address.',
     'detail' => ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? ''),
 ];
 
-// ── 6. Ang pagkakataon ───────────────────────────────────────
-//
-// Kahit tama ang lahat, hindi lumalabas ang camera sa taong hindi
-// napili — at hindi ito nagbabago sa buong araw, kaya ang pag-
-// refresh ay walang naidudulot. Ito ang huling dahilan, at ito
-// ang pinakamadalas mapagkamalang sira.
-$sampleAsked = [];
-$sampleTotal = 0;
-
-if ($migrated && $rate > 0) {
-    try {
-        $q = $conn->query("
-            SELECT l.short_code, ss.student_no
-            FROM attendance_links_tbl l
-            JOIN student_subjects_tbl ss ON ss.subject_code = l.subject_code
-            WHERE l.is_active = 1
-            LIMIT 60
-        ");
-        while ($row = $q->fetch_assoc()) {
-            $sampleTotal++;
-            if (selfie_is_required($conn, $row['student_no'], $row['short_code'], $rate, 0)) {
-                $sampleAsked[] = $row['student_no'] . ' → ' . $row['short_code'];
-            }
-        }
-    } catch (Throwable $e) {
-        // Walang magagawa; ipinapakita lang ang zero sa ibaba.
-    }
-}
 ?>
 <!doctype html>
 <html lang="en">
@@ -234,10 +128,7 @@ if ($migrated && $rate > 0) {
         .ati-page .chk-body p { margin: 0; font-size: .84rem; line-height: 1.6; color: var(--ink-3); }
         .ati-page .chk-detail { margin-top: .35rem !important; font-size: .75rem !important; color: var(--ink-4) !important; word-break: break-word; }
         .ati-page .chk-detail code, .ati-page .chk-body code { padding: .1rem .3rem; border-radius: 5px; background: rgba(var(--tint), .06); color: var(--ati-ink); }
-        .ati-page .cam-out { margin-top: .8rem; font-size: .84rem; line-height: 1.6; color: var(--ink-3); }
-        .ati-page .cam-stage { width: 180px; height: 180px; margin-top: .7rem; border-radius: 14px; overflow: hidden; border: 1px solid var(--ati-line); background: rgba(var(--tint), .05); }
-        .ati-page .cam-stage video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-    </style>
+                            </style>
 </head>
 
 <body>
@@ -252,13 +143,13 @@ if ($migrated && $rate > 0) {
                 <div class="ati-hero-icon"><i class="bi bi-clipboard-pulse"></i></div>
                 <div class="ati-hero-text">
                     <h2>Integrity Check</h2>
-                    <p>Why the photo check is or is not appearing, in six answers.</p>
+                    <p>Whether the device check is actually running, in three answers.</p>
                 </div>
             </div>
 
             <div class="ati-card">
                 <div class="ati-card-head">
-                    <h3><i class="bi bi-list-check"></i> The server side</h3>
+                    <h3><i class="bi bi-list-check"></i> Setup</h3>
                 </div>
 
                 <?php foreach ($checks as $c): ?>
@@ -275,41 +166,6 @@ if ($migrated && $rate > 0) {
                 <?php endforeach; ?>
             </div>
 
-            <?php if ($migrated && $rate > 0): ?>
-                <div class="ati-card">
-                    <div class="ati-card-head">
-                        <h3><i class="bi bi-dice-3"></i> Who would be asked right now</h3>
-                        <span class="ati-count"><?= count($sampleAsked) ?> of <?= $sampleTotal ?></span>
-                    </div>
-                    <p class="ati-lede">
-                        The pick is fixed for the whole day, so refreshing never changes it. If the number
-                        you are testing with is not on this list, you will not see the camera today no matter
-                        how many times you submit &mdash; that is the feature working, not failing.
-                        To see it on demand, set the rate to 100 in Settings, test, then put it back.
-                    </p>
-                    <?php if (empty($sampleAsked)): ?>
-                        <p class="ati-none"><i class="bi bi-info-circle"></i> None of the sampled pairs are picked today.</p>
-                    <?php else: ?>
-                        <p class="chk-detail" style="margin-top:0 !important">
-                            <?= htmlspecialchars(implode(' · ', array_slice($sampleAsked, 0, 40))) ?>
-                        </p>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
-            <div class="ati-card">
-                <div class="ati-card-head">
-                    <h3><i class="bi bi-camera-video"></i> This device</h3>
-                </div>
-                <p class="ati-lede">
-                    Open this page on the phone a student would actually use. The button asks for the camera
-                    exactly the way the attendance form does.
-                </p>
-                <button type="button" class="set-btn" id="camTest"><i class="bi bi-camera"></i> Test the camera</button>
-                <div class="cam-out" id="camOut"></div>
-                <div class="cam-stage" id="camStage" hidden><video id="camVideo" playsinline muted autoplay></video></div>
-            </div>
-
         </div>
     </div>
 
@@ -319,54 +175,6 @@ if ($migrated && $rate > 0) {
     <script src="<?= asset('../assets/js/logout.js') ?>"></script>
     <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
     <script src="<?= asset('../assets/js/lock.js') ?>"></script>
-    <script>
-        // Ang parehong tatlong tanong na itinatanong ng attendance
-        // form, isa-isang sinasagot — dahil ang "walang lumalabas" ay
-        // maaaring alinman sa tatlo, at magkaiba ang lunas ng bawat isa.
-        document.getElementById('camTest').addEventListener('click', async function () {
-            const out = document.getElementById('camOut');
-            const lines = [];
-
-            lines.push(row(window.isSecureContext, 'Secure context (https)',
-                'The page is not secure, so the camera API is switched off by the browser.'));
-
-            const hasApi = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-            lines.push(row(hasApi, 'navigator.mediaDevices.getUserMedia exists',
-                'This browser does not expose the camera API at all. In-app browsers (Facebook, Messenger) are the usual cause — open the link in Chrome or Safari.'));
-
-            out.innerHTML = lines.join('');
-
-            if (!hasApi) return;
-
-            out.innerHTML += '<div>Asking for permission&hellip;</div>';
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-                const v = document.getElementById('camVideo');
-                v.srcObject = stream;
-                document.getElementById('camStage').hidden = false;
-                out.innerHTML += row(true, 'Camera opened', '');
-                setTimeout(() => {
-                    stream.getTracks().forEach(t => t.stop());
-                    document.getElementById('camStage').hidden = true;
-                    out.innerHTML += '<div class="chk-detail">Camera released.</div>';
-                }, 6000);
-            } catch (err) {
-                out.innerHTML += row(false, 'Camera opened',
-                    err.name + ' — ' + (err.name === 'NotAllowedError'
-                        ? 'permission was denied. Allow the camera for this site in the browser settings.'
-                        : err.name === 'NotFoundError'
-                            ? 'this device has no camera.'
-                            : err.message));
-            }
-
-            function row(ok, label, why) {
-                return '<div><span style="color:' + (ok ? '#4ade80' : '#f87171') + '">'
-                     + (ok ? '✓' : '✗') + '</span> ' + label
-                     + (ok || !why ? '' : ' &mdash; ' + why) + '</div>';
-            }
-        });
-    </script>
 </body>
 
 </html>

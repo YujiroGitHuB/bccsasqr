@@ -35,11 +35,8 @@ if ($short_code === '') {
     exit;
 }
 
-// SELECT * — ang require_room_code ay dumarating kasama ng isang
-// migration, at ang nakalistang column na wala pa ay pumapatay ng
-// buong paghahanap. Binabasa ito sa ibaba na may ??.
 $linkStmt = $conn->prepare("
-    SELECT *,
+    SELECT subject_code, section, instructor_id, is_active,
            (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired
     FROM attendance_links_tbl
     WHERE short_code = ?
@@ -237,12 +234,7 @@ try {
         // pinapaalala ng pahina habang maluwag pa, para may photo na siya
         // bago pa i-ON ng admin ang tuntunin.
         'photo_missing' => $photo_missing,
-        'upload_url'    => $photo_missing ? '../student/StudentPhotoProfile.php' : null,
-        // Sinasabi sa form kung kailangan pa ng code sa harapan bago
-        // buksan ang Submit. Ang tunay na tseke ay sa pagsusumite —
-        // ito ay para lamang malaman ng estudyante nang maaga kung ano
-        // pa ang hihingin sa kanya.
-        'room_code'     => (int) ($link['require_room_code'] ?? 0) === 1
+        'upload_url'    => $photo_missing ? '../student/StudentPhotoProfile.php' : null
     ]);
 
     $stmt->close();

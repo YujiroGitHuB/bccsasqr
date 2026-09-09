@@ -5,36 +5,32 @@
 // Ang includes/photo_requirement.php ay isinulat dahil naghiwalay
 // ang dalawang pintuan ng attendance — ang scanner at ang link —
 // at ang tuntuning ipinatupad ng isa ay hindi alam ng isa. Ganoon
-// din ang dahilan ng file na ito. Anim na bagay ang hinahawakan:
+// din ang dahilan ng file na ito. Apat na bagay ang hinahawakan:
 //
 //   1. device_id     — ang cookie na nagsasabing iisang telepono
 //   2. rate limit    — ang bilangan ng paghahanap ng numero
 //   3. audit         — ang talaan ng bawat pagsusumite
-//   4. room code     — ang umiikot na anim na digit sa harapan
-//   5. selfie        — ang paminsan-minsang hiling ng mukha
-//   6. lihim         — ang HMAC key na ginagamit ng 1, 4 at 5
+//   4. lihim         — ang HMAC key na pumipirma sa device_id
 //
-// Tatlong file ang tumatawag nito: crud/verify_student.php,
-// crud/submit_attendance.php at crud/room_code.php. Kung
-// maghihiwalay silang muli, ang butas ay bubukas sa pinakamaluwag
-// sa tatlo — gaya ng nangyari sa larawan.
+// Dalawang file ang tumatawag nito: crud/verify_student.php at
+// crud/submit_attendance.php. Kung maghihiwalay silang muli, ang
+// butas ay bubukas sa mas maluwag sa dalawa — gaya ng nangyari sa
+// larawan.
 //
 // Walang tinatanggihan ang file na ito nang mag-isa. Nagsasagot
 // lamang ito ng tanong; ang tumatawag ang nagpapasya.
 // ============================================================
 
 const INTEGRITY_COOKIE     = 'bcc_did';
-const INTEGRITY_ROOM_STEP  = 30;      // segundo kada code
-const INTEGRITY_AUDIT_DAYS = 30;      // gaano katagal itinatago ang talaan
-const INTEGRITY_SELFIE_MAX = 400000;  // bytes, matapos i-decode (~400KB)
+const INTEGRITY_AUDIT_DAYS = 30;   // gaano katagal itinatago ang talaan
 
 
 // ─────────────────────────────────────────────────────────────
-// 6. Ang lihim
+// 4. Ang lihim
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Ang HMAC key ng buong file na ito.
+ * Ang HMAC key na pumipirma sa device cookie.
  *
  * Nauuna ang INTEGRITY_SECRET sa includes/config.php kapag
  * itinakda — doon dapat ito sa isang tunay na deployment, dahil
@@ -44,8 +40,8 @@ const INTEGRITY_SELFIE_MAX = 400000;  // bytes, matapos i-decode (~400KB)
  * paaralang nag-a-upload lamang ng bagong bersyon sa hosting.
  *
  * Ang pagpapalit nito ay pagpapawalang-bisa ng lahat ng device
- * cookie at ng lahat ng bukas na room code — walang mawawalang
- * attendance, magsisimula lamang muli ang pagkilala sa device.
+ * cookie — walang mawawalang attendance, magsisimula lamang muli
+ * ang pagkilala sa bawat telepono.
  */
 function integrity_secret(mysqli $conn): string
 {
@@ -121,8 +117,8 @@ function integrity_setting(mysqli $conn, string $key, string $default = ''): str
  * ng bagong ID sa pamamagitan ng pag-edit ng cookie sa devtools —
  * kaya pa ring BURAHIN ito, at iyon ang hangganan ng tampok na
  * ito: humaharang ito sa madali, hindi sa determinado. Ang
- * determinado ang dahilan kung bakit may audit trail at may selfie
- * spot check.
+ * determinado ang dahilan kung bakit may audit trail — ang
+ * nakakalusot ay nakikita pa rin sa pages/attendance_integrity.php.
  *
  * httpOnly: walang JavaScript na makakabasa nito, kaya hindi ito
  * kayang kopyahin at ipadala sa kaklase sa group chat.
@@ -243,42 +239,6 @@ function integrity_device_conflict(
     return $row ? $row['student_no'] : null;
 }
 
-/**
- * Ilang MAGKAKAIBANG estudyante ang naisumite ng device na ito sa
- * nakaraang pitong araw, sa lahat ng link?
- *
- * Ang isang beses ay maaaring hiniram na telepono ng kaklaseng
- * naubusan ng baterya. Ang tatlo sa loob ng isang linggo ay hindi
- * na iyon. Ginagamit ito para pumili ng hihingan ng selfie, hindi
- * para humarang: totoo rin ang magkapatid na iisa ang telepono.
- */
-function integrity_device_reach(mysqli $conn, string $device_id): int
-{
-    if ($device_id === '') return 0;
-
-    // Gaya ng integrity_device_conflict(): patay ang tampok kapag
-    // wala pa ang talaan, hindi sagabal.
-    try {
-        $stmt = $conn->prepare("
-            SELECT COUNT(DISTINCT student_no) AS n
-            FROM attendance_audit_tbl
-            WHERE device_id  = ?
-              AND result     = 'ok'
-              AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        ");
-        $stmt->bind_param("s", $device_id);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-    } catch (Throwable $e) {
-        error_log('integrity_device_reach: ' . $e->getMessage());
-        return 0;
-    }
-
-    return (int) ($row['n'] ?? 0);
-}
-
-
 // ─────────────────────────────────────────────────────────────
 // 2. Ang bilangan
 // ─────────────────────────────────────────────────────────────
@@ -370,18 +330,17 @@ function integrity_log(mysqli $conn, array $r): void
     $fingerprint   = substr((string) ($r['fingerprint'] ?? ''), 0, 16) ?: null;
     $ip            = $r['ip']            ?? null;
     $user_agent    = substr((string) ($r['user_agent'] ?? ($_SERVER['HTTP_USER_AGENT'] ?? '')), 0, 255);
-    $selfie_path   = $r['selfie_path']   ?? null;
     $result        = (string) ($r['result'] ?? 'unknown');
 
     try {
         $stmt = $conn->prepare("
             INSERT INTO attendance_audit_tbl
                 (student_no, short_code, subject_name, section, instructor_id,
-                 device_id, fingerprint, ip, user_agent, selfie_path, result)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 device_id, fingerprint, ip, user_agent, result)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->bind_param(
-            "ssssissssss",
+            "ssssisssss",
             $student_no,
             $short_code,
             $subject_name,
@@ -391,7 +350,6 @@ function integrity_log(mysqli $conn, array $r): void
             $fingerprint,
             $ip,
             $user_agent,
-            $selfie_path,
             $result
         );
         $stmt->execute();
@@ -411,211 +369,4 @@ function integrity_log(mysqli $conn, array $r): void
             WHERE created_at < DATE_SUB(NOW(), INTERVAL " . INTEGRITY_AUDIT_DAYS . " DAY)
         ");
     }
-}
-
-
-// ─────────────────────────────────────────────────────────────
-// 4. Ang code ng silid
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Anim na digit para sa isang yugto ng panahon.
- *
- * Ang binhi ay nasa database, ang code ay hindi kailanman —
- * kinakalkula ito kada tanong. Kaya walang matatagpuang listahan ng
- * darating na code kahit sa mismong talaan.
- */
-function room_code_at(string $secret, int $window): string
-{
-    $mac = hash_hmac('sha256', (string) $window, $secret);
-
-    // Anim na hex na digit → hanggang 16.7M, tapos modulo 1M. Ang
-    // bahagyang hilig sa mababang numero ay walang saysay dito:
-    // tatlumpung segundo lamang ang buhay ng bawat code.
-    return str_pad((string) (hexdec(substr($mac, 0, 6)) % 1000000), 6, '0', STR_PAD_LEFT);
-}
-
-/** Ang kasalukuyang yugto. */
-function room_code_window(): int
-{
-    return (int) floor(time() / INTEGRITY_ROOM_STEP);
-}
-
-/**
- * Tama ba ang tinipa ng estudyante?
- *
- * Tinatanggap ang kasalukuyang yugto AT ang nakaraan. Tatlumpung
- * segundo ang bawat isa, kaya ang taong nagsimulang tumipa sa
- * ikadalawampu't-siyam na segundo ay may buong tatlumpung segundo
- * pang natitira — hindi siya dapat parusahan dahil mabagal ang
- * daliri niya o ang koneksyon.
- */
-function room_code_valid(string $secret, string $input): bool
-{
-    $input = preg_replace('/\D/', '', $input);
-    if (strlen($input) !== 6) return false;
-
-    $now = room_code_window();
-
-    foreach ([$now, $now - 1] as $w) {
-        if (hash_equals(room_code_at($secret, $w), $input)) return true;
-    }
-
-    return false;
-}
-
-/**
- * Ang binhi ng isang link, ginagawa kapag wala pa.
- *
- * Tinatawag kapag binuksan ang tampok para sa link na iyon at kapag
- * hinihingi ng instruktor ang live na code. Hindi kailanman
- * ipinapadala sa browser ng estudyante — kung naroon ito, kayang
- * kalkulahin ng sinuman ang code mula sa bahay.
- */
-function room_code_secret(mysqli $conn, string $short_code): ?string
-{
-    // null kapag wala pa ang column — hindi pa napapatakbo ang
-    // migration, kaya hindi pa umiiral ang tampok. Ang tumatawag ay
-    // magsasabing hindi ito mabuksan, at ang attendance ay
-    // magpapatuloy nang wala ito.
-    $read = function () use ($conn, $short_code) {
-        try {
-            $stmt = $conn->prepare("SELECT room_code_secret FROM attendance_links_tbl WHERE short_code = ?");
-            $stmt->bind_param("s", $short_code);
-            $stmt->execute();
-            $row = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-            return $row;
-        } catch (Throwable $e) {
-            error_log('room_code_secret: ' . $e->getMessage());
-            return null;
-        }
-    };
-
-    $row = $read();
-    if (!$row) return null;
-    if (!empty($row['room_code_secret'])) return $row['room_code_secret'];
-
-    $secret = bin2hex(random_bytes(32));
-
-    try {
-        $upd = $conn->prepare("
-            UPDATE attendance_links_tbl SET room_code_secret = ?
-            WHERE short_code = ? AND room_code_secret IS NULL
-        ");
-        $upd->bind_param("ss", $secret, $short_code);
-        $upd->execute();
-        $upd->close();
-    } catch (Throwable $e) {
-        error_log('room_code_secret: ' . $e->getMessage());
-        return null;
-    }
-
-    // Muling basahin: kapag may naunang request na nakapagtakda na,
-    // ang kanila ang totoo — hindi ang bagong ginawa rito. Kung
-    // hindi, ang isang instruktor ay magpapakita ng code na hindi
-    // tinatanggap ng server.
-    $row = $read();
-
-    return $row['room_code_secret'] ?? $secret;
-}
-
-
-// ─────────────────────────────────────────────────────────────
-// 5. Ang selfie
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Hihingan ba ng selfie ang pagsusumiteng ito?
- *
- * Dalawang dahilan:
- *
- *   1. Napili siya ng spot check. DETERMINISTIKO ang pagpili — ang
- *      parehong estudyante sa parehong link sa parehong araw ay
- *      laging pareho ang sagot. Kung random ito kada request, ang
- *      tanging kailangang gawin ay mag-refresh hanggang hindi ka na
- *      tanungin, at wala nang saysay ang buong tampok.
- *
- *   2. Marami nang estudyanteng naisumite ang device na ito
- *      kamakailan. Hindi ito humaharang — nagtatanong lamang, at
- *      ang mukha ang sasagot.
- *
- * Ang bahagdan ay galing sa Settings. 0 = patay ang tampok.
- */
-function selfie_is_required(
-    mysqli $conn,
-    string $student_no,
-    string $short_code,
-    int $rate,
-    int $device_reach
-): bool {
-    // Ang device na nakapagsumite na para sa tatlong magkakaibang
-    // tao ngayong linggo ay tinatanong kahit patay ang spot check:
-    // ito ang mismong huwarang hinahanap ng tampok.
-    if ($device_reach >= 3) return true;
-
-    if ($rate <= 0)   return false;
-    if ($rate >= 100) return true;
-
-    $seed = $student_no . '|' . $short_code . '|' . date('Y-m-d') . '|' . integrity_secret($conn);
-
-    return (hexdec(substr(hash('sha256', $seed), 0, 6)) % 100) < $rate;
-}
-
-/**
- * Isinusulat ang selfie sa uploads/ at isinasauli ang path nito.
- *
- * Sa disk at hindi sa database: sampung megabyte lamang ang
- * database, at ang isang larawan ay kasinlaki ng isang libong
- * hilera ng attendance.
- *
- * Sinusuri kung larawan nga ito bago isulat — hindi ang sinasabi ng
- * data URL kundi ang mismong nilalaman, dahil ang unahan ng data
- * URL ay isinulat ng kliyente.
- *
- * @return array{path:?string,error:?string}
- */
-function selfie_store(string $data_url, string $student_no): array
-{
-    $fail = fn(string $msg) => ['path' => null, 'error' => $msg];
-
-    if (strpos($data_url, 'base64,') === false) {
-        return $fail('Photo was not sent correctly. Please try again.');
-    }
-
-    $bin = base64_decode(substr($data_url, strpos($data_url, 'base64,') + 7), true);
-
-    if ($bin === false || $bin === '') {
-        return $fail('Photo was not sent correctly. Please try again.');
-    }
-
-    if (strlen($bin) > INTEGRITY_SELFIE_MAX) {
-        return $fail('Photo is too large. Please try again.');
-    }
-
-    $info = @getimagesizefromstring($bin);
-    if ($info === false || !in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) {
-        return $fail('That file is not a photo.');
-    }
-
-    // Isang folder kada araw: madaling tingnan ang isang sesyon, at
-    // madaling tanggalin ang isang buwan nang buo.
-    $day = date('Y-m-d');
-    $dir = __DIR__ . '/../uploads/selfies/' . $day;
-
-    if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
-        return $fail('Could not save the photo. Please contact your instructor.');
-    }
-
-    // May gitling ang student_no ("025-1114") — pinapayagan iyon,
-    // ang iba ay hindi, kaya walang makakalabas sa folder na ito
-    // sa pamamagitan ng numerong may "../".
-    $safe = preg_replace('/[^A-Za-z0-9\-]/', '', $student_no);
-    $name = $safe . '_' . date('His') . '_' . bin2hex(random_bytes(3)) . '.jpg';
-
-    if (@file_put_contents($dir . '/' . $name, $bin) === false) {
-        return $fail('Could not save the photo. Please contact your instructor.');
-    }
-
-    return ['path' => 'uploads/selfies/' . $day . '/' . $name, 'error' => null];
 }

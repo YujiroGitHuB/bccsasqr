@@ -26,7 +26,7 @@ $days = (int) ($_GET['days'] ?? 7);
 if (!in_array($days, [1, 7, 30], true)) $days = 7;
 
 $show = $_GET['show'] ?? 'flagged';
-if (!in_array($show, ['flagged', 'selfies', 'all'], true)) $show = 'flagged';
+if (!in_array($show, ['flagged', 'all'], true)) $show = 'flagged';
 
 // ── Ang scope ────────────────────────────────────────────────
 // Ang admin ay nakikita ang lahat; ang instructor ay ang sarili
@@ -67,10 +67,9 @@ $ready = true;
 // ── Mga bilang sa itaas ──────────────────────────────────────
 $totals = audit_query($conn, "
     SELECT
-        SUM(result = 'ok')                                    AS ok,
-        SUM(result = 'device_reuse')                          AS device_reuse,
-        SUM(result = 'bad_room_code')                         AS bad_room_code,
-        SUM(selfie_path IS NOT NULL AND selfie_path <> '')    AS selfies
+        SUM(result = 'ok')           AS ok,
+        SUM(result = 'device_reuse') AS device_reuse,
+        SUM(result = 'duplicate')    AS duplicate
     FROM attendance_audit_tbl
     WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
     $scopeSql
@@ -82,10 +81,9 @@ if ($totals === null) {
 }
 
 $t = $totals[0] ?? [];
-$nOk      = (int) ($t['ok']            ?? 0);
-$nReuse   = (int) ($t['device_reuse']  ?? 0);
-$nBadCode = (int) ($t['bad_room_code'] ?? 0);
-$nSelfies = (int) ($t['selfies']       ?? 0);
+$nOk    = (int) ($t['ok']           ?? 0);
+$nReuse = (int) ($t['device_reuse'] ?? 0);
+$nDup   = (int) ($t['duplicate']    ?? 0);
 
 // ── Mga device na nagsilbi sa mahigit isang estudyante ───────
 //
@@ -118,13 +116,7 @@ $devices = audit_query($conn, "
 ", 'i' . $scopeType, array_merge([$days], $scopeParams)) ?? [];
 
 // ── Ang mga pangyayari ───────────────────────────────────────
-if ($show === 'flagged') {
-    $filterSql = " AND result IN ('device_reuse', 'bad_room_code') ";
-} elseif ($show === 'selfies') {
-    $filterSql = " AND selfie_path IS NOT NULL AND selfie_path <> '' ";
-} else {
-    $filterSql = '';
-}
+$filterSql = ($show === 'flagged') ? " AND result = 'device_reuse' " : '';
 
 $events = audit_query($conn, "
     SELECT a.*, s.fullname
@@ -143,7 +135,6 @@ function result_chip(string $result): array
     switch ($result) {
         case 'ok':            return ['Saved',           'ok',      'bi-check-circle-fill'];
         case 'device_reuse':  return ['Same device',     'blocked', 'bi-phone-fill'];
-        case 'bad_room_code': return ['Wrong code',      'blocked', 'bi-display'];
         case 'duplicate':     return ['Already in',      'muted',   'bi-arrow-repeat'];
         case 'not_enrolled':  return ['Not enrolled',    'muted',   'bi-person-dash'];
         default:              return [ucfirst($result),  'muted',   'bi-question-circle'];
@@ -239,15 +230,10 @@ function device_label(?string $ua): string
                         <span class="ati-stat-figure"><?= number_format($nReuse) ?></span>
                         <span class="ati-stat-note">turned away as a second student</span>
                     </div>
-                    <div class="ati-stat <?= $nBadCode > 0 ? 'is-alert' : '' ?>">
-                        <span class="ati-stat-label">Wrong code</span>
-                        <span class="ati-stat-figure"><?= number_format($nBadCode) ?></span>
-                        <span class="ati-stat-note">room code did not match</span>
-                    </div>
                     <div class="ati-stat">
-                        <span class="ati-stat-label">Photo checks</span>
-                        <span class="ati-stat-figure"><?= number_format($nSelfies) ?></span>
-                        <span class="ati-stat-note">selfies captured</span>
+                        <span class="ati-stat-label">Repeats</span>
+                        <span class="ati-stat-figure"><?= number_format($nDup) ?></span>
+                        <span class="ati-stat-note">already recorded today</span>
                     </div>
                 </div>
 
@@ -313,7 +299,7 @@ function device_label(?string $ua): string
                     <div class="ati-card-head">
                         <h3><i class="bi bi-list-ul"></i> Submissions</h3>
                         <div class="ati-tabs">
-                            <?php foreach (['flagged' => 'Flagged', 'selfies' => 'Photo checks', 'all' => 'Everything'] as $key => $label): ?>
+                            <?php foreach (['flagged' => 'Flagged', 'all' => 'Everything'] as $key => $label): ?>
                                 <a class="ati-tab <?= $show === $key ? 'is-on' : '' ?>"
                                    href="?days=<?= $days ?>&show=<?= $key ?>"><?= $label ?></a>
                             <?php endforeach; ?>
@@ -363,14 +349,6 @@ function device_label(?string $ua): string
                                                 <span class="ati-chip is-<?= $chipKind ?>">
                                                     <i class="bi <?= $chipIcon ?>"></i><?= $chipText ?>
                                                 </span>
-                                                <?php if (!empty($e['selfie_path'])): ?>
-                                                    <a class="ati-shot" target="_blank"
-                                                       href="../<?= htmlspecialchars($e['selfie_path']) ?>"
-                                                       title="Open the photo taken at submission">
-                                                        <img src="../<?= htmlspecialchars($e['selfie_path']) ?>"
-                                                             alt="Photo taken when <?= htmlspecialchars($e['student_no']) ?> submitted" loading="lazy">
-                                                    </a>
-                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

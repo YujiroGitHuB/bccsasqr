@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-09.3';
+const WHATS_NEW_VERSION = '2026-09-09.4';
 
 /**
  * The changelog, newest release first.
@@ -61,25 +61,13 @@ function whats_new_releases(): array
             'date'    => '2026-09-09',
             'icon'    => 'bi-shield-check',
             'title'   => 'Knowing whose phone it is',
-            'summary' => 'Holding the attendance link and knowing a classmate\'s number used to be enough to sign them in. Five new checks close that, and a new page shows you every submission that was turned away.',
+            'summary' => 'Holding the attendance link and knowing a classmate\'s number used to be enough to sign them in. A phone can now record attendance for one student a day, and a new page shows you every submission that was turned away.',
             'items'   => [
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-phone',
                     'title' => 'One device, one student',
                     'text'  => 'A phone that has recorded attendance for one student can no longer record it for a different student in the same class that day. This is the change that stops one person signing in the whole row &mdash; it is on by default, and there is a switch for it under <strong>Settings &rsaquo; Attendance rules</strong>.',
-                ],
-                [
-                    'type'  => 'new',
-                    'icon'  => 'bi-display',
-                    'title' => 'A code on the board that changes every 30 seconds',
-                    'text'  => 'Turn it on for a class from the <strong>Code</strong> button on its link card, and put the six digits on the projector. Students must type them to submit, so anyone who is not in the room cannot &mdash; by the time the code reaches the group chat, it has already changed.',
-                ],
-                [
-                    'type'  => 'new',
-                    'icon'  => 'bi-camera',
-                    'title' => 'Selfie spot checks',
-                    'text'  => 'A share of submissions &mdash; you choose the percentage &mdash; are asked for a quick photo before they are saved. Who gets asked is decided by the server and stays the same all day, so refreshing does not get anyone out of it. A phone that has submitted for three or more students in one week is always asked.',
                 ],
                 [
                     'type'  => 'new',

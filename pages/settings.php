@@ -104,36 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['device_binding_status
     exit;
 }
 
-// Handle Selfie Spot Check rate
-//
-// Bahagdan at hindi switch: ang paghingi ng mukha sa BAWAT
-// estudyante ay pagbabago ng buong karanasan para hulihin ang iilan,
-// at mabigat ang camera sa isang libreng hosting. Ang 0 ay patay.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selfie_rate'])) {
-    requirePermissionJson('settings.manage');
-
-    // Nakakulong sa 0–100. Ang halagang nasa labas ng saklaw ay
-    // hindi mali ng gumagamit — walang paraan para maabot iyon mula
-    // sa pahina — kaya tahimik itong ipinipilit sa loob imbes na
-    // maglabas ng mensaheng walang sinumang makakakita.
-    $rate = max(0, min(100, (int) $_POST['selfie_rate']));
-
-    $stmt = $conn->prepare("
-        INSERT INTO attendance_settings (setting_key, setting_value, updated_at)
-        VALUES ('selfie_spot_rate', ?, NOW())
-        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()
-    ");
-    $rateStr = (string) $rate;
-    $stmt->bind_param("s", $rateStr);
-
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'rate' => $rate]);
-    } else {
-        echo json_encode(['success' => false, 'error' => $stmt->error]);
-    }
-    exit;
-}
-
 // Get current page lock status
 $result = mysqli_query($conn, "SELECT setting_value FROM lock_settings_tbl WHERE setting_key = 'page_locked'");
 $current = mysqli_fetch_assoc($result)['setting_value'];
@@ -173,16 +143,13 @@ if ($photoStats && mysqli_num_rows($photoStats) > 0) {
     $photoMissing = (int)$row['missing'];
 }
 
-// ── Mga bagong tuntunin sa pagkakakilanlan ──────────────────
+// ── Isang device, isang estudyante ──────────────────────────
 //
-// Default ang device binding sa ON at ang selfie sa 0: ang unang
-// tanong ay walang dagdag na hakbang para sa estudyante at
-// nahuhuli ang halos lahat ng pagsusumite para sa kaklase, samantalang
-// ang pangalawa ay bumubukas ng camera. Ang paaralang nagpapatakbo ng
-// migration ay binibigyan ng 15 — ang lahat ng iba ay nagsisimula sa
-// patay hangga't hindi sinasadyang buksan.
-$isDeviceBinding = integrity_setting($conn, 'device_binding',   '1') === '1';
-$selfieRate      = (int) integrity_setting($conn, 'selfie_spot_rate', '0');
+// ON ang default: walang dagdag na hakbang ito para sa estudyante —
+// walang tinitipa, walang hinihintay — at nahuhuli nito ang halos
+// lahat ng pagsusumite para sa kaklase. Ang tampok na walang
+// kapalit na abala ay dapat nakabukas na sa unang araw.
+$isDeviceBinding = integrity_setting($conn, 'device_binding', '1') === '1';
 
 // Ilang pagsusumite ang naharang ngayong linggo. Isang numero lamang,
 // pero ito ang sagot sa tanong na "may ginagawa ba talaga ito?" —
@@ -540,47 +507,6 @@ $systemLogo = $system['logo'] ?? '';
                     </div>
                 </div>
 
-                <!-- Selfie Spot Check -->
-                <div class="set-row">
-                    <div class="set-icon"><i class="bi bi-camera-fill"></i></div>
-                    <div class="set-main">
-                        <h3>
-                            Selfie Spot Check
-                            <span class="set-badge <?= $selfieRate > 0 ? 'strict' : 'muted' ?>" id="selfieRateStatus">
-                                <i class="bi bi-<?= $selfieRate > 0 ? 'camera-fill' : 'camera-video-off' ?>"></i>
-                                <?= $selfieRate > 0 ? $selfieRate . '% of submissions' : 'Off' ?>
-                            </span>
-                        </h3>
-                        <p>
-                            Asks a share of students to take a quick photo of themselves before
-                            their attendance is saved. Who gets asked is decided by the server
-                            and stays the same for that student all day, so refreshing the page
-                            does not get them out of it. A device that has submitted for three
-                            or more different students in a week is always asked, whatever this
-                            is set to.
-                        </p>
-                        <div class="set-warn">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <span>
-                                The camera needs HTTPS and the student's permission. Set this to
-                                0 to turn it off entirely.
-                            </span>
-                        </div>
-                    </div>
-                    <div class="set-control">
-                        <form method="post" id="selfieRateForm" class="set-inline-form">
-                            <label class="visually-hidden" for="selfie_rate">Percentage of submissions</label>
-                            <div class="set-number">
-                                <input type="number" class="form-control" id="selfie_rate" name="selfie_rate"
-                                    min="0" max="100" step="5" value="<?= $selfieRate ?>">
-                                <span class="set-number-unit">%</span>
-                            </div>
-                            <button type="submit" class="set-btn">
-                                <i class="bi bi-check2"></i> Save
-                            </button>
-                        </form>
-                    </div>
-                </div>
             </div>
 
             <!-- ══ SYSTEM ══════════════════════════════════════ -->
