@@ -25,6 +25,7 @@ include __DIR__ . "/../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/db_connect.php";
 require_once __DIR__ . "/../includes/attendance_integrity.php";
+require_once __DIR__ . "/../includes/integrity_filters.php";
 
 // '../pages/dashboard.php' at hindi ang default na 'dashboard.php':
 // nasa exports/ ang file na ito, kaya ang default ay magtuturo sa
@@ -37,58 +38,21 @@ $user_id  = (int) $_SESSION['user_id'];
 $is_admin = ($_SESSION['role'] === 'admin');
 
 // ── Ang parehong salaan ng pahina ────────────────────────────
-$days = (int) ($_GET['days'] ?? 7);
-if (!in_array($days, [1, 7, 30], true)) $days = 7;
+// Isang kopya lamang nito ang umiiral, at nasa
+// includes/integrity_filters.php — kasama ang linyang "sarili mong
+// klase lamang". Ang export na nakalimutan iyon ay ang butas na
+// isinara ng pahina.
+$f = integrity_filters($_GET, $is_admin, $user_id);
 
-$show = $_GET['show'] ?? 'flagged';
-if (!in_array($show, ['flagged', 'all', 'ok', 'device_reuse', 'duplicate', 'not_enrolled', 'lookup_limit'], true)) {
-    $show = 'flagged';
-}
+$days   = $f['days'];
+$show   = $f['show'];
+$class  = $f['class'];
+$q      = $f['q'];
+$device = $f['device'];
 
-$class  = substr(trim((string) ($_GET['class'] ?? '')), 0, 10);
-$q      = substr(trim((string) ($_GET['q'] ?? '')), 0, 60);
-$device = (string) ($_GET['device'] ?? '');
-if (!preg_match('/^[0-9a-f]{1,32}$/', $device)) $device = '';
-
-$where  = ' a.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) ';
-$types  = 'i';
-$params = [$days];
-
-if (!$is_admin) {
-    $where .= ' AND a.instructor_id = ? ';
-    $types .= 'i';
-    $params[] = $user_id;
-}
-
-if ($class !== '') {
-    $where .= ' AND a.short_code = ? ';
-    $types .= 's';
-    $params[] = $class;
-}
-
-if ($device !== '') {
-    $where .= ' AND a.device_id LIKE ? ';
-    $types .= 's';
-    $params[] = $device . '%';
-}
-
-if ($q !== '') {
-    $where .= ' AND (a.student_no LIKE ?
-                     OR EXISTS (SELECT 1 FROM students_tbl sq
-                                WHERE sq.student_no = a.student_no
-                                  AND sq.fullname LIKE ?)) ';
-    $types .= 'ss';
-    $params[] = '%' . $q . '%';
-    $params[] = '%' . $q . '%';
-}
-
-if ($show === 'flagged') {
-    $where .= " AND a.result IN ('device_reuse', 'not_enrolled', 'lookup_limit', 'no_student', 'bad_link') ";
-} elseif ($show !== 'all') {
-    $where .= ' AND a.result = ? ';
-    $types .= 's';
-    $params[] = $show;
-}
+$where  = $f['all_where'];
+$types  = $f['all_types'];
+$params = $f['all_params'];
 
 // Walang LIMIT dito, hindi tulad ng pahina: ang pinutol na
 // ebidensya ay hindi ebidensya. Ang talaan ay tatlumpung araw

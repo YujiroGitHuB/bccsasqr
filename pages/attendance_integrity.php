@@ -6,6 +6,7 @@ include __DIR__ . "/../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/db_connect.php";
 require_once __DIR__ . "/../includes/attendance_integrity.php";
+require_once __DIR__ . "/../includes/integrity_filters.php";
 
 // links.manage at hindi bagong permission key.
 //
@@ -28,34 +29,18 @@ const ATI_DEVICE_CAP = 50;   // pinakamarami sa talahanayan ng device
 // Lahat ay nasa URL at wala sa session: ang isang natuklasan dito ay
 // isang bagay na ipinapadala mo sa kapwa guro o sa dean, at ang link
 // na binubuksan nila ay dapat parehong tanawin ang ipinapakita.
+//
+// Nasa includes/integrity_filters.php ang pagbasa at ang SQL, at
+// pinagsasaluhan ito ng dalawang export — kasama ang linyang
+// "sarili mong klase lamang", na hindi dapat magkaroon ng
+// pangatlong kopya.
+$f = integrity_filters($_GET, $is_admin, $user_id);
 
-// Ilang araw pabalik ang tinitingnan. Ang audit ay itinatago nang
-// tatlumpung araw (INTEGRITY_AUDIT_DAYS), kaya walang saysay ang
-// mas malayo pa rito.
-$days = (int) ($_GET['days'] ?? 7);
-if (!in_array($days, [1, 7, 30], true)) $days = 7;
-
-// flagged  — device_reuse at not_enrolled, ang dalawang sinubukan
-// all      — lahat
-// ang iba  — isang tiyak na kahihinatnan, galing sa pagpindot ng tile
-$show = $_GET['show'] ?? 'flagged';
-if (!in_array($show, ['flagged', 'all', 'ok', 'device_reuse', 'duplicate', 'not_enrolled', 'lookup_limit'], true)) {
-    $show = 'flagged';
-}
-
-// Ang short_code ng isang attendance link. Ang instruktor na may
-// limang klase ay hindi naghahanap sa halo — isang klase ang
-// tinitingnan niya sa isang pagkakataon.
-$class = substr(trim((string) ($_GET['class'] ?? '')), 0, 10);
-
-// Numero o pangalan ng estudyante.
-$q = substr(trim((string) ($_GET['q'] ?? '')), 0, 60);
-
-// Ang pagbaba mula sa isang device papunta sa mismong mga hilera
-// nito. 32 hex na karakter ang buo, pero ang ipinapakita sa
-// talahanayan ay ang unang walo — kaya tinatanggap ang alinman.
-$device = (string) ($_GET['device'] ?? '');
-if (!preg_match('/^[0-9a-f]{1,32}$/', $device)) $device = '';
+$days   = $f['days'];
+$show   = $f['show'];
+$class  = $f['class'];
+$q      = $f['q'];
+$device = $f['device'];
 
 $page = max(1, (int) ($_GET['page'] ?? 1));
 
@@ -95,75 +80,18 @@ function audit_query(mysqli $conn, string $sql, string $types, array $params): ?
     }
 }
 
-// ── Ang saklaw, itinatayo nang isang beses ───────────────────
-//
-// Isang WHERE na pinagsasaluhan ng LAHAT ng tanong sa ibaba: ang mga
-// bilang sa itaas, ang mga device, ang bilang ng pahina at ang mga
-// hilera mismo. Isang kalipunan, kaya hindi maaaring magsalungat ang
-// tile at ang talahanayang nasa ilalim nito.
-//
-// Ang unang salaan ay hindi pinipili ng gumagamit: ang admin ay
-// nakikita ang lahat, ang instruktor ay ang sarili niyang klase
-// lamang. Kung makakalimutan ito ng isang tanong, makikita ng
-// instruktor ang mga estudyante ng ibang guro.
-$baseWhere  = ' a.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) ';
-$baseTypes  = 'i';
-$baseParams = [$days];
+// Ang saklaw, itinayo nang isang beses at pinagsasaluhan ng LAHAT
+// ng tanong sa ibaba: ang mga bilang sa itaas, ang mga device, ang
+// bilang ng pahina at ang mga hilera mismo. Isang kalipunan, kaya
+// hindi maaaring magsalungat ang tile at ang talahanayang nasa
+// ilalim nito.
+$baseWhere  = $f['where'];
+$baseTypes  = $f['types'];
+$baseParams = $f['params'];
 
-if (!$is_admin) {
-    $baseWhere .= ' AND a.instructor_id = ? ';
-    $baseTypes .= 'i';
-    $baseParams[] = $user_id;
-}
-
-if ($class !== '') {
-    $baseWhere .= ' AND a.short_code = ? ';
-    $baseTypes .= 's';
-    $baseParams[] = $class;
-}
-
-if ($device !== '') {
-    // LIKE at hindi '=': ang ipinapakita sa talahanayan ay ang unang
-    // walong karakter, at iyon din ang dala ng link na pinindot.
-    $baseWhere .= ' AND a.device_id LIKE ? ';
-    $baseTypes .= 's';
-    $baseParams[] = $device . '%';
-}
-
-if ($q !== '') {
-    // EXISTS at hindi JOIN: ginagamit din ang salaang ito ng tanong sa
-    // mga device, at doon ay may COUNT(DISTINCT student_no) na hindi
-    // dapat maapektuhan ng anumang hilerang idinagdag ng isang join.
-    $baseWhere .= ' AND (a.student_no LIKE ?
-                         OR EXISTS (SELECT 1 FROM students_tbl sq
-                                    WHERE sq.student_no = a.student_no
-                                      AND sq.fullname LIKE ?)) ';
-    $baseTypes .= 'ss';
-    $baseParams[] = '%' . $q . '%';
-    $baseParams[] = '%' . $q . '%';
-}
-
-// Ang salaan ng kahihinatnan ay HIWALAY sa base: ang mga tile sa
-// itaas ay nagbibilang sa loob ng saklaw ngunit sa kabila ng
-// kahihinatnan — kung hindi, ang pagpindot sa "Same device" ay
-// gagawing 0 ang tatlong tile sa tabi nito.
-$resultWhere  = '';
-$resultTypes  = '';
-$resultParams = [];
-
-if ($show === 'flagged') {
-    // Lima, at hindi ang dating isa. Ang pinagsasaluhan ng mga ito ay
-    // hindi ang pagkabigo — ang pagkukusa: may nagtangkang gawin ang
-    // isang bagay na hindi kanya. Ang sarado nang link at ang kulang
-    // na larawan ay pagkabigo rin, pero pang-araw-araw na hadlang
-    // iyon, at ang pagsasama sa kanila rito ay paglibing sa lima.
-    $resultWhere = " AND a.result IN
-        ('device_reuse', 'not_enrolled', 'lookup_limit', 'no_student', 'bad_link') ";
-} elseif ($show !== 'all') {
-    $resultWhere  = ' AND a.result = ? ';
-    $resultTypes  = 's';
-    $resultParams = [$show];
-}
+$resultWhere  = $f['result_where'];
+$resultTypes  = $f['result_types'];
+$resultParams = $f['result_params'];
 
 $ready = true;
 
@@ -558,18 +486,34 @@ if (!in_array($show, ['flagged', 'all'], true)) {
                                placeholder="Student number or name — 025-002, Angeles">
                     </label>
 
+                    <?php /* Nananatili ang Apply para sa browser na walang JavaScript;
+                            itinatago ito ng assets/js/integrityFilters.js kapag tumatakbo
+                            siya, dahil sa puntong iyon ay kusa nang nagsasalain ang
+                            pahina at ang pindutang walang ginagawa ay isang tanong. */ ?>
                     <button type="submit" class="ati-go">Apply</button>
                     <?php if ($activeChips): ?>
                         <a class="ati-clear"
                            href="<?= $url(['class' => '', 'q' => '', 'device' => '', 'show' => 'flagged']) ?>">Clear</a>
                     <?php endif; ?>
 
-                    <?php /* Kaparehong salaan, walang LIMIT. Ang dinadala mo sa ibang
-                            tao ay ang tanawing tinitingnan mo ngayon — at hindi ang
-                            unang limampu nito. */ ?>
-                    <a class="ati-export" href="../exports/export_integrity_csv.php<?= $url() ?>">
-                        <i class="bi bi-filetype-csv"></i> Export
-                    </a>
+                    <?php /* Kaparehong salaan sa dalawa. Ang dinadala mo sa ibang tao ay
+                            ang tanawing tinitingnan mo ngayon.
+
+                            CSV para sa datos: buong device_id, walang hangganan,
+                            sinasala sa Excel. PDF para sa papel: may letterhead at
+                            lagda, at may hangganang 300 hilera — walang bumabasa ng
+                            siyamnapung pahina. */ ?>
+                    <span class="ati-exports">
+                        <a class="ati-export" href="../exports/export_integrity_csv.php<?= $url() ?>"
+                           title="Every row in this view, for Excel">
+                            <i class="bi bi-filetype-csv"></i> CSV
+                        </a>
+                        <a class="ati-export" href="../exports/export_integrity_pdf.php<?= $url() ?>"
+                           target="_blank" rel="noopener"
+                           title="A signed report of this view, for printing">
+                            <i class="bi bi-filetype-pdf"></i> PDF
+                        </a>
+                    </span>
                 </form>
 
                 <?php if ($activeChips): ?>
@@ -871,6 +815,9 @@ if (!in_array($show, ['flagged', 'all'], true)) {
     <script src="<?= asset('../assets/js/logout.js') ?>"></script>
     <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
     <script src="<?= asset('../assets/js/lock.js') ?>"></script>
+    <?php if ($ready): ?>
+        <script src="<?= asset('../assets/js/integrityFilters.js') ?>"></script>
+    <?php endif; ?>
     <?php if ($ready && $hasReview): ?>
         <script src="<?= asset('../assets/js/integrityReview.js') ?>"></script>
     <?php endif; ?>

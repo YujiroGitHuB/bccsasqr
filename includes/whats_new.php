@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-10.4';
+const WHATS_NEW_VERSION = '2026-09-10.5';
 
 /**
  * The changelog, newest release first.
@@ -113,9 +113,15 @@ function whats_new_releases(): array
                 ],
                 [
                     'type'  => 'new',
-                    'icon'  => 'bi-filetype-csv',
-                    'title' => 'Export what you are looking at',
-                    'text'  => 'A screenshot of a table is not evidence. <strong>Export</strong> writes the current view to a CSV &mdash; the same filters, no row limit, with the range and scope printed at the top of the file &mdash; for the conversation with a student or a program head.',
+                    'icon'  => 'bi-search',
+                    'title' => 'The class and the search apply themselves',
+                    'text'  => 'Picking a class filters straight away, and the search runs shortly after you stop typing &mdash; no <em>Apply</em> to remember. The cursor stays where you left it, so a name can be typed straight through. The button is still there for a browser with JavaScript switched off.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-file-earmark-arrow-down',
+                    'title' => 'Export what you are looking at — CSV or PDF',
+                    'text'  => 'A screenshot of a table is not evidence. Both carry the same filters you have on screen. <strong>CSV</strong> is the data &mdash; every row, full device ids, opened in Excel and sorted. <strong>PDF</strong> is the document &mdash; letterhead, the range and scope, the counts, the shared phones, and a <em>Prepared by</em> line to sign; it stops at 300 rows and says so, because nobody reads a ninety-page report.',
                 ],
                 [
                     'type'  => 'new',

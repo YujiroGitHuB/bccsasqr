@@ -513,6 +513,25 @@
     color: var(--ink-2);
 }
 
+/* ─── Kusang nagsasala ────────────────────────────────────── */
+/* Idinadagdag ng assets/js/integrityFilters.js. Walang epekto
+   kapag patay ang JavaScript — nananatili roon ang Apply. */
+.ati-page .ati-filters.is-auto .ati-field {
+    transition: border-color .18s ease;
+}
+
+.ati-page .ati-filters.is-auto .ati-field:focus-within {
+    border-color: var(--ati-line);
+}
+
+/* Habang naghihintay ng bagong pahina. Ang buong hanay ay bahagyang
+   lumalabo — sapat para malamang may nangyayari, at hindi sapat
+   para maging kislap sa bawat titik. */
+.ati-page .ati-filters.is-working {
+    opacity: .6;
+    pointer-events: none;
+}
+
 /* ─── Mga aktibong salaan ─────────────────────────────────── */
 /* Ang bawat isa ay matatanggal. Ang salaang hindi mo makita ay ang
    dahilan kung bakit "walang laman" ang isang pahinang may laman. */
@@ -580,6 +599,25 @@
 }
 
 /* ─── Export ──────────────────────────────────────────────── */
+/* Dalawang labasan, magkadikit: iisang bagay ang ginagawa nila at
+   ang pagkakaiba ay ang uri ng file, kaya isang pindutang may
+   dalawang kalahati ang hugis nito at hindi dalawang pindutan. */
+.ati-page .ati-exports {
+    display: inline-flex;
+    margin-left: auto;
+}
+
+.ati-page .ati-exports .ati-export:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.ati-page .ati-exports .ati-export:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left-color: transparent;
+}
+
 /* Outline at hindi puno: ang Apply ang pangunahing pindutan sa
    hanay na ito, at dalawang solidong pindutan sa tabi ng isa't isa
    ay nag-aagawan. */
@@ -785,6 +823,18 @@
 
     .ati-page .ati-field-grow {
         flex: 1 1 auto;
+    }
+
+    /* Ang dalawang export ay naghahati sa lapad sa halip na
+       maipit sa isang gilid na wala nang natitirang espasyo. */
+    .ati-page .ati-exports {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .ati-page .ati-exports .ati-export {
+        flex: 1;
+        justify-content: center;
     }
 
     .ati-page .ati-pager-links {
