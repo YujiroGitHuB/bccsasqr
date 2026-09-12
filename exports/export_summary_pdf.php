@@ -21,6 +21,7 @@ include __DIR__ . "/../includes/permissions.php";
 requirePermission('attendance.export', '../pages/dashboard.php');
 include __DIR__ . "/../includes/systemConfig.php";
 require __DIR__ . '/../includes/pdf_report.php';
+require_once __DIR__ . "/../includes/attendance_summary.php";
 
 date_default_timezone_set('Asia/Manila');
 
@@ -44,72 +45,21 @@ $fSection = trim($_POST['section'] ?? '');
 $fSubject = trim($_POST['subject'] ?? '');
 
 // ── The summary ───────────────────────────────────────────
-// Deliberately the same two queries as pages/get_summary_ajax.php,
-// including the scoping: an admin sees every student, an instructor
-// only the sections assigned to them, counting only the attendance
-// they recorded. A report that showed more than the tab it was
-// exported from would be a permission hole, not a feature.
-$summaryData = [];
-
-if (isAdmin()) {
-    $summaryResult = $conn->query("
-        SELECT s.student_no, s.fullname, s.course, s.section,
-               a.subject,
-               COUNT(a.id) AS total_attendance
-        FROM students_tbl s
-        LEFT JOIN attendance_tbl a ON s.student_no = a.student_no
-        GROUP BY s.student_no, s.fullname, s.course, s.section, a.subject
-        ORDER BY s.fullname ASC, a.subject ASC
-    ");
-    if ($summaryResult) {
-        while ($row = $summaryResult->fetch_assoc()) {
-            $summaryData[] = $row;
-        }
-    }
-} else {
-    $secStmt = $conn->prepare("
-        SELECT course, section
-        FROM instructor_section_tbl
-        WHERE instructor_id = ?
-    ");
-    $secStmt->bind_param("i", $user_id);
-    $secStmt->execute();
-    $secResult = $secStmt->get_result();
-
-    $assigned = [];
-    while ($row = $secResult->fetch_assoc()) {
-        $assigned[] = $row;
-    }
-
-    if (!empty($assigned)) {
-        // The fragment is built from instructor_section_tbl, never from
-        // the request, and each value is escaped — same as the endpoint
-        // this mirrors.
-        $conditions = implode(' OR ', array_map(
-            fn($s) => "(s.course = '" . $conn->real_escape_string($s['course']) . "'"
-                    . " AND s.section = '" . $conn->real_escape_string($s['section']) . "')",
-            $assigned
-        ));
-
-        $summaryResult = $conn->query("
-            SELECT s.student_no, s.fullname, s.course, s.section,
-                   a.subject,
-                   COUNT(a.id) AS total_attendance
-            FROM students_tbl s
-            LEFT JOIN attendance_tbl a
-                ON s.student_no = a.student_no
-                AND a.user_id = $user_id
-            WHERE $conditions
-            GROUP BY s.student_no, s.fullname, s.course, s.section, a.subject
-            ORDER BY s.fullname ASC, a.subject ASC
-        ");
-        if ($summaryResult) {
-            while ($row = $summaryResult->fetch_assoc()) {
-                $summaryData[] = $row;
-            }
-        }
-    }
-}
+// The counting lives in includes/attendance_summary.php, which the
+// Summary tab calls through pages/get_summary_ajax.php. It used to be
+// written out here a second time, with a comment saying the two
+// queries were deliberately identical — they cannot be kept identical
+// by hand now that a row is a fraction, and a signed report that
+// disagrees with the screen it was exported from is worse than no
+// report.
+//
+// The scoping comes with it: an admin sees every student, an
+// instructor only the sections assigned to them, counting only the
+// attendance they recorded. The counts are still re-run here rather
+// than accepted from the browser — the tab holds its rows in a
+// DataTable, and posting them back would let anyone edit a total
+// before it landed on a signed report.
+$summaryData = attendance_summary_rows($conn, isAdmin(), $user_id);
 
 // ── Filters ───────────────────────────────────────────────
 // Applied in PHP rather than SQL because the Section dropdown holds
@@ -137,7 +87,8 @@ foreach ($summaryData as $row) {
         'course'           => $row['course'],
         'section'          => $cleanSec,
         'subject'          => $subject,
-        'total_attendance' => (int) $row['total_attendance'],
+        'attended'      => (int) $row['attended'],
+        'sessions_held' => (int) $row['sessions_held'],
     ];
 }
 
@@ -147,12 +98,14 @@ foreach ($summaryData as $row) {
 // three below are what the total has to be read against.
 $students = [];
 $subjects = [];
-$records  = 0;
+$records  = 0;   // sessions attended
+$expected = 0;   // sessions those were out of
 
 foreach ($rows as $r) {
     $students[$r['student_no']] = true;
     if ($r['subject'] !== 'N/A') $subjects[$r['subject']] = true;
-    $records += $r['total_attendance'];
+    $records  += $r['attended'];
+    $expected += $r['sessions_held'];
 }
 
 $studentCount = count($students);
@@ -182,7 +135,7 @@ $pdf->MetaBar([
 $pdf->StatCards([
     'Students'           => [(string) $studentCount, 'plain'],
     'Subjects'           => [(string) $subjectCount, 'plain'],
-    'Attendance Records' => [(string) $records, 'ok'],
+    'Sessions Attended'  => [$records . ' / ' . $expected, 'ok'],
     'Average / Student'  => [number_format($average, 1), 'plain'],
 ]);
 
@@ -196,7 +149,7 @@ $pdf->setTableColumns([
     [28, 'Course',       'C'],
     [26, 'Section',      'C'],
     [60, 'Subject',      'L'],
-    [26, 'Total',        'C'],
+    [26, 'Attendance',   'C'],
 ]);
 
 $pdf->TableHead();
@@ -217,7 +170,9 @@ if (empty($rows)) {
         $pdf->Cell(28, 7.5, ReportPDF::txt($r['course']),       1, 0, 'C', $fill);
         $pdf->Cell(26, 7.5, ReportPDF::txt($r['section']),      1, 0, 'C', $fill);
         $pdf->Cell(60, 7.5, $pdf->fit($r['subject'], 60),       1, 0, 'L', $fill);
-        $pdf->Cell(26, 7.5, (string) $r['total_attendance'],    1, 1, 'C', $fill);
+        $pdf->Cell(26, 7.5, $r['sessions_held'] > 0
+            ? $r['attended'] . ' / ' . $r['sessions_held']
+            : (string) $r['attended'],                       1, 1, 'C', $fill);
         $fill = !$fill;
     }
 }
@@ -228,8 +183,8 @@ $pdf->EndTableBody();
 $pdf->SetFont('Arial', 'B', 9.5);
 $pdf->SetFillColor(238, 242, 246);
 $pdf->SetTextColor(17, 24, 39);
-$pdf->Cell(251, 8, ReportPDF::txt('Total attendance records'), 1, 0, 'R', true);
-$pdf->Cell(26,  8, (string) $records,                          1, 1, 'C', true);
+$pdf->Cell(251, 8, ReportPDF::txt('Sessions attended, out of sessions held'), 1, 0, 'R', true);
+$pdf->Cell(26,  8, $records . ' / ' . $expected,                            1, 1, 'C', true);
 $pdf->SetTextColor(0, 0, 0);
 
 $pdf->AddSignature();

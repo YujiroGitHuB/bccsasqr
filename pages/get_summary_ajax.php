@@ -8,6 +8,10 @@
 // page view, and every row was rendered into the HTML as well. Now it
 // only runs on request.
 //
+// The counting itself lives in includes/attendance_summary.php, which
+// exports/export_summary_pdf.php calls as well — the tab and the PDF
+// exported from it have to agree.
+//
 // Follows the pattern of get_links_ajax.php: JSON + a session cache
 // with a TTL. Add ?refresh=1 to force fresh counts.
 // ============================================================
@@ -22,6 +26,7 @@ include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/attendance_summary.php";
 
 ob_clean();
 header('Content-Type: application/json');
@@ -41,7 +46,12 @@ function cleanSection($section) {
 // ─── Cache ────────────────────────────────────────────────────
 // Shorter than attendance_links' 600s because the summary grows as
 // attendance is taken. Five minutes is enough for a review screen.
-$cache_key = 'attendance_summary_' . $user_id;
+//
+// The key carries a version. A cached payload written before rows
+// gained `sessions_held` would render as "3/" in the tab for up to
+// five minutes after a deploy; bumping the version retires those
+// instead of asking the front end to guess what an old row meant.
+$cache_key = 'attendance_summary_v2_' . $user_id;
 $cache_ttl = 300;
 
 if (
@@ -60,64 +70,7 @@ if (
 }
 
 // ─── Fetch the summary ────────────────────────────────────────
-$summaryData = [];
-
-if (isAdmin()) {
-    $summaryResult = $conn->query("
-        SELECT s.student_no, s.fullname, s.course, s.section,
-               a.subject,
-               COUNT(a.id) AS total_attendance
-        FROM students_tbl s
-        LEFT JOIN attendance_tbl a ON s.student_no = a.student_no
-        GROUP BY s.student_no, s.fullname, s.course, s.section, a.subject
-        ORDER BY s.fullname ASC, a.subject ASC
-    ");
-    if ($summaryResult) {
-        while ($row = $summaryResult->fetch_assoc()) {
-            $summaryData[] = $row;
-        }
-    }
-} else {
-    $secStmt = $conn->prepare("
-        SELECT course, section
-        FROM instructor_section_tbl
-        WHERE instructor_id = ?
-    ");
-    $secStmt->bind_param("i", $user_id);
-    $secStmt->execute();
-    $secResult = $secStmt->get_result();
-
-    $assigned = [];
-    while ($row = $secResult->fetch_assoc()) {
-        $assigned[] = $row;
-    }
-
-    if (!empty($assigned)) {
-        $conditions = implode(' OR ', array_map(
-            fn($s) => "(s.course = '" . $conn->real_escape_string($s['course']) . "'"
-                    . " AND s.section = '" . $conn->real_escape_string($s['section']) . "')",
-            $assigned
-        ));
-
-        $summaryResult = $conn->query("
-            SELECT s.student_no, s.fullname, s.course, s.section,
-                   a.subject,
-                   COUNT(a.id) AS total_attendance
-            FROM students_tbl s
-            LEFT JOIN attendance_tbl a
-                ON s.student_no = a.student_no
-                AND a.user_id = $user_id
-            WHERE $conditions
-            GROUP BY s.student_no, s.fullname, s.course, s.section, a.subject
-            ORDER BY s.fullname ASC, a.subject ASC
-        ");
-        if ($summaryResult) {
-            while ($row = $summaryResult->fetch_assoc()) {
-                $summaryData[] = $row;
-            }
-        }
-    }
-}
+$summaryData = attendance_summary_rows($conn, isAdmin(), $user_id);
 
 // ─── Prepare the rows and the filters ─────────────────────────
 $rows           = [];
@@ -135,12 +88,14 @@ foreach ($summaryData as $row) {
     }
 
     $rows[] = [
-        'student_no'       => $row['student_no'],
-        'fullname'         => $row['fullname'],
-        'course'           => $row['course'],
-        'section'          => $cleanSec,
-        'subject'          => $row['subject'] ?? 'N/A',
-        'total_attendance' => (int) $row['total_attendance'],
+        'student_no'    => $row['student_no'],
+        'fullname'      => $row['fullname'],
+        'course'        => $row['course'],
+        'section'       => $cleanSec,
+        'subject'       => $row['subject'] ?? 'N/A',
+        'attended'      => $row['attended'],
+        'sessions_held' => $row['sessions_held'],
+        'first_seen'    => $row['first_seen'],
     ];
 }
 

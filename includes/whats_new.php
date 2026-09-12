@@ -60,14 +60,20 @@ function whats_new_releases(): array
             'id'      => '2026-09-12',
             'date'    => '2026-09-12',
             'icon'    => 'bi-qr-code-scan',
-            'title'   => 'The QR would not scan in light mode',
-            'summary' => 'A student whose phone was on the light theme could hold their code up to the scanner all morning and nothing would happen. The code was fine &mdash; the white frame the page drew around it was not.',
+            'title'   => 'A code that would not scan, and a count out of nothing',
+            'summary' => 'Two things that looked fine and were not. A student on the light theme could hold their QR up to the scanner all morning without it being seen &mdash; the code was right, the white frame the page drew around it was not. And the Summary tab counted scans without ever saying what they were out of.',
             'items'   => [
                 [
                     'type'  => 'fixed',
                     'icon'  => 'bi-sun',
                     'title' => 'A code on a light-themed phone reads again',
                     'text'  => 'The QR is drawn light-on-dark, but the border around it followed the page theme &mdash; so in <em>light</em> mode a dark code sat inside a near-white ring. A camera has to flip an inverted code to read it, and flipping it turned that ring dark, leaving the three corner squares with no clear margin at all: the whole card came through as one dark block and nothing decoded. Dark mode only worked by luck, because the page background there was already the same colour as the code. The border is now fixed to the code\'s own background in both themes, and it is wider, so the same phone scans on the first try either way.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-percent',
+                    'title' => 'Attendance reads 3 / 6, not 3',
+                    'text'  => 'The Summary tab showed how many times a student had been scanned and nothing else &mdash; and <em>3</em> means nothing until you know whether the class has met four times or forty. Every row now carries what it is out of. The sessions are counted <strong>from that student\'s first scan</strong>, so somebody who transferred in at the fifth meeting is not handed four absences they could not have attended; hover the number to see the date the count starts from. A session is one subject on one day, the same thing the Absences report counts, so the two screens finally agree &mdash; and two scans on one day no longer count as two.',
                 ],
             ],
         ],

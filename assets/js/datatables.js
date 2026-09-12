@@ -216,6 +216,16 @@ $(document).ready(function () {
         fill('#filterSummarySubject', filters.subjects);
     }
 
+    /* The same escaping $.fn.dataTable.render.text() does, for the one
+       column below that builds its own markup and so cannot use it. */
+    function escHtml(v) {
+        return String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
     function initSummaryTable(rows) {
         var esc = $.fn.dataTable.render.text();
 
@@ -228,7 +238,47 @@ $(document).ready(function () {
                 { data: 'course',           render: esc },
                 { data: 'section',          render: esc },
                 { data: 'subject',          render: esc },
-                { data: 'total_attendance', render: esc }
+                {
+                    data: 'attended',
+                    /* "3 / 6" — sessions attended out of the sessions
+                       held for that class since this student's FIRST
+                       scan in it, which is what makes the denominator
+                       differ between two students in one row set. The
+                       arithmetic is in includes/attendance_summary.php;
+                       this only prints it.
+
+                       A student who has never been scanned has no start
+                       date and so nothing to be out of. They get a bare
+                       0 rather than "0 / 0", which reads like the class
+                       never met.
+
+                       Sorting is on the RATE, not on the text: sorted as
+                       text "10 / 12" lands before "3 / 6", and the
+                       column is read to find who is falling behind,
+                       where 3/10 is worse than 3/6. The never-scanned
+                       sort below everyone at -1 — they are the worst
+                       case, not the best. */
+                    render: function (data, type, row) {
+                        var held = row.sessions_held || 0;
+
+                        if (type === 'sort' || type === 'type') {
+                            return held > 0 ? data / held : -1;
+                        }
+                        if (type === 'filter') {
+                            return held > 0 ? data + ' / ' + held : String(data);
+                        }
+                        if (!held) return String(data);
+
+                        var title = row.first_seen
+                            ? 'Out of the ' + held + ' session' + (held === 1 ? '' : 's')
+                              + ' held since their first scan on ' + row.first_seen
+                            : '';
+
+                        return '<span title="' + escHtml(title) + '">'
+                             + data + ' <span class="text-muted">/ ' + held + '</span>'
+                             + '</span>';
+                    }
+                }
             ],
             dom: 'lfrtip',
             lengthMenu: [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],

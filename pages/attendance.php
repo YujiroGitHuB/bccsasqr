@@ -360,7 +360,7 @@ $preSection = cleanSection(trim($_GET['section'] ?? ''));
                                         <th>Course</th>
                                         <th>Section</th>
                                         <th>Subject</th>
-                                        <th>Total Attendance</th>
+                                        <th>Attendance</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
