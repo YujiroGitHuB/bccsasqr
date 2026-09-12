@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-10.5';
+const WHATS_NEW_VERSION = '2026-09-12';
 
 /**
  * The changelog, newest release first.
@@ -55,6 +55,22 @@ const WHATS_NEW_VERSION = '2026-09-10.5';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-12',
+            'date'    => '2026-09-12',
+            'icon'    => 'bi-qr-code-scan',
+            'title'   => 'The QR would not scan in light mode',
+            'summary' => 'A student whose phone was on the light theme could hold their code up to the scanner all morning and nothing would happen. The code was fine &mdash; the white frame the page drew around it was not.',
+            'items'   => [
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-sun',
+                    'title' => 'A code on a light-themed phone reads again',
+                    'text'  => 'The QR is drawn light-on-dark, but the border around it followed the page theme &mdash; so in <em>light</em> mode a dark code sat inside a near-white ring. A camera has to flip an inverted code to read it, and flipping it turned that ring dark, leaving the three corner squares with no clear margin at all: the whole card came through as one dark block and nothing decoded. Dark mode only worked by luck, because the page background there was already the same colour as the code. The border is now fixed to the code\'s own background in both themes, and it is wider, so the same phone scans on the first try either way.',
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-10',

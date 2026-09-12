@@ -944,12 +944,27 @@ body.qr-page {
     color: var(--qr-ink);
 }
 
+/* This plate is the QR's quiet zone, and it must NOT follow the
+   theme. The canvas inside it is drawn light-on-dark with fixed
+   colors (colorDark #38bdf8 on colorLight #0f172a in
+   js/scriptv2.js), so in light mode `var(--bg)` wrapped a dark code
+   in a near-white ring. A decoder has to invert an inverted code to
+   read it — which turned that ring dark and left the finder patterns
+   with no quiet zone at all, so the card read as one dark square and
+   nothing decoded. Dark mode happened to work only because --bg was
+   already near #0f172a.
+
+   The background is the same #0f172a as the downloaded card's QR_BG,
+   and the padding matches that card's 28px margin — the old 14px was
+   barely one module wide. The hairline is tinted instead of
+   var(--border) so light mode cannot put a bright ring back around
+   the code. */
 #qrcode {
     display: inline-block;
-    padding: 14px;
+    padding: 28px;
     border-radius: 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
+    background: #0f172a;
+    border: 1px solid rgba(56, 189, 248, .18);
     line-height: 0;
 }
 
