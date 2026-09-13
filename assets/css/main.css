@@ -13,8 +13,17 @@
     "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 }
 
+/* html gets the same ground as body. theme.css paints both with
+   --bg, and this file repaints only body — but body is only as tall
+   as its content, so on a short page (an empty Security Monitor, a
+   filtered list) the darker --bg of html showed as a black band
+   under the content. */
+html,
 body {
   background-color: var(--surface-slate);
+}
+
+body {
   color: var(--ink-2);
   overflow-x: hidden;
 }

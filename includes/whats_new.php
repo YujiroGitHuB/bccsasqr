@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-13.2';
+const WHATS_NEW_VERSION = '2026-09-13.3';
 
 /**
  * The changelog, newest release first.
@@ -86,6 +86,12 @@ function whats_new_releases(): array
                     'icon'  => 'bi-lightning-charge',
                     'title' => 'The filters apply as you type',
                     'text'  => 'No more pressing <strong>Apply</strong> on the Security Monitor. Picking an event type filters straight away, and the IP box searches while you type &mdash; the start of an address is enough, so <em>192.168.</em> shows everything from that network.',
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-aspect-ratio',
+                    'title' => 'No more black band under short pages',
+                    'text'  => 'When a page had only a little on it &mdash; an empty list, a filter that matched nothing &mdash; the bottom of the window showed a strip of a darker colour than the rest of the page. The whole window is now one colour, however much or little the page holds.',
                 ],
             ],
         ],
