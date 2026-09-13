@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-13';
+const WHATS_NEW_VERSION = '2026-09-13.2';
 
 /**
  * The changelog, newest release first.
@@ -80,6 +80,12 @@ function whats_new_releases(): array
                     'icon'  => 'bi-eye',
                     'title' => 'It watches, it does not block',
                     'text'  => 'Nothing that worked yesterday is refused today &mdash; every one of these requests was already stopped, and a student named O&rsquo;Neil or a note that says <em>#1</em> is not treated as an attack. The log keeps 30 days and records a source repeating itself a limited number of times, so a script hammering the login page cannot fill the database.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-lightning-charge',
+                    'title' => 'The filters apply as you type',
+                    'text'  => 'No more pressing <strong>Apply</strong> on the Security Monitor. Picking an event type filters straight away, and the IP box searches while you type &mdash; the start of an address is enough, so <em>192.168.</em> shows everything from that network.',
                 ],
             ],
         ],

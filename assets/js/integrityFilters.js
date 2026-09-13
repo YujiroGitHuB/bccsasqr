@@ -21,8 +21,11 @@
     const form = document.querySelector('.ati-filters');
     if (!form) return;
 
-    const select = form.querySelector('select[name="class"]');
-    const search = form.querySelector('input[name="q"]');
+    // By type, not by name: pages/security_monitor.php uses the same
+    // form shape with an event dropdown and an IP box, and one script
+    // serves both pages.
+    const select = form.querySelector('select');
+    const search = form.querySelector('input[type="search"]');
     const apply  = form.querySelector('.ati-go');
 
     // Itinatago lamang kapag TUMATAKBO ang file na ito. Sa browser na
@@ -45,6 +48,8 @@
         // "q=": ang URL na ipinapadala mo sa iba ay hindi dapat may
         // dalang salaang wala namang laman.
         if (search && search.value.trim() === '') search.disabled = true;
+        // Same for "All classes" / "Every kind of event".
+        if (select && select.value === '') select.disabled = true;
 
         form.classList.add('is-working');
         form.submit();

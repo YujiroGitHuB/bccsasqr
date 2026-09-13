@@ -33,8 +33,13 @@ const SEC_EVENT_GROUPS = [
 $event = (string) ($_GET['event'] ?? '');
 if (!isset(SECURITY_EVENTS[$event]) && !isset(SEC_EVENT_GROUPS[$event])) $event = '';
 
+// A full address matches exactly; anything shorter that is still made
+// of address characters matches as a prefix. The box searches as you
+// type, so "192.168." has to narrow the list rather than be thrown
+// away and wipe what was typed.
 $ip = trim((string) ($_GET['ip'] ?? ''));
-if ($ip !== '' && !filter_var($ip, FILTER_VALIDATE_IP)) $ip = '';
+if ($ip !== '' && !preg_match('/^[0-9a-fA-F.:]{1,45}$/', $ip)) $ip = '';
+$ipExact = $ip !== '' && filter_var($ip, FILTER_VALIDATE_IP) !== false;
 
 $page = max(1, (int) ($_GET['page'] ?? 1));
 
@@ -105,10 +110,14 @@ $ready = security_install($conn);
 $baseWhere  = ' e.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) ';
 $baseTypes  = 'i';
 $baseParams = [$days];
-if ($ip !== '') {
+if ($ipExact) {
     $baseWhere   .= ' AND e.ip = ? ';
     $baseTypes   .= 's';
     $baseParams[] = $ip;
+} elseif ($ip !== '') {
+    $baseWhere   .= ' AND e.ip LIKE ? ';
+    $baseTypes   .= 's';
+    $baseParams[] = $ip . '%';   // only [0-9a-f.:] — no LIKE wildcards can get in
 }
 
 $listWhere  = $baseWhere;
@@ -159,7 +168,7 @@ $recentHigh = (int) ((sec_query($conn, "
 ", '', []) ?? [['n' => 0]])[0]['n'] ?? 0);
 
 // ── Where it is coming from ──────────────────────────────────
-$sources = $ip !== '' ? [] : (sec_query($conn, "
+$sources = $ipExact ? [] : (sec_query($conn, "
     SELECT e.ip,
            COUNT(*)                 AS n,
            SUM(e.severity = 'high') AS high,
@@ -209,7 +218,7 @@ if (can('links.manage')) {
 }
 
 $activeChips = [];
-if ($ip !== '')    $activeChips[] = ['bi-geo-alt', 'IP ' . $ip, ['ip' => '']];
+if ($ip !== '')    $activeChips[] = ['bi-geo-alt', 'IP ' . $ip . ($ipExact ? '' : '…'), ['ip' => '']];
 if (isset(SEC_EVENT_GROUPS[$event])) {
     $activeChips[] = [SEC_EVENT_GROUPS[$event][1], SEC_EVENT_GROUPS[$event][0], ['event' => '']];
 } elseif ($event !== '') {
@@ -343,7 +352,7 @@ if (isset(SEC_EVENT_GROUPS[$event])) {
                     <label class="ati-field ati-field-grow">
                         <i class="bi bi-geo-alt"></i>
                         <input type="search" name="ip" value="<?= htmlspecialchars($ip) ?>"
-                               placeholder="IP address — 203.0.113.9">
+                               placeholder="IP address, or the start of one — 203.0.113" autocomplete="off">
                     </label>
 
                     <button type="submit" class="ati-go">Apply</button>
@@ -363,7 +372,7 @@ if (isset(SEC_EVENT_GROUPS[$event])) {
                     </div>
                 <?php endif; ?>
 
-                <?php if ($ip === ''): ?>
+                <?php if (!$ipExact): ?>
                     <div class="ati-card">
                         <div class="ati-card-head">
                             <h3><i class="bi bi-geo-alt"></i> Where it came from</h3>
@@ -537,6 +546,9 @@ if (isset(SEC_EVENT_GROUPS[$event])) {
     <script src="<?= asset('../assets/js/logout.js') ?>"></script>
     <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
     <script src="<?= asset('../assets/js/lock.js') ?>"></script>
+    <?php if ($ready): ?>
+        <script src="<?= asset('../assets/js/integrityFilters.js') ?>"></script>
+    <?php endif; ?>
 </body>
 
 </html>
