@@ -277,6 +277,40 @@
     color: var(--ink-4);
 }
 
+/* Goes straight to what the item describes. Sky like the New chip —
+   an action, not a state. */
+.wn-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .15rem;
+    margin-top: .45rem;
+    padding: .28rem .55rem .28rem .7rem;
+    border-radius: 8px;
+    font-size: .78rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--am-ink, #7dd3fc);
+    background: rgba(14, 165, 233, .1);
+    border: 1px solid rgba(14, 165, 233, .24);
+    transition: background .15s, border-color .15s;
+}
+
+.wn-link:hover,
+.wn-link:focus-visible {
+    color: var(--am-ink, #7dd3fc);
+    background: rgba(14, 165, 233, .18);
+    border-color: rgba(14, 165, 233, .4);
+}
+
+.wn-link i {
+    font-size: 1rem;
+    transition: transform .15s;
+}
+
+.wn-link:hover i {
+    transform: translateX(2px);
+}
+
 .wn-item-body code {
     padding: .05rem .3rem;
     border-radius: 4px;

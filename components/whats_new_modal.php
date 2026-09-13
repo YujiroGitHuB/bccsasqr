@@ -95,6 +95,12 @@ $__wnReleases = whats_new_releases();
                                                 </div>
                                                 <?php // Authored in includes/whats_new.php, not user input — see the note there. ?>
                                                 <p><?php echo $__item['text']; ?></p>
+                                                <?php if ($__link = whats_new_link($__item)) { ?>
+                                                    <a class="wn-link" href="<?php echo htmlspecialchars($__link['href']); ?>">
+                                                        <?php echo htmlspecialchars($__link['label']); ?>
+                                                        <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
+                                                    </a>
+                                                <?php } ?>
                                             </div>
                                         </li>
                                     <?php } ?>

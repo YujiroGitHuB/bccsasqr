@@ -38,6 +38,20 @@
  * path shown in <code>. It is written HERE, by whoever edits this
  * file — never from the database and never from a form — so there
  * is nothing user-supplied to escape.
+ *
+ * ── Links ───────────────────────────────────────────────────
+ * An item may carry `link` — a button under its text that goes
+ * straight to what it describes, so reading about a feature and
+ * finding it are one step:
+ *
+ *   'link' => ['href' => 'pages/security_monitor.php',   // from the app root
+ *              'label' => 'Open Security Monitor',
+ *              'can' => 'security.monitor'],             // optional
+ *
+ * `can` is a permission key, or 'admin'. Without the right the link
+ * is simply not shown — pointing someone at a page that bounces them
+ * back to the dashboard is worse than no link. Fixes that have
+ * nowhere to go (a colour, a crash) leave `link` out.
  * ============================================================
  */
 
@@ -45,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-13.6';
+const WHATS_NEW_VERSION = '2026-09-13.7';
 
 /**
  * The changelog, newest release first.
@@ -68,12 +82,14 @@ function whats_new_releases(): array
                     'icon'  => 'bi-shield-exclamation',
                     'title' => 'Security Monitor',
                     'text'  => 'Under <strong>System</strong> in the sidebar. It lists failed sign-ins, actions someone was not allowed to do, and requests that carried SQL, script or path injection &mdash; each with the IP address, the device, and what it was aimed at. <em>Where it came from</em> groups them by address, so one person working through several emails stands out from a teacher who mistyped once. Admins see it straight away; an instructor only if it is ticked for them under <strong>Manage Access</strong>.',
+                    'link'  => ['href' => 'pages/security_monitor.php', 'label' => 'Open Security Monitor', 'can' => 'security.monitor'],
                 ],
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-key',
                     'title' => 'Password guessing is called out',
                     'text'  => 'Five failed sign-ins from one address, or against one email, inside fifteen minutes is marked <strong>Password guessing</strong> and shown in red. A face sign-in that did not come from the real face-login screen is marked the same way, and anything high-severity from the last day puts a warning at the top of the page.',
+                    'link'  => ['href' => 'pages/security_monitor.php?event=signin', 'label' => 'See failed sign-ins', 'can' => 'security.monitor'],
                 ],
                 [
                     'type'  => 'improved',
@@ -86,24 +102,28 @@ function whats_new_releases(): array
                     'icon'  => 'bi-lightning-charge',
                     'title' => 'The filters apply as you type',
                     'text'  => 'No more pressing <strong>Apply</strong> on the Security Monitor. Picking an event type filters straight away, and the IP box searches while you type &mdash; the start of an address is enough, so <em>192.168.</em> shows everything from that network.',
+                    'link'  => ['href' => 'pages/security_monitor.php', 'label' => 'Try the filters', 'can' => 'security.monitor'],
                 ],
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-files',
                     'title' => 'Copy one instructor’s access to others',
                     'text'  => 'In <strong>Manage Users &rarr; Access</strong>, <em>Copy access from another instructor</em> ticks the same boxes someone else already has &mdash; adjust them if you like, then save. And <em>Also apply to</em>, at the bottom, gives the boxes you ticked to as many other instructors as you pick, in one save. You are asked to confirm first, because their current access is replaced.',
+                    'link'  => ['href' => 'pages/manage_users.php', 'label' => 'Go to Manage Users', 'can' => 'admin'],
                 ],
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-chevron-bar-contract',
                     'title' => 'Students at risk can be folded away',
                     'text'  => 'The <strong>Students at risk</strong> list on the dashboard has a <em>Hide</em> button. Folded, it shrinks to one line that still shows how many students are at risk; <em>Show</em> brings the names back. Your browser remembers which way you left it.',
+                    'link'  => ['href' => 'pages/dashboard.php#riskPanel', 'label' => 'Show me on the dashboard'],
                 ],
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-grid-1x2',
                     'title' => 'Section cards say what matters first',
                     'text'  => 'Each section card now leads with one number &mdash; <strong>engagement</strong>, with how many of the class have attended &mdash; and puts active, never scanned and classes held on a single line under it. The absence counts are grey when nobody is at that level, <em>amber</em> at 3+ and <em>red</em> at 5+, so a healthy section no longer looks as alarming as a struggling one. A section that has not had a class yet simply says so, instead of showing a whole class as &ldquo;never&rdquo;. The PDF buttons are also readable in light mode now.',
+                    'link'  => ['href' => 'pages/dashboard.php#sectionCards', 'label' => 'See the section cards'],
                 ],
                 [
                     'type'  => 'fixed',
@@ -590,6 +610,36 @@ function whats_new_tag(string $type): array
         default:
             return [ucfirst($type), 'is-plain'];
     }
+}
+
+/**
+ * The item's link, ready to print — or null when it has none, or the
+ * viewer may not open it.
+ *
+ * The href is written from the app root and prefixed with ../ here:
+ * the modal only renders on pages one folder down (pages/*.php, via
+ * includes/footer.php).
+ *
+ * @return array{href:string, label:string}|null
+ */
+function whats_new_link(array $item): ?array
+{
+    $link = $item['link'] ?? null;
+    if (!is_array($link) || empty($link['href'])) {
+        return null;
+    }
+
+    $need = $link['can'] ?? null;
+    if ($need === 'admin') {
+        if (!function_exists('isAdmin') || !isAdmin()) return null;
+    } elseif ($need !== null) {
+        if (!function_exists('can') || !can($need)) return null;
+    }
+
+    return [
+        'href'  => '../' . ltrim($link['href'], '/'),
+        'label' => $link['label'] ?? 'Take me there',
+    ];
 }
 
 // No closing PHP tag on purpose — see includes/systemConfig.php.

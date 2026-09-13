@@ -90,6 +90,15 @@
             if (dialog) dialog.show();
         });
 
+        // A link to a spot on the page already open (dashboard.php#riskPanel
+        // while on the dashboard) only scrolls — without this the dialog
+        // would stay on top of the very thing it just pointed at. Not
+        // data-bs-dismiss: Bootstrap cancels the navigation on an <a>.
+        modal.addEventListener('click', function (e) {
+            var link = e.target.closest ? e.target.closest('.wn-link') : null;
+            if (link && dialog) dialog.hide();
+        });
+
         if (unread && AUTO_OPEN && dialog) {
             // A beat after paint. Opening a dialog into a page that is
             // still laying itself out puts it on top of a moving
