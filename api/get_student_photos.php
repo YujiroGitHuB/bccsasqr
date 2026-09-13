@@ -15,6 +15,8 @@ header('Content-Type: application/json');
 // Any logged-in user may view. Admins see all students; instructors are
 // scoped to the students in their assigned sections (see below).
 if (empty($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     http_response_code(403);
     exit(json_encode(['success' => false, 'message' => 'Unauthorized.']));
 }

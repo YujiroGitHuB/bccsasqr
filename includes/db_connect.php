@@ -71,3 +71,10 @@ try {
     include __DIR__ . "/../error.php";
     exit;
 }
+
+// Every endpoint loads this file exactly once per request — public
+// ones included — which makes it the one place a request can be
+// looked over for attack patterns. It only records; see the header
+// of includes/security_log.php.
+require_once __DIR__ . "/security_log.php";
+security_scan_request();

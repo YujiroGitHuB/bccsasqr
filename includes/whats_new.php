@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-12';
+const WHATS_NEW_VERSION = '2026-09-13';
 
 /**
  * The changelog, newest release first.
@@ -55,6 +55,34 @@ const WHATS_NEW_VERSION = '2026-09-12';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-13',
+            'date'    => '2026-09-13',
+            'icon'    => 'bi-shield-exclamation',
+            'title'   => 'A record of who tried to break in',
+            'summary' => 'The system already turned away wrong passwords, instructors reaching for admin tools and requests with attack code in them — and forgot each one the moment it did. They are written down now, with where they came from, on a new Security Monitor page.',
+            'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-shield-exclamation',
+                    'title' => 'Security Monitor',
+                    'text'  => 'Under <strong>System</strong> in the sidebar. It lists failed sign-ins, actions someone was not allowed to do, and requests that carried SQL, script or path injection &mdash; each with the IP address, the device, and what it was aimed at. <em>Where it came from</em> groups them by address, so one person working through several emails stands out from a teacher who mistyped once. Admins see it straight away; an instructor only if it is ticked for them under <strong>Manage Access</strong>.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-key',
+                    'title' => 'Password guessing is called out',
+                    'text'  => 'Five failed sign-ins from one address, or against one email, inside fifteen minutes is marked <strong>Password guessing</strong> and shown in red. A face sign-in that did not come from the real face-login screen is marked the same way, and anything high-severity from the last day puts a warning at the top of the page.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-eye',
+                    'title' => 'It watches, it does not block',
+                    'text'  => 'Nothing that worked yesterday is refused today &mdash; every one of these requests was already stopped, and a student named O&rsquo;Neil or a note that says <em>#1</em> is not treated as an attack. The log keeps 30 days and records a source repeating itself a limited number of times, so a script hammering the login page cannot fill the database.',
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-12',

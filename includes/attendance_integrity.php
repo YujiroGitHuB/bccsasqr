@@ -178,6 +178,18 @@ function integrity_device_id(mysqli $conn): string
         }
     }
 
+    // A cookie that is present but does not verify was edited — the
+    // browser only ever holds the value this function set. Recorded
+    // before it is replaced. (Rotating INTEGRITY_SECRET makes every
+    // phone land here once; expect a burst of these after doing so.)
+    if ($raw !== '') {
+        require_once __DIR__ . '/security_log.php';
+        security_log('cookie_forged', [
+            'identifier' => INTEGRITY_COOKIE,
+            'detail'     => 'Device cookie did not match its signature and was replaced.',
+        ]);
+    }
+
     // Wala, sira, o pineke. Bagong ID.
     $id  = bin2hex(random_bytes(16));
     $sig = substr(hash_hmac('sha256', $id, integrity_secret($conn)), 0, 16);

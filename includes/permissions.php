@@ -160,6 +160,11 @@ const PERMISSION_CATALOG = [
                 'note'  => 'Table sizes and storage usage.',
                 'icon'  => 'bi-activity',
             ],
+            'security.monitor' => [
+                'label' => 'Security monitor',
+                'note'  => 'Failed sign-ins, blocked actions and attack attempts, with IP addresses.',
+                'icon'  => 'bi-shield-exclamation',
+            ],
         ],
     ],
     'qr' => [
@@ -340,6 +345,9 @@ function requirePermission(string $permission, string $redirect = 'dashboard.php
         return;
     }
 
+    require_once __DIR__ . '/security_log.php';
+    security_denied($permission);
+
     $_SESSION['alert'] = [
         'icon'     => 'error',
         'title'    => 'No Access',
@@ -392,6 +400,12 @@ function requirePermissionJson(string $permission, string $shape = 'success'): v
     if (can($permission)) {
         return;
     }
+
+    // Nothing in the interface calls an endpoint the user lacks the
+    // right for — the button is not rendered. Reaching this line
+    // means the request was built by hand, which is worth a record.
+    require_once __DIR__ . '/security_log.php';
+    security_denied($permission);
 
     if (!headers_sent()) {
         header('Content-Type: application/json');

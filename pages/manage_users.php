@@ -4,6 +4,8 @@ session_start();
 include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 if (!isAdmin()) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('admin: manage users');
     header("Location: dashboard.php");
     exit;
 }

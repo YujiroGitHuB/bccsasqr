@@ -12,6 +12,7 @@
 session_start();
 header('Content-Type: application/json');
 include __DIR__ . '/../includes/db_connect.php';
+require_once __DIR__ . '/../includes/security_log.php';
 
 // Distance below which two face descriptors are considered the same person.
 // Matches the client threshold (0.45); a small margin keeps legitimate logins
@@ -35,6 +36,12 @@ $descriptorRaw = $_POST['descriptor'] ?? '';
 $submitted     = json_decode($descriptorRaw, true);
 
 if (!is_array($submitted) || count($submitted) !== 128) {
+    // The page only posts after a local match, with a real descriptor.
+    // A request without one was written by hand.
+    security_log('face_mismatch', [
+        'identifier' => 'user #' . (int) $userId,
+        'detail'     => 'Face sign-in posted without a valid face descriptor.',
+    ]);
     echo json_encode(['success' => false, 'message' => 'Face verification required.']);
     exit();
 }
@@ -69,6 +76,10 @@ try {
     $result = $stmt->get_result();
 
     if ($result->num_rows === 0) {
+        security_log('face_mismatch', [
+            'identifier' => 'user #' . (int) $userId,
+            'detail'     => 'Face sign-in for an account that does not have face login.',
+        ]);
         echo json_encode(['success' => false, 'message' => 'User not found or face login not enabled']);
         $stmt->close();
         $conn->close();
@@ -97,6 +108,15 @@ try {
     }
 
     if ($bestDistance > FACE_MATCH_THRESHOLD) {
+        // The page matches at 0.45 before posting, so a legitimate
+        // sign-in never reaches the server above 0.50. One that does
+        // skipped the page's own check.
+        security_log('face_mismatch', [
+            'identifier' => $user['email'],
+            'user_id'    => null,
+            'detail'     => 'Face did not match the account (distance ' . round($bestDistance, 3)
+                          . ', limit ' . FACE_MATCH_THRESHOLD . ').',
+        ]);
         echo json_encode(['success' => false, 'message' => 'Face not recognized. Please try again or use password login.']);
         $conn->close();
         exit();

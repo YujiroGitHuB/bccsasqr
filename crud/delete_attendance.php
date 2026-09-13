@@ -6,6 +6,8 @@ include __DIR__ . "/../includes/permissions.php";
 
 // Require a logged-in user (instructor or admin).
 if (empty($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     echo json_encode(["success" => false, "message" => "Unauthorized"]);
     exit;
 }

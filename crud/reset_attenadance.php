@@ -7,6 +7,8 @@ include("../includes/db_connect.php");
 include __DIR__ . "/../includes/permissions.php";
 
 if (!isAdmin()) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('admin: reset attendance');
     http_response_code(403);
     echo "unauthorized";
     exit;

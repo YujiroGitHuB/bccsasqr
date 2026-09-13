@@ -7,6 +7,8 @@ header('Content-Type: application/json');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit;
 }
@@ -16,6 +18,8 @@ if (!isset($_SESSION['user_id'])) {
 // instructor granted students.delete can remove records, not the
 // whole table. Before this, any signed-in user could empty it.
 if (!isAdmin()) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('admin: delete all students');
     echo json_encode(['success' => false, 'message' => 'Only an administrator can delete all students.']);
     exit;
 }

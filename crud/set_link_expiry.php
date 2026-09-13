@@ -24,6 +24,8 @@ require_once __DIR__ . "/../includes/links.php";
 header('Content-Type: application/json');
 
 if (empty($_SESSION['user_id']) || empty($_SESSION['role'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     echo json_encode(['success' => false, 'message' => 'Not logged in']);
     exit();
 }

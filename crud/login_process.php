@@ -1,6 +1,7 @@
 <?php
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/security_log.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email']);
@@ -20,6 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $user_status = !empty($user['status']) ? $user['status'] : 'active';
             
             if ($user_status === 'disabled') {
+                security_failed_login('login_disabled', $email);
                 $_SESSION['alert'] = [
                     'icon' => 'error',
                     'title' => 'Account Disabled',
@@ -57,6 +59,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 header("Location: ../index.php");
                 exit;
             } else {
+                security_failed_login('login_failed', $email);
                 $_SESSION['alert'] = [
                     'icon' => 'error',
                     'title' => 'Incorrect Password',
@@ -67,6 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit;
             }
         } else {
+            security_failed_login('login_no_user', $email);
             $_SESSION['alert'] = [
                 'icon' => 'warning',
                 'title' => 'No user found',

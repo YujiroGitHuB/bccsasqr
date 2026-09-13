@@ -14,6 +14,8 @@ include __DIR__ . "/../includes/permissions.php";
 header('Content-Type: application/json');
 
 if (!isAdmin()) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('admin: read permissions');
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized.']);
     exit;
 }

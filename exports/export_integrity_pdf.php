@@ -28,6 +28,8 @@ require __DIR__ . '/../includes/pdf_report.php';
 date_default_timezone_set('Asia/Manila');
 
 if (!isset($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     header("Location: ../index.php");
     exit;
 }

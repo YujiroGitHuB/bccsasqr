@@ -151,7 +151,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </div>
     <?php } ?>
 
-    <?php if (canAny(['backup.manage', 'db.monitor'])) { ?>
+    <?php if (canAny(['backup.manage', 'db.monitor', 'security.monitor'])) { ?>
         <!-- SYSTEM -->
         <small class="sidebar-label">SYSTEM</small>
         <?php if (can('backup.manage')) { ?>
@@ -162,6 +162,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <?php if (can('db.monitor')) { ?>
             <a href="../pages/db_monitor.php" class="nav-link <?php echo ($current_page == 'db_monitor.php') ? 'active' : ''; ?>" data-tip="Database Monitor">
                 <i class="bi bi-activity"></i><span>Database Monitor</span>
+            </a>
+        <?php } ?>
+        <?php if (can('security.monitor')) { ?>
+            <a href="../pages/security_monitor.php" class="nav-link <?php echo ($current_page == 'security_monitor.php') ? 'active' : ''; ?>" data-tip="Security Monitor">
+                <i class="bi bi-shield-exclamation"></i><span>Security Monitor</span>
             </a>
         <?php } ?>
     <?php } ?>

@@ -27,6 +27,8 @@ function reply(string $status, string $message, array $extra = []): never {
 }
 
 if (!isAdmin()) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('admin: save user');
     reply('error', 'Unauthorized.');
 }
 

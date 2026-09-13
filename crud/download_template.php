@@ -2,6 +2,8 @@
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     header('Location: ../index.php');
     exit;
 }

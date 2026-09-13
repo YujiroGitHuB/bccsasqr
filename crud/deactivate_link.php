@@ -6,6 +6,8 @@ include __DIR__ . "/../includes/permissions.php";
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     echo json_encode(['success' => false, 'message' => 'Not logged in']);
     exit();
 }

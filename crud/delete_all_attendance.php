@@ -4,6 +4,8 @@ include("../includes/db_connect.php");
 include __DIR__ . "/../includes/permissions.php";
 
 if (!isset($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     echo json_encode(["success" => false, "message" => "Unauthorized access"]);
     exit;
 }
@@ -13,6 +15,8 @@ if (!isset($_SESSION['user_id'])) {
 // user — an instructor could wipe the whole table by calling it
 // directly. It is now admin-only, matching the button.
 if (!isAdmin()) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('admin: delete all attendance');
     echo json_encode(["success" => false, "message" => "Only an administrator can delete all attendance records."]);
     exit;
 }

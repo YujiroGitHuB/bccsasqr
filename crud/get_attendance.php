@@ -5,6 +5,8 @@ include("../includes/db_connect.php");
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     echo json_encode(["error" => "Not logged in"]);
     exit;
 }

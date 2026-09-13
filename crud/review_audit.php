@@ -26,6 +26,8 @@ header('Content-Type: application/json');
 date_default_timezone_set('Asia/Manila');
 
 if (empty($_SESSION['user_id']) || empty($_SESSION['role'])) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('sign-in');
     echo json_encode(['success' => false, 'message' => 'Not logged in']);
     exit();
 }

@@ -8,6 +8,8 @@ header('Content-Type: application/json');
 
 // Only admins can manage users
 if (!isAdmin()) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('admin: enable/disable user');
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
