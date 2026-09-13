@@ -592,51 +592,18 @@
 }
 
 .dash-page .dash-card-head small {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
     margin-left: auto;
-    font-size: .74rem;
-    color: rgba(var(--tint), .32);
+    font-size: .76rem;
+    font-weight: 600;
+    color: var(--dash-muted);
     white-space: nowrap;
 }
 
-.dash-page .dash-mini {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: .5rem;
-    margin-bottom: .85rem;
-}
-
-.dash-page .dash-mini div {
-    padding: .55rem .4rem;
-    border-radius: 10px;
-    text-align: center;
-    background: rgba(var(--tint), .03);
-    border: 1px solid rgba(var(--tint), .05);
-}
-
-.dash-page .dash-mini b {
-    display: block;
-    font-size: 1.15rem;
-    font-weight: 700;
-    line-height: 1.2;
-    color: var(--ink-2);
-}
-
-.dash-page .dash-mini small {
-    font-size: .68rem;
-    letter-spacing: .3px;
-    color: rgba(var(--tint), .38);
-}
-
-.dash-page .dash-mini .ok b {
-    color: #34d399;
-}
-
-.dash-page .dash-mini .warn b {
-    color: #fbbf24;
-}
-
 /* Engagement is a ratio — quicker to read as a bar than as a bare
-   number. */
+   number. (Subject cards; the section card has its own below.) */
 .dash-page .dash-engage {
     margin-bottom: .85rem;
 }
@@ -650,15 +617,144 @@
 }
 
 .dash-page .dash-engage-top b {
-    color: #67e8f9;
+    color: var(--stud-ink, #67e8f9);
     font-weight: 700;
 }
 
-.dash-page .dash-engage .dash-bar span {
+.dash-page .dash-engage .dash-bar span,
+.dash-page .dash-sec-bar span {
     background: linear-gradient(90deg, #06b6d4, #67e8f9);
 }
 
-/* ─── Clickable risk pill ─────────────────────────────────── */
+/* ─── Section card body ───────────────────────────────────────
+   One headline (engagement), its parts on one line, then the two
+   absence counts. It used to be three equal tiles plus two red
+   boxes, so nothing on the card was obviously the answer. */
+.dash-page .dash-sec-engage {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-bottom: .5rem;
+}
+
+.dash-page .dash-sec-figure {
+    display: flex;
+    align-items: baseline;
+    gap: .4rem;
+}
+
+.dash-page .dash-sec-figure b {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -.02em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.dash-page .dash-sec-figure b span {
+    margin-left: 1px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dash-muted);
+}
+
+.dash-page .dash-sec-figure small {
+    font-size: .74rem;
+    color: var(--dash-muted);
+}
+
+.dash-page .dash-sec-of {
+    font-size: .74rem;
+    color: var(--dash-muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.dash-page .dash-sec-bar {
+    height: 6px;
+    margin-bottom: .8rem;
+}
+
+.dash-page .dash-sec-split {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .35rem .9rem;
+    margin-bottom: .9rem;
+    font-size: .76rem;
+    color: var(--dash-muted);
+}
+
+.dash-page .dash-sec-split span {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+}
+
+.dash-page .dash-sec-split b {
+    font-weight: 700;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+}
+
+/* A dot, not a filled tile: the state colour marks the word, it does
+   not paint the card. Grey unless the count means something. */
+.dash-page .dash-sec-split i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(var(--tint), .25);
+}
+
+.dash-page .dash-sec-split .is-ok i {
+    background: #10b981;
+}
+
+.dash-page .dash-sec-split .is-warn i {
+    background: #f59e0b;
+}
+
+.dash-page .dash-sec-classes {
+    margin-left: auto;
+}
+
+.dash-page .dash-sec-empty {
+    /* Fills the space the figures would take, so a not-yet-started
+       section is the same height as its neighbours without a gap. */
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .85rem .9rem;
+    border-radius: 12px;
+    border: 1px dashed rgba(var(--tint), .14);
+    background: rgba(var(--tint), .02);
+}
+
+.dash-page .dash-sec-empty > i {
+    font-size: 1.15rem;
+    line-height: 1.2;
+    color: var(--dash-muted);
+}
+
+.dash-page .dash-sec-empty b {
+    display: block;
+    margin-bottom: .15rem;
+    font-size: .84rem;
+    font-weight: 600;
+    color: var(--ink-2);
+}
+
+.dash-page .dash-sec-empty small {
+    display: block;
+    font-size: .74rem;
+    line-height: 1.4;
+    color: var(--dash-muted);
+}
+
+/* ─── Clickable absence pill ──────────────────────────────── */
 .dash-page .dash-risks {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -668,12 +764,13 @@
 
 .dash-page .dash-risk {
     display: flex;
-    align-items: center;
-    gap: .5rem;
-    padding: .55rem .65rem;
+    align-items: baseline;
+    gap: .4rem;
+    padding: .55rem .7rem;
     border-radius: 10px;
     text-decoration: none;
     cursor: pointer;
+    border: 1px solid transparent;
     transition: background .15s, border-color .15s, transform .15s;
 }
 
@@ -682,40 +779,63 @@
 }
 
 .dash-page .dash-risk b {
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
 }
 
 .dash-page .dash-risk small {
-    font-size: .68rem;
+    font-size: .7rem;
     line-height: 1.2;
-    opacity: .8;
+    opacity: .85;
 }
 
+.dash-page .dash-risk .bi-chevron-right {
+    margin-left: auto;
+    align-self: center;
+    font-size: .7rem;
+    opacity: .5;
+    transition: opacity .15s, transform .15s;
+}
+
+.dash-page .dash-risk:hover .bi-chevron-right {
+    opacity: .9;
+    transform: translateX(2px);
+}
+
+/* 3+ is a warning, 5+ is the one to act on — amber and red, the
+   same meaning those colours carry everywhere else. */
 .dash-page .dash-risk.warn {
-    background: rgba(239, 68, 68, .1);
-    border: 1px solid rgba(239, 68, 68, .22);
-    color: #f87171;
+    color: var(--warn-ink, #fbbf24);
+    background: rgba(245, 158, 11, .1);
+    border-color: rgba(245, 158, 11, .26);
 }
 
 .dash-page .dash-risk.warn:hover {
-    background: rgba(239, 68, 68, .18);
+    background: rgba(245, 158, 11, .17);
 }
 
 .dash-page .dash-risk.crit {
-    background: rgba(220, 38, 38, .12);
-    border: 1px solid rgba(220, 38, 38, .3);
-    color: #fca5a5;
+    color: var(--bad-ink, #f87171);
+    background: rgba(239, 68, 68, .1);
+    border-color: rgba(239, 68, 68, .28);
 }
 
 .dash-page .dash-risk.crit:hover {
-    background: rgba(220, 38, 38, .2);
+    background: rgba(239, 68, 68, .18);
 }
 
-.dash-page .dash-risk .n {
-    margin-left: auto;
-    text-align: right;
+/* Nobody at that level: still clickable (the modal says so), but
+   it no longer asks for attention. */
+.dash-page .dash-risk.is-zero {
+    color: var(--dash-muted);
+    background: rgba(var(--tint), .03);
+    border-color: rgba(var(--tint), .07);
+}
+
+.dash-page .dash-risk.is-zero:hover {
+    background: rgba(var(--tint), .07);
 }
 
 /* ─── Subject card ────────────────────────────────────────── */
@@ -810,7 +930,7 @@
 .dash-page .dash-export.present {
     background: rgba(16, 185, 129, .12);
     border: 1px solid rgba(16, 185, 129, .25);
-    color: #6ee7b7;
+    color: var(--ok-ink, #6ee7b7);
 }
 
 .dash-page .dash-export.present:hover {
@@ -820,7 +940,7 @@
 .dash-page .dash-export.absent {
     background: rgba(239, 68, 68, .12);
     border: 1px solid rgba(239, 68, 68, .25);
-    color: #fca5a5;
+    color: var(--bad-ink, #fca5a5);
 }
 
 .dash-page .dash-export.absent:hover {

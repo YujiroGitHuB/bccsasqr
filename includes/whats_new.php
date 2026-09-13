@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-13.5';
+const WHATS_NEW_VERSION = '2026-09-13.6';
 
 /**
  * The changelog, newest release first.
@@ -98,6 +98,12 @@ function whats_new_releases(): array
                     'icon'  => 'bi-chevron-bar-contract',
                     'title' => 'Students at risk can be folded away',
                     'text'  => 'The <strong>Students at risk</strong> list on the dashboard has a <em>Hide</em> button. Folded, it shrinks to one line that still shows how many students are at risk; <em>Show</em> brings the names back. Your browser remembers which way you left it.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-grid-1x2',
+                    'title' => 'Section cards say what matters first',
+                    'text'  => 'Each section card now leads with one number &mdash; <strong>engagement</strong>, with how many of the class have attended &mdash; and puts active, never scanned and classes held on a single line under it. The absence counts are grey when nobody is at that level, <em>amber</em> at 3+ and <em>red</em> at 5+, so a healthy section no longer looks as alarming as a struggling one. A section that has not had a class yet simply says so, instead of showing a whole class as &ldquo;never&rdquo;. The PDF buttons are also readable in light mode now.',
                 ],
                 [
                     'type'  => 'fixed',

@@ -918,7 +918,7 @@ $at_risk_top   = array_slice($at_risk, 0, 10);
                                                 <i class="bi bi-grid-3x3-gap-fill"></i>
                                                 <?= htmlspecialchars($section) ?>
                                             </a>
-                                            <small><?= $total_classes ?> class<?= $total_classes == 1 ? '' : 'es' ?></small>
+                                            <small><i class="bi bi-people"></i> <?= number_format($total) ?></small>
                                         </div>
 
                                         <?php if (!$has_subjects): ?>
@@ -928,56 +928,65 @@ $at_risk_top   = array_slice($at_risk, 0, 10);
                                             </div>
                                         <?php endif; ?>
 
-                                        <!-- These three figures are the card's content, no longer
-                                             hidden inside a collapse — they are what gets looked at
-                                             first. -->
-                                        <div class="dash-mini">
-                                            <div>
-                                                <b><?= number_format($total) ?></b>
-                                                <small>Enrolled</small>
+                                        <?php if ($total_classes === 0): ?>
+                                            <!-- Before the first class every figure is zero, and the
+                                                 card used to present that as trouble: "73 Never" in
+                                                 amber, two red absence boxes. Nothing has gone wrong
+                                                 yet, so it says that instead. -->
+                                            <div class="dash-sec-empty">
+                                                <i class="bi bi-calendar2-plus"></i>
+                                                <div>
+                                                    <b>No classes recorded yet</b>
+                                                    <small><?= number_format($total) ?> student<?= $total == 1 ? '' : 's' ?> enrolled. Engagement and absences appear after the first scan.</small>
+                                                </div>
                                             </div>
-                                            <div class="ok">
-                                                <b><?= number_format($active_students) ?></b>
-                                                <small>Active</small>
+                                        <?php else: ?>
+                                            <?php $eng = (int) round(min(100, $engagement_rate)); ?>
+                                            <!-- Engagement is the headline: the share of the class that
+                                                 has attended at least once. Enrolled, active and never
+                                                 are the parts of that one sentence, not three equal
+                                                 tiles competing for the eye. -->
+                                            <div class="dash-sec-engage">
+                                                <div class="dash-sec-figure">
+                                                    <!-- Clamped like the bar beside it. A student
+                                                         scanned by another account still counts as
+                                                         active here, so the raw ratio can exceed 1
+                                                         and printed "104%" next to a full bar. -->
+                                                    <b><?= $eng ?><span>%</span></b>
+                                                    <small>engagement</small>
+                                                </div>
+                                                <small class="dash-sec-of">
+                                                    <?= number_format(min($active_students, $total)) ?> of <?= number_format($total) ?> attended
+                                                </small>
                                             </div>
-                                            <div class="warn">
-                                                <b><?= number_format($never_attended) ?></b>
-                                                <small>Never</small>
-                                            </div>
-                                        </div>
+                                            <div class="dash-bar dash-sec-bar"><span style="width:<?= $eng ?>%"></span></div>
 
-                                        <div class="dash-engage">
-                                            <div class="dash-engage-top">
-                                                <span>Engagement</span>
-                                                <!-- Clamped like the bar beside it. A student
-                                                     scanned by another account still counts as
-                                                     active here, so the raw ratio can exceed 1
-                                                     and printed "104%" next to a full bar. -->
-                                                <b><?= min(100, $engagement_rate) ?>%</b>
+                                            <div class="dash-sec-split">
+                                                <span class="is-ok"><i></i><b><?= number_format($active_students) ?></b> active</span>
+                                                <span class="<?= $never_attended > 0 ? 'is-warn' : '' ?>"><i></i><b><?= number_format($never_attended) ?></b> never scanned</span>
+                                                <span class="dash-sec-classes"><?= number_format($total_classes) ?> class<?= $total_classes == 1 ? '' : 'es' ?></span>
                                             </div>
-                                            <div class="dash-bar"><span style="width:<?= min(100, $engagement_rate) ?>%"></span></div>
-                                        </div>
 
-                                        <div class="dash-risks">
-                                            <a href="#" class="dash-risk warn"
-                                                onclick="viewAbsences('<?= htmlspecialchars($section) ?>',3); return false;"
-                                                title="View and export the list">
-                                                <i class="bi bi-exclamation-circle-fill"></i>
-                                                <span class="n">
+                                            <!-- Grey at zero, amber at 3+, red at 5+. Both used to be
+                                                 red whatever the count, so a healthy section looked
+                                                 exactly as alarming as a failing one. -->
+                                            <div class="dash-risks">
+                                                <a href="#" class="dash-risk warn <?= $students_3_absences > 0 ? '' : 'is-zero' ?>"
+                                                    onclick="viewAbsences('<?= htmlspecialchars($section) ?>',3); return false;"
+                                                    title="View and export the list">
                                                     <b><?= number_format($students_3_absences) ?></b>
-                                                    <small>3+ absent</small>
-                                                </span>
-                                            </a>
-                                            <a href="#" class="dash-risk crit"
-                                                onclick="viewAbsences('<?= htmlspecialchars($section) ?>',5); return false;"
-                                                title="Critical — view and export">
-                                                <i class="bi bi-x-octagon-fill"></i>
-                                                <span class="n">
+                                                    <small>3+ absences</small>
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </a>
+                                                <a href="#" class="dash-risk crit <?= $students_5_absences > 0 ? '' : 'is-zero' ?>"
+                                                    onclick="viewAbsences('<?= htmlspecialchars($section) ?>',5); return false;"
+                                                    title="Critical — view and export">
                                                     <b><?= number_format($students_5_absences) ?></b>
-                                                    <small>5+ absent</small>
-                                                </span>
-                                            </a>
-                                        </div>
+                                                    <small>5+ absences</small>
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </a>
+                                            </div>
+                                        <?php endif; ?>
 
                                         <?php if (can('attendance.export') && $students_3_absences > 0): ?>
                                             <!-- The subject cards have had a PDF button all
