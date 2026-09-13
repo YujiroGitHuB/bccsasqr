@@ -1158,6 +1158,47 @@
     color: rgba(var(--tint), .35);
 }
 
+/* Hide / Show. The head loses its bottom gap when collapsed so the
+   panel shrinks to a single tidy row instead of leaving dead space. */
+.dash-page .dash-risk-head-actions {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.dash-page .dash-risk-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 600;
+    color: var(--dash-muted);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .1);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+.dash-page .dash-risk-toggle:hover {
+    color: var(--ink);
+    background: rgba(var(--tint), .1);
+}
+
+.dash-page .dash-risk-toggle i {
+    font-size: .72rem;
+    transition: transform .2s;
+}
+
+.dash-page .dash-risk-panel.is-collapsed .dash-risk-toggle i {
+    transform: rotate(180deg);
+}
+
+.dash-page .dash-risk-panel.is-collapsed .dash-risk-panel-head {
+    margin-bottom: 0;
+}
+
 /* ─── Section toolbar ─────────────────────────────────────── */
 /* Ships `hidden` and is revealed by dashboard_sections.js — a search
    box that cannot search is worse than no search box. */

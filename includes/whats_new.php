@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-13.4';
+const WHATS_NEW_VERSION = '2026-09-13.5';
 
 /**
  * The changelog, newest release first.
@@ -92,6 +92,12 @@ function whats_new_releases(): array
                     'icon'  => 'bi-files',
                     'title' => 'Copy one instructor’s access to others',
                     'text'  => 'In <strong>Manage Users &rarr; Access</strong>, <em>Copy access from another instructor</em> ticks the same boxes someone else already has &mdash; adjust them if you like, then save. And <em>Also apply to</em>, at the bottom, gives the boxes you ticked to as many other instructors as you pick, in one save. You are asked to confirm first, because their current access is replaced.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-chevron-bar-contract',
+                    'title' => 'Students at risk can be folded away',
+                    'text'  => 'The <strong>Students at risk</strong> list on the dashboard has a <em>Hide</em> button. Folded, it shrinks to one line that still shows how many students are at risk; <em>Show</em> brings the names back. Your browser remembers which way you left it.',
                 ],
                 [
                     'type'  => 'fixed',

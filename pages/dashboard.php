@@ -712,15 +712,25 @@ $at_risk_top   = array_slice($at_risk, 0, 10);
                  The same numbers already computed above are flattened
                  here, worst first, so the list is free. -->
             <?php if ($view_mode === 'sections' && $at_risk_total > 0): ?>
-                <section class="dash-risk-panel">
+                <section class="dash-risk-panel" id="riskPanel">
                     <div class="dash-risk-panel-head">
                         <div>
                             <h5><i class="bi bi-exclamation-triangle-fill"></i> Students at risk</h5>
                             <small>3 or more missed sessions across your sections</small>
                         </div>
-                        <span class="dash-risk-count"><?= number_format($at_risk_total) ?> student<?= $at_risk_total === 1 ? '' : 's' ?></span>
+                        <div class="dash-risk-head-actions">
+                            <span class="dash-risk-count"><?= number_format($at_risk_total) ?> student<?= $at_risk_total === 1 ? '' : 's' ?></span>
+                            <?php /* The count stays visible when the list is hidden:
+                                    "107 students" is still worth seeing every day,
+                                    even when the ten names are not. */ ?>
+                            <button type="button" class="dash-risk-toggle" id="riskToggle"
+                                aria-expanded="true" aria-controls="riskBody">
+                                <i class="bi bi-chevron-up"></i><span>Hide</span>
+                            </button>
+                        </div>
                     </div>
 
+                    <div class="dash-risk-body" id="riskBody">
                     <ol class="dash-risk-list">
                         <?php foreach ($at_risk_top as $stu): ?>
                             <?php $crit = $stu['absences'] >= 5; ?>
@@ -747,7 +757,39 @@ $at_risk_top   = array_slice($at_risk, 0, 10);
                             <?= number_format($at_risk_total - count($at_risk_top)) ?> more — open a section card for the full list.
                         </p>
                     <?php endif; ?>
+                    </div>
                 </section>
+
+                <script>
+                    // Inline and right after the panel, not in a file loaded at
+                    // the end of the page: a hidden list has to be hidden before
+                    // the first paint, or it opens and snaps shut on every load.
+                    // Remembered per browser, like the sidebar's dropdowns.
+                    (function () {
+                        var KEY    = 'dashRiskHidden';
+                        var panel  = document.getElementById('riskPanel');
+                        var body   = document.getElementById('riskBody');
+                        var toggle = document.getElementById('riskToggle');
+                        if (!panel || !body || !toggle) return;
+
+                        function set(hidden) {
+                            body.hidden = hidden;
+                            panel.classList.toggle('is-collapsed', hidden);
+                            toggle.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+                            toggle.querySelector('span').textContent = hidden ? 'Show' : 'Hide';
+                        }
+
+                        var saved = false;
+                        try { saved = localStorage.getItem(KEY) === '1'; } catch (e) {}
+                        set(saved);
+
+                        toggle.addEventListener('click', function () {
+                            var hidden = !body.hidden;
+                            set(hidden);
+                            try { localStorage.setItem(KEY, hidden ? '1' : '0'); } catch (e) {}
+                        });
+                    })();
+                </script>
             <?php endif; ?>
 
             <!-- ── Section toolbar ────────────────────────────────
