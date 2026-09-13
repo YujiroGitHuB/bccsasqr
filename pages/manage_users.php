@@ -62,6 +62,15 @@ try {
 }
 
 $totalPermissions = count(allPermissionKeys());
+
+// Instructors, for "Copy from" and "Also apply to" in the Access
+// modal. Admins are left out of both: they hold every permission by
+// role, so there is nothing to copy from them and nothing to give.
+$instructors = [];
+$instructorQuery = $conn->query("SELECT id, name FROM users WHERE role = 'instructor' ORDER BY name");
+while ($instructorQuery && $row = $instructorQuery->fetch_assoc()) {
+    $instructors[] = $row;
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -400,6 +409,23 @@ $totalPermissions = count(allPermissionKeys());
                     </div>
 
                     <div class="modal-body">
+                        <?php if (count($instructors) > 1): ?>
+                            <!-- Fills the boxes only. Nothing is saved until Save Access,
+                                 so a wrong pick is undone by picking again or Cancel. -->
+                            <label class="access-copy">
+                                <i class="bi bi-files"></i>
+                                <select id="accessCopyFrom">
+                                    <option value="">Copy access from another instructor…</option>
+                                    <?php foreach ($instructors as $inst): ?>
+                                        <option value="<?= (int)$inst['id'] ?>">
+                                            <?= htmlspecialchars($inst['name']) ?>
+                                            (<?= $permissionCounts[(int)$inst['id']] ?? 0 ?> of <?= $totalPermissions ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                        <?php endif; ?>
+
                         <div class="access-toolbar">
                             <span class="access-count" id="accessCount">0 of <?= $totalPermissions ?> selected</span>
                             <div class="access-toolbar-actions">
@@ -441,6 +467,24 @@ $totalPermissions = count(allPermissionKeys());
                                 </fieldset>
                             <?php endforeach; ?>
                         </div>
+
+                        <?php if (count($instructors) > 1): ?>
+                            <div class="access-also">
+                                <div class="access-also-head">
+                                    <i class="bi bi-people"></i>
+                                    <span>Also apply to</span>
+                                    <small>They get exactly the boxes ticked above — their current access is replaced.</small>
+                                </div>
+                                <div class="access-also-list">
+                                    <?php foreach ($instructors as $inst): ?>
+                                        <label class="also-chip" data-also-id="<?= (int)$inst['id'] ?>">
+                                            <input type="checkbox" name="also_user_ids[]" value="<?= (int)$inst['id'] ?>">
+                                            <span><i class="bi bi-check-lg"></i><?= htmlspecialchars($inst['name']) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
 
                         <p class="access-note" id="accessEmptyNote">
                             <i class="bi bi-exclamation-triangle"></i>

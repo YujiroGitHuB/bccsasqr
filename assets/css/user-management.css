@@ -751,6 +751,137 @@
     display: flex;
 }
 
+/* ─── Copy from / Also apply to ─────────────────────────────
+   Two ways to stop ticking the same boxes once per instructor:
+   pull a set in from someone who already has it, or push the set
+   being saved out to others. Blue like the group icons — these are
+   actions on the list, not states, so no green/amber/red. */
+.access-modal .access-copy {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin: 0 0 .85rem;
+    padding: .5rem .75rem;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, .08);
+    border: 1px solid rgba(59, 130, 246, .22);
+    cursor: pointer;
+}
+
+.access-modal .access-copy > i {
+    color: #60a5fa;
+    font-size: .95rem;
+}
+
+.access-modal .access-copy select {
+    flex: 1;
+    min-width: 0;
+    padding: .2rem 0;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ink-2);
+    background: transparent;
+    border: 0;
+    outline: none;
+    cursor: pointer;
+}
+
+.access-modal .access-copy select option {
+    color: var(--ink);
+    background: var(--surface);
+}
+
+.access-modal .access-also {
+    margin-top: 1rem;
+    padding-top: .85rem;
+    border-top: 1px solid rgba(var(--tint), .08);
+}
+
+.access-modal .access-also-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: .2rem .45rem;
+    margin-bottom: .55rem;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-4);
+}
+
+.access-modal .access-also-head i {
+    color: #60a5fa;
+    font-size: .9rem;
+}
+
+.access-modal .access-also-head small {
+    flex-basis: 100%;
+    font-size: .74rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-4);
+}
+
+.access-modal .access-also-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.access-modal .also-chip {
+    position: relative;
+    cursor: pointer;
+}
+
+.access-modal .also-chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.access-modal .also-chip span {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .32rem .75rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--ink-3);
+    background: rgba(var(--tint), .04);
+    border: 1px solid rgba(var(--tint), .14);
+    transition: .15s;
+}
+
+/* The tick only takes space once chosen, so unchosen names stay compact. */
+.access-modal .also-chip span i {
+    display: none;
+}
+
+.access-modal .also-chip:hover span {
+    background: rgba(var(--tint), .08);
+    color: var(--ink);
+}
+
+.access-modal .also-chip input:checked + span {
+    /* --stud-ink is darkened for light mode on body (theme.css);
+       the literal is the dark-mode value. */
+    color: var(--stud-ink, #93c5fd);
+    background: rgba(59, 130, 246, .14);
+    border-color: rgba(59, 130, 246, .45);
+}
+
+.access-modal .also-chip input:checked + span i {
+    display: inline;
+}
+
+.access-modal .also-chip input:focus-visible + span {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}
+
 /* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
     .users-page .users-hero {

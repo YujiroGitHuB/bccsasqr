@@ -45,7 +45,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-13.3';
+const WHATS_NEW_VERSION = '2026-09-13.4';
 
 /**
  * The changelog, newest release first.
@@ -60,8 +60,8 @@ function whats_new_releases(): array
             'id'      => '2026-09-13',
             'date'    => '2026-09-13',
             'icon'    => 'bi-shield-exclamation',
-            'title'   => 'A record of who tried to break in',
-            'summary' => 'The system already turned away wrong passwords, instructors reaching for admin tools and requests with attack code in them — and forgot each one the moment it did. They are written down now, with where they came from, on a new Security Monitor page.',
+            'title'   => 'A record of who tried to break in, and access in one step',
+            'summary' => 'The system already turned away wrong passwords, instructors reaching for admin tools and requests with attack code in them — and forgot each one the moment it did. They are written down now, with where they came from, on a new Security Monitor page. And giving several instructors the same access no longer means ticking the same boxes once for each.',
             'items'   => [
                 [
                     'type'  => 'new',
@@ -86,6 +86,12 @@ function whats_new_releases(): array
                     'icon'  => 'bi-lightning-charge',
                     'title' => 'The filters apply as you type',
                     'text'  => 'No more pressing <strong>Apply</strong> on the Security Monitor. Picking an event type filters straight away, and the IP box searches while you type &mdash; the start of an address is enough, so <em>192.168.</em> shows everything from that network.',
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-files',
+                    'title' => 'Copy one instructor’s access to others',
+                    'text'  => 'In <strong>Manage Users &rarr; Access</strong>, <em>Copy access from another instructor</em> ticks the same boxes someone else already has &mdash; adjust them if you like, then save. And <em>Also apply to</em>, at the bottom, gives the boxes you ticked to as many other instructors as you pick, in one save. You are asked to confirm first, because their current access is replaced.',
                 ],
                 [
                     'type'  => 'fixed',

@@ -336,6 +336,7 @@ function openAccessModal(userId) {
     // Cleared and locked until the server answers, so a stale set from
     // the previously opened user can never be saved onto this one.
     boxes.forEach(b => { b.checked = false; b.disabled = true; });
+    resetAccessCopy(userId);
     setAccessLoading(true);
     updateAccessCount();
 
@@ -394,10 +395,39 @@ function initAccessForm() {
 
     form.addEventListener('change', (e) => {
         if (e.target.classList.contains('perm-check')) updateAccessCount();
+        if (e.target.name === 'also_user_ids[]') updateAccessSaveLabel();
+    });
+
+    document.getElementById('accessCopyFrom')?.addEventListener('change', function () {
+        if (this.value) copyAccessFrom(this.value, this.options[this.selectedIndex].text.trim());
     });
 
     form.addEventListener('submit', function (e) {
         e.preventDefault();
+
+        // Replacing other instructors' access is the one part of this
+        // modal whose effect is not visible in it, so it is confirmed.
+        const also = alsoApplyChecked();
+        if (also.length && typeof Swal !== 'undefined' && !form.dataset.confirmed) {
+            const names = also.map(c => c.closest('.also-chip').textContent.trim());
+            Swal.fire(Object.assign({
+                icon: 'question',
+                title: `Apply to ${also.length + 1} instructors?`,
+                html: 'The access of <b>' + names.map(escapeHtml).join('</b>, <b>') +
+                      '</b> will be replaced with the boxes ticked here.',
+                showCancelButton: true,
+                confirmButtonColor: '#3b82f6',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, apply',
+                cancelButtonText: 'Go back',
+            }, swalDark)).then(r => {
+                if (!r.isConfirmed) return;
+                form.dataset.confirmed = '1';
+                form.requestSubmit();
+            });
+            return;
+        }
+        delete form.dataset.confirmed;
 
         const btn      = document.getElementById('accessSubmit');
         const original = btn.innerHTML;
@@ -426,6 +456,75 @@ function initAccessForm() {
                 btn.innerHTML = original;
             });
     });
+}
+
+// ── Copy from / Also apply to ────────────────────────────────
+// Copying only ticks boxes — Save Access is still what writes, so a
+// copy can be adjusted before it lands.
+function copyAccessFrom(sourceId, label) {
+    const boxes = accessCheckboxes();
+    const name  = label.replace(/\s*\(\d+ of \d+\)$/, '');
+
+    boxes.forEach(b => { b.disabled = true; });
+    setAccessLoading(true);
+    showAccessError('');
+
+    fetch(`../api/get_user_permissions.php?user_id=${encodeURIComponent(sourceId)}`)
+        .then(res => res.json())
+        .then(data => {
+            setAccessLoading(false);
+            boxes.forEach(b => { b.disabled = false; });
+
+            if (data.status !== 'success') {
+                showAccessError(data.message || "Could not load that instructor's access.");
+                return;
+            }
+
+            const granted = new Set(data.permissions || []);
+            boxes.forEach(b => { b.checked = granted.has(b.value); });
+            updateAccessCount();
+            userToast('info', `Copied ${granted.size} permission${granted.size === 1 ? '' : 's'} from ${escapeHtml(name)}. Press Save Access to keep them.`);
+        })
+        .catch(() => {
+            setAccessLoading(false);
+            boxes.forEach(b => { b.disabled = false; });
+            showAccessError('Could not reach the server. Please try again.');
+        });
+}
+
+function resetAccessCopy(userId) {
+    const copy = document.getElementById('accessCopyFrom');
+    if (copy) {
+        copy.value = '';
+        // Copying a user onto themselves does nothing, so they are
+        // hidden from their own list — in both places.
+        Array.from(copy.options).forEach(o => { o.hidden = o.value === String(userId); });
+    }
+
+    document.querySelectorAll('.also-chip').forEach(chip => {
+        const self  = chip.dataset.alsoId === String(userId);
+        const input = chip.querySelector('input');
+        input.checked  = false;
+        input.disabled = self;     // a disabled box is never posted
+        chip.hidden    = self;
+    });
+
+    const form = document.getElementById('accessForm');
+    if (form) delete form.dataset.confirmed;
+    updateAccessSaveLabel();
+}
+
+function alsoApplyChecked() {
+    return Array.from(document.querySelectorAll('.also-chip input:checked:not(:disabled)'));
+}
+
+function updateAccessSaveLabel() {
+    const btn = document.getElementById('accessSubmit');
+    if (!btn || btn.disabled) return;
+    const n = alsoApplyChecked().length;
+    btn.innerHTML = n
+        ? `<i class="bi bi-check2-circle"></i> Save for ${n + 1} instructors`
+        : '<i class="bi bi-check2-circle"></i> Save Access';
 }
 
 function accessCheckboxes() {

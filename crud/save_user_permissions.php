@@ -67,8 +67,58 @@ if (!setUserPermissions($conn, $userId, $requested, (int)$_SESSION['user_id'])) 
 
 $granted = count(array_intersect(allPermissionKeys(), $requested));
 
+// ── Also apply to ───────────────────────────────────────────
+// Giving five instructors the same access used to mean opening the
+// modal five times and ticking the same boxes five times. The modal
+// can now name other instructors to receive the exact set just saved.
+//
+// Each one goes through setUserPermissions() like the first, so the
+// same catalog filter applies. Admins are skipped for the same reason
+// as above, and the user being edited is not counted twice.
+$alsoIds = array_values(array_unique(array_filter(
+    array_map('intval', (array)($_POST['also_user_ids'] ?? [])),
+    static fn(int $id) => $id > 0 && $id !== $userId
+)));
+
+$applied = [];
+$failed  = [];
+
+if ($alsoIds) {
+    $placeholders = implode(',', array_fill(0, count($alsoIds), '?'));
+    $stmt = $conn->prepare("SELECT id, name FROM users WHERE role = 'instructor' AND id IN ($placeholders)");
+    $stmt->bind_param(str_repeat('i', count($alsoIds)), ...$alsoIds);
+    $stmt->execute();
+    $targets = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    foreach ($targets as $target) {
+        if (setUserPermissions($conn, (int)$target['id'], $requested, (int)$_SESSION['user_id'])) {
+            $applied[] = $target['name'];
+        } else {
+            $failed[] = $target['name'];
+        }
+    }
+}
+
+$name = htmlspecialchars($user['name']);
+
+if ($failed) {
+    replyPerm('warning',
+        'Saved for ' . $name . ($applied ? ' and ' . count($applied) . ' more' : '')
+        . ', but not for ' . htmlspecialchars(implode(', ', $failed)) . '. Please try those again.',
+        ['granted' => $granted]
+    );
+}
+
+if ($applied) {
+    replyPerm('success',
+        'Access updated for ' . $name . ' and ' . count($applied) . ' other instructor' . (count($applied) === 1 ? '' : 's') . '.',
+        ['granted' => $granted, 'applied' => count($applied)]
+    );
+}
+
 replyPerm('success', $granted === 0
-    ? htmlspecialchars($user['name']) . ' now has dashboard access only.'
-    : 'Access updated for ' . htmlspecialchars($user['name']) . '.',
+    ? $name . ' now has dashboard access only.'
+    : 'Access updated for ' . $name . '.',
     ['granted' => $granted]
 );
