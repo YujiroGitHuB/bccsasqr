@@ -31,6 +31,18 @@ jobs:
           REMOTE_PORT:     ${{ secrets.SSH_PORT }}
           TARGET:          ${{ secrets.REMOTE_TARGET }}
           SOURCE: "./"
+          # Overriding this replaces the action's default, so the
+          # StrictHostKeyChecking flag has to be repeated here — a fresh
+          # runner has never seen this host and would otherwise stop to ask.
+          #
+          # ConnectTimeout is the reason for the override. A host that is
+          # simply not listening on 65002 (SSH switched off in hPanel, or
+          # SSH_HOST pointing at the web front end instead of the SSH server)
+          # leaves ssh waiting through its default timeout, and the job burns
+          # five minutes before saying anything. Fifteen seconds is far more
+          # than a reachable server needs, and turns that into a fast, legible
+          # failure.
+          SSH_CMD_ARGS: "-o StrictHostKeyChecking=no -o ConnectTimeout=15"
           # -c compares by checksum, not timestamp: a fresh `checkout` gives
           # every file the time of the clone, so a timestamp comparison would
           # re-upload the whole site on every push.
