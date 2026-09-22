@@ -31,9 +31,16 @@ uploads/**
 !uploads/**/
 !uploads/**/.gitkeep
 
-# Local secrets. The FTP credentials live in GitHub Actions secrets under the
-# `Server` environment, but keep this here so a local file never slips into a
-# commit by accident.
+# The live database login. Created by hand on the server (and locally, if
+# you want something other than the XAMPP defaults) from
+# includes/db_credentials.example.php. It is ALSO excluded in
+# .github/workflows/deploy.yml — that exclude is what stops rsync from
+# overwriting the server's copy on every push, and the two must stay in step.
+includes/db_credentials.php
+
+# Local secrets. The Hostinger SSH key and host details live in GitHub
+# Actions secrets under the `Server` environment, but keep this here so a
+# local file never slips into a commit by accident.
 .env
 .env.local
 .env.*.local

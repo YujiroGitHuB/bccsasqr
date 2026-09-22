@@ -21,12 +21,27 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 ini_set('display_errors', 0);
 error_reporting(0);
 
+// ── Saan galing ang login ───────────────────────────────────
+// Ang db_credentials.php ay gawa sa server, sa kamay, at hindi
+// hinihipo ng deploy (tingnan ang EXCLUDE sa deploy.yml) — kaya ang
+// password ng buhay na database ay nananatili roon at hindi kailanman
+// dumadaan sa git. Kapag wala ang file, ang nasa ibaba ang gagamitin,
+// at iyon ang XAMPP ng isang bagong clone: tumatakbo agad, walang
+// setup. Ang db_credentials.example.php ang plantilya.
+if (is_file(__DIR__ . '/db_credentials.php')) {
+    require_once __DIR__ . '/db_credentials.php';
+}
+defined('DB_HOST') || define('DB_HOST', 'localhost');
+defined('DB_USER') || define('DB_USER', 'root');
+defined('DB_PASS') || define('DB_PASS', '');
+defined('DB_NAME') || define('DB_NAME', 'bcc_qr_attendance_db');
+
 try {
     $conn = new mysqli(
-        "localhost",
-        "root",
-        "",
-        "bcc_qr_attendance_db"
+        DB_HOST,
+        DB_USER,
+        DB_PASS,
+        DB_NAME
     );
 
     if ($conn->connect_error) {

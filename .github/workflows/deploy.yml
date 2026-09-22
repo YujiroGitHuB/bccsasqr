@@ -1,49 +1,56 @@
-name: Deploy to InfinityFree
+name: Deploy to Hostinger
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+concurrency:
+  # Two pushes in quick succession used to mean two rsyncs writing into the
+  # same web root at once. The later one wins and the earlier is pointless,
+  # so cancel it rather than race.
+  group: deploy-hostinger
+  cancel-in-progress: true
+
 jobs:
   deploy:
-    name: FTP Deploy
+    name: rsync over SSH
     runs-on: ubuntu-latest
-    environment: Server   
-    
+    environment: Server
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: FTP Deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Deploy to Hostinger
+        uses: easingthemes/ssh-deploy@v5.1.0
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          server-dir: /lexon.free.nf/htdocs/bccsasqr/
-          # Every line below is a glob, not YAML — a "#" here would be treated
-          # as a pattern, so keep explanations outside the block.
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST:     ${{ secrets.SSH_HOST }}
+          REMOTE_USER:     ${{ secrets.SSH_USER }}
+          REMOTE_PORT:     ${{ secrets.SSH_PORT }}
+          TARGET:          ${{ secrets.REMOTE_TARGET }}
+          SOURCE: "./"
+          # -c compares by checksum, not timestamp: a fresh `checkout` gives
+          # every file the time of the clone, so a timestamp comparison would
+          # re-upload the whole site on every push.
+          # --delete removes what is no longer in the repo. It does NOT touch
+          # anything in EXCLUDE below — that is the whole reason those live
+          # there and not in .gitignore alone.
+          ARGS: "-rlzvc -i --delete"
+          # Comma-separated, each one passed to rsync as --exclude.
           #
-          # uploads/** matters: user uploads live on the server and never in
-          # the repo, so without it the deploy sees every banner, avatar, and
-          # response attachment as an orphan and deletes it. An uploaded
-          # banner only survived until the next push. Excluded paths are
-          # skipped entirely — not uploaded, not deleted.
+          # uploads/ and backups/ are written by the running app on the
+          # server and exist in no commit. Without them here, --delete reads
+          # every student photo and every .sql dump as an orphan and removes
+          # it — an uploaded banner would survive only until the next push.
           #
-          # backups/** is the same story: the in-app backup feature writes its
-          # .sql dumps on the server, so an unexcluded backups/ means every
-          # push wipes the dumps it finds there.
+          # includes/db_credentials.php is the live database login. It is
+          # created once on the server by hand (see db_credentials.example.php)
+          # and must outlive every deploy. Under the old FTP action only
+          # changed files were sent, so hand-edited server files survived by
+          # accident; rsync overwrites, so the protection has to be explicit.
           #
-          # bccsasqr-mobile/** is the Flutter app. It is source for a phone,
-          # not files a web server ever serves — and android/ + ios/ alone are
-          # hundreds of files against InfinityFree's inode limit. Its build
-          # artifacts are already kept out of git by the Flutter project's own
-          # .gitignore; this keeps its source out of the web root.
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/README.md
-            uploads/**
-            backups/**
-            bccsasqr-mobile/**
+          # bccsasqr-mobile/ is Flutter source — files for a phone, never
+          # something a web server serves.
+          EXCLUDE: "/.git/, /.github/, /node_modules/, /README.md, /uploads/, /backups/, /bccsasqr-mobile/, /includes/db_credentials.php, /includes/db_error.log, .mcp.json, .DS_Store, Thumbs.db"

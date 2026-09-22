@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-13.7';
+const WHATS_NEW_VERSION = '2026-09-23';
 
 /**
  * The changelog, newest release first.
@@ -69,6 +69,30 @@ const WHATS_NEW_VERSION = '2026-09-13.7';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-23',
+            'date'    => '2026-09-23',
+            'icon'    => 'bi-hdd-network',
+            'title'   => 'A new home, and a database login that stays put',
+            'summary' => 'The system has moved off free hosting onto a paid plan, and the way a new release reaches it changed with it. The part worth knowing: the live database login now lives on the server and nowhere else, so an update can no longer take the site down on its way in.',
+            'items'   => [
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-database-lock',
+                    'title' => 'A release can no longer knock out the database',
+                    'text'  => 'The login the system uses to reach its database sat <em>inside</em> the code, which meant the copy on the server and the copy on the development machine were the same file fighting over one value. It held only because the old upload skipped files that had not changed &mdash; so the hand-typed server version survived by luck, and any release that touched that one file took the whole site offline until it was typed back in. The login now lives in a file of its own that no release is allowed to touch. Nothing about the system looks different; it simply stops being one careless push away from a dead site.',
+                    'link'  => ['href' => 'pages/db_monitor.php', 'label' => 'Open Database Monitor', 'can' => 'db.monitor'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-speedometer2',
+                    'title' => 'Pages come from a server the school pays for',
+                    'text'  => 'The free host it ran on was shared with everyone else who wanted something for nothing: slow at the hours a school actually uses a system, with hard ceilings on how many files and how much database it would hold. The new plan has its own resources and keeps the database on the same machine as the pages, so a dashboard no longer waits on a round trip to a separate server for every panel it draws. Your uploaded photos, your settings and your saved backups all came across untouched.',
+                    'link'  => ['href' => 'pages/backup.php', 'label' => 'Check your backups', 'can' => 'backup.manage'],
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-13',
