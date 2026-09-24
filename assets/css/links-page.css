@@ -20,6 +20,14 @@
     --lnk-border: rgba(var(--tint), .07);
 }
 
+/* theme.css darkens --lnk-ink for light mode on <body>, but the
+   declaration above sits closer to the card and won — leaving the
+   pale #c4b5fd on white: the short code, the count and every Edit
+   button nearly invisible. Same value theme.css uses. */
+:root:not([data-theme="dark"]) .link-page {
+    --lnk-ink: #6d28d9;
+}
+
 /* ─── Hero ────────────────────────────────────────────────── */
 .link-page .lnk-hero {
     position: relative;
@@ -190,83 +198,177 @@
     color: var(--ink-4);
 }
 
-/* ─── Expiry ──────────────────────────────────────────────────
-   Ang estado ng oras ng link. Tatlong anyo: walang expiry (pinatay
-   ang kulay — normal ito, hindi babala), papalapit na ang pagsara
-   (amber sa huling labinlimang minuto), at sarado na (pula).
+/* ─── Time group: expiry + late marking ──────────────────────
+   Both settings live in one bordered group, one row each: an icon
+   tile, a fixed label over the current value, and a single action.
+   They used to be two pill-and-button pairs stacked on top of each
+   other — "No expiry / Set expiry", "No late time / Set late time" —
+   which repeated the same shape twice and read as clutter rather
+   than as two settings.
 
-   Ang mga kulay ng estado ay hindi galing sa --lnk na violet ng
-   pahina: ang violet ay pagkakakilanlan, ang mga ito ay kalagayan.
-   Hindi rin ang kulay lang ang nagsasabi — may salita at may icon
-   ang bawat isa. */
-.link-page .lnk-exp {
-    border-top: 1px solid rgba(var(--tint), .07);
-    padding-top: .65rem;
+   State colour sits on the icon tile and the value only; the label
+   never changes colour, so the eye can find "Link closes" and
+   "Late marking" in the same place on every card. Green / amber /
+   red are state, not decoration — the violet --lnk stays on the
+   actions. Every state also has its own words and icon, so colour
+   is never the only signal. */
+.link-page .lnk-time {
+    border-radius: 12px;
+    border: 1px solid rgba(var(--tint), .07);
+    background: rgba(var(--tint), .02);
+    overflow: hidden;
 }
 
-/* Ang pill sa kaliwa, ang mga pindutan sa kanan. space-between at
-   hindi margin-left:auto: kapag makitid ang card at bumaba ng linya
-   ang mga pindutan, ang space-between ay nag-iiwan sa kanila sa
-   kaliwa — habang ang auto na margin ay itutulak sila sa kanang
-   dulo ng bagong linya, kung saan mukha silang naiwan. */
-.link-page .lnk-exp-row {
+.link-page .lnk-time-item + .lnk-time-item {
+    border-top: 1px solid rgba(var(--tint), .06);
+}
+
+.link-page .lnk-time-item.is-open {
+    background: rgba(var(--tint), .025);
+}
+
+.link-page .lnk-time-row {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: .5rem;
     flex-wrap: wrap;
-}
-
-/* Ang eksaktong petsa. Nasa ilalim ng pill at hindi sa loob nito:
-   isang linyang mababasa kapag kailangan, at hindi humahati sa row. */
-.link-page .lnk-exp-when {
-    margin-top: .35rem;
-    font-size: .7rem;
-    color: rgba(var(--tint), .38);
-}
-
-.link-page .lnk-exp-badge {
-    display: inline-flex;
     align-items: center;
-    gap: .35rem;
-    padding: .25rem .6rem;
-    border-radius: 999px;
-    font-size: .75rem;
-    font-weight: 600;
+    gap: .5rem .65rem;
+    padding: .6rem .7rem;
+}
+
+/* ── Icon tile ── */
+.link-page .lnk-time-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    font-size: .95rem;
+    color: rgba(var(--tint), .4);
+    background: rgba(var(--tint), .05);
+    border: 1px solid rgba(var(--tint), .08);
+}
+
+.link-page .is-ok .lnk-time-icon {
     color: var(--ok-ink, #34d399);
     background: rgba(16, 185, 129, .12);
-    border: 1px solid rgba(16, 185, 129, .28);
+    border-color: rgba(16, 185, 129, .26);
 }
 
-/* tabular-nums: pare-pareho ang lapad ng bawat numero, kaya hindi
-   gumagalaw ang pill sa bawat tiktok ng segundo. */
-.link-page .lnk-exp-badge b {
-    font-variant-numeric: tabular-nums;
-}
-
-.link-page .lnk-exp-badge.is-soon {
+.link-page .is-warn .lnk-time-icon {
     color: var(--warn-ink, #fcd34d);
     background: rgba(245, 158, 11, .12);
     border-color: rgba(245, 158, 11, .3);
 }
 
-.link-page .lnk-exp-badge.is-over {
+.link-page .is-bad .lnk-time-icon {
     color: var(--bad-ink, #f87171);
     background: rgba(239, 68, 68, .12);
     border-color: rgba(239, 68, 68, .3);
 }
 
-.link-page .lnk-exp-badge.is-none {
-    color: rgba(var(--tint), .4);
-    background: rgba(var(--tint), .04);
-    border-color: rgba(var(--tint), .1);
+/* ── Label over value ── */
+/* min-width: 0 lets a long date wrap inside the text column instead
+   of shoving the action button off the card. */
+.link-page .lnk-time-text {
+    /* 150px before the actions give way: an expired card carries two
+       buttons, and below this the text would be squeezed into a
+       column one word wide. The buttons drop under it instead. */
+    flex: 1 1 150px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
 }
 
-.link-page .lnk-exp-actions {
+.link-page .lnk-time-label {
+    font-size: .64rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: rgba(var(--tint), .4);
+}
+
+.link-page .lnk-time-value {
+    font-size: .83rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--ink-2);
+}
+
+/* tabular-nums: every digit the same width, so the countdown does
+   not shuffle sideways on each tick. */
+.link-page .lnk-time-value b {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.link-page .is-none .lnk-time-value { color: rgba(var(--tint), .55); }
+.link-page .is-ok   .lnk-time-value { color: var(--ok-ink, #34d399); }
+.link-page .is-warn .lnk-time-value { color: var(--warn-ink, #fcd34d); }
+.link-page .is-bad  .lnk-time-value { color: var(--bad-ink, #f87171); }
+
+/* The exact time. Muted and a size down, after a dot: it answers
+   "what time exactly" without competing with the value. nowrap so
+   "4:20 PM" never breaks between the time and the PM. */
+.link-page .lnk-time-meta {
+    font-size: .72rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: rgba(var(--tint), .4);
+}
+
+.link-page .lnk-time-meta::before {
+    content: '·';
+    margin: 0 .35rem;
+}
+
+/* ── Action ── */
+.link-page .lnk-time-actions {
+    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     gap: .35rem;
-    margin-left: auto;
+    margin-left: auto;   /* stays on the right when it wraps under */
+}
+
+/* A quiet tinted button: the card's one solid primary is Copy, and
+   "New link" on an expired card. Two of these per card at full
+   strength would outshout both. */
+.link-page .lnk-time-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .3rem .65rem;
+    border-radius: 8px;
+    font-size: .74rem;
+    font-weight: 600;
+    color: var(--lnk-ink);
+    background: transparent;
+    border: 1px solid var(--lnk-line);
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+
+.link-page .lnk-time-btn:hover,
+.link-page .lnk-time-item.is-open .lnk-time-row .lnk-time-btn {
+    background: var(--lnk-soft);
+    border-color: var(--lnk);
+}
+
+.link-page .lnk-time-btn i {
+    font-size: .8em;
+}
+
+/* Hints inside a panel: what the buttons below them do. */
+.link-page .lnk-panel-hint {
+    margin: 0 0 .35rem;
+    font-size: .7rem;
+    color: rgba(var(--tint), .45);
+}
+
+.link-page .lnk-panel-hint:not(:first-child) {
+    margin-top: .6rem;
 }
 
 /* Ang pangunahing sagot sa isang saradong link: bagong code. Buo ang
@@ -276,7 +378,7 @@
     display: inline-flex;
     align-items: center;
     gap: .3rem;
-    padding: .25rem .6rem;
+    padding: .3rem .65rem;
     border-radius: 8px;
     font-size: .74rem;
     font-weight: 700;
@@ -291,27 +393,10 @@
     filter: brightness(1.1);
 }
 
-.link-page .lnk-exp-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: .3rem;
-    padding: .25rem .6rem;
-    border-radius: 8px;
-    font-size: .74rem;
-    font-weight: 600;
-    color: var(--lnk-ink);
-    background: var(--lnk-soft);
-    border: 1px solid var(--lnk-line);
-    cursor: pointer;
-    transition: filter .15s;
-}
-
-.link-page .lnk-exp-toggle:hover {
-    filter: brightness(1.15);
-}
-
+/* Opens under its own row, inset inside the group, so it reads as
+   belonging to that row and not to the card. */
 .link-page .lnk-exp-panel {
-    margin-top: .6rem;
+    margin: 0 .7rem .7rem;
     padding: .65rem;
     border-radius: 10px;
     background: rgba(var(--tint), .04);
@@ -348,7 +433,6 @@
 .link-page .lnk-exp-custom {
     display: flex;
     gap: .35rem;
-    margin-top: .5rem;
 }
 
 .link-page .lnk-exp-at {
@@ -390,23 +474,6 @@
 .link-page .lnk-exp-clear:hover {
     color: var(--ink-2);
     border-color: rgba(var(--tint), .2);
-}
-
-/* ─── Late cutoff ─────────────────────────────────────────────
-   Sits directly under the expiry and reuses its pill, toggle and
-   panel, so the card reads as one "time" section with two rows
-   instead of two separate blocks. No second rule line, and the
-   card's 1rem gap is pulled in for the same reason. */
-.link-page .lnk-late {
-    border-top: 0;
-    padding-top: 0;
-    margin-top: -.5rem;
-}
-
-.link-page .lnk-late-hint {
-    margin-bottom: .35rem;
-    font-size: .7rem;
-    color: rgba(var(--tint), .45);
 }
 
 .link-page .instructor-badge {

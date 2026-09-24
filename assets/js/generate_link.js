@@ -100,8 +100,10 @@ function buildCard(l) {
 
                     <div class="link-display" id="${uid}">${wbrUrl(link)}</div>
 
-                    ${buildExpiry(l)}
-                    ${buildLate(l)}
+                    <div class="lnk-time">
+                        ${buildExpiry(l)}
+                        ${buildLate(l)}
+                    </div>
 
                     <div class="d-flex flex-wrap gap-2 mt-auto">
                         <button class="btn btn-sm btn-primary" onclick="copyLink('${uid}', this)">
@@ -195,31 +197,68 @@ function humanLeft(seconds) {
     return s + 's';
 }
 
+/**
+ * One row of the card's time group — the expiry and the late cutoff
+ * are both built from this, so the two read as one settings list
+ * rather than two pill-and-button pairs repeating each other.
+ *
+ *   state   none | ok | warn | bad — colours the icon tile and value
+ *   label   what the row is ("Link closes"), always the same
+ *   value   its current setting, the part that changes
+ *   meta    the exact time, muted, after the value
+ */
+function timeRow(o) {
+    return `
+        <div class="lnk-time-item is-${o.state}" id="${o.uid}" ${o.attrs || ''}>
+            <div class="lnk-time-row">
+                <span class="lnk-time-icon"><i class="bi ${o.icon}"></i></span>
+                <div class="lnk-time-text">
+                    <span class="lnk-time-label">${o.label}</span>
+                    <span class="lnk-time-value">${o.value}${o.meta ? `<span class="lnk-time-meta">${o.meta}</span>` : ''}</span>
+                </div>
+                <div class="lnk-time-actions">${o.actions}</div>
+            </div>
+            ${o.panel}
+        </div>`;
+}
+
+/** "+ Set" when nothing is set, "Edit" once something is. */
+function timeEditBtn(uid, isSet) {
+    return `<button type="button" class="lnk-time-btn" onclick="toggleExpiry('${uid}')" aria-expanded="false">
+                <i class="bi ${isSet ? 'bi-pencil' : 'bi-plus-lg'}"></i> ${isSet ? 'Edit' : 'Set'}
+            </button>`;
+}
+
 function buildExpiry(l) {
     const code = l.short_code;
     const uid  = 'exp-' + code;
 
-    // Ang eksaktong petsa ay lumabas sa pill at naging sariling linya
-    // sa ibaba. Sa loob ng pill, dalawang bagay ang laman nito — ang
-    // bilang pababa at ang "Aug 15, 2026 11:59 PM" — at sa lapad ng
-    // isang card ay itinutulak niyon ang Change sa sarili nitong linya,
-    // kung saan mukha itong naiwan. Ang pill ang mabilis basahin; ang
-    // petsa ay ang sagot sa "anong oras ba talaga", at hindi
-    // kailangang nasa loob ng parehong hugis.
-    let status, when = '';
+    // The exact date is the muted meta after the value, not part of
+    // it: the countdown is what you read at a glance, the date answers
+    // "what time exactly" — and "Aug 15, 2026 11:59 PM" inside the
+    // value would push the action button onto a line of its own.
+    let state, icon, label = 'Link closes', value, meta = '', attrs = '';
+
+    // expires_short is just "4:20 PM" when the link closes today; the
+    // full label stays on the hover title for the exact date.
+    const at = escHtml(l.expires_short || l.expires_label || '');
 
     if (l.is_expired) {
-        status = `<span class="lnk-exp-badge is-over"><i class="bi bi-slash-circle"></i> Expired</span>`;
-        when   = l.expires_label ? `Closed ${escHtml(l.expires_label)}` : '';
+        state = 'bad';
+        icon  = 'bi-slash-circle';
+        label = 'Link closed';
+        value = 'Expired';
+        meta  = at;
     } else if (l.expires_in !== null && l.expires_in !== undefined) {
-        const soon = l.expires_in <= 900 ? ' is-soon' : '';
-        status = `<span class="lnk-exp-badge${soon}" data-countdown="${l.expires_in}">
-                      <i class="bi bi-hourglass-split"></i>
-                      Closes in <b class="lnk-exp-clock">${humanLeft(l.expires_in)}</b>
-                  </span>`;
-        when   = escHtml(l.expires_label || '');
+        state = l.expires_in <= 900 ? 'warn' : 'ok';
+        icon  = 'bi-hourglass-split';
+        value = `in <b class="lnk-exp-clock">${humanLeft(l.expires_in)}</b>`;
+        meta  = at;
+        attrs = `data-countdown="${l.expires_in}" title="${escHtml(l.expires_label || '')}"`;
     } else {
-        status = `<span class="lnk-exp-badge is-none"><i class="bi bi-infinity"></i> No expiry</span>`;
+        state = 'none';
+        icon  = 'bi-infinity';
+        value = 'No expiry';
     }
 
     const presets = EXPIRY_PRESETS.map(p => {
@@ -242,38 +281,40 @@ function buildExpiry(l) {
         ? `<button type="button" class="lnk-exp-new" onclick="newLinkCode('${code}', this)">
                <i class="bi bi-arrow-repeat"></i> New link
            </button>
-           <button type="button" class="lnk-exp-toggle" onclick="extendExpiry('${uid}', ${l.expires_in || 0})">
+           <button type="button" class="lnk-time-btn" onclick="extendExpiry('${uid}', ${l.expires_in || 0})">
                <i class="bi bi-clock-history"></i> Extend
            </button>`
-        : `<button type="button" class="lnk-exp-toggle" onclick="toggleExpiry('${uid}')">
-               <i class="bi bi-clock-history"></i>
-               ${l.expires_at ? 'Change' : 'Set expiry'}
-           </button>`;
+        : timeEditBtn(uid, !!l.expires_at);
 
-    return `
-        <div class="lnk-exp" id="${uid}">
-            <div class="lnk-exp-row">
-                ${status}
-                <span class="lnk-exp-actions">${actions}</span>
+    const panel = `
+        <div class="lnk-exp-panel" hidden>
+            <div class="lnk-panel-hint">Close the link in…</div>
+            <div class="lnk-exp-presets">${presets}</div>
+            <div class="lnk-panel-hint">…or at a set time</div>
+            <div class="lnk-exp-custom">
+                <input type="datetime-local" class="lnk-exp-at" aria-label="Custom expiry date and time">
+                <button type="button" class="lnk-exp-set"
+                    onclick="setExpiry('${code}', {at: this.previousElementSibling.value}, this)">Set</button>
             </div>
-            ${when ? `<div class="lnk-exp-when">${when}</div>` : ''}
-
-            <div class="lnk-exp-panel" hidden>
-                <div class="lnk-exp-presets">${presets}</div>
-                <div class="lnk-exp-custom">
-                    <input type="datetime-local" class="lnk-exp-at" aria-label="Custom expiry date and time">
-                    <button type="button" class="lnk-exp-set"
-                        onclick="setExpiry('${code}', {at: this.previousElementSibling.value}, this)">Set</button>
-                </div>
-                ${l.expires_at ? `<button type="button" class="lnk-exp-clear"
-                        onclick="setExpiry('${code}', {clear: 1}, this)">Remove expiry</button>` : ''}
-            </div>
+            ${l.expires_at ? `<button type="button" class="lnk-exp-clear"
+                    onclick="setExpiry('${code}', {clear: 1}, this)">Remove expiry</button>` : ''}
         </div>`;
+
+    return timeRow({ uid, state, icon, label, value, meta, attrs, actions, panel });
 }
 
 function toggleExpiry(uid) {
-    const panel = document.getElementById(uid)?.querySelector('.lnk-exp-panel');
-    if (panel) panel.hidden = !panel.hidden;
+    const item  = document.getElementById(uid);
+    const panel = item?.querySelector('.lnk-exp-panel');
+    if (!panel) return;
+
+    panel.hidden = !panel.hidden;
+
+    // The open row is marked so it reads as the one being edited, and
+    // the button says so to a screen reader.
+    item.classList.toggle('is-open', !panel.hidden);
+    item.querySelector('.lnk-time-row .lnk-time-btn')
+        ?.setAttribute('aria-expanded', String(!panel.hidden));
 }
 
 /**
@@ -400,6 +441,7 @@ function setExpiry(short_code, opts, btn) {
             if (link) {
                 link.expires_at    = res.expires_at;
                 link.expires_label = res.expires_label;
+                link.expires_short = res.expires_short;
                 link.expires_in    = res.expires_in;
                 link.is_expired    = res.is_expired;
                 copyLate(link, res);
@@ -439,19 +481,26 @@ function buildLate(l) {
     // A closed link takes no submissions, so there is nothing to mark.
     if (l.is_expired) return '';
 
-    const code = l.short_code;
-    const uid  = 'late-' + code;
+    const code  = l.short_code;
+    const uid   = 'late-' + code;
     const label = escHtml(l.late_label || '');
 
-    let status;
+    let state, icon, value, meta = '', attrs = '';
+
     if (!l.late_on) {
-        status = `<span class="lnk-exp-badge is-none"><i class="bi bi-alarm"></i> No late time</span>`;
+        state = 'none';
+        icon  = 'bi-alarm';
+        value = 'Off';
+        meta  = 'all on time';
     } else if (l.late_in > 0) {
-        status = `<span class="lnk-exp-badge lnk-late-badge" data-late-in="${l.late_in}" data-late-label="${label}">
-                      <i class="bi bi-alarm"></i> On time until <b>${label}</b>
-                  </span>`;
+        state = 'ok';
+        icon  = 'bi-alarm';
+        value = `On time until <b>${label}</b>`;
+        attrs = `data-late-in="${l.late_in}" data-late-label="${label}"`;
     } else {
-        status = `<span class="lnk-exp-badge is-soon"><i class="bi bi-alarm-fill"></i> Late after <b>${label}</b></span>`;
+        state = 'warn';
+        icon  = 'bi-alarm-fill';
+        value = `Late after <b>${label}</b>`;
     }
 
     const presets = LATE_PRESETS.map(m =>
@@ -459,30 +508,25 @@ function buildLate(l) {
              onclick="setLate('${code}', {minutes:${m}}, this)">${m} min</button>`
     ).join('');
 
-    return `
-        <div class="lnk-exp lnk-late" id="${uid}">
-            <div class="lnk-exp-row">
-                ${status}
-                <span class="lnk-exp-actions">
-                    <button type="button" class="lnk-exp-toggle" onclick="toggleExpiry('${uid}')">
-                        <i class="bi bi-alarm"></i> ${l.late_on ? 'Change' : 'Set late time'}
-                    </button>
-                </span>
+    const panel = `
+        <div class="lnk-exp-panel" hidden>
+            <div class="lnk-panel-hint">Students are on time for the next…</div>
+            <div class="lnk-exp-presets">${presets}</div>
+            <div class="lnk-panel-hint">…or on time until</div>
+            <div class="lnk-exp-custom">
+                <input type="time" class="lnk-exp-at" aria-label="On time until">
+                <button type="button" class="lnk-exp-set"
+                    onclick="setLate('${code}', {at: this.previousElementSibling.value}, this)">Set</button>
             </div>
-
-            <div class="lnk-exp-panel" hidden>
-                <div class="lnk-late-hint">Students are on time for the next…</div>
-                <div class="lnk-exp-presets">${presets}</div>
-                <div class="lnk-late-hint mt-2">…or on time until</div>
-                <div class="lnk-exp-custom mt-1">
-                    <input type="time" class="lnk-exp-at" aria-label="On time until">
-                    <button type="button" class="lnk-exp-set"
-                        onclick="setLate('${code}', {at: this.previousElementSibling.value}, this)">Set</button>
-                </div>
-                ${l.late_on ? `<button type="button" class="lnk-exp-clear"
-                        onclick="setLate('${code}', {clear: 1}, this)">Remove late time</button>` : ''}
-            </div>
+            ${l.late_on ? `<button type="button" class="lnk-exp-clear"
+                    onclick="setLate('${code}', {clear: 1}, this)">Remove late time</button>` : ''}
         </div>`;
+
+    return timeRow({
+        uid, state, icon, value, meta, attrs, panel,
+        label  : 'Late marking',
+        actions: timeEditBtn(uid, l.late_on)
+    });
 }
 
 function copyLate(link, res) {
@@ -525,21 +569,31 @@ function setLate(short_code, opts, btn) {
             renderCards(allLinks);
             applyFilters();
 
-            // A time already behind us is allowed, but it is worth
-            // saying what it means: only submissions from here on are
-            // late — the ones already in stay on time.
-            let text = 'Late marking is off. Every submission counts as on time.';
-            if (res.late_on) {
-                text = res.late_in > 0
-                    ? 'On time until ' + res.late_label + '. Submissions after that are marked late.'
-                    : 'That time has passed — everyone who submits from now on is marked late.';
+            // A time already behind us is allowed, but it is far more
+            // often a slip — 8:15 typed at 3 PM, AM where PM was meant —
+            // than a real wish to mark the whole class late. So that
+            // case is a warning that waits for OK, not a success toast
+            // that fades before anyone reads it.
+            if (res.late_on && res.late_in <= 0) {
+                Swal.fire({
+                    icon : 'warning',
+                    title: res.late_label + ' has already passed',
+                    html : `Everyone who submits from now on will be marked <b>late</b>.<br>
+                            <span style="font-size:.9em;opacity:.75">
+                                If you meant a later time — PM instead of AM — tap Edit and set it again.
+                            </span>`,
+                    confirmButtonColor: '#8b5cf6'
+                });
+                return;
             }
 
             Swal.fire({
                 icon : 'success',
                 title: res.late_on ? 'Late time set' : 'Late time removed',
-                text,
-                timer: res.late_on && res.late_in <= 0 ? 3500 : 2200,
+                text : res.late_on
+                    ? 'On time until ' + res.late_label + '. Submissions after that are marked late.'
+                    : 'Late marking is off. Every submission counts as on time.',
+                timer: 2200,
                 showConfirmButton: false
             });
         })
@@ -554,32 +608,37 @@ function setLate(short_code, opts, btn) {
 // link ay dalawampung setInterval na magigising kada segundo.
 let expiryRefreshPending = false;
 
-// The late pill only changes once, at zero, so it is flipped in place
+// The late row only changes once, at zero, so it is flipped in place
 // rather than asking the server: nothing else about the link changed.
+// In place, and not by re-rendering the card, so an open panel stays
+// open under the instructor's cursor.
 setInterval(function () {
-    document.querySelectorAll('.lnk-late-badge[data-late-in]').forEach(el => {
+    document.querySelectorAll('.lnk-time-item[data-late-in]').forEach(el => {
         const left = parseInt(el.dataset.lateIn, 10) - 1;
         el.dataset.lateIn = left;
         if (left > 0) return;
 
         el.removeAttribute('data-late-in');
-        el.classList.add('is-soon');
-        el.innerHTML = '<i class="bi bi-alarm-fill"></i> Late after <b>' + escHtml(el.dataset.lateLabel) + '</b>';
+        el.classList.replace('is-ok', 'is-warn');
+        el.querySelector('.lnk-time-icon i').className = 'bi bi-alarm-fill';
+        el.querySelector('.lnk-time-value').innerHTML =
+            'Late after <b>' + escHtml(el.dataset.lateLabel) + '</b>';
 
-        const link = allLinks.find(l => 'late-' + l.short_code === el.closest('.lnk-late')?.id);
+        const link = allLinks.find(l => 'late-' + l.short_code === el.id);
         if (link) link.late_in = 0;
     });
 }, 1000);
 
 setInterval(function () {
-    document.querySelectorAll('.lnk-exp-badge[data-countdown]').forEach(el => {
+    document.querySelectorAll('.lnk-time-item[data-countdown]').forEach(el => {
         let left = parseInt(el.dataset.countdown, 10) - 1;
         el.dataset.countdown = left;
 
         const clock = el.querySelector('.lnk-exp-clock');
         if (clock) clock.textContent = humanLeft(left);
 
-        el.classList.toggle('is-soon', left <= 900);
+        el.classList.toggle('is-warn', left <= 900);
+        el.classList.toggle('is-ok', left > 900);
 
         if (left <= 0) {
             // Huwag hulaan kung ano ang hitsura ng expired — tanungin

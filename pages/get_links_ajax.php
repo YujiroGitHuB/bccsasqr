@@ -65,7 +65,12 @@ function attach_link_expiry(mysqli $conn, array $links): array {
                expires_at,
                (expires_at IS NOT NULL AND expires_at <= NOW())  AS is_expired,
                TIMESTAMPDIFF(SECOND, NOW(), expires_at)          AS expires_in,
-               DATE_FORMAT(expires_at, '%b %e, %Y %l:%i %p')     AS expires_label
+               DATE_FORMAT(expires_at, '%b %e, %Y %l:%i %p')     AS expires_label,
+               -- Just the time when it is today: on a card, the full
+               -- date is mostly noise and wraps mid-phrase.
+               IF(DATE(expires_at) = CURDATE(),
+                  DATE_FORMAT(expires_at, '%l:%i %p'),
+                  DATE_FORMAT(expires_at, '%b %e, %l:%i %p'))   AS expires_short
         FROM attendance_links_tbl
         WHERE short_code IN ($marks)
     ");
@@ -87,6 +92,7 @@ function attach_link_expiry(mysqli $conn, array $links): array {
 
         $l['expires_at']    = $e['expires_at']    ?? null;
         $l['expires_label'] = $e['expires_label'] ?? null;
+        $l['expires_short'] = isset($e['expires_short']) ? trim($e['expires_short']) : null;
         $l['expires_in']    = ($e && $e['expires_in'] !== null) ? (int) $e['expires_in'] : null;
         $l['is_expired']    = $e ? ((int) $e['is_expired'] === 1) : false;
 

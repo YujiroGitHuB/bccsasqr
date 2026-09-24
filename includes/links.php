@@ -131,7 +131,12 @@ function link_state(mysqli $conn, string $short_code): array
                expires_at,
                (expires_at IS NOT NULL AND expires_at <= NOW())  AS is_expired,
                TIMESTAMPDIFF(SECOND, NOW(), expires_at)          AS expires_in,
-               DATE_FORMAT(expires_at, '%b %e, %Y %l:%i %p')     AS expires_label
+               DATE_FORMAT(expires_at, '%b %e, %Y %l:%i %p')     AS expires_label,
+               -- Just the time when it is today: on a card, the full
+               -- date is mostly noise and wraps mid-phrase.
+               IF(DATE(expires_at) = CURDATE(),
+                  DATE_FORMAT(expires_at, '%l:%i %p'),
+                  DATE_FORMAT(expires_at, '%b %e, %l:%i %p'))   AS expires_short
         FROM attendance_links_tbl
         WHERE short_code = ?
     ");
@@ -149,6 +154,7 @@ function link_state(mysqli $conn, string $short_code): array
         'short_code'    => $short_code,
         'expires_at'    => $row['expires_at']    ?? null,
         'expires_label' => $row['expires_label'] ?? null,
+        'expires_short' => isset($row['expires_short']) ? trim($row['expires_short']) : null,
         'expires_in'    => isset($row['expires_in']) && $row['expires_in'] !== null ? (int) $row['expires_in'] : null,
         'is_expired'    => isset($row['is_expired']) && (int) $row['is_expired'] === 1,
     ], $late);

@@ -81,7 +81,7 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-alarm',
                     'title' => 'Set a late time on any link',
-                    'text'  => 'Each card on <strong>Attendance Links</strong> has a new <strong>Set late time</strong> button under the expiry. Tap <strong>15 min</strong> as class starts, or type the exact time &mdash; for a link open 8:00 to 9:00, set <em>8:15</em>. A student who submits at 8:15 is on time; at 8:16 they are marked late. The late time only applies to today, so Monday&rsquo;s setting never marks Wednesday&rsquo;s class late, and a new link starts with none.',
+                    'text'  => 'Each card on <strong>Attendance Links</strong> now has a <strong>Late marking</strong> row right under <strong>Link closes</strong>. Tap its <strong>Set</strong>, then <strong>15 min</strong> as class starts, or type the exact time &mdash; for a link open 8:00 to 9:00, set <em>8:15</em>. A student who submits at 8:15 is on time; at 8:16 they are marked late. The late time only applies to today, so Monday&rsquo;s setting never marks Wednesday&rsquo;s class late, and a new link starts with none.',
                     'link'  => ['href' => 'pages/generate_attendance_link.php', 'label' => 'Open Attendance Links', 'can' => 'links.manage'],
                 ],
                 [
