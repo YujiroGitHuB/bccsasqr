@@ -139,11 +139,17 @@ function link_state(mysqli $conn, string $short_code): array
     $stmt->execute();
     $row = $stmt->get_result()->fetch_assoc() ?: [];
 
-    return [
+    // The card is repainted from this answer alone, so it carries the
+    // late cutoff too — otherwise changing the expiry would wipe the
+    // late pill off the card until the next reload.
+    require_once __DIR__ . '/late.php';
+    $late = late_states($conn, [$short_code])[$short_code];
+
+    return array_merge([
         'short_code'    => $short_code,
         'expires_at'    => $row['expires_at']    ?? null,
         'expires_label' => $row['expires_label'] ?? null,
         'expires_in'    => isset($row['expires_in']) && $row['expires_in'] !== null ? (int) $row['expires_in'] : null,
         'is_expired'    => isset($row['is_expired']) && (int) $row['is_expired'] === 1,
-    ];
+    ], $late);
 }

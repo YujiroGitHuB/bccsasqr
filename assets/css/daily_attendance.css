@@ -207,6 +207,30 @@ body.attendance-page {
     border-color: rgba(239, 68, 68, .3);
 }
 
+/* The late cutoff. Same pill as the expiry, so the two read as one
+   family when both are set: green while on time, amber once a
+   submission would be marked late. Never red — late is still
+   recorded, and red on this page means "you cannot submit". */
+.attendance-page .att-late {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: 1rem;
+    padding: .45rem .9rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--ok-ink, #6ee7b7);
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .28);
+}
+
+.attendance-page .att-late.is-late {
+    color: var(--warn-ink, #fcd34d);
+    background: rgba(245, 158, 11, .12);
+    border-color: rgba(245, 158, 11, .3);
+}
+
 .attendance-page .att-locked {
     display: inline-flex;
     align-items: center;

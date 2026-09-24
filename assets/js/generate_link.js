@@ -101,6 +101,7 @@ function buildCard(l) {
                     <div class="link-display" id="${uid}">${wbrUrl(link)}</div>
 
                     ${buildExpiry(l)}
+                    ${buildLate(l)}
 
                     <div class="d-flex flex-wrap gap-2 mt-auto">
                         <button class="btn btn-sm btn-primary" onclick="copyLink('${uid}', this)">
@@ -401,6 +402,7 @@ function setExpiry(short_code, opts, btn) {
                 link.expires_label = res.expires_label;
                 link.expires_in    = res.expires_in;
                 link.is_expired    = res.is_expired;
+                copyLate(link, res);
             }
 
             renderCards(allLinks);
@@ -421,9 +423,153 @@ function setExpiry(short_code, opts, btn) {
         });
 }
 
+// ─── Late cutoff ──────────────────────────────────────────────────────────────
+//
+// "On time until 8:15" on a link that stays open until 9:00. The
+// server stamps every submission (see includes/late.php); this only
+// shows and sets the cutoff. Like the expiry, late_in is measured by
+// the database clock and the browser just counts it down.
+//
+// Presets are counted from now, because the common case is setting it
+// the moment the class starts: open the link at 8:00, tap 15 min.
+
+const LATE_PRESETS = [10, 15, 30];
+
+function buildLate(l) {
+    // A closed link takes no submissions, so there is nothing to mark.
+    if (l.is_expired) return '';
+
+    const code = l.short_code;
+    const uid  = 'late-' + code;
+    const label = escHtml(l.late_label || '');
+
+    let status;
+    if (!l.late_on) {
+        status = `<span class="lnk-exp-badge is-none"><i class="bi bi-alarm"></i> No late time</span>`;
+    } else if (l.late_in > 0) {
+        status = `<span class="lnk-exp-badge lnk-late-badge" data-late-in="${l.late_in}" data-late-label="${label}">
+                      <i class="bi bi-alarm"></i> On time until <b>${label}</b>
+                  </span>`;
+    } else {
+        status = `<span class="lnk-exp-badge is-soon"><i class="bi bi-alarm-fill"></i> Late after <b>${label}</b></span>`;
+    }
+
+    const presets = LATE_PRESETS.map(m =>
+        `<button type="button" class="lnk-exp-preset"
+             onclick="setLate('${code}', {minutes:${m}}, this)">${m} min</button>`
+    ).join('');
+
+    return `
+        <div class="lnk-exp lnk-late" id="${uid}">
+            <div class="lnk-exp-row">
+                ${status}
+                <span class="lnk-exp-actions">
+                    <button type="button" class="lnk-exp-toggle" onclick="toggleExpiry('${uid}')">
+                        <i class="bi bi-alarm"></i> ${l.late_on ? 'Change' : 'Set late time'}
+                    </button>
+                </span>
+            </div>
+
+            <div class="lnk-exp-panel" hidden>
+                <div class="lnk-late-hint">Students are on time for the next…</div>
+                <div class="lnk-exp-presets">${presets}</div>
+                <div class="lnk-late-hint mt-2">…or on time until</div>
+                <div class="lnk-exp-custom mt-1">
+                    <input type="time" class="lnk-exp-at" aria-label="On time until">
+                    <button type="button" class="lnk-exp-set"
+                        onclick="setLate('${code}', {at: this.previousElementSibling.value}, this)">Set</button>
+                </div>
+                ${l.late_on ? `<button type="button" class="lnk-exp-clear"
+                        onclick="setLate('${code}', {clear: 1}, this)">Remove late time</button>` : ''}
+            </div>
+        </div>`;
+}
+
+function copyLate(link, res) {
+    link.late_on    = res.late_on;
+    link.late_in    = res.late_in;
+    link.late_label = res.late_label;
+}
+
+function setLate(short_code, opts, btn) {
+    if (opts.at === '') {
+        Swal.fire({ icon: 'warning', title: 'Pick a time first', timer: 2000, showConfirmButton: false });
+        return;
+    }
+
+    const body = new URLSearchParams({ short_code });
+    Object.keys(opts).forEach(k => body.append(k, opts[k]));
+
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '…';
+
+    fetch('../crud/set_link_late.php', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body   : body.toString()
+    })
+        .then(r => r.json())
+        .then(res => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+
+            if (!res.success) {
+                Swal.fire({ icon: 'error', title: 'Could not set late time', text: res.message || 'Please try again.' });
+                return;
+            }
+
+            const link = allLinks.find(l => l.short_code === short_code);
+            if (link) copyLate(link, res);
+
+            renderCards(allLinks);
+            applyFilters();
+
+            // A time already behind us is allowed, but it is worth
+            // saying what it means: only submissions from here on are
+            // late — the ones already in stay on time.
+            let text = 'Late marking is off. Every submission counts as on time.';
+            if (res.late_on) {
+                text = res.late_in > 0
+                    ? 'On time until ' + res.late_label + '. Submissions after that are marked late.'
+                    : 'That time has passed — everyone who submits from now on is marked late.';
+            }
+
+            Swal.fire({
+                icon : 'success',
+                title: res.late_on ? 'Late time set' : 'Late time removed',
+                text,
+                timer: res.late_on && res.late_in <= 0 ? 3500 : 2200,
+                showConfirmButton: false
+            });
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+            Swal.fire({ icon: 'error', title: 'Network error', text: 'Please try again.' });
+        });
+}
+
 // Isang orasan para sa lahat ng card, hindi isa kada card: dalawampung
 // link ay dalawampung setInterval na magigising kada segundo.
 let expiryRefreshPending = false;
+
+// The late pill only changes once, at zero, so it is flipped in place
+// rather than asking the server: nothing else about the link changed.
+setInterval(function () {
+    document.querySelectorAll('.lnk-late-badge[data-late-in]').forEach(el => {
+        const left = parseInt(el.dataset.lateIn, 10) - 1;
+        el.dataset.lateIn = left;
+        if (left > 0) return;
+
+        el.removeAttribute('data-late-in');
+        el.classList.add('is-soon');
+        el.innerHTML = '<i class="bi bi-alarm-fill"></i> Late after <b>' + escHtml(el.dataset.lateLabel) + '</b>';
+
+        const link = allLinks.find(l => 'late-' + l.short_code === el.closest('.lnk-late')?.id);
+        if (link) link.late_in = 0;
+    });
+}, 1000);
 
 setInterval(function () {
     document.querySelectorAll('.lnk-exp-badge[data-countdown]').forEach(el => {

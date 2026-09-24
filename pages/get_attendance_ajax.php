@@ -40,6 +40,7 @@ include "../includes/permissions.php";
 include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
+require_once __DIR__ . "/../includes/late.php";
 
 ob_clean();
 header('Content-Type: application/json');
@@ -205,8 +206,12 @@ $limitLen = ($length < 1 || $length > $MAX_ROWS) ? $MAX_ROWS : $length;
 $rowTypes  = $types . 'ii';
 $rowParams = array_merge($params, [$start, $limitLen]);
 
+// is_late is read only once the column exists (includes/late.php) —
+// before that every row was on time, because there was no cutoff.
+$lateCol = late_ready($conn) ? 'is_late' : '0 AS is_late';
+
 $stmt = $conn->prepare("
-    SELECT id, date, student_no, name, course, section, time_in, subject
+    SELECT id, date, student_no, name, course, section, time_in, subject, $lateCol
     FROM attendance_tbl
     $sqlWhere
     $orderSql
@@ -228,6 +233,7 @@ while ($row = $result->fetch_assoc()) {
         // gaya ng dating ginagawa ng cleanSection() sa pahina.
         'section'    => preg_replace('/^[A-Z]+-/', '', (string) $row['section']),
         'time_in'    => $row['time_in'],
+        'is_late'    => (int) $row['is_late'] === 1,
         'subject'    => $row['subject'],
     ];
 }

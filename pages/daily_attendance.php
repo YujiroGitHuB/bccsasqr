@@ -3,6 +3,7 @@
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
 require_once __DIR__ . "/../includes/attendance_integrity.php";
+require_once __DIR__ . "/../includes/late.php";
 
 // ── Ang cookie ng device, itinatanim bago ang anumang output ──
 //
@@ -23,6 +24,7 @@ $is_valid = false;
 
 $invalid_reason = 'unknown';
 $expires_in     = null;   // segundo hanggang mag-expire; null = walang expiry
+$late           = late_state_from_row(null);
 $short_code     = '';
 
 if (isset($_GET['c'])) {
@@ -40,10 +42,16 @@ if (isset($_GET['c'])) {
     // crud/submit_attendance.php, kaya ang PHP na paghahambing ay
     // maaaring magsabing bukas pa ang link na tatanggihan naman ng
     // susunod na hakbang.
+    //
+    // The late cutoff is read on the same clock, so the pill below and
+    // the stamp crud/submit_attendance.php writes cannot disagree.
+    $lateCols = late_ready($conn) ? ', ' . late_state_columns() : '';
+
     $stmt = $conn->prepare("
         SELECT *,
                (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired,
                TIMESTAMPDIFF(SECOND, NOW(), expires_at)         AS expires_in
+               $lateCols
         FROM attendance_links_tbl
         WHERE short_code = ?
     ");
@@ -68,6 +76,7 @@ if (isset($_GET['c'])) {
                 'instructor_name' => $row['instructor_name']
             ];
             $expires_in = $row['expires_in'] === null ? null : (int) $row['expires_in'];
+            $late       = late_state_from_row($lateCols !== '' ? $row : null);
             $is_valid   = true;
         }
     }
@@ -149,6 +158,22 @@ if ($result && $result->num_rows > 0) {
                 <div class="att-expiry" id="attExpiry" data-seconds="<?php echo $expires_in; ?>">
                     <i class="bi bi-hourglass-split"></i>
                     <span id="attExpiryText">Closes in <span id="attExpiryClock">—</span></span>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($late['late_on']): ?>
+                <!-- Told up front, so "late" on the confirmation is never
+                     the first the student hears of a cutoff. Like the
+                     countdown above, the server decides — this only turns
+                     amber at the minute the stamp starts reading late. -->
+                <div class="att-late<?php echo $late['late_in'] <= 0 ? ' is-late' : ''; ?>"
+                     id="attLate" data-seconds="<?php echo (int) $late['late_in']; ?>">
+                    <i class="bi bi-alarm"></i>
+                    <span id="attLateText">
+                        <?php echo $late['late_in'] <= 0
+                            ? 'You will be marked late'
+                            : 'On time until ' . htmlspecialchars($late['late_label']); ?>
+                    </span>
                 </div>
             <?php endif; ?>
         </div>
@@ -310,6 +335,23 @@ if ($result && $result->num_rows > 0) {
 
             const tick = setInterval(paint, 1000);
             paint();
+        })();
+
+        // ── Late cutoff ──────────────────────────────────────────────
+        // One switch, at zero: from "on time until 8:15" to "you will be
+        // marked late". No countdown — a clock racing toward "late" reads
+        // as pressure, and the time itself is what a student needs.
+        (function () {
+            const box = document.getElementById('attLate');
+            if (!box) return;
+
+            const left = parseInt(box.dataset.seconds, 10);
+            if (!(left > 0)) return;
+
+            setTimeout(function () {
+                box.classList.add('is-late');
+                document.getElementById('attLateText').textContent = 'You will be marked late';
+            }, left * 1000);
         })();
 
         let verifiedStudentNo = null;
@@ -498,7 +540,9 @@ if ($result && $result->num_rows > 0) {
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            showAlert(data.message, 'success');
+                            // Still a success — the record is saved — but
+                            // amber, so "late" is not lost in a green box.
+                            showAlert(data.message, data.late ? 'warning' : 'success');
                             TTSManager.speak(data.message);
 
                             setTimeout(() => {

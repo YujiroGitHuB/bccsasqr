@@ -17,6 +17,7 @@ header("Expires: 0");
 session_start();
 include __DIR__ . "/../includes/db_connect.php";
 include __DIR__ . "/../includes/auth.php";
+require_once __DIR__ . "/../includes/late.php";
 
 date_default_timezone_set('Asia/Manila');
 
@@ -36,6 +37,11 @@ $course  = $parts[0] ?? '';
 $section = $parts[1] ?? $full_section;
 
 if ($present) {
+    // MIN, like the time: a student with an on-time record and a late
+    // one for the same class (scanned in, then submitted by link) made
+    // it on time.
+    $lateCol = late_ready($conn) ? 'MIN(a.is_late)' : '0';
+
     $query = "
         SELECT
             s.student_no,
@@ -47,7 +53,8 @@ if ($present) {
                     WHEN a.time_in LIKE '%AM%' OR a.time_in LIKE '%PM%' THEN a.time_in
                     ELSE DATE_FORMAT(a.time_in, '%h:%i %p')
                 END
-            ) AS time_in
+            ) AS time_in,
+            $lateCol AS is_late
         FROM students_tbl s
         INNER JOIN attendance_tbl a ON s.student_no = a.student_no
         WHERE s.course   = ?
@@ -214,7 +221,12 @@ $showFilter = $total_count > 8;
                         <td class="app-id"><?= htmlspecialchars($row['student_no']) ?></td>
                         <td><?= htmlspecialchars($row['fullname']) ?></td>
                         <?php if ($present): ?>
-                            <td class="app-time"><?= htmlspecialchars($fmtTime($row['time_in'])) ?></td>
+                            <td class="app-time">
+                                <?php if ((int) $row['is_late'] === 1): ?>
+                                    <span class="app-late">Late</span>
+                                <?php endif; ?>
+                                <?= htmlspecialchars($fmtTime($row['time_in'])) ?>
+                            </td>
                         <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>

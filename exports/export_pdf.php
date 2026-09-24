@@ -13,6 +13,7 @@ include __DIR__ . "/../includes/permissions.php";
 requirePermission('attendance.export', '../pages/dashboard.php');
 include __DIR__ . "/../includes/systemConfig.php";
 require __DIR__ . '/../includes/pdf_report.php';
+require_once __DIR__ . '/../includes/late.php';
 
 date_default_timezone_set('Asia/Manila');
 
@@ -100,8 +101,9 @@ if ($status === 'absent') {
     $rowParams = array_merge([$course, $section, $course, $section, $subject], $scopeParams, [$date]);
     $stmt->bind_param("sssss" . $scopeTypes . "s", ...$rowParams);
 } else {
+    $lateCol = late_ready($conn) ? 'is_late' : '0 AS is_late';
     $sql = "
-        SELECT date, student_no, name, course, section, subject, time_in
+        SELECT date, student_no, name, course, section, subject, time_in, $lateCol
         FROM attendance_tbl
         WHERE course = ? AND section = ? AND subject = ? $scopeSql AND DATE(`date`) = ?
         ORDER BY name ASC
@@ -186,7 +188,12 @@ if ($total_count === 0) {
             $pdf->Cell(32, 7.5, ReportPDF::txt($row['student_no']),  1, 0, 'C', $fill);
             $pdf->Cell(76, 7.5, $pdf->fit($row['name'], 76),         1, 0, 'L', $fill);
             $pdf->Cell(24, 7.5, ReportPDF::txt($row['course']),      1, 0, 'C', $fill);
-            $pdf->Cell(46, 7.5, date('h:i A', strtotime($row['time_in'])), 1, 1, 'C', $fill);
+            // Late goes in the time cell, in words: the report is
+            // printed and signed, often in black and white, so a
+            // colour would not survive it.
+            $timeText = date('h:i A', strtotime($row['time_in']));
+            if ((int) $row['is_late'] === 1) $timeText .= ' (Late)';
+            $pdf->Cell(46, 7.5, $timeText, 1, 1, 'C', $fill);
         }
         $fill = !$fill;
     }

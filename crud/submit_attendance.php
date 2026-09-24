@@ -3,6 +3,7 @@ session_start();
 include __DIR__ . "/../includes/db_connect.php";
 require_once __DIR__ . "/../includes/photo_requirement.php";
 require_once __DIR__ . "/../includes/attendance_integrity.php";
+require_once __DIR__ . "/../includes/late.php";
 date_default_timezone_set('Asia/Manila');
 header('Content-Type: application/json');
 
@@ -122,10 +123,19 @@ if ($is_locked) {
 // Ang paghahambing ng oras ay nasa SQL: ang orasan ng database ang
 // nagtakda ng expires_at (tingnan ang crud/set_link_expiry.php), kaya
 // ang parehong orasan din ang dapat magsabing lumipas na ito.
+//
+// is_late is decided here, with the other questions about the link,
+// on the same database clock. See includes/late.php.
+$lateReady = late_ready($conn);
+$lateCols  = $lateReady
+    ? LATE_NOW_SQL . " AS is_late, DATE_FORMAT(late_after, '%l:%i %p') AS late_label"
+    : "0 AS is_late, NULL AS late_label";
+
 $linkStmt = $conn->prepare("
     SELECT subject_id, subject_code, subject_name, section, instructor_id, instructor_name,
            is_active,
-           (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired
+           (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired,
+           $lateCols
     FROM attendance_links_tbl
     WHERE short_code = ?
 ");
@@ -163,6 +173,8 @@ $subject_name    = trim($link['subject_name']);
 $full_section    = trim($link['section']);   // "BSIT-1A"
 $instructor_id   = (int)$link['instructor_id'];
 $instructor_name = trim($link['instructor_name']);
+$is_late         = (int)$link['is_late'] === 1 ? 1 : 0;
+$late_label      = trim((string)$link['late_label']);
 
 // Mula rito ay alam na ng $audit kung anong klase ito: reference ang
 // hawak nito sa tatlong variable sa itaas, kaya may pangalan na ng
@@ -296,13 +308,17 @@ if ($dup->get_result()->num_rows > 0) {
 $time_in = date('h:i:s A');
 $name    = $student['fullname'];
 
+// is_late only when the column exists: without it this INSERT would
+// fail for every student, cutoff or not.
+$lateInsCol = $lateReady ? ', is_late' : '';
+$lateInsVal = $lateReady ? ', ?' : '';
+
 $insert = $conn->prepare("
     INSERT INTO attendance_tbl
-        (date, student_no, name, course, section, subject, instructor, time_in, user_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (date, student_no, name, course, section, subject, instructor, time_in, user_id$lateInsCol)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?$lateInsVal)
 ");
-$insert->bind_param(
-    "ssssssssi",
+$insParams = [
     $today,
     $student_no,
     $name,
@@ -312,7 +328,10 @@ $insert->bind_param(
     $instructor_name,
     $time_in,
     $instructor_id
-);
+];
+if ($lateReady) $insParams[] = $is_late;
+
+$insert->bind_param("ssssssssi" . ($lateReady ? 'i' : ''), ...$insParams);
 
 if ($insert->execute()) {
     // Pagkatapos ng INSERT at hindi bago: ang 'ok' sa audit ay
@@ -321,7 +340,18 @@ if ($insert->execute()) {
     // ang INSERT, ang isang nabigong pagsusumite ay magsasara ng device
     // para sa taong hindi naman naitala.
     $audit('ok');
-    echo json_encode(['success' => true, 'message' => 'Attendance submitted successfully for ' . $subject_name . '!']);
+
+    // Said to the student in the same breath as "recorded": finding
+    // out from the instructor a week later is the worse way to learn it.
+    if ($is_late) {
+        echo json_encode([
+            'success' => true,
+            'late'    => true,
+            'message' => 'Attendance submitted for ' . $subject_name . ' — marked LATE (on time was until ' . $late_label . ').'
+        ]);
+    } else {
+        echo json_encode(['success' => true, 'late' => false, 'message' => 'Attendance submitted successfully for ' . $subject_name . '!']);
+    }
 } else {
     // Pumasa siya sa bawat tseke at hindi pa rin siya naitala. Kung
     // wala ito, ang estudyanteng nagrereklamong nagsumite siya ay

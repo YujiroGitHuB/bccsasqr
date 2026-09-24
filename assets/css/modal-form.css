@@ -551,6 +551,20 @@
     text-align: right;
 }
 
+/* Before the time, so the times keep their right edge. */
+.app-table .app-late {
+    display: inline-block;
+    margin-right: .35rem;
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    color: var(--warn-ink, #fcd34d);
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .3);
+}
+
 /* ─── Filter over a rendered list ────────────────────────── */
 
 /* The attendance list is server-rendered in one piece, so its filter is

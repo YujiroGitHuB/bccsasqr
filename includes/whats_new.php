@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-23';
+const WHATS_NEW_VERSION = '2026-09-24';
 
 /**
  * The changelog, newest release first.
@@ -69,6 +69,30 @@ const WHATS_NEW_VERSION = '2026-09-23';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-24',
+            'date'    => '2026-09-24',
+            'icon'    => 'bi-alarm',
+            'title'   => 'Late marking on attendance links',
+            'summary' => 'An attendance link can now tell on time from late. Keep the link open for the whole period, set the minute the grace period ends, and anyone who submits after it is still recorded — with a Late tag beside their time.',
+            'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-alarm',
+                    'title' => 'Set a late time on any link',
+                    'text'  => 'Each card on <strong>Attendance Links</strong> has a new <strong>Set late time</strong> button under the expiry. Tap <strong>15 min</strong> as class starts, or type the exact time &mdash; for a link open 8:00 to 9:00, set <em>8:15</em>. A student who submits at 8:15 is on time; at 8:16 they are marked late. The late time only applies to today, so Monday&rsquo;s setting never marks Wednesday&rsquo;s class late, and a new link starts with none.',
+                    'link'  => ['href' => 'pages/generate_attendance_link.php', 'label' => 'Open Attendance Links', 'can' => 'links.manage'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-tag',
+                    'title' => 'Late shows everywhere a time does',
+                    'text'  => 'An amber <strong>Late</strong> tag sits beside the time in Attendance Records, in the Present list on the dashboard and on the student&rsquo;s own Tracker, and the printed PDF reads <em>08:16 AM (Late)</em>. Students see it coming too: the form says <em>On time until 8:15 AM</em>, turns amber once the time passes, and the confirmation says plainly that they were marked late. Records taken before today all count as on time.',
+                    'link'  => ['href' => 'pages/attendance.php', 'label' => 'Open Attendance Records', 'can' => 'attendance.view'],
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-23',

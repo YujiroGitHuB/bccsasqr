@@ -409,6 +409,24 @@
     color: var(--on-accent);
 }
 
+/* ─── Late tag ────────────────────────────────────────────────
+   Next to the time in the records table. Amber, because it is a
+   state (see the admin design notes: green / amber / red are for
+   state only) — present, but after the cutoff the link set. */
+.att-late-tag {
+    display: inline-block;
+    margin-left: .3rem;
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    vertical-align: 1px;
+    color: var(--warn-ink, #fcd34d);
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .3);
+}
+
 /* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
     .att-page .att-hero {

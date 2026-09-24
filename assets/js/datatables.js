@@ -111,7 +111,18 @@ $(document).ready(function () {
                 // ("BSIT-2A" → "2A"), gaya ng dating ginagawa ng
                 // cleanSection() sa pahina.
                 { data: 'section',    render: escAtt },
-                { data: 'time_in',    render: escAtt },
+                // Late rides in the time column rather than a column of
+                // its own: columnDefs and the server's sort whitelist
+                // address columns by index, and a new one would shift
+                // every target after it.
+                {
+                    data: 'time_in',
+                    render: function (time, type, row) {
+                        var text = attrAtt(time);
+                        if (type !== 'display' || !row.is_late) return text;
+                        return text + ' <span class="att-late-tag">Late</span>';
+                    }
+                },
                 { data: 'subject',    render: escAtt },
                 {
                     data: 'id',

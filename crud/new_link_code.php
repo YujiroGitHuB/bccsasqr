@@ -76,6 +76,13 @@ $set    = $clause['sql'] ?? 'expires_at = NULL';
 $types  = $clause['types'];
 $params = $clause['params'];
 
+// A new session starts with no late cutoff, for the same reason it
+// does not inherit the expiry: the old one belongs to the old class.
+require_once __DIR__ . "/../includes/late.php";
+if (late_ready($conn)) {
+    $set .= ', late_after = NULL';
+}
+
 // ── Palitan ──────────────────────────────────────────────────
 // Kasama ang is_active = 1: maaaring pinatay ang link (manu-mano o
 // dahil nawalan ng enrolled na estudyante), at ang paghingi ng

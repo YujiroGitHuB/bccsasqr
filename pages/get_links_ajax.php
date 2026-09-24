@@ -10,6 +10,7 @@ include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
 require_once __DIR__ . "/../includes/links.php";
+require_once __DIR__ . "/../includes/late.php";
 
 ob_clean();
 header('Content-Type: application/json');
@@ -77,6 +78,10 @@ function attach_link_expiry(mysqli $conn, array $links): array {
         $byCode[$row['short_code']] = $row;
     }
 
+    // The late cutoff rides along for the same reason the expiry does:
+    // it is a countdown, and a cached one would be wrong.
+    $late = late_states($conn, $codes);
+
     foreach ($links as &$l) {
         $e = $byCode[$l['short_code']] ?? null;
 
@@ -84,6 +89,8 @@ function attach_link_expiry(mysqli $conn, array $links): array {
         $l['expires_label'] = $e['expires_label'] ?? null;
         $l['expires_in']    = ($e && $e['expires_in'] !== null) ? (int) $e['expires_in'] : null;
         $l['is_expired']    = $e ? ((int) $e['is_expired'] === 1) : false;
+
+        $l = array_merge($l, $late[$l['short_code']]);
     }
     unset($l);
 
@@ -247,9 +254,12 @@ foreach ($all_active_links as $key => $info) {
 
     if ($info['is_stale']) {
         $new_code = link_generate_code($conn);
+        // The late cutoff goes with the expiry: both belonged to the
+        // meeting that is over.
+        $lateReset = late_ready($conn) ? ', late_after = NULL' : '';
         $rot = $conn->prepare("
             UPDATE attendance_links_tbl
-            SET short_code = ?, expires_at = NULL
+            SET short_code = ?, expires_at = NULL $lateReset
             WHERE short_code = ?
         ");
         $rot->bind_param("ss", $new_code, $short_code);

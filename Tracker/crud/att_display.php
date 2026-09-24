@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../includes/late.php';
+
 $attendance_records = [];
 $student_info = null;
 $total_attendance = 0;
@@ -31,9 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
             $student_info = $student_result->fetch_assoc();
 
             // STEP 2: Get attendance records WITH subject grouping
+            // A student looking up their own record should see a late
+            // mark before the instructor mentions it, not after.
+            $lateCol = late_ready($conn) ? 'is_late' : '0 AS is_late';
             $stmt = $conn->prepare("
                 SELECT id, date, student_no, name, course, section, 
-                       subject, instructor, time_in 
+                       subject, instructor, time_in, $lateCol
                 FROM attendance_tbl 
                 WHERE student_no = ? 
                 ORDER BY subject, date DESC
@@ -208,7 +213,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
                                                         <span class="cell-day"><?= date('l', $ts) ?></span>
                                                     <?php endif; ?>
                                                 </td>
-                                                <td class="cell-time"><?= htmlspecialchars($record['time_in']) ?></td>
+                                                <td class="cell-time">
+                                                    <?php if ((int) $record['is_late'] === 1): ?>
+                                                        <span class="late-tag">Late</span>
+                                                    <?php endif; ?>
+                                                    <?= htmlspecialchars($record['time_in']) ?>
+                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>

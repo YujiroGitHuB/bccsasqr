@@ -759,6 +759,21 @@ body.trk-page {
     font-variant-numeric: tabular-nums;
 }
 
+/* Before the time, not after it: the column is right-aligned, so
+   the times keep one clean edge whether or not a row is late. */
+.attendance-table .late-tag {
+    display: inline-block;
+    margin-right: .35rem;
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    color: var(--warn-ink);
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .3);
+}
+
 /* ─── Empty / nothing found ───────────────────────────────── */
 
 .no-results {
