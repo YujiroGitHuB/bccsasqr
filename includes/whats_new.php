@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-24.3';
+const WHATS_NEW_VERSION = '2026-09-24.4';
 
 /**
  * The changelog, newest release first.
@@ -74,8 +74,8 @@ function whats_new_releases(): array
             'id'      => '2026-09-24',
             'date'    => '2026-09-24',
             'icon'    => 'bi-alarm',
-            'title'   => 'Late marking on attendance links, and a gauge for the new plan',
-            'summary' => 'An attendance link can now tell on time from late. Keep the link open for the whole period, set the minute the grace period ends, and anyone who submits after it is still recorded — with a Late tag beside their time. The Database Monitor also measures against the new plan’s 50 GB now, not the old 10 MB.',
+            'title'   => 'Late marking on links and the scanner, and a gauge for the new plan',
+            'summary' => 'An attendance link can now tell on time from late. Keep the link open for the whole period, set the minute the grace period ends, and anyone who submits after it is still recorded — with a Late tag beside their time. The QR scanner does the same for the students you scan. The Database Monitor also measures against the new plan’s 50 GB now, not the old 10 MB.',
             'items'   => [
                 [
                     'type'  => 'new',
@@ -90,6 +90,19 @@ function whats_new_releases(): array
                     'title' => 'Late shows everywhere a time does',
                     'text'  => 'An amber <strong>Late</strong> tag sits beside the time in Attendance Records, in the Present list on the dashboard and on the student&rsquo;s own Tracker, and the printed PDF reads <em>08:16 AM (Late)</em>. Students see it coming too: the form counts down the minutes they have left to be on time and names the cutoff. The moment it passes, it turns amber and says <em>You&rsquo;re late &mdash; you can still submit</em>, the button reads <em>Submit Attendance (Late)</em>, and the confirmation repeats that they were marked late. Nobody walks away thinking the form closed on them. Records taken before today all count as on time.',
                     'link'  => ['href' => 'pages/attendance.php', 'label' => 'Open Attendance Records', 'can' => 'attendance.view'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-qr-code-scan',
+                    'title' => 'Late marking on the QR scanner',
+                    'text'  => 'Pick a subject on the scanner and a <strong>Set late time</strong> button appears under it &mdash; tap <strong>15 min</strong> as class starts, or type the exact time. The pill counts down while scans are on time and turns amber once they are going in as late. Every late scan says so: <em>LATE</em> on the pop-up and the result card, a Late tag in the list, and the voice reads &ldquo;recorded late&rdquo; for when you are not looking at the screen. The time is kept per subject and only for today, and it is separate from any late time set on an attendance link.',
+                    'link'  => ['href' => 'Qrscanner/qrscanner.php', 'label' => 'Open the Scanner', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-shield-lock',
+                    'title' => 'Scans are timed and signed by the server, not the phone',
+                    'text'  => 'The scanner used to send its own date, time and account number with every scan, and the system took its word for all three. A phone with a wrong clock filed scans at the wrong time &mdash; and anyone who edited the request could backdate a scan, pick their own time in, or claim to be an admin to scan a subject that is not theirs. Now the phone only says <em>which student</em> and <em>which subject</em>: the date and time come from the server&rsquo;s clock, the account from who is signed in, and the subject&rsquo;s name from the subject list. Nothing changes in how you scan; the time on screen is simply the one that was saved.',
                 ],
                 [
                     'type'  => 'improved',

@@ -90,7 +90,13 @@ const DynamicIsland = (() => {
     function show(data) {
         diName.textContent = data.name    || 'Unknown Student';
         diSubj.textContent = data.subject || '';
-        diTime.textContent = getNow();
+        diTime.textContent = data.time || getNow();
+        if (data.late) {
+            const tag = document.createElement('span');
+            tag.className   = 'di-late';
+            tag.textContent = 'LATE';
+            diTime.append(' · ', tag);
+        }
 
         if (data.photoUrl) {
             const img  = new Image();
@@ -134,7 +140,7 @@ const DynamicIsland = (() => {
    ============================================================ */
 let cardTimer = null;
 
-function showStudentCard(student, subject, time) {
+function showStudentCard(student, subject, time, late = false) {
     const card     = document.getElementById('studentCard');
     const photo    = document.getElementById('cardPhoto');
     const initials = document.getElementById('cardInitials');
@@ -165,7 +171,9 @@ function showStudentCard(student, subject, time) {
         subjectEl.classList.add('no-photo');
     }
     document.getElementById('cardTime').innerHTML      =
-        time + '<br><span style="color:#38bdf8">' + getToday() + '</span>';
+        time + '<br>' + (late
+            ? '<span class="scan-late-tag">Late</span>'
+            : '<span style="color:#38bdf8">' + getToday() + '</span>');
 
     card.style.display = 'none';
     void card.offsetWidth;
@@ -364,20 +372,18 @@ function handleScanned(text) {
     }
 
     debugLog(`Student number parsed: ${student.id}`);
-    const time = new Date().toLocaleTimeString();
     debugLog('Sending to server...');
 
+    // Which student and which subject — nothing else. Who is scanning,
+    // the date and the time are the server's to decide (see the top of
+    // crud/save_attendance.php); sending them only invited a changed
+    // copy.
     fetch('../crud/save_attendance.php', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            date:         getToday(),
             id:           student.id,
-            subject:      selectedSubjectName,
-            subject_code: selectedSubject,
-            instructor:   instructorName,
-            time:         time,
-            user_id:      loggedUserId
+            subject_code: selectedSubject
         })
     })
     .then(res => { debugLog('Server response received'); return res.json(); })
@@ -385,15 +391,23 @@ function handleScanned(text) {
         debugLog(`Server response: ${JSON.stringify(response)}`);
 
         if (response.success) {
+            // Late is the server's answer (the database clock against the
+            // subject's cutoff), carried to every place the scan shows.
+            const late = response.late === true;
+
+            // The time and date that were stored, so the screen never
+            // shows a different minute from the record.
+            const time = response.time_in ?? new Date().toLocaleTimeString();
 
             // ── Attendance table ──
-            addToAttendance(getToday(), {
+            addToAttendance(response.date ?? getToday(), {
                 id:      student.id,
                 name:    response.name    ?? student.id,
                 course:  response.course  ?? '',
                 section: response.section ?? '',
                 subject: selectedSubjectName,
-                time
+                time,
+                late
             });
 
             // ── Inline student card (inside #result) ──
@@ -402,13 +416,15 @@ function handleScanned(text) {
                 course:    response.course    ?? '',
                 section:   response.section   ?? '',
                 photo_url: response.photo_url ?? null,
-            }, selectedSubjectName, time);
+            }, selectedSubjectName, time, late);
 
             // ── Dynamic Island (top center) ──
             DynamicIsland.show({
                 name:     response.name      ?? student.id,
                 subject:  selectedSubjectName,
                 photoUrl: response.photo_url ?? null,
+                time,
+                late
             });
 
             if (response.photo_missing) {
@@ -417,7 +433,11 @@ function handleScanned(text) {
                 // person holding the QR. Say so plainly instead of
                 // quietly showing initials.
                 qrResult.textContent =
-                    `✓ ${response.name ?? student.id} — ⚠ no photo, identity not verified`;
+                    `✓ ${response.name ?? student.id}${late ? ' — LATE' : ''} — ⚠ no photo, identity not verified`;
+                qrResult.style.color = '#facc15';
+                qrResult.className   = 'warning';
+            } else if (late) {
+                qrResult.textContent = `✓ ${response.name ?? student.id} — LATE (after ${response.late_label ?? 'the cutoff'})`;
                 qrResult.style.color = '#facc15';
                 qrResult.className   = 'warning';
             } else {
@@ -430,8 +450,9 @@ function handleScanned(text) {
             // The name is read, not the raw record: the school export is
             // all-caps, which every voice spells out letter by letter.
             // Kept to one short phrase — the old sentence ran long
-            // enough that the next scan cut it off mid-name.
-            TTSManager.speak(`${TTSManager.nameForSpeech(response.name) || student.id}, recorded.`);
+            // enough that the next scan cut it off mid-name. "Late" is
+            // one word more, and the instructor may not be looking.
+            TTSManager.speak(`${TTSManager.nameForSpeech(response.name) || student.id}, recorded${late ? ' late' : ''}.`);
 
         } else if (response.message === 'already_marked') {
             qrResult.textContent = `⚠ Already marked: ${student.id}`;
@@ -594,13 +615,170 @@ function scaleLocation(loc, k) {
 /* ============================================================
    ATTENDANCE TABLE
    ============================================================ */
+// The Late tag rides in the Time cell rather than a column of its own:
+// the table is sorted and searched by position, and "Late" beside the
+// time is where the eye already is.
+function timeCell(time, late) {
+    return late ? `${time} <span class="scan-late-tag">Late</span>` : time;
+}
+
 function addToAttendance(date, student) {
     $('#attendanceTable').DataTable().row.add([
         date, student.id, student.name,
         student.course, student.section,
-        student.subject, student.time
+        student.subject, timeCell(student.time, student.late)
     ]).draw(false);
 }
+
+/* ============================================================
+   LATE TIME
+   The cutoff for the selected subject: "on time until 8:15", and every
+   scan after that minute is saved as late. crud/save_attendance.php
+   decides it on the database clock — this only shows and sets it.
+   Every subject's state arrived with the page (scanLateStates), and
+   all of them count down together, so switching subjects never shows
+   a stale countdown.
+   ============================================================ */
+const ScanLate = (() => {
+    const box      = document.getElementById('scanLate');
+    const pill     = document.getElementById('scanLatePill');
+    const icon     = document.getElementById('scanLateIcon');
+    const text     = document.getElementById('scanLateText');
+    const btn      = document.getElementById('scanLateBtn');
+    const btnIcon  = document.getElementById('scanLateBtnIcon');
+    const btnText  = document.getElementById('scanLateBtnText');
+    const panel    = document.getElementById('scanLatePanel');
+    const atInput  = document.getElementById('scanLateAt');
+    const clearBtn = document.getElementById('scanLateClear');
+
+    const states = (typeof scanLateStates === 'object' && scanLateStates) || {};
+    let code = '';
+
+    const SWAL_SCAN = { background: '#0f172a', color: '#e2e8f0', confirmButtonColor: '#38bdf8' };
+
+    const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ESC[c]);
+
+    function fmtLeft(left) {
+        const h = Math.floor(left / 3600);
+        const m = Math.floor((left % 3600) / 60);
+        const s = left % 60;
+        const pad = n => String(n).padStart(2, '0');
+        return h > 0 ? `${h}h ${pad(m)}m` : (m > 0 ? `${m}m ${pad(s)}s` : `${s}s`);
+    }
+
+    function paint() {
+        box.hidden = !code;
+        if (!code) return;
+
+        const st = states[code];
+        pill.classList.remove('is-none', 'is-ok', 'is-late');
+
+        if (!st || !st.late_on) {
+            pill.classList.add('is-none');
+            icon.className      = 'bi bi-alarm';
+            text.textContent    = 'No late time';
+            btnIcon.className   = 'bi bi-plus-lg';
+            btnText.textContent = 'Set late time';
+            clearBtn.hidden     = true;
+            return;
+        }
+
+        const label = esc(st.late_label);
+        btnIcon.className   = 'bi bi-pencil';
+        btnText.textContent = 'Change';
+        clearBtn.hidden     = false;
+
+        if (st.late_in > 0) {
+            pill.classList.add('is-ok');
+            icon.className = 'bi bi-alarm';
+            text.innerHTML = `On time until <b>${label}</b> · <span class="scan-late-left">${fmtLeft(st.late_in)}</span> left`;
+        } else {
+            pill.classList.add('is-late');
+            icon.className = 'bi bi-alarm-fill';
+            text.innerHTML = `Marking late · after <b>${label}</b>`;
+        }
+    }
+
+    function select(subjectCode) {
+        code = subjectCode || '';
+        panel.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+        paint();
+    }
+
+    function save(opts, trigger) {
+        if (!code) return;
+        if (opts.at === '') {
+            Swal.fire({ ...SWAL_SCAN, icon: 'warning', title: 'Pick a time first', timer: 1800, showConfirmButton: false });
+            return;
+        }
+
+        const body = new URLSearchParams({ subject_code: code });
+        Object.keys(opts).forEach(k => body.append(k, opts[k]));
+
+        const forCode = code;
+        if (trigger) trigger.disabled = true;
+
+        fetch('../crud/set_scan_late.php', { method: 'POST', body })
+            .then(r => r.json())
+            .then(res => {
+                if (!res.success) throw new Error(res.message || 'Could not set the late time.');
+
+                states[forCode] = { late_on: res.late_on, late_in: res.late_in, late_label: res.late_label };
+                panel.hidden = true;
+                btn.setAttribute('aria-expanded', 'false');
+                paint();
+
+                // A time already behind us is usually a slip — 8:15 typed
+                // at 3 PM, AM where PM was meant — so it asks to be read.
+                if (res.late_on && res.late_in <= 0) {
+                    Swal.fire({
+                        ...SWAL_SCAN, icon: 'warning',
+                        title: `${esc(res.late_label)} has already passed`,
+                        html: `Every scan from now on will be saved as <b>late</b>.<br>
+                               <span style="font-size:.9em;opacity:.75">If you meant a later time — PM instead of AM — tap Change and set it again.</span>`
+                    });
+                } else {
+                    Swal.fire({
+                        ...SWAL_SCAN, icon: 'success', timer: 2000, showConfirmButton: false,
+                        title: res.late_on ? 'Late time set' : 'Late time removed',
+                        text:  res.late_on
+                            ? `On time until ${res.late_label}. Scans after that are saved as late.`
+                            : 'Every scan counts as on time.'
+                    });
+                }
+            })
+            .catch(err => Swal.fire({ ...SWAL_SCAN, icon: 'error', title: 'Could not set late time', text: err.message }))
+            .finally(() => { if (trigger) trigger.disabled = false; });
+    }
+
+    btn.addEventListener('click', () => {
+        panel.hidden = !panel.hidden;
+        btn.setAttribute('aria-expanded', String(!panel.hidden));
+    });
+    panel.querySelectorAll('[data-minutes]').forEach(b =>
+        b.addEventListener('click', () => save({ minutes: b.dataset.minutes }, b)));
+    document.getElementById('scanLateSet').addEventListener('click', e => save({ at: atInput.value }, e.currentTarget));
+    clearBtn.addEventListener('click', () => save({ clear: 1 }, clearBtn));
+
+    // One clock for every subject. Only the selected one is repainted,
+    // and only in full at the minute it turns late.
+    setInterval(() => {
+        Object.keys(states).forEach(c => {
+            const st = states[c];
+            if (!st || !st.late_on || !(st.late_in > 0)) return;
+            st.late_in--;
+
+            if (c !== code) return;
+            if (st.late_in <= 0) { paint(); return; }
+            const left = pill.querySelector('.scan-late-left');
+            if (left) left.textContent = fmtLeft(st.late_in);
+        });
+    }, 1000);
+
+    return { select };
+})();
 
 /* ============================================================
    SUBJECT SELECT EVENT
@@ -629,6 +807,7 @@ subjectSelect.addEventListener('change', function () {
     const selected      = this.options[this.selectedIndex];
     selectedSubject     = this.value;
     selectedSubjectName = selected.getAttribute('data-name');
+    ScanLate.select(selectedSubject);
 
     if (selectedSubject) {
         // On a phone the subject name is already in the chip — repeating
@@ -696,7 +875,7 @@ window.onload = () => {
             table.row.add([
                 r.date, r.student_no, r.name,
                 r.course, r.section,
-                r.subject || 'N/A', r.time_in
+                r.subject || 'N/A', timeCell(r.time_in, Number(r.is_late) === 1)
             ]).draw(false);
         });
     })

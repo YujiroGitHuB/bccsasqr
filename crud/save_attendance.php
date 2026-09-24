@@ -1,12 +1,16 @@
 <?php
+// Errors are logged, never printed: a PHP warning in the middle of this
+// JSON broke the scan it belonged to, and printed the server's file
+// paths to whoever was holding the phone.
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 
 session_start();
 include "../includes/db_connect.php";
 include "../includes/auth.php";
 include __DIR__ . "/../includes/permissions.php";
 require_once __DIR__ . "/../includes/photo_requirement.php";
+require_once __DIR__ . "/../includes/late.php";
 date_default_timezone_set('Asia/Manila');
 
 header('Content-Type: application/json');
@@ -16,19 +20,52 @@ requirePermissionJson('attendance.record');
 try {
     $data = json_decode(file_get_contents('php://input'), true);
 
-    $date         = $data['date']         ?? '';
-    $student_no   = $data['id']           ?? '';
-    $subject      = $data['subject']      ?? '';
-    $subject_code = $data['subject_code'] ?? '';
-    $time         = $data['time']         ?? date('h:i:s A');
-    $user_id      = $data['user_id']      ?? '';
+    // ── 0. What the request is trusted with ───────────────────────────────────
+    // Only WHICH student and WHICH subject. Everything else used to come
+    // from the request as well, and each one was a way in:
+    //
+    //   user_id  decided whether the scanner was an admin — so an
+    //            instructor sending user_id 1 skipped the "is this
+    //            subject yours?" check, and the record was filed under
+    //            whoever they named.
+    //   date     let a scan be filed on any day, past or future.
+    //   time     let a late arrival pick their own time_in.
+    //   subject  was stored as the subject NAME beside a code it need
+    //            not match, so a record could claim any class.
+    //
+    // Who comes from the session, when from the server's clock, and the
+    // subject's name from subjects_tbl.
+    $student_no   = trim((string) ($data['id']           ?? ''));
+    $subject_code = trim((string) ($data['subject_code'] ?? ''));
+    $user_id      = (int) ($_SESSION['user_id'] ?? 0);
+
+    // One instant for all three, so the date, the time_in and the stored
+    // datetime can never straddle a second — or midnight.
+    $now          = time();
+    $date         = date('Y-m-d', $now);
+    $time         = date('h:i:s A', $now);
 
     // ── 1. Validate required fields ───────────────────────────────────────────
-    if (empty($student_no) || empty($subject) || empty($user_id)) {
+    if ($student_no === '' || $subject_code === '' || $user_id <= 0) {
         echo json_encode([
             'success' => false,
             'message' => 'missing_data',
             'error'   => 'Required fields are missing'
+        ]);
+        exit;
+    }
+
+    $subj = $conn->prepare("SELECT subject_name FROM subjects_tbl WHERE subject_code = ? LIMIT 1");
+    $subj->bind_param("s", $subject_code);
+    $subj->execute();
+    $subject = $subj->get_result()->fetch_assoc()['subject_name'] ?? null;
+    $subj->close();
+
+    if ($subject === null) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'missing_data',
+            'error'   => 'That subject does not exist.'
         ]);
         exit;
     }
@@ -184,18 +221,29 @@ try {
     $inst->execute();
     $instructor = $inst->get_result()->fetch_assoc()['name'];
 
+    // ── 7b. Late? ─────────────────────────────────────────────────────────────
+    // Against the cutoff the signed-in instructor set on the scanner for
+    // this subject (includes/late.php), on the database clock that set it.
+    $late      = late_scan_now($conn, $user_id, $subject_code);
+    $is_late   = $late['is_late'] ? 1 : 0;
+    $lateReady = late_ready($conn);
+
     // ── 8. Insert attendance record ───────────────────────────────────────────
-    $datetime = $date . ' ' . date('H:i:s');
+    $datetime = date('Y-m-d H:i:s', $now);
+
+    // is_late only once the column exists — without it this INSERT
+    // would fail for every scan.
+    $lateInsCol = $lateReady ? ', is_late' : '';
+    $lateInsVal = $lateReady ? ', ?' : '';
 
     $insert = $conn->prepare("
         INSERT INTO attendance_tbl
-            (user_id, date, student_no, name, course, section, subject, instructor, time_in)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (user_id, date, student_no, name, course, section, subject, instructor, time_in$lateInsCol)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?$lateInsVal)
     ");
     if (!$insert) throw new Exception("Insert prepare failed: " . $conn->error);
 
-    $insert->bind_param(
-        "issssssss",
+    $insParams = [
         $user_id,
         $datetime,
         $student_no,
@@ -205,12 +253,22 @@ try {
         $subject,
         $instructor,
         $time
-    );
+    ];
+    if ($lateReady) $insParams[] = $is_late;
+
+    $insert->bind_param("issssssss" . ($lateReady ? 'i' : ''), ...$insParams);
 
     if ($insert->execute()) {
         echo json_encode([
             'success'   => true,
             'message'   => 'saved',
+            'late'       => (bool) $is_late,
+            'late_label' => $late['label'],
+            // What was stored, so the scanner shows the server's date and
+            // time — not the phone's, which is no longer sent.
+            'date'       => $date,
+            'time_in'    => $time,
+            'subject'    => $subject,
             'name'      => $student_data['fullname'],
             'course'    => $student_data['course'],
             'section'   => $student_data['section'],
@@ -229,10 +287,12 @@ try {
     $insert->close();
     $conn->close();
 } catch (Exception $e) {
+    // The detail goes to the server log. The phone gets a sentence — the
+    // stack trace it used to get named every file and path on the server.
+    error_log('save_attendance: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
     echo json_encode([
         'success' => false,
         'message' => 'error',
-        'error'   => $e->getMessage(),
-        'trace'   => $e->getTraceAsString()
+        'error'   => 'Could not save attendance. Please try again.'
     ]);
 }

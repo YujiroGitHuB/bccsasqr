@@ -1098,6 +1098,191 @@ tr:hover td {
     animation: statusBlink 1.6s ease-in-out infinite;
 }
 
+/* ── Late time ──────────────────────────────────────────────
+   The selected subject's cutoff: a pill for its state and one
+   button, with presets that open underneath — the same shape as
+   the Late marking row on the Attendance Links cards, so the two
+   read as one feature.
+
+   Green while scans are on time, amber once they are going in as
+   late. Never red: a late scan is still recorded. Each state also
+   has its own words and icon, so colour is never the only signal. */
+.scan-late {
+    margin-bottom: 12px;
+}
+
+.scan-late[hidden] {
+    display: none;
+}
+
+.scan-late-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.scan-late-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    min-width: 0;
+    padding: .38rem .75rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+/* tabular-nums: the countdown keeps one width as it ticks. */
+.scan-late-pill b,
+.scan-late-left {
+    font-variant-numeric: tabular-nums;
+}
+
+.scan-late-pill.is-none {
+    color: rgba(var(--tint), .5);
+    background: rgba(var(--tint), .04);
+    border-color: rgba(var(--tint), .1);
+}
+
+.scan-late-pill.is-ok {
+    color: var(--ok-ink, #34d399);
+    background: rgba(16, 185, 129, .12);
+    border-color: rgba(16, 185, 129, .3);
+}
+
+.scan-late-pill.is-late {
+    color: var(--warn-ink, #fcd34d);
+    background: rgba(245, 158, 11, .12);
+    border-color: rgba(245, 158, 11, .32);
+}
+
+/* Tinted, not solid: the camera is the page's main thing. */
+.scan-late-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    min-height: 34px;
+    padding: 0 .8rem;
+    border-radius: 9px;
+    border: 1px solid var(--scan-line);
+    background: var(--scan-soft);
+    color: var(--scan-ink);
+    font-size: .76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter .15s ease;
+}
+
+.scan-late-btn:hover {
+    filter: brightness(1.15);
+}
+
+.scan-late-panel {
+    margin-top: .6rem;
+    padding: .7rem;
+    border-radius: 11px;
+    border: 1px solid rgba(var(--tint), .08);
+    background: rgba(var(--tint), .03);
+}
+
+.scan-late-panel[hidden] {
+    display: none;
+}
+
+.scan-late-hint {
+    margin: 0 0 .4rem;
+    font-size: .72rem;
+    color: rgba(var(--tint), .45);
+}
+
+.scan-late-hint:not(:first-child) {
+    margin-top: .7rem;
+}
+
+.scan-late-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.scan-late-presets button,
+.scan-late-clear {
+    min-height: 36px;
+    padding: 0 .85rem;
+    border-radius: 9px;
+    border: 1px solid rgba(var(--tint), .12);
+    background: rgba(var(--tint), .05);
+    color: var(--ink-3);
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.scan-late-presets button:hover,
+.scan-late-clear:hover {
+    color: var(--ink);
+    background: rgba(var(--tint), .1);
+}
+
+.scan-late-custom {
+    display: flex;
+    gap: .4rem;
+}
+
+/* The picker's inputs are sized for the subject select — an icon
+   inset on the left and 48px tall. This one has no icon. */
+.subject-selection .scan-late-custom input {
+    flex: 1;
+    min-width: 0;
+    min-height: 38px;
+    padding: .35rem .7rem;
+    font-size: .85rem;
+}
+
+.scan-late-custom button {
+    flex-shrink: 0;
+    min-height: 38px;
+    padding: 0 1rem;
+    border-radius: 9px;
+    border: 0;
+    background: linear-gradient(135deg, var(--scan), var(--scan-deep));
+    color: var(--on-accent);
+    font-size: .8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.scan-late-clear {
+    display: block;
+    width: 100%;
+    margin-top: .6rem;
+    color: rgba(var(--tint), .5);
+    background: transparent;
+}
+
+.scan-late-clear[hidden] {
+    display: none;
+}
+
+/* The tag beside a late scan's time — in the list, on the result
+   card and (as .di-late) on the island. */
+.scan-late-tag,
+.di-late {
+    display: inline-block;
+    padding: .02rem .42rem;
+    border-radius: 999px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--warn-ink, #fcd34d);
+    background: rgba(245, 158, 11, .14);
+    border: 1px solid rgba(245, 158, 11, .32);
+}
+
 /* ============================================================
    QR SCANNER PAGE — qr-scanner.css
    All styles extracted from inline styles in qr_scanner.php
@@ -1849,6 +2034,12 @@ body {
     body.scan-mode .subject-selection {
         padding: 10px;
         margin: 0 0 10px;
+    }
+
+    /* Kept in scan mode, just tighter: whether scans are going in as
+       late is what the person holding the camera needs to see. */
+    body.scan-mode .scan-late {
+        margin-bottom: 8px;
     }
 
     body.scan-mode #scannerStatus {

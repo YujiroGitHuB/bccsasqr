@@ -4,6 +4,7 @@ session_start();
 include __DIR__ . "/../includes/auth.php";
 include "../includes/db_connect.php";
 include __DIR__ . "/../includes/permissions.php";
+require_once __DIR__ . "/../includes/late.php";
 requirePermission('qr.scanner', '../pages/dashboard.php');
 
 // Fetch lock setting
@@ -44,6 +45,10 @@ if ($role === 'admin') {
     $result  = $subjects_query->get_result();
     $subjects = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 }
+
+// This instructor's late cutoff for each subject, so switching subjects
+// shows the right one without a round trip. See includes/late.php.
+$scanLate = late_scan_states($conn, (int) $instructor_id, array_column($subjects, 'subject_code'));
 
 // Show message page if instructor has no subjects assigned
 if (count($subjects) === 0 && $role !== 'admin') {
@@ -210,6 +215,39 @@ if (count($subjects) === 0 && $role !== 'admin') {
                     </select>
                 </div>
 
+                <!-- Late time for the selected subject. Hidden until one
+                     is picked — a cutoff belongs to a subject, and there
+                     is nothing to show before there is one. Stays in view
+                     in phone scan mode: whether scans are going in as late
+                     is exactly what the person holding the camera needs. -->
+                <div class="scan-late" id="scanLate" hidden>
+                    <div class="scan-late-row">
+                        <span class="scan-late-pill is-none" id="scanLatePill">
+                            <i class="bi bi-alarm" id="scanLateIcon" aria-hidden="true"></i>
+                            <span id="scanLateText">No late time</span>
+                        </span>
+                        <button type="button" class="scan-late-btn" id="scanLateBtn" aria-expanded="false" aria-controls="scanLatePanel">
+                            <i class="bi bi-plus-lg" id="scanLateBtnIcon" aria-hidden="true"></i>
+                            <span id="scanLateBtnText">Set late time</span>
+                        </button>
+                    </div>
+
+                    <div class="scan-late-panel" id="scanLatePanel" hidden>
+                        <div class="scan-late-hint">Students are on time for the next…</div>
+                        <div class="scan-late-presets">
+                            <button type="button" data-minutes="10">10 min</button>
+                            <button type="button" data-minutes="15">15 min</button>
+                            <button type="button" data-minutes="30">30 min</button>
+                        </div>
+                        <div class="scan-late-hint">…or on time until</div>
+                        <div class="scan-late-custom">
+                            <input type="time" id="scanLateAt" aria-label="On time until">
+                            <button type="button" id="scanLateSet">Set</button>
+                        </div>
+                        <button type="button" class="scan-late-clear" id="scanLateClear" hidden>Remove late time</button>
+                    </div>
+                </div>
+
                 <div id="scannerStatus" class="scanner-status">
                     Please select a subject first
                 </div>
@@ -289,6 +327,7 @@ if (count($subjects) === 0 && $role !== 'admin') {
     <script>
         const loggedUserId = <?php echo json_encode($instructor_id); ?>;
         const instructorName = <?php echo json_encode($instructor_name); ?>;
+        const scanLateStates = <?php echo json_encode($scanLate, JSON_HEX_TAG | JSON_FORCE_OBJECT); ?>;
 
         console.log('Instructor ID:', loggedUserId);
         console.log('Instructor Name:', instructorName);

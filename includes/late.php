@@ -197,6 +197,104 @@ function late_state_from_row(?array $row): array
     ];
 }
 
+// ─────────────────────────────────────────────────────────────
+// The QR scanner's cutoff
+//
+// The scanner is not a link. The instructor picks a subject and scans
+// whoever walks up, from any section, so the cutoff belongs to
+// (instructor, subject) rather than to a link row. It lives in a
+// small table of its own with the same late_after column, so every
+// rule above — only today counts, late from the next minute, database
+// clock — applies unchanged through the same SQL.
+//
+// Separate from the link's cutoff on purpose: an instructor who sets
+// 8:15 on the scanner has not said anything about a link they may
+// send out for a make-up at 3 PM.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Is scan_late_tbl there (and is_late on attendance_tbl)? Creates the
+ * table on first use, like late_install() adds the columns.
+ */
+function late_scan_ready(mysqli $conn): bool
+{
+    static $ready = null;
+    if ($ready !== null) return $ready;
+
+    if (!late_ready($conn)) return $ready = false;
+
+    try {
+        $conn->query("
+            CREATE TABLE IF NOT EXISTS scan_late_tbl (
+                instructor_id INT(11)     NOT NULL,
+                subject_code  VARCHAR(50) NOT NULL,
+                late_after    DATETIME    NULL DEFAULT NULL,
+                updated_at    TIMESTAMP   NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+                PRIMARY KEY (instructor_id, subject_code)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+        ");
+        return $ready = true;
+    } catch (Throwable $e) {
+        error_log('late_scan_ready: ' . $e->getMessage());
+        return $ready = false;
+    }
+}
+
+/**
+ * Scanner late state for one instructor's subjects, keyed by
+ * subject_code, in the same shape as late_states().
+ */
+function late_scan_states(mysqli $conn, int $instructorId, array $codes): array
+{
+    $out = array_fill_keys($codes, late_state_from_row(null));
+    if (empty($codes) || !late_scan_ready($conn)) return $out;
+
+    $marks = implode(',', array_fill(0, count($codes), '?'));
+    $stmt  = $conn->prepare("
+        SELECT subject_code, " . late_state_columns() . "
+        FROM scan_late_tbl
+        WHERE instructor_id = ? AND subject_code IN ($marks)
+    ");
+    $stmt->bind_param('i' . str_repeat('s', count($codes)), $instructorId, ...$codes);
+    $stmt->execute();
+
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $out[$row['subject_code']] = late_state_from_row($row);
+    }
+    $stmt->close();
+
+    return $out;
+}
+
+/**
+ * Would a scan right now be late? Decided on the database clock, never
+ * the phone's: the scanner sends its own time for time_in, and a phone
+ * set five minutes slow must not turn 8:20 into on time.
+ *
+ * @return array{is_late:bool, label:?string}
+ */
+function late_scan_now(mysqli $conn, int $instructorId, string $subjectCode): array
+{
+    if (!late_scan_ready($conn)) return ['is_late' => false, 'label' => null];
+
+    $stmt = $conn->prepare("
+        SELECT " . LATE_NOW_SQL . "              AS is_late,
+               DATE_FORMAT(late_after, '%l:%i %p') AS late_label
+        FROM scan_late_tbl
+        WHERE instructor_id = ? AND subject_code = ?
+    ");
+    $stmt->bind_param('is', $instructorId, $subjectCode);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return [
+        'is_late' => $row && (int) $row['is_late'] === 1,
+        'label'   => $row && $row['late_label'] !== null ? trim($row['late_label']) : null,
+    ];
+}
+
 /**
  * Late state for a set of short codes, keyed by code. Every code is
  * present in the result; a code whose columns are missing reads as

@@ -34,6 +34,16 @@ ALTER TABLE attendance_links_tbl
 ALTER TABLE attendance_tbl
     ADD COLUMN IF NOT EXISTS is_late TINYINT(1) NOT NULL DEFAULT 0 AFTER time_in;
 
+-- The QR scanner's cutoff, per instructor and subject — the scanner
+-- has no link row to hold one. Same late_after rules as above.
+CREATE TABLE IF NOT EXISTS scan_late_tbl (
+    instructor_id INT(11)     NOT NULL,
+    subject_code  VARCHAR(50) NOT NULL,
+    late_after    DATETIME    NULL DEFAULT NULL,
+    updated_at    TIMESTAMP   NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (instructor_id, subject_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- ── Check ───────────────────────────────────────────────────
 SELECT short_code, expires_at, late_after
 FROM attendance_links_tbl
