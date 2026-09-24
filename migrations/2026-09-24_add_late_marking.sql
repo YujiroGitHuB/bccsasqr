@@ -34,8 +34,10 @@ ALTER TABLE attendance_links_tbl
 ALTER TABLE attendance_tbl
     ADD COLUMN IF NOT EXISTS is_late TINYINT(1) NOT NULL DEFAULT 0 AFTER time_in;
 
--- The QR scanner's cutoff, per instructor and subject — the scanner
--- has no link row to hold one. Same late_after rules as above.
+-- The QR scanner's late switch, per instructor and subject — the
+-- scanner has no link row to hold one. late_after is the moment it was
+-- switched on (NULL = off); like the link's, only a value dated today
+-- counts, so a switch left on is off again the next day.
 CREATE TABLE IF NOT EXISTS scan_late_tbl (
     instructor_id INT(11)     NOT NULL,
     subject_code  VARCHAR(50) NOT NULL,

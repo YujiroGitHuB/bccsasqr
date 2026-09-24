@@ -437,7 +437,7 @@ function handleScanned(text) {
                 qrResult.style.color = '#facc15';
                 qrResult.className   = 'warning';
             } else if (late) {
-                qrResult.textContent = `✓ ${response.name ?? student.id} — LATE (after ${response.late_label ?? 'the cutoff'})`;
+                qrResult.textContent = `✓ ${response.name ?? student.id} — LATE`;
                 qrResult.style.color = '#facc15';
                 qrResult.className   = 'warning';
             } else {
@@ -631,190 +631,71 @@ function addToAttendance(date, student) {
 }
 
 /* ============================================================
-   LATE TIME
-   The cutoff for the selected subject: "on time until 8:15", and every
-   scan after that minute is saved as late. crud/save_attendance.php
-   decides it on the database clock — this only shows and sets it.
-   Every subject's state arrived with the page (scanLateStates), and
-   all of them count down together, so switching subjects never shows
-   a stale countdown.
-
-   Behind a switch, off by default: a class that does not mark late
-   sees one quiet line. "On" is the subject having a late time today —
-   or, for the moment between flipping the switch and picking a time,
-   being in `pending`. Switching off clears the time on the server, so
-   off always means every scan counts as on time.
+   LATE MARKING
+   One switch per subject. On: every scan from then on is saved as
+   late — the instructor flips it once the class has started. Off: on
+   time. crud/save_attendance.php reads the same switch on the server,
+   so the record never depends on what this screen shows. A switch left
+   on is off again the next day (see includes/late.php).
    ============================================================ */
 const ScanLate = (() => {
-    const box      = document.getElementById('scanLate');
-    const pill     = document.getElementById('scanLatePill');
-    const icon     = document.getElementById('scanLateIcon');
-    const text     = document.getElementById('scanLateText');
-    const btn      = document.getElementById('scanLateBtn');
-    const btnIcon  = document.getElementById('scanLateBtnIcon');
-    const btnText  = document.getElementById('scanLateBtnText');
-    const panel    = document.getElementById('scanLatePanel');
-    const atInput  = document.getElementById('scanLateAt');
-    const sw       = document.getElementById('scanLateSwitch');
-    const body     = document.getElementById('scanLateBody');
-    const offHint  = document.getElementById('scanLateOffHint');
+    const box  = document.getElementById('scanLate');
+    const sw   = document.getElementById('scanLateSwitch');
+    const hint = document.getElementById('scanLateHint');
 
-    const states  = (typeof scanLateStates === 'object' && scanLateStates) || {};
-    const pending = new Set();   // switched on, no time picked yet
+    const states = (typeof scanLateStates === 'object' && scanLateStates) || {};
     let code = '';
-
-    const SWAL_SCAN = { background: '#0f172a', color: '#e2e8f0', confirmButtonColor: '#38bdf8' };
-
-    const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ESC[c]);
-
-    function fmtLeft(left) {
-        const h = Math.floor(left / 3600);
-        const m = Math.floor((left % 3600) / 60);
-        const s = left % 60;
-        const pad = n => String(n).padStart(2, '0');
-        return h > 0 ? `${h}h ${pad(m)}m` : (m > 0 ? `${m}m ${pad(s)}s` : `${s}s`);
-    }
-
-    function openPanel(open) {
-        panel.hidden = !open;
-        btn.setAttribute('aria-expanded', String(open));
-    }
 
     function paint() {
         box.hidden = !code;
         if (!code) return;
 
-        const st = states[code];
-        const on = !!(st && st.late_on) || pending.has(code);
-
+        const on = states[code] === true;
         sw.setAttribute('aria-checked', String(on));
-        body.hidden    = !on;
-        offHint.hidden = on;
         box.classList.toggle('is-on', on);
-        if (!on) { openPanel(false); return; }
-
-        pill.classList.remove('is-none', 'is-ok', 'is-late');
-
-        if (!st || !st.late_on) {
-            pill.classList.add('is-none');
-            icon.className      = 'bi bi-alarm';
-            text.textContent    = 'Pick when late starts';
-            btnIcon.className   = 'bi bi-plus-lg';
-            btnText.textContent = 'Set time';
-            return;
-        }
-
-        const label = esc(st.late_label);
-        btnIcon.className   = 'bi bi-pencil';
-        btnText.textContent = 'Change';
-
-        if (st.late_in > 0) {
-            pill.classList.add('is-ok');
-            icon.className = 'bi bi-alarm';
-            text.innerHTML = `On time until <b>${label}</b> · <span class="scan-late-left">${fmtLeft(st.late_in)}</span> left`;
-        } else {
-            pill.classList.add('is-late');
-            icon.className = 'bi bi-alarm-fill';
-            text.innerHTML = `Marking late · after <b>${label}</b>`;
-        }
+        hint.textContent = on
+            ? 'On — every scan is saved as late'
+            : 'Off — every scan counts as on time';
     }
 
     function select(subjectCode) {
         code = subjectCode || '';
-        openPanel(false);
         paint();
-    }
-
-    function save(opts, trigger) {
-        if (!code) return;
-        if (opts.at === '') {
-            Swal.fire({ ...SWAL_SCAN, icon: 'warning', title: 'Pick a time first', timer: 1800, showConfirmButton: false });
-            return;
-        }
-
-        const body = new URLSearchParams({ subject_code: code });
-        Object.keys(opts).forEach(k => body.append(k, opts[k]));
-
-        const forCode = code;
-        if (trigger) trigger.disabled = true;
-
-        fetch('../crud/set_scan_late.php', { method: 'POST', body })
-            .then(r => r.json())
-            .then(res => {
-                if (!res.success) throw new Error(res.message || 'Could not set the late time.');
-
-                states[forCode] = { late_on: res.late_on, late_in: res.late_in, late_label: res.late_label };
-                pending.delete(forCode);
-                openPanel(false);
-                paint();
-
-                // A time already behind us is usually a slip — 8:15 typed
-                // at 3 PM, AM where PM was meant — so it asks to be read.
-                if (res.late_on && res.late_in <= 0) {
-                    Swal.fire({
-                        ...SWAL_SCAN, icon: 'warning',
-                        title: `${esc(res.late_label)} has already passed`,
-                        html: `Every scan from now on will be saved as <b>late</b>.<br>
-                               <span style="font-size:.9em;opacity:.75">If you meant a later time — PM instead of AM — tap Change and set it again, or switch Late marking off.</span>`
-                    });
-                } else {
-                    Swal.fire({
-                        ...SWAL_SCAN, icon: 'success', timer: 2000, showConfirmButton: false,
-                        title: res.late_on ? 'Late time set' : 'Late marking off',
-                        text:  res.late_on
-                            ? `On time until ${res.late_label}. Scans after that are saved as late.`
-                            : 'Every scan from now on counts as on time.'
-                    });
-                }
-            })
-            .catch(err => {
-                // Put the switch back to what the server still has.
-                paint();
-                Swal.fire({ ...SWAL_SCAN, icon: 'error', title: 'Could not set late time', text: err.message });
-            })
-            .finally(() => { if (trigger) trigger.disabled = false; });
     }
 
     sw.addEventListener('click', () => {
         if (!code) return;
 
-        if (sw.getAttribute('aria-checked') !== 'true') {
-            // Nothing is saved yet — a late time needs a time. The
-            // choices open straight away, since that is the next step.
-            pending.add(code);
-            paint();
-            openPanel(true);
-            return;
-        }
+        const forCode = code;
+        const turnOn  = states[forCode] !== true;
 
-        pending.delete(code);
-        if (states[code] && states[code].late_on) {
-            save({ clear: 1 }, sw);   // off on the server too
-        } else {
-            paint();                  // was only switched on, never set
-        }
+        // Flipped at once — the instructor is mid-class, looking at the
+        // camera, not at a spinner. Put back if the server says no.
+        states[forCode] = turnOn;
+        paint();
+        sw.disabled = true;
+
+        fetch('../crud/set_scan_late.php', {
+            method: 'POST',
+            body:   new URLSearchParams({ subject_code: forCode, on: turnOn ? '1' : '0' })
+        })
+            .then(r => r.json())
+            .then(res => {
+                if (!res.success) throw new Error(res.message || 'Could not change late marking.');
+                states[forCode] = res.on === true;
+            })
+            .catch(err => {
+                states[forCode] = !turnOn;
+                Swal.fire({
+                    background: '#0f172a', color: '#e2e8f0', confirmButtonColor: '#38bdf8',
+                    icon: 'error', title: 'Late marking not changed', text: err.message
+                });
+            })
+            .finally(() => {
+                sw.disabled = false;
+                paint();
+            });
     });
-
-    btn.addEventListener('click', () => openPanel(panel.hidden));
-    panel.querySelectorAll('[data-minutes]').forEach(b =>
-        b.addEventListener('click', () => save({ minutes: b.dataset.minutes }, b)));
-    document.getElementById('scanLateSet').addEventListener('click', e => save({ at: atInput.value }, e.currentTarget));
-
-    // One clock for every subject. Only the selected one is repainted,
-    // and only in full at the minute it turns late.
-    setInterval(() => {
-        Object.keys(states).forEach(c => {
-            const st = states[c];
-            if (!st || !st.late_on || !(st.late_in > 0)) return;
-            st.late_in--;
-
-            if (c !== code) return;
-            if (st.late_in <= 0) { paint(); return; }
-            const left = pill.querySelector('.scan-late-left');
-            if (left) left.textContent = fmtLeft(st.late_in);
-        });
-    }, 1000);
 
     return { select };
 })();

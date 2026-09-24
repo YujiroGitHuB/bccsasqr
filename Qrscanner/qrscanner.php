@@ -46,9 +46,10 @@ if ($role === 'admin') {
     $subjects = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 }
 
-// This instructor's late cutoff for each subject, so switching subjects
-// shows the right one without a round trip. See includes/late.php.
-$scanLate = late_scan_states($conn, (int) $instructor_id, array_column($subjects, 'subject_code'));
+// Whether late marking is on for each of this instructor's subjects
+// today, so switching subjects shows the right switch without a round
+// trip. See includes/late.php.
+$scanLate = late_scan_on($conn, (int) $instructor_id, array_column($subjects, 'subject_code'));
 
 // Show message page if instructor has no subjects assigned
 if (count($subjects) === 0 && $role !== 'admin') {
@@ -215,57 +216,27 @@ if (count($subjects) === 0 && $role !== 'admin') {
                     </select>
                 </div>
 
-                <!-- Late time for the selected subject. Hidden until one
-                     is picked — a cutoff belongs to a subject, and there
-                     is nothing to show before there is one. Stays in view
-                     in phone scan mode: whether scans are going in as late
-                     is exactly what the person holding the camera needs. -->
-                <div class="scan-late" id="scanLate" hidden>
-                    <!-- Off unless switched on: a class that does not
-                         mark late sees one quiet line and nothing else.
-                         Switching it off clears the subject's late time.
+                <!-- Late marking for the selected subject: one switch and
+                     nothing else. On, every scan from then on is saved as
+                     late; off, on time. Hidden until a subject is picked —
+                     the switch belongs to a subject. Stays in view in phone
+                     scan mode: whether scans are going in as late is what
+                     the person holding the camera needs to see.
 
-                         A button, not a <label> + checkbox: this sits
-                         inside .subject-selection, whose `label` rules
-                         would restyle it and — in phone scan mode — hide
-                         it, exactly when it is needed. -->
+                     A button, not a <label> + checkbox: this sits inside
+                     .subject-selection, whose `label` rules would restyle
+                     it and — in phone scan mode — hide it. -->
+                <div class="scan-late" id="scanLate" hidden>
                     <button type="button" class="scan-late-toggle" id="scanLateSwitch"
                             role="switch" aria-checked="false">
                         <span class="scan-late-toggle-text">
                             <span class="scan-late-toggle-title">
                                 <i class="bi bi-alarm" aria-hidden="true"></i> Late marking
                             </span>
-                            <small id="scanLateOffHint">Off — every scan counts as on time</small>
+                            <small id="scanLateHint">Off — every scan counts as on time</small>
                         </span>
                         <span class="scan-late-switch" aria-hidden="true"></span>
                     </button>
-
-                    <div class="scan-late-body" id="scanLateBody" hidden>
-                        <div class="scan-late-row">
-                            <span class="scan-late-pill is-none" id="scanLatePill">
-                                <i class="bi bi-alarm" id="scanLateIcon" aria-hidden="true"></i>
-                                <span id="scanLateText">Pick when late starts</span>
-                            </span>
-                            <button type="button" class="scan-late-btn" id="scanLateBtn" aria-expanded="false" aria-controls="scanLatePanel">
-                                <i class="bi bi-plus-lg" id="scanLateBtnIcon" aria-hidden="true"></i>
-                                <span id="scanLateBtnText">Set time</span>
-                            </button>
-                        </div>
-
-                        <div class="scan-late-panel" id="scanLatePanel" hidden>
-                            <div class="scan-late-hint">Students are on time for the next…</div>
-                            <div class="scan-late-presets">
-                                <button type="button" data-minutes="10">10 min</button>
-                                <button type="button" data-minutes="15">15 min</button>
-                                <button type="button" data-minutes="30">30 min</button>
-                            </div>
-                            <div class="scan-late-hint">…or on time until</div>
-                            <div class="scan-late-custom">
-                                <input type="time" id="scanLateAt" aria-label="On time until">
-                                <button type="button" id="scanLateSet">Set</button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div id="scannerStatus" class="scanner-status">

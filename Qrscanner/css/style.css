@@ -1098,26 +1098,21 @@ tr:hover td {
     animation: statusBlink 1.6s ease-in-out infinite;
 }
 
-/* ── Late time ──────────────────────────────────────────────
-   The selected subject's cutoff: a pill for its state and one
-   button, with presets that open underneath — the same shape as
-   the Late marking row on the Attendance Links cards, so the two
-   read as one feature.
-
-   Green while scans are on time, amber once they are going in as
-   late. Never red: a late scan is still recorded. Each state also
-   has its own words and icon, so colour is never the only signal. */
+/* ── Late marking ───────────────────────────────────────────
+   One switch per subject, nothing else. On: every scan is saved as
+   late. The row turns amber while it is on — late is a state, and the
+   person holding the camera should see it at a glance. Never red: a
+   late scan is still recorded. */
 .scan-late {
     margin-bottom: 12px;
 }
 
-.scan-late[hidden],
-.scan-late-body[hidden] {
+.scan-late[hidden] {
     display: none;
 }
 
-/* The on/off line. The whole row is the switch, so the text is as
-   easy to tap as the track — a thumb, not a mouse, is aiming at it. */
+/* The whole row is the switch, so the text is as easy to tap as the
+   track — a thumb, not a mouse, is aiming at it. */
 .scan-late-toggle {
     display: flex;
     align-items: center;
@@ -1131,7 +1126,7 @@ tr:hover td {
     color: inherit;
     font: inherit;
     cursor: pointer;
-    transition: border-color .2s ease;
+    transition: border-color .2s ease, background .2s ease;
 }
 
 .scan-late-toggle:focus-visible {
@@ -1140,7 +1135,8 @@ tr:hover td {
 }
 
 .scan-late.is-on .scan-late-toggle {
-    border-color: var(--scan-line);
+    border-color: rgba(245, 158, 11, .35);
+    background: rgba(245, 158, 11, .08);
 }
 
 .scan-late-toggle-text {
@@ -1165,8 +1161,13 @@ tr:hover td {
     color: rgba(var(--tint), .45);
 }
 
-.scan-late-toggle small[hidden] {
-    display: none;
+.scan-late.is-on .scan-late-toggle-title i,
+.scan-late.is-on .scan-late-toggle small {
+    color: var(--warn-ink, #fcd34d);
+}
+
+.scan-late.is-on .scan-late-toggle small {
+    font-weight: 600;
 }
 
 .scan-late-switch {
@@ -1192,10 +1193,10 @@ tr:hover td {
     transition: transform .2s ease;
 }
 
-/* Sky, not green: on/off is a setting, and green on this page means
-   a scan went through. */
+/* Amber, like the row: on does not mean "enabled", it means "scans
+   are being marked late". */
 .scan-late-toggle[aria-checked="true"] .scan-late-switch {
-    background: linear-gradient(135deg, var(--scan), var(--scan-deep));
+    background: #f59e0b;
 }
 
 .scan-late-toggle[aria-checked="true"] .scan-late-switch::after {
@@ -1207,149 +1208,7 @@ tr:hover td {
 }
 
 .scan-late-toggle:disabled .scan-late-switch {
-    opacity: .5;
-}
-
-.scan-late-body {
-    margin-top: .55rem;
-}
-
-.scan-late-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: .5rem;
-}
-
-.scan-late-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    min-width: 0;
-    padding: .38rem .75rem;
-    border-radius: 999px;
-    font-size: .78rem;
-    font-weight: 600;
-    border: 1px solid transparent;
-}
-
-/* tabular-nums: the countdown keeps one width as it ticks. */
-.scan-late-pill b,
-.scan-late-left {
-    font-variant-numeric: tabular-nums;
-}
-
-.scan-late-pill.is-none {
-    color: rgba(var(--tint), .5);
-    background: rgba(var(--tint), .04);
-    border-color: rgba(var(--tint), .1);
-}
-
-.scan-late-pill.is-ok {
-    color: var(--ok-ink, #34d399);
-    background: rgba(16, 185, 129, .12);
-    border-color: rgba(16, 185, 129, .3);
-}
-
-.scan-late-pill.is-late {
-    color: var(--warn-ink, #fcd34d);
-    background: rgba(245, 158, 11, .12);
-    border-color: rgba(245, 158, 11, .32);
-}
-
-/* Tinted, not solid: the camera is the page's main thing. */
-.scan-late-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    min-height: 34px;
-    padding: 0 .8rem;
-    border-radius: 9px;
-    border: 1px solid var(--scan-line);
-    background: var(--scan-soft);
-    color: var(--scan-ink);
-    font-size: .76rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: filter .15s ease;
-}
-
-.scan-late-btn:hover {
-    filter: brightness(1.15);
-}
-
-.scan-late-panel {
-    margin-top: .6rem;
-    padding: .7rem;
-    border-radius: 11px;
-    border: 1px solid rgba(var(--tint), .08);
-    background: rgba(var(--tint), .03);
-}
-
-.scan-late-panel[hidden] {
-    display: none;
-}
-
-.scan-late-hint {
-    margin: 0 0 .4rem;
-    font-size: .72rem;
-    color: rgba(var(--tint), .45);
-}
-
-.scan-late-hint:not(:first-child) {
-    margin-top: .7rem;
-}
-
-.scan-late-presets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .4rem;
-}
-
-.scan-late-presets button {
-    min-height: 36px;
-    padding: 0 .85rem;
-    border-radius: 9px;
-    border: 1px solid rgba(var(--tint), .12);
-    background: rgba(var(--tint), .05);
-    color: var(--ink-3);
-    font-size: .78rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.scan-late-presets button:hover {
-    color: var(--ink);
-    background: rgba(var(--tint), .1);
-}
-
-.scan-late-custom {
-    display: flex;
-    gap: .4rem;
-}
-
-/* The picker's inputs are sized for the subject select — an icon
-   inset on the left and 48px tall. This one has no icon. */
-.subject-selection .scan-late-custom input {
-    flex: 1;
-    min-width: 0;
-    min-height: 38px;
-    padding: .35rem .7rem;
-    font-size: .85rem;
-}
-
-.scan-late-custom button {
-    flex-shrink: 0;
-    min-height: 38px;
-    padding: 0 1rem;
-    border-radius: 9px;
-    border: 0;
-    background: linear-gradient(135deg, var(--scan), var(--scan-deep));
-    color: var(--on-accent);
-    font-size: .8rem;
-    font-weight: 700;
-    cursor: pointer;
+    opacity: .6;
 }
 
 /* The tag beside a late scan's time — in the list, on the result

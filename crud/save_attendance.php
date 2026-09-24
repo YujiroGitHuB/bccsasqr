@@ -222,10 +222,9 @@ try {
     $instructor = $inst->get_result()->fetch_assoc()['name'];
 
     // ── 7b. Late? ─────────────────────────────────────────────────────────────
-    // Against the cutoff the signed-in instructor set on the scanner for
-    // this subject (includes/late.php), on the database clock that set it.
-    $late      = late_scan_now($conn, $user_id, $subject_code);
-    $is_late   = $late['is_late'] ? 1 : 0;
+    // Yes while the signed-in instructor has late marking switched on for
+    // this subject today (includes/late.php).
+    $is_late   = late_scan_now($conn, $user_id, $subject_code) ? 1 : 0;
     $lateReady = late_ready($conn);
 
     // ── 8. Insert attendance record ───────────────────────────────────────────
@@ -263,7 +262,6 @@ try {
             'success'   => true,
             'message'   => 'saved',
             'late'       => (bool) $is_late,
-            'late_label' => $late['label'],
             // What was stored, so the scanner shows the server's date and
             // time — not the phone's, which is no longer sent.
             'date'       => $date,

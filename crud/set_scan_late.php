@@ -1,17 +1,15 @@
 <?php
 // ============================================================
-// Set or remove the QR scanner's late cutoff for one subject.
+// Switch the QR scanner's late marking on or off for one subject.
 //
-// Same inputs and the same rules as crud/set_link_late.php — see
-// includes/late.php — but keyed by (signed-in instructor, subject)
-// instead of a link, because the scanner has no link.
+// On: every scan from now on is saved as late. Off: on time. There is
+// no cutoff time on the scanner — the instructor flips the switch when
+// the class has started. Keyed by (signed-in instructor, subject);
+// see includes/late.php.
 //
 // Accepts (POST):
 //   subject_code  required
-//   and ONE of:
-//     minutes=15   on time for the next 15 minutes
-//     at=08:15     today, from <input type="time">
-//     clear=1      no cutoff
+//   on            1 | 0
 // ============================================================
 
 session_start();
@@ -30,9 +28,10 @@ if (empty($_SESSION['user_id'])) {
 
 requirePermissionJson('qr.scanner');
 
-// The session, never the request: the cutoff is this instructor's own.
+// The session, never the request: the switch is this instructor's own.
 $user_id      = (int) $_SESSION['user_id'];
 $subject_code = trim($_POST['subject_code'] ?? '');
+$on           = ($_POST['on'] ?? '') === '1';
 
 if ($subject_code === '') {
     echo json_encode(['success' => false, 'message' => 'Select a subject first.']);
@@ -64,37 +63,25 @@ if (!late_scan_ready($conn)) {
     exit;
 }
 
-$clause = late_clause($_POST);
-
-if ($clause['error'] !== null) {
-    echo json_encode(['success' => false, 'message' => $clause['error']]);
-    exit;
-}
-
-if ($clause['sql'] === null) {
-    echo json_encode(['success' => false, 'message' => 'Nothing to set.']);
-    exit;
-}
-
-// The row first, then the same SET clause the link endpoint uses — one
-// place builds late_after, whichever table it lands in.
-$ins = $conn->prepare("INSERT IGNORE INTO scan_late_tbl (instructor_id, subject_code) VALUES (?, ?)");
-$ins->bind_param('is', $user_id, $subject_code);
-$ins->execute();
-
-$stmt   = $conn->prepare("UPDATE scan_late_tbl SET {$clause['sql']} WHERE instructor_id = ? AND subject_code = ?");
-$types  = $clause['types'] . 'is';
-$params = array_merge($clause['params'], [$user_id, $subject_code]);
-$stmt->bind_param($types, ...$params);
+// On records the moment it was switched on — NOW(), on the database
+// clock that also decides what "today" is. Off is NULL.
+$stmt = $conn->prepare("
+    INSERT INTO scan_late_tbl (instructor_id, subject_code, late_after)
+    VALUES (?, ?, IF(?, NOW(), NULL))
+    ON DUPLICATE KEY UPDATE late_after = VALUES(late_after)
+");
+$onInt = $on ? 1 : 0;
+$stmt->bind_param('isi', $user_id, $subject_code, $onInt);
 
 if (!$stmt->execute()) {
     echo json_encode(['success' => false, 'message' => 'Database error']);
     exit;
 }
 
-echo json_encode(array_merge(
-    ['success' => true, 'subject_code' => $subject_code],
-    late_scan_states($conn, $user_id, [$subject_code])[$subject_code]
-));
+echo json_encode([
+    'success'      => true,
+    'subject_code' => $subject_code,
+    'on'           => late_scan_now($conn, $user_id, $subject_code),
+]);
 
 $conn->close();

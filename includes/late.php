@@ -198,18 +198,23 @@ function late_state_from_row(?array $row): array
 }
 
 // ─────────────────────────────────────────────────────────────
-// The QR scanner's cutoff
+// The QR scanner's switch
 //
-// The scanner is not a link. The instructor picks a subject and scans
-// whoever walks up, from any section, so the cutoff belongs to
-// (instructor, subject) rather than to a link row. It lives in a
-// small table of its own with the same late_after column, so every
-// rule above — only today counts, late from the next minute, database
-// clock — applies unchanged through the same SQL.
+// The scanner has no cutoff time. It has a switch: the instructor
+// turns late marking on when the class has started, and every scan
+// from then on is late until it is turned off. No time to set, no
+// countdown to watch — the person holding the camera already knows
+// when class began.
 //
-// Separate from the link's cutoff on purpose: an instructor who sets
-// 8:15 on the scanner has not said anything about a link they may
-// send out for a make-up at 3 PM.
+// Kept per (instructor, subject), because the scanner is not a link:
+// it scans whoever walks up, from any section. The table reuses the
+// late_after column — set to the moment it was switched on, NULL when
+// off — and the same "only today counts" rule as above. So a switch
+// left on at the end of Monday's class is off on Tuesday morning,
+// without anyone remembering to turn it off.
+//
+// Separate from the link's cutoff on purpose: switching the scanner on
+// says nothing about a link sent out for a make-up at 3 PM.
 // ─────────────────────────────────────────────────────────────
 
 /**
@@ -241,17 +246,18 @@ function late_scan_ready(mysqli $conn): bool
 }
 
 /**
- * Scanner late state for one instructor's subjects, keyed by
- * subject_code, in the same shape as late_states().
+ * Is late marking on today, per subject, for one instructor?
+ *
+ * @return array<string, bool>  subject_code => on
  */
-function late_scan_states(mysqli $conn, int $instructorId, array $codes): array
+function late_scan_on(mysqli $conn, int $instructorId, array $codes): array
 {
-    $out = array_fill_keys($codes, late_state_from_row(null));
+    $out = array_fill_keys($codes, false);
     if (empty($codes) || !late_scan_ready($conn)) return $out;
 
     $marks = implode(',', array_fill(0, count($codes), '?'));
     $stmt  = $conn->prepare("
-        SELECT subject_code, " . late_state_columns() . "
+        SELECT subject_code, " . LATE_TODAY_SQL . " AS is_on
         FROM scan_late_tbl
         WHERE instructor_id = ? AND subject_code IN ($marks)
     ");
@@ -260,7 +266,7 @@ function late_scan_states(mysqli $conn, int $instructorId, array $codes): array
 
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) {
-        $out[$row['subject_code']] = late_state_from_row($row);
+        $out[$row['subject_code']] = (int) $row['is_on'] === 1;
     }
     $stmt->close();
 
@@ -268,31 +274,12 @@ function late_scan_states(mysqli $conn, int $instructorId, array $codes): array
 }
 
 /**
- * Would a scan right now be late? Decided on the database clock, never
- * the phone's: the scanner sends its own time for time_in, and a phone
- * set five minutes slow must not turn 8:20 into on time.
- *
- * @return array{is_late:bool, label:?string}
+ * Is a scan right now late? True while the switch is on — decided on
+ * the database's idea of "today", never the phone's.
  */
-function late_scan_now(mysqli $conn, int $instructorId, string $subjectCode): array
+function late_scan_now(mysqli $conn, int $instructorId, string $subjectCode): bool
 {
-    if (!late_scan_ready($conn)) return ['is_late' => false, 'label' => null];
-
-    $stmt = $conn->prepare("
-        SELECT " . LATE_NOW_SQL . "              AS is_late,
-               DATE_FORMAT(late_after, '%l:%i %p') AS late_label
-        FROM scan_late_tbl
-        WHERE instructor_id = ? AND subject_code = ?
-    ");
-    $stmt->bind_param('is', $instructorId, $subjectCode);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-
-    return [
-        'is_late' => $row && (int) $row['is_late'] === 1,
-        'label'   => $row && $row['late_label'] !== null ? trim($row['late_label']) : null,
-    ];
+    return late_scan_on($conn, $instructorId, [$subjectCode])[$subjectCode] ?? false;
 }
 
 /**

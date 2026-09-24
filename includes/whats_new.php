@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-24.5';
+const WHATS_NEW_VERSION = '2026-09-24.6';
 
 /**
  * The changelog, newest release first.
@@ -95,14 +95,14 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-qr-code-scan',
                     'title' => 'Late marking on the QR scanner',
-                    'text'  => 'Pick a subject on the scanner and switch on <strong>Late marking</strong> under it &mdash; then tap <strong>15 min</strong> as class starts, or type the exact time. The pill counts down while scans are on time and turns amber once they are going in as late. Every late scan says so: <em>LATE</em> on the pop-up and the result card, a Late tag in the list, and the voice reads &ldquo;recorded late&rdquo; for when you are not looking at the screen. The time is kept per subject and only for today, and it is separate from any late time set on an attendance link.',
+                    'text'  => 'Pick a subject on the scanner and a <strong>Late marking</strong> switch sits under it. While it is on, every scan is saved as late &mdash; and says so: <em>LATE</em> on the pop-up and the result card, a Late tag in the list, and the voice reads &ldquo;recorded late&rdquo; for when you are not looking at the screen. It is kept per subject, and it is separate from any late time set on an attendance link.',
                     'link'  => ['href' => 'Qrscanner/qrscanner.php', 'label' => 'Open the Scanner', 'can' => 'qr.scanner'],
                 ],
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-toggle-on',
-                    'title' => 'Late marking on the scanner is a switch, off until you want it',
-                    'text'  => 'A class that does not mark late now sees a single quiet line under the subject &mdash; <em>Late marking: Off</em> &mdash; and nothing else. Switch it on and the time choices open straight away. Switch it off again and that subject&rsquo;s late time is cleared, so every scan from then on counts as on time. Scans already saved keep the mark they got.',
+                    'title' => 'Scanner late marking is just on or off — no time to set',
+                    'text'  => 'The scanner no longer asks for a cutoff time. Switch <strong>Late marking</strong> on when the class has started and every scan from then on is late; switch it off and scans count as on time again. The row turns amber while it is on, so it is hard to leave on by accident &mdash; and if it is, it is off again the next morning on its own. Scans already saved keep the mark they got.',
                     'link'  => ['href' => 'Qrscanner/qrscanner.php', 'label' => 'Open the Scanner', 'can' => 'qr.scanner'],
                 ],
                 [
