@@ -166,13 +166,18 @@ if ($result && $result->num_rows > 0) {
                      the first the student hears of a cutoff. Like the
                      countdown above, the server decides — this only turns
                      amber at the minute the stamp starts reading late. -->
+                <!-- Both states name the cutoff. Without it, the amber
+                     pill could not answer "why am I late?" — nor show an
+                     instructor that the time they set had already passed. -->
+                <?php $lateLabel = htmlspecialchars($late['late_label']); ?>
                 <div class="att-late<?php echo $late['late_in'] <= 0 ? ' is-late' : ''; ?>"
-                     id="attLate" data-seconds="<?php echo (int) $late['late_in']; ?>">
-                    <i class="bi bi-alarm"></i>
+                     id="attLate" data-seconds="<?php echo (int) $late['late_in']; ?>"
+                     data-label="<?php echo $lateLabel; ?>">
+                    <i class="bi <?php echo $late['late_in'] <= 0 ? 'bi-alarm' : 'bi-check2-circle'; ?>" id="attLateIcon"></i>
                     <span id="attLateText">
                         <?php echo $late['late_in'] <= 0
-                            ? 'You will be marked late'
-                            : 'On time until ' . htmlspecialchars($late['late_label']); ?>
+                            ? 'You will be marked late — on time was until ' . $lateLabel
+                            : 'You’re on time — until ' . $lateLabel; ?>
                     </span>
                 </div>
             <?php endif; ?>
@@ -350,7 +355,9 @@ if ($result && $result->num_rows > 0) {
 
             setTimeout(function () {
                 box.classList.add('is-late');
-                document.getElementById('attLateText').textContent = 'You will be marked late';
+                document.getElementById('attLateIcon').className = 'bi bi-alarm';
+                document.getElementById('attLateText').textContent =
+                    'You will be marked late — on time was until ' + box.dataset.label;
             }, left * 1000);
         })();
 
