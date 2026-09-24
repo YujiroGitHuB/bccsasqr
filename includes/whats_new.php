@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-24';
+const WHATS_NEW_VERSION = '2026-09-24.2';
 
 /**
  * The changelog, newest release first.
@@ -74,8 +74,8 @@ function whats_new_releases(): array
             'id'      => '2026-09-24',
             'date'    => '2026-09-24',
             'icon'    => 'bi-alarm',
-            'title'   => 'Late marking on attendance links',
-            'summary' => 'An attendance link can now tell on time from late. Keep the link open for the whole period, set the minute the grace period ends, and anyone who submits after it is still recorded — with a Late tag beside their time.',
+            'title'   => 'Late marking on attendance links, and a gauge for the new plan',
+            'summary' => 'An attendance link can now tell on time from late. Keep the link open for the whole period, set the minute the grace period ends, and anyone who submits after it is still recorded — with a Late tag beside their time. The Database Monitor also measures against the new plan’s 50 GB now, not the old 10 MB.',
             'items'   => [
                 [
                     'type'  => 'new',
@@ -90,6 +90,13 @@ function whats_new_releases(): array
                     'title' => 'Late shows everywhere a time does',
                     'text'  => 'An amber <strong>Late</strong> tag sits beside the time in Attendance Records, in the Present list on the dashboard and on the student&rsquo;s own Tracker, and the printed PDF reads <em>08:16 AM (Late)</em>. Students see it coming too: the form counts down the minutes they have left to be on time and names the cutoff. The moment it passes, it turns amber and says <em>You&rsquo;re late &mdash; you can still submit</em>, the button reads <em>Submit Attendance (Late)</em>, and the confirmation repeats that they were marked late. Nobody walks away thinking the form closed on them. Records taken before today all count as on time.',
                     'link'  => ['href' => 'pages/attendance.php', 'label' => 'Open Attendance Records', 'can' => 'attendance.view'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-database',
+                    'title' => 'Database Monitor measures against 50 GB',
+                    'text'  => 'The gauge was still measuring against the free plan&rsquo;s 10 MB, so a healthy database read as a third full and creeping toward a warning. It now reads against the 50 GB of the new plan and shows sizes in GB once they get that big. A database this small shows as a thin sliver and <em>&lt;0.01%</em>, rather than a flat 0% that looks like the monitor stopped working.',
+                    'link'  => ['href' => 'pages/db_monitor.php', 'label' => 'Open Database Monitor', 'can' => 'db.monitor'],
                 ],
             ],
         ],

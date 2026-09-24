@@ -47,17 +47,57 @@ while ($row = $tables->fetch_assoc()) {
     $totalRows  += (int) $row['Rows'];
 }
 
-// Limit config (InfinityFree = 10MB)
-$limit_mb = 10;
+// ── The limit ────────────────────────────────────────────────
+// The database allowance of the hosting plan, in MB. This is the
+// only line to change when the plan changes.
+//
+//   InfinityFree (free)       10 MB   — until 2026-09-23
+//   Hostinger Business     51200 MB   = 50 GB
+$limit_mb = 50 * 1024;
+
 $used_mb  = round($dbSize['Size_MB'], 4);
 $data_mb  = round($dbSize['Data_MB'], 4);
 $index_mb = round($dbSize['Index_MB'], 4);
 $free_mb  = round(max($limit_mb - $used_mb, 0), 4);
 $percent  = $limit_mb > 0 ? round(($used_mb / $limit_mb) * 100, 2) : 0;
 
+// A few MB of a 50 GB allowance rounds to 0.00%, and "0%" reads as
+// "the monitor is broken" or "the database is empty" — neither true.
+$percentLabel = ($used_mb > 0 && $percent < 0.01) ? '<0.01' : (string) $percent;
+
+/**
+ * [number, unit] for a size held in MB: MB below a gigabyte, GB from
+ * there. "51200 MB" is a number nobody reads at a glance; "50 GB" is
+ * what the hosting plan itself says.
+ */
+function dbm_size_parts(float $mb): array
+{
+    if ($mb >= 1024) {
+        $gb = round($mb / 1024, 2);
+        return [rtrim(rtrim(number_format($gb, 2, '.', ''), '0'), '.'), 'GB'];
+    }
+    return [(string) round($mb, 2), 'MB'];
+}
+
+function dbm_size(float $mb): string
+{
+    return implode(' ', dbm_size_parts($mb));
+}
+
+[$usedNum, $usedUnit] = dbm_size_parts($used_mb);
+[$freeNum, $freeUnit] = dbm_size_parts($free_mb);
+
 // Share of the limit taken by each half, for the stacked bar.
 $dataPct  = $limit_mb > 0 ? min(($data_mb / $limit_mb) * 100, 100) : 0;
 $indexPct = $limit_mb > 0 ? min(($index_mb / $limit_mb) * 100, 100) : 0;
+
+// Against 50 GB a real database is a fraction of a pixel wide. A
+// sliver is drawn for anything above zero, so the bar still shows
+// there is data and which colour it is — the figures beside it carry
+// the true size.
+if ($dataPct  > 0) $dataPct  = max($dataPct, .6);
+if ($indexPct > 0) $indexPct = max($indexPct, .6);
+
 $freePct  = max(100 - $dataPct - $indexPct, 0);
 
 // State drives the whole page — the ring, the alert strip, the
@@ -115,13 +155,13 @@ $ringDash = round($ringCirc * min($percent, 100) / 100, 2);
         <div class="dbm-hero">
             <div class="dbm-gauge">
                 <svg viewBox="0 0 120 120" role="img"
-                    aria-label="<?= $percent ?> percent of the <?= $limit_mb ?> MB limit used">
+                    aria-label="<?= htmlspecialchars($percentLabel) ?> percent of the <?= dbm_size($limit_mb) ?> limit used">
                     <circle class="dbm-ring-track" cx="60" cy="60" r="52"></circle>
                     <circle class="dbm-ring-value" cx="60" cy="60" r="52"
                         style="stroke-dasharray: <?= $ringDash ?> 999"></circle>
                 </svg>
                 <div class="dbm-gauge-center" aria-hidden="true">
-                    <span class="dbm-gauge-pct"><?= $percent ?>%</span>
+                    <span class="dbm-gauge-pct"><?= htmlspecialchars($percentLabel) ?>%</span>
                     <span class="dbm-gauge-sub">used</span>
                 </div>
             </div>
@@ -129,7 +169,7 @@ $ringDash = round($ringCirc * min($percent, 100) / 100, 2);
             <div class="dbm-hero-body">
                 <div class="dbm-hero-label">Overall Usage</div>
                 <div class="dbm-hero-figure">
-                    <?= $used_mb ?> <small>MB of <?= $limit_mb ?> MB</small>
+                    <?= $usedNum ?> <small><?= $usedUnit ?> of <?= dbm_size($limit_mb) ?></small>
                 </div>
 
                 <div class="dbm-stack" role="presentation">
@@ -139,9 +179,9 @@ $ringDash = round($ringCirc * min($percent, 100) / 100, 2);
                 </div>
 
                 <ul class="dbm-legend">
-                    <li><span class="dbm-dot is-data"></span> Data <b><?= $data_mb ?> MB</b></li>
-                    <li><span class="dbm-dot is-index"></span> Index <b><?= $index_mb ?> MB</b></li>
-                    <li><span class="dbm-dot is-free"></span> Free <b><?= $free_mb ?> MB</b></li>
+                    <li><span class="dbm-dot is-data"></span> Data <b><?= dbm_size($data_mb) ?></b></li>
+                    <li><span class="dbm-dot is-index"></span> Index <b><?= dbm_size($index_mb) ?></b></li>
+                    <li><span class="dbm-dot is-free"></span> Free <b><?= dbm_size($free_mb) ?></b></li>
                 </ul>
 
                 <div class="dbm-alert">
@@ -166,7 +206,7 @@ $ringDash = round($ringCirc * min($percent, 100) / 100, 2);
             <div class="stat-card <?= $stateCard ?>">
                 <div class="stat-icon"><i class="bi bi-hdd-fill"></i></div>
                 <div class="stat-label">Free Space</div>
-                <div class="stat-value"><?= $free_mb ?><small> MB</small></div>
+                <div class="stat-value"><?= $freeNum ?><small> <?= $freeUnit ?></small></div>
             </div>
             <div class="stat-card red">
                 <div class="stat-icon"><i class="bi bi-bar-chart-fill"></i></div>
