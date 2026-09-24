@@ -231,6 +231,67 @@ body.attendance-page {
     border-color: rgba(245, 158, 11, .3);
 }
 
+.attendance-page .att-late b {
+    font-variant-numeric: tabular-nums;
+}
+
+/* The late note above the form. Not an .alert: alerts come and go
+   with each lookup and submission, and this has to stay put for as
+   long as the page is open. Same colours as the pill, so the two read
+   as one message — the pill the glance, this the sentence. */
+.attendance-page .att-late-note {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: 1.15rem;
+    padding: .85rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, .25);
+    border-left: 3px solid #10b981;
+    background: rgba(16, 185, 129, .08);
+}
+
+.attendance-page .att-late-note[hidden] {
+    display: none;
+}
+
+.attendance-page .att-late-note-icon {
+    flex-shrink: 0;
+    margin-top: .05rem;
+    font-size: 1.15rem;
+    color: var(--ok-ink, #6ee7b7);
+}
+
+.attendance-page .att-late-note-title {
+    margin: 0 0 .15rem;
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--ok-ink, #6ee7b7);
+}
+
+.attendance-page .att-late-note-text {
+    margin: 0;
+    font-size: .8rem;
+    line-height: 1.5;
+    color: var(--ink-3);
+}
+
+.attendance-page .att-late-note-text strong {
+    color: var(--ink-2);
+}
+
+.attendance-page .att-late-note.is-late {
+    border-color: rgba(245, 158, 11, .3);
+    border-left-color: #f59e0b;
+    background: rgba(245, 158, 11, .09);
+}
+
+.attendance-page .att-late-note.is-late .att-late-note-icon,
+.attendance-page .att-late-note.is-late .att-late-note-title,
+.attendance-page .att-late-note.is-late .att-late-note-text strong {
+    color: var(--warn-ink, #fcd34d);
+}
+
 .attendance-page .att-locked {
     display: inline-flex;
     align-items: center;

@@ -161,28 +161,52 @@ if ($result && $result->num_rows > 0) {
                 </div>
             <?php endif; ?>
 
+            <?php
+            // Server-rendered in whichever state is true right now, so
+            // there is no flash of "on time" on a page opened late. The
+            // script below counts down and flips it at the cutoff — the
+            // stamp itself is decided by crud/submit_attendance.php.
+            $lateLabel = $late['late_on'] ? htmlspecialchars($late['late_label']) : '';
+            $isLateNow = $late['late_on'] && $late['late_in'] <= 0;
+            ?>
             <?php if ($late['late_on']): ?>
-                <!-- Told up front, so "late" on the confirmation is never
-                     the first the student hears of a cutoff. Like the
-                     countdown above, the server decides — this only turns
-                     amber at the minute the stamp starts reading late. -->
-                <!-- Both states name the cutoff. Without it, the amber
-                     pill could not answer "why am I late?" — nor show an
-                     instructor that the time they set had already passed. -->
-                <?php $lateLabel = htmlspecialchars($late['late_label']); ?>
-                <div class="att-late<?php echo $late['late_in'] <= 0 ? ' is-late' : ''; ?>"
-                     id="attLate" data-seconds="<?php echo (int) $late['late_in']; ?>"
-                     data-label="<?php echo $lateLabel; ?>">
-                    <i class="bi <?php echo $late['late_in'] <= 0 ? 'bi-alarm' : 'bi-check2-circle'; ?>" id="attLateIcon"></i>
+                <!-- The glance: how long until late, in the same shape as
+                     "Closes in" beside it. The sentence is in the note
+                     above the form. -->
+                <div class="att-late<?php echo $isLateNow ? ' is-late' : ''; ?>" id="attLate">
+                    <i class="bi <?php echo $isLateNow ? 'bi-alarm' : 'bi-check2-circle'; ?>" id="attLateIcon"></i>
                     <span id="attLateText">
-                        <?php echo $late['late_in'] <= 0
-                            ? 'You will be marked late — on time was until ' . $lateLabel
-                            : 'You’re on time — until ' . $lateLabel; ?>
+                        <?php if ($isLateNow): ?>
+                            You’re late
+                        <?php else: ?>
+                            On time · <b id="attLateClock">—</b> left
+                        <?php endif; ?>
                     </span>
                 </div>
             <?php endif; ?>
         </div>
         <div class="card-body">
+            <?php if ($late['late_on']): ?>
+                <!-- Where the student looks before typing. Two things it
+                     must say in both states: what the cutoff is, and that
+                     being late does NOT close the form — a student who
+                     believes it does walks away and ends up absent. -->
+                <div class="att-late-note<?php echo $isLateNow ? ' is-late' : ''; ?>" id="attLateNote"
+                     data-seconds="<?php echo (int) $late['late_in']; ?>"
+                     data-label="<?php echo $lateLabel; ?>">
+                    <i class="bi <?php echo $isLateNow ? 'bi-alarm' : 'bi-check2-circle'; ?> att-late-note-icon" id="attLateNoteIcon"></i>
+                    <div>
+                        <p class="att-late-note-title" id="attLateNoteTitle">
+                            <?php echo $isLateNow ? 'You’re late' : 'You’re on time'; ?>
+                        </p>
+                        <p class="att-late-note-text" id="attLateNoteText">
+                            <?php echo $isLateNow
+                                ? 'On time was until ' . $lateLabel . '. You can still submit your attendance — it will be recorded as <strong>late</strong>.'
+                                : 'Submit by ' . $lateLabel . ' to be on time. After that you can still submit, but you’ll be marked <strong>late</strong>.'; ?>
+                        </p>
+                    </div>
+                </div>
+            <?php endif; ?>
             <div id="alertContainer"></div>
             <form id="attendanceForm">
                 <div class="att-field">
@@ -238,7 +262,7 @@ if ($result && $result->num_rows > 0) {
                 </div>
 
                 <button type="submit" class="btn-submit" id="submitBtn" disabled>
-                    <span id="submitText"><i class="bi bi-check-circle"></i> Submit Attendance</span>
+                    <span id="submitText"><i class="bi bi-check-circle"></i> Submit Attendance<?php echo $isLateNow ? ' (Late)' : ''; ?></span>
                     <span id="loadingSpinner">
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                         Processing...
@@ -301,6 +325,20 @@ if ($result && $result->num_rows > 0) {
         // server pa rin ang nagpapasya: kahit i-edit ang orasan ng
         // telepono o pakialaman ang JavaScript, ang short_code ang
         // sinusuri sa pagsusumite.
+        // "1h 05m 09s", "12m 30s", "9s". Shared by both countdowns so
+        // "Closes in" and "On time · … left" never read differently.
+        // Naka-pad para hindi tumatalon ang lapad kada segundo.
+        function fmtLeft(left) {
+            const h = Math.floor(left / 3600);
+            const m = Math.floor((left % 3600) / 60);
+            const s = left % 60;
+            const pad = n => String(n).padStart(2, '0');
+
+            return h > 0
+                ? h + 'h ' + pad(m) + 'm ' + pad(s) + 's'
+                : (m > 0 ? m + 'm ' + pad(s) + 's' : s + 's');
+        }
+
         (function () {
             const box = document.getElementById('attExpiry');
             if (!box) return;
@@ -317,20 +355,15 @@ if ($result && $result->num_rows > 0) {
                     const no = document.getElementById('studentNo');
                     if (btn) btn.disabled = true;
                     if (no) no.disabled = true;
+
+                    // "You can still submit" is no longer true once the
+                    // link itself has closed.
+                    document.getElementById('attLateNote')?.setAttribute('hidden', '');
                     clearInterval(tick);
                     return;
                 }
 
-                const h = Math.floor(left / 3600);
-                const m = Math.floor((left % 3600) / 60);
-                const s = left % 60;
-
-                // Naka-pad para hindi tumatalon ang lapad kada segundo.
-                const pad = n => String(n).padStart(2, '0');
-
-                clock.textContent = h > 0
-                    ? h + 'h ' + pad(m) + 'm ' + pad(s) + 's'
-                    : (m > 0 ? m + 'm ' + pad(s) + 's' : s + 's');
+                clock.textContent = fmtLeft(left);
 
                 // Ang huling limang minuto ay iba ang kulay — sapat pang
                 // panahon para magmadali, hindi pa huli.
@@ -343,22 +376,49 @@ if ($result && $result->num_rows > 0) {
         })();
 
         // ── Late cutoff ──────────────────────────────────────────────
-        // One switch, at zero: from "on time until 8:15" to "you will be
-        // marked late". No countdown — a clock racing toward "late" reads
-        // as pressure, and the time itself is what a student needs.
+        // Counts down the time left to be on time, then flips the pill,
+        // the note and the submit button to "late" at zero — without a
+        // reload, for a student who opened the page at 8:14 and is still
+        // typing at 8:16. The button keeps working: late is recorded,
+        // not refused.
         (function () {
-            const box = document.getElementById('attLate');
-            if (!box) return;
+            const note = document.getElementById('attLateNote');
+            if (!note) return;
 
-            const left = parseInt(box.dataset.seconds, 10);
-            if (!(left > 0)) return;
+            let left = parseInt(note.dataset.seconds, 10);
+            if (!(left > 0)) return;   // already late — rendered that way
 
-            setTimeout(function () {
-                box.classList.add('is-late');
+            const clock = document.getElementById('attLateClock');
+            const label = note.dataset.label;
+
+            function markLate() {
+                document.getElementById('attLate').classList.add('is-late');
                 document.getElementById('attLateIcon').className = 'bi bi-alarm';
-                document.getElementById('attLateText').textContent =
-                    'You will be marked late — on time was until ' + box.dataset.label;
-            }, left * 1000);
+                document.getElementById('attLateText').textContent = 'You’re late';
+
+                note.classList.add('is-late');
+                document.getElementById('attLateNoteIcon').className = 'bi bi-alarm att-late-note-icon';
+                document.getElementById('attLateNoteTitle').textContent = 'You’re late';
+                document.getElementById('attLateNoteText').innerHTML =
+                    'On time was until ' + label + '. You can still submit your attendance — ' +
+                    'it will be recorded as <strong>late</strong>.';
+
+                document.getElementById('submitText').innerHTML =
+                    '<i class="bi bi-check-circle"></i> Submit Attendance (Late)';
+            }
+
+            function paint() {
+                if (left <= 0) {
+                    clearInterval(tick);
+                    markLate();
+                    return;
+                }
+                clock.textContent = fmtLeft(left);
+                left--;
+            }
+
+            const tick = setInterval(paint, 1000);
+            paint();
         })();
 
         let verifiedStudentNo = null;

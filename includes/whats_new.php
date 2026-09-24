@@ -88,7 +88,7 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-tag',
                     'title' => 'Late shows everywhere a time does',
-                    'text'  => 'An amber <strong>Late</strong> tag sits beside the time in Attendance Records, in the Present list on the dashboard and on the student&rsquo;s own Tracker, and the printed PDF reads <em>08:16 AM (Late)</em>. Students see it coming too: the form says <em>You&rsquo;re on time &mdash; until 8:15 AM</em> in green, turns amber once the time passes (still showing the cutoff, so nobody has to ask why), and the confirmation says plainly that they were marked late. Records taken before today all count as on time.',
+                    'text'  => 'An amber <strong>Late</strong> tag sits beside the time in Attendance Records, in the Present list on the dashboard and on the student&rsquo;s own Tracker, and the printed PDF reads <em>08:16 AM (Late)</em>. Students see it coming too: the form counts down the minutes they have left to be on time and names the cutoff. The moment it passes, it turns amber and says <em>You&rsquo;re late &mdash; you can still submit</em>, the button reads <em>Submit Attendance (Late)</em>, and the confirmation repeats that they were marked late. Nobody walks away thinking the form closed on them. Records taken before today all count as on time.',
                     'link'  => ['href' => 'pages/attendance.php', 'label' => 'Open Attendance Records', 'can' => 'attendance.view'],
                 ],
             ],
