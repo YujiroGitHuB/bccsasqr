@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-24.2';
+const WHATS_NEW_VERSION = '2026-09-24.3';
 
 /**
  * The changelog, newest release first.
@@ -94,8 +94,8 @@ function whats_new_releases(): array
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-database',
-                    'title' => 'Database Monitor measures against 50 GB',
-                    'text'  => 'The gauge was still measuring against the free plan&rsquo;s 10 MB, so a healthy database read as a third full and creeping toward a warning. It now reads against the 50 GB of the new plan and shows sizes in GB once they get that big. A database this small shows as a thin sliver and <em>&lt;0.01%</em>, rather than a flat 0% that looks like the monitor stopped working.',
+                    'title' => 'Database Monitor measures against your real limit',
+                    'text'  => 'The gauge was still measuring against the free plan&rsquo;s 10 MB, so a healthy database read as a third full and creeping toward a warning. It now starts at the new plan&rsquo;s 50 GB, and an admin can change it any time with <strong>Set limit</strong> at the top of the page &mdash; type the size hPanel shows for the database, in GB or MB, and the gauge, the bar and Free Space follow. Sizes show in GB once they get that big, and a database this small shows as a thin sliver and <em>&lt;0.01%</em> rather than a flat 0% that looks like the monitor stopped working.',
                     'link'  => ['href' => 'pages/db_monitor.php', 'label' => 'Open Database Monitor', 'can' => 'db.monitor'],
                 ],
             ],

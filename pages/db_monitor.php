@@ -48,12 +48,26 @@ while ($row = $tables->fetch_assoc()) {
 }
 
 // ── The limit ────────────────────────────────────────────────
-// The database allowance of the hosting plan, in MB. This is the
-// only line to change when the plan changes.
+// The database allowance of the hosting plan, in MB. Set from this
+// page by an admin (the "Set limit" button, crud/set_db_limit.php)
+// and kept in attendance_settings as db_limit_mb, so a plan change
+// needs no code change.
 //
+// The default is what applies until someone sets it:
 //   InfinityFree (free)       10 MB   — until 2026-09-23
 //   Hostinger Business     51200 MB   = 50 GB
 $limit_mb = 50 * 1024;
+
+try {
+    $ls = $conn->query("
+        SELECT setting_value FROM attendance_settings
+        WHERE setting_key = 'db_limit_mb' LIMIT 1
+    ");
+    $saved = $ls ? (int) ($ls->fetch_row()[0] ?? 0) : 0;
+    if ($saved > 0) $limit_mb = $saved;
+} catch (Throwable $e) {
+    // No settings table — the default stands.
+}
 
 $used_mb  = round($dbSize['Size_MB'], 4);
 $data_mb  = round($dbSize['Data_MB'], 4);
@@ -167,7 +181,14 @@ $ringDash = round($ringCirc * min($percent, 100) / 100, 2);
             </div>
 
             <div class="dbm-hero-body">
-                <div class="dbm-hero-label">Overall Usage</div>
+                <div class="dbm-hero-top">
+                    <div class="dbm-hero-label">Overall Usage</div>
+                    <?php if (isAdmin()): ?>
+                        <button type="button" class="dbm-limit-btn" onclick="editDbLimit()">
+                            <i class="bi bi-sliders"></i> Set limit
+                        </button>
+                    <?php endif; ?>
+                </div>
                 <div class="dbm-hero-figure">
                     <?= $usedNum ?> <small><?= $usedUnit ?> of <?= dbm_size($limit_mb) ?></small>
                 </div>
@@ -291,6 +312,95 @@ $ringDash = round($ringCirc * min($percent, 100) / 100, 2);
     <script src="<?= asset('../assets/js/toggleSidebar.js') ?>"></script>
     <script src="<?= asset('../assets/js/lock.js') ?>"></script>
     <script src="<?= asset('../assets/js/systemConfig.js') ?>"></script>
+    <?php if (isAdmin()): ?>
+    <script>
+        // ── Set limit ────────────────────────────────────────────
+        // The size hPanel shows for this database. Offered in GB or
+        // MB because plans are sold in GB and the old one was 10 MB.
+        const DBM_LIMIT_MB = <?= (int) $limit_mb ?>;
+
+        const DBM_SWAL = {
+            background: '#16161a',
+            color: '#f1f5f9',
+            customClass: { popup: 'app-swal' },
+            buttonsStyling: false,
+            showClass: { popup: 'swal2-noanimation' }
+        };
+
+        function editDbLimit() {
+            // Opened in the unit it reads in on the page: 50 GB, not 51200 MB.
+            const inGb  = DBM_LIMIT_MB >= 1024;
+            const value = inGb ? +(DBM_LIMIT_MB / 1024).toFixed(2) : DBM_LIMIT_MB;
+
+            Swal.fire({
+                ...DBM_SWAL,
+                html: `
+                    <div class="app-swal-head">
+                        <div class="app-modal-icon"><i class="bi bi-hdd-fill"></i></div>
+                        <div>
+                            <h2>Database size limit</h2>
+                            <p>What the usage gauge on this page measures against.</p>
+                        </div>
+                    </div>
+                    <div class="app-swal-body">
+                        <div class="app-field">
+                            <label class="form-label" for="dbLimitValue">Limit</label>
+                            <div class="dbm-limit-row">
+                                <div class="app-input">
+                                    <i class="bi bi-database"></i>
+                                    <input type="number" class="form-control" id="dbLimitValue"
+                                           min="1" step="any" value="${value}" inputmode="decimal">
+                                </div>
+                                <div class="app-input dbm-limit-unit">
+                                    <select class="form-select" id="dbLimitUnit" aria-label="Unit">
+                                        <option value="GB" ${inGb ? 'selected' : ''}>GB</option>
+                                        <option value="MB" ${inGb ? '' : 'selected'}>MB</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="app-note is-info" style="margin:1rem 0 0">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>Use the size hPanel shows under <strong>Databases</strong> for this database.
+                            This only changes the gauge — nothing in the database itself.</span>
+                        </div>
+                    </div>`,
+                showCancelButton: true,
+                confirmButtonText: 'Save',
+                cancelButtonText: 'Cancel',
+                showLoaderOnConfirm: true,
+                focusConfirm: false,
+                didOpen: () => document.getElementById('dbLimitValue').select(),
+                preConfirm: () => {
+                    const v = document.getElementById('dbLimitValue').value.trim();
+                    const u = document.getElementById('dbLimitUnit').value;
+
+                    if (!(parseFloat(v) > 0)) {
+                        Swal.showValidationMessage('Enter a size greater than zero.');
+                        return false;
+                    }
+
+                    return fetch('../crud/set_db_limit.php', {
+                        method: 'POST',
+                        body: new URLSearchParams({ value: v, unit: u })
+                    })
+                        .then(r => r.json())
+                        .then(res => {
+                            if (!res.success) throw new Error(res.message || 'Could not save the limit.');
+                            return res;
+                        })
+                        .catch(err => Swal.showValidationMessage(err.message));
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then(r => {
+                // Every figure on the page — the ring, the bar, free
+                // space, the state — derives from the limit, so the page
+                // is simply drawn again.
+                if (r.isConfirmed && r.value) location.reload();
+            });
+        }
+    </script>
+    <?php endif; ?>
 </body>
 
 </html>

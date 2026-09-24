@@ -255,6 +255,59 @@
     margin-bottom: .35rem;
 }
 
+/* The label and, for an admin, "Set limit" on one line. The label
+   keeps its own bottom margin; the row adds none. */
+.dbm-hero-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+/* Quiet on purpose — the same ghost shape as Refresh. It is set once
+   per plan, not something the page is for. */
+.dbm-limit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-top: -.2rem;
+    padding: .3rem .7rem;
+    border-radius: 8px;
+    border: 1px solid rgba(var(--tint), .12);
+    background: rgba(var(--tint), .04);
+    color: var(--ink-3);
+    font-size: .75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+}
+
+.dbm-limit-btn:hover {
+    background: rgba(var(--tint), .08);
+    border-color: rgba(var(--tint), .2);
+    color: var(--ink);
+}
+
+/* ── The Set limit dialog (inside .app-swal, outside .dbm-page) ── */
+.dbm-limit-row {
+    display: flex;
+    gap: .5rem;
+}
+
+.dbm-limit-row .app-input:first-child {
+    flex: 1;
+    min-width: 0;
+}
+
+/* The unit needs no icon, so none of the icon's left padding. */
+.dbm-limit-unit {
+    flex: 0 0 5.5rem;
+}
+
+.dbm-limit-unit .form-select {
+    padding-left: .9rem;
+}
+
 .dbm-hero-figure {
     font-size: 1.75rem;
     font-weight: 700;
