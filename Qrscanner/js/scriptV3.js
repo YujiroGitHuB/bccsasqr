@@ -638,6 +638,12 @@ function addToAttendance(date, student) {
    Every subject's state arrived with the page (scanLateStates), and
    all of them count down together, so switching subjects never shows
    a stale countdown.
+
+   Behind a switch, off by default: a class that does not mark late
+   sees one quiet line. "On" is the subject having a late time today —
+   or, for the moment between flipping the switch and picking a time,
+   being in `pending`. Switching off clears the time on the server, so
+   off always means every scan counts as on time.
    ============================================================ */
 const ScanLate = (() => {
     const box      = document.getElementById('scanLate');
@@ -649,9 +655,12 @@ const ScanLate = (() => {
     const btnText  = document.getElementById('scanLateBtnText');
     const panel    = document.getElementById('scanLatePanel');
     const atInput  = document.getElementById('scanLateAt');
-    const clearBtn = document.getElementById('scanLateClear');
+    const sw       = document.getElementById('scanLateSwitch');
+    const body     = document.getElementById('scanLateBody');
+    const offHint  = document.getElementById('scanLateOffHint');
 
-    const states = (typeof scanLateStates === 'object' && scanLateStates) || {};
+    const states  = (typeof scanLateStates === 'object' && scanLateStates) || {};
+    const pending = new Set();   // switched on, no time picked yet
     let code = '';
 
     const SWAL_SCAN = { background: '#0f172a', color: '#e2e8f0', confirmButtonColor: '#38bdf8' };
@@ -667,27 +676,38 @@ const ScanLate = (() => {
         return h > 0 ? `${h}h ${pad(m)}m` : (m > 0 ? `${m}m ${pad(s)}s` : `${s}s`);
     }
 
+    function openPanel(open) {
+        panel.hidden = !open;
+        btn.setAttribute('aria-expanded', String(open));
+    }
+
     function paint() {
         box.hidden = !code;
         if (!code) return;
 
         const st = states[code];
+        const on = !!(st && st.late_on) || pending.has(code);
+
+        sw.setAttribute('aria-checked', String(on));
+        body.hidden    = !on;
+        offHint.hidden = on;
+        box.classList.toggle('is-on', on);
+        if (!on) { openPanel(false); return; }
+
         pill.classList.remove('is-none', 'is-ok', 'is-late');
 
         if (!st || !st.late_on) {
             pill.classList.add('is-none');
             icon.className      = 'bi bi-alarm';
-            text.textContent    = 'No late time';
+            text.textContent    = 'Pick when late starts';
             btnIcon.className   = 'bi bi-plus-lg';
-            btnText.textContent = 'Set late time';
-            clearBtn.hidden     = true;
+            btnText.textContent = 'Set time';
             return;
         }
 
         const label = esc(st.late_label);
         btnIcon.className   = 'bi bi-pencil';
         btnText.textContent = 'Change';
-        clearBtn.hidden     = false;
 
         if (st.late_in > 0) {
             pill.classList.add('is-ok');
@@ -702,8 +722,7 @@ const ScanLate = (() => {
 
     function select(subjectCode) {
         code = subjectCode || '';
-        panel.hidden = true;
-        btn.setAttribute('aria-expanded', 'false');
+        openPanel(false);
         paint();
     }
 
@@ -726,8 +745,8 @@ const ScanLate = (() => {
                 if (!res.success) throw new Error(res.message || 'Could not set the late time.');
 
                 states[forCode] = { late_on: res.late_on, late_in: res.late_in, late_label: res.late_label };
-                panel.hidden = true;
-                btn.setAttribute('aria-expanded', 'false');
+                pending.delete(forCode);
+                openPanel(false);
                 paint();
 
                 // A time already behind us is usually a slip — 8:15 typed
@@ -737,30 +756,50 @@ const ScanLate = (() => {
                         ...SWAL_SCAN, icon: 'warning',
                         title: `${esc(res.late_label)} has already passed`,
                         html: `Every scan from now on will be saved as <b>late</b>.<br>
-                               <span style="font-size:.9em;opacity:.75">If you meant a later time — PM instead of AM — tap Change and set it again.</span>`
+                               <span style="font-size:.9em;opacity:.75">If you meant a later time — PM instead of AM — tap Change and set it again, or switch Late marking off.</span>`
                     });
                 } else {
                     Swal.fire({
                         ...SWAL_SCAN, icon: 'success', timer: 2000, showConfirmButton: false,
-                        title: res.late_on ? 'Late time set' : 'Late time removed',
+                        title: res.late_on ? 'Late time set' : 'Late marking off',
                         text:  res.late_on
                             ? `On time until ${res.late_label}. Scans after that are saved as late.`
-                            : 'Every scan counts as on time.'
+                            : 'Every scan from now on counts as on time.'
                     });
                 }
             })
-            .catch(err => Swal.fire({ ...SWAL_SCAN, icon: 'error', title: 'Could not set late time', text: err.message }))
+            .catch(err => {
+                // Put the switch back to what the server still has.
+                paint();
+                Swal.fire({ ...SWAL_SCAN, icon: 'error', title: 'Could not set late time', text: err.message });
+            })
             .finally(() => { if (trigger) trigger.disabled = false; });
     }
 
-    btn.addEventListener('click', () => {
-        panel.hidden = !panel.hidden;
-        btn.setAttribute('aria-expanded', String(!panel.hidden));
+    sw.addEventListener('click', () => {
+        if (!code) return;
+
+        if (sw.getAttribute('aria-checked') !== 'true') {
+            // Nothing is saved yet — a late time needs a time. The
+            // choices open straight away, since that is the next step.
+            pending.add(code);
+            paint();
+            openPanel(true);
+            return;
+        }
+
+        pending.delete(code);
+        if (states[code] && states[code].late_on) {
+            save({ clear: 1 }, sw);   // off on the server too
+        } else {
+            paint();                  // was only switched on, never set
+        }
     });
+
+    btn.addEventListener('click', () => openPanel(panel.hidden));
     panel.querySelectorAll('[data-minutes]').forEach(b =>
         b.addEventListener('click', () => save({ minutes: b.dataset.minutes }, b)));
     document.getElementById('scanLateSet').addEventListener('click', e => save({ at: atInput.value }, e.currentTarget));
-    clearBtn.addEventListener('click', () => save({ clear: 1 }, clearBtn));
 
     // One clock for every subject. Only the selected one is repainted,
     // and only in full at the minute it turns late.

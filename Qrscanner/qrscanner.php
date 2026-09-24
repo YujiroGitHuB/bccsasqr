@@ -221,30 +221,50 @@ if (count($subjects) === 0 && $role !== 'admin') {
                      in phone scan mode: whether scans are going in as late
                      is exactly what the person holding the camera needs. -->
                 <div class="scan-late" id="scanLate" hidden>
-                    <div class="scan-late-row">
-                        <span class="scan-late-pill is-none" id="scanLatePill">
-                            <i class="bi bi-alarm" id="scanLateIcon" aria-hidden="true"></i>
-                            <span id="scanLateText">No late time</span>
-                        </span>
-                        <button type="button" class="scan-late-btn" id="scanLateBtn" aria-expanded="false" aria-controls="scanLatePanel">
-                            <i class="bi bi-plus-lg" id="scanLateBtnIcon" aria-hidden="true"></i>
-                            <span id="scanLateBtnText">Set late time</span>
-                        </button>
-                    </div>
+                    <!-- Off unless switched on: a class that does not
+                         mark late sees one quiet line and nothing else.
+                         Switching it off clears the subject's late time.
 
-                    <div class="scan-late-panel" id="scanLatePanel" hidden>
-                        <div class="scan-late-hint">Students are on time for the next…</div>
-                        <div class="scan-late-presets">
-                            <button type="button" data-minutes="10">10 min</button>
-                            <button type="button" data-minutes="15">15 min</button>
-                            <button type="button" data-minutes="30">30 min</button>
+                         A button, not a <label> + checkbox: this sits
+                         inside .subject-selection, whose `label` rules
+                         would restyle it and — in phone scan mode — hide
+                         it, exactly when it is needed. -->
+                    <button type="button" class="scan-late-toggle" id="scanLateSwitch"
+                            role="switch" aria-checked="false">
+                        <span class="scan-late-toggle-text">
+                            <span class="scan-late-toggle-title">
+                                <i class="bi bi-alarm" aria-hidden="true"></i> Late marking
+                            </span>
+                            <small id="scanLateOffHint">Off — every scan counts as on time</small>
+                        </span>
+                        <span class="scan-late-switch" aria-hidden="true"></span>
+                    </button>
+
+                    <div class="scan-late-body" id="scanLateBody" hidden>
+                        <div class="scan-late-row">
+                            <span class="scan-late-pill is-none" id="scanLatePill">
+                                <i class="bi bi-alarm" id="scanLateIcon" aria-hidden="true"></i>
+                                <span id="scanLateText">Pick when late starts</span>
+                            </span>
+                            <button type="button" class="scan-late-btn" id="scanLateBtn" aria-expanded="false" aria-controls="scanLatePanel">
+                                <i class="bi bi-plus-lg" id="scanLateBtnIcon" aria-hidden="true"></i>
+                                <span id="scanLateBtnText">Set time</span>
+                            </button>
                         </div>
-                        <div class="scan-late-hint">…or on time until</div>
-                        <div class="scan-late-custom">
-                            <input type="time" id="scanLateAt" aria-label="On time until">
-                            <button type="button" id="scanLateSet">Set</button>
+
+                        <div class="scan-late-panel" id="scanLatePanel" hidden>
+                            <div class="scan-late-hint">Students are on time for the next…</div>
+                            <div class="scan-late-presets">
+                                <button type="button" data-minutes="10">10 min</button>
+                                <button type="button" data-minutes="15">15 min</button>
+                                <button type="button" data-minutes="30">30 min</button>
+                            </div>
+                            <div class="scan-late-hint">…or on time until</div>
+                            <div class="scan-late-custom">
+                                <input type="time" id="scanLateAt" aria-label="On time until">
+                                <button type="button" id="scanLateSet">Set</button>
+                            </div>
                         </div>
-                        <button type="button" class="scan-late-clear" id="scanLateClear" hidden>Remove late time</button>
                     </div>
                 </div>
 

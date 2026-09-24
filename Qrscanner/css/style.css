@@ -1111,8 +1111,107 @@ tr:hover td {
     margin-bottom: 12px;
 }
 
-.scan-late[hidden] {
+.scan-late[hidden],
+.scan-late-body[hidden] {
     display: none;
+}
+
+/* The on/off line. The whole row is the switch, so the text is as
+   easy to tap as the track — a thumb, not a mouse, is aiming at it. */
+.scan-late-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    width: 100%;
+    padding: .55rem .75rem;
+    border-radius: 11px;
+    border: 1px solid rgba(var(--tint), .08);
+    background: rgba(var(--tint), .03);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: border-color .2s ease;
+}
+
+.scan-late-toggle:focus-visible {
+    outline: 2px solid var(--scan);
+    outline-offset: 2px;
+}
+
+.scan-late.is-on .scan-late-toggle {
+    border-color: var(--scan-line);
+}
+
+.scan-late-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    text-align: left;
+}
+
+.scan-late-toggle-title {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--ink-2);
+}
+
+.scan-late-toggle small {
+    font-size: .7rem;
+    color: rgba(var(--tint), .45);
+}
+
+.scan-late-toggle small[hidden] {
+    display: none;
+}
+
+.scan-late-switch {
+    flex-shrink: 0;
+    position: relative;
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: rgba(var(--tint), .16);
+    transition: background .2s ease;
+}
+
+.scan-late-switch::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--on-accent);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+    transition: transform .2s ease;
+}
+
+/* Sky, not green: on/off is a setting, and green on this page means
+   a scan went through. */
+.scan-late-toggle[aria-checked="true"] .scan-late-switch {
+    background: linear-gradient(135deg, var(--scan), var(--scan-deep));
+}
+
+.scan-late-toggle[aria-checked="true"] .scan-late-switch::after {
+    transform: translateX(18px);
+}
+
+.scan-late-toggle:disabled {
+    cursor: progress;
+}
+
+.scan-late-toggle:disabled .scan-late-switch {
+    opacity: .5;
+}
+
+.scan-late-body {
+    margin-top: .55rem;
 }
 
 .scan-late-row {
@@ -1208,8 +1307,7 @@ tr:hover td {
     gap: .4rem;
 }
 
-.scan-late-presets button,
-.scan-late-clear {
+.scan-late-presets button {
     min-height: 36px;
     padding: 0 .85rem;
     border-radius: 9px;
@@ -1221,8 +1319,7 @@ tr:hover td {
     cursor: pointer;
 }
 
-.scan-late-presets button:hover,
-.scan-late-clear:hover {
+.scan-late-presets button:hover {
     color: var(--ink);
     background: rgba(var(--tint), .1);
 }
@@ -1253,18 +1350,6 @@ tr:hover td {
     font-size: .8rem;
     font-weight: 700;
     cursor: pointer;
-}
-
-.scan-late-clear {
-    display: block;
-    width: 100%;
-    margin-top: .6rem;
-    color: rgba(var(--tint), .5);
-    background: transparent;
-}
-
-.scan-late-clear[hidden] {
-    display: none;
 }
 
 /* The tag beside a late scan's time — in the list, on the result
