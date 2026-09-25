@@ -3,6 +3,12 @@ on:
   push:
     branches:
       - main
+    # A push that touches only the Flutter app has nothing to send — the
+    # folder is in EXCLUDE below — so skip the run instead of spending one
+    # on a no-op. A push that also changes the website still deploys:
+    # paths-ignore only skips when EVERY changed file matches.
+    paths-ignore:
+      - 'bccsasqr-mobile/**'
   workflow_dispatch:
 
 concurrency:

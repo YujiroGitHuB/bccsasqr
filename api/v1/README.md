@@ -130,6 +130,21 @@ call is enough to decide whether your Generate button opens.
 } }
 ```
 
+`warnings` never blocks the QR. It lists things that will trip the student up
+later, each with a message safe to show as-is and, when there is somewhere to
+fix it, an `action` to offer as a button. Today there is one:
+
+```json
+{ "code": "photo_missing",
+  "message": "You need to upload your photo before you can record attendance. …",
+  "action": { "label": "Upload your photo",
+              "url": "https://…/student/StudentPhotoProfile.php" } }
+```
+
+It appears when Settings → Student Photo Requirement is on and the student has
+no photo — the scanner and the attendance link would refuse them. Render any
+warning you receive, not just the codes you know about.
+
 Errors: `invalid_student_no` (400), `student_not_found` (404).
 
 ### `POST /terms/accept`
@@ -244,7 +259,7 @@ flutter run   --dart-define=API_BASE_URL=http://10.0.2.2/bccsasqr/api/v1   --dar
 | Android emulator → XAMPP      | `http://10.0.2.2/bccsasqr/api/v1`    |
 | iOS simulator → XAMPP         | `http://localhost/bccsasqr/api/v1`   |
 | Real phone on the same wifi   | `http://192.168.x.x/bccsasqr/api/v1` |
-| Deployed                      | `https://your-host/bccsasqr/api/v1`  |
+| Deployed (Hostinger)          | `https://lexondev.com/bccsasqr/api/v1` |
 
 With no `API_BASE_URL` the app runs on bundled demo records, so it still starts
 offline. If the host has no `mod_rewrite`, append `/index.php` to the value.

@@ -150,6 +150,14 @@ function gen_student_resource(mysqli $conn, array $student): array
         $warnings[] = [
             'code'    => 'photo_missing',
             'message' => photo_required_message(),
+            // The message says "open the Student Photo page" — a student
+            // in the app has no address bar to find it with, so hand
+            // over the page itself. Server-built, so a move of the page
+            // never needs a new app release.
+            'action'  => [
+                'label' => 'Upload your photo',
+                'url'   => api_base_url() . '/student/StudentPhotoProfile.php',
+            ],
         ];
     }
 
