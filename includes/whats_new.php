@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-25.2';
+const WHATS_NEW_VERSION = '2026-09-25.3';
 
 /**
  * The changelog, newest release first.
@@ -75,13 +75,20 @@ function whats_new_releases(): array
             'date'    => '2026-09-25',
             'icon'    => 'bi-phone',
             'title'   => 'An Android app for students, and a logo that stays put',
-            'summary' => 'Students can now install the QR generator as an Android app from its own download page — it makes the very same code as the web page. And a logo or letterhead uploaded in Settings no longer disappears when the system is updated.',
+            'summary' => 'Students can now install the QR generator as an Android app from its own download page — it makes the very same code as the web page and reads its messages aloud the same way. And a logo or letterhead uploaded in Settings no longer disappears when the system is updated.',
             'items'   => [
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-android2',
                     'title' => 'Get the app: a download page for students',
                     'text'  => 'The QR generator is now also an Android app. Students type their student number, accept the terms, and save their QR on the phone &mdash; <strong>the same code the web page makes</strong>, down to the last square, so the scanner treats both alike. It even warns them when their photo is missing, with a button to upload one, before they reach the scanner. Share the download page with your class: it walks them through the install, and on a computer it shows a QR to open the page on their phone.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-volume-up',
+                    'title' => 'The app talks students through it, like the web page',
+                    'text'  => 'Just like the web QR generator, the app now speaks. It reads out the message on the screen as it appears: that it is <strong>checking</strong> a student number, whether the record was <strong>verified</strong> or <strong>not found</strong>, and the <strong>missing photo</strong> warning when there is one. Opening <strong>How this works</strong> reads that too. Anyone who installed the app earlier today gets the voice by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
                 ],
                 [
