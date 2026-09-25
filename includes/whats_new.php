@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-24.6';
+const WHATS_NEW_VERSION = '2026-09-25';
 
 /**
  * The changelog, newest release first.
@@ -69,6 +69,23 @@ const WHATS_NEW_VERSION = '2026-09-24.6';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-25',
+            'date'    => '2026-09-25',
+            'icon'    => 'bi-image',
+            'title'   => 'Your uploaded logo stays put',
+            'summary' => 'A logo or report letterhead uploaded in Settings was being removed every time the system was updated, leaving a broken image in the sidebar and on reports. They are now kept through updates.',
+            'items'   => [
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-image',
+                    'title' => 'Logo and letterhead survive system updates',
+                    'text'  => 'Each update replaced the system&rsquo;s files with a fresh copy, and a logo or letterhead you had uploaded under <strong>System Configuration</strong> was not part of that copy &mdash; so it was deleted, and the sidebar, login page and exported reports showed a broken image. Uploads are now left alone. <strong>If your logo is missing today</strong>, upload it once more in <strong>Settings &rarr; System Configuration</strong>; it will stay this time.',
+                    'link'  => ['href' => 'pages/settings.php#system-config', 'label' => 'Open System Configuration', 'can' => 'settings.manage'],
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-24',

@@ -49,11 +49,6 @@ class StudentRecord {
     if (warnings.isNotEmpty) 'warnings': [for (final w in warnings) w.toJson()],
   };
 
-  /// Filename-safe stem used when the QR image is written to disk.
-  String get fileStem =>
-      'BCC-SASQR-${studentNumber.value}-'
-      '${fullName.replaceAll(RegExp(r'[^A-Za-z0-9]+'), '-')}';
-
   @override
   bool operator ==(Object other) =>
       other is StudentRecord &&

@@ -236,8 +236,78 @@ void main() {
         onRequest: (r) => seen = r.url,
       );
 
-      expect(await repo.issueQrPayload(_number), '019-464');
+      expect((await repo.issueQrPayload(_number)).data, '019-464');
       expect(seen.toString(), '$_base/students/019-464/qr');
+    });
+
+    test('reads the drawing spec and the card the server issued', () async {
+      final repo = repoReturning(
+        ok({
+          'student': _student,
+          'qr': {
+            'payload': '019-464',
+            'spec': {
+              'size': 250,
+              'error_correction': 'M',
+              'foreground': '#38bdf8',
+              'background': '#0f172a',
+            },
+            'card': {
+              'filename': '019-464_qr.png',
+              'details': [
+                {'label': 'Student No.', 'value': '019-464'},
+                {'label': 'Course', 'value': 'BSIT'},
+              ],
+            },
+          },
+        }),
+      );
+
+      final qr = await repo.issueQrPayload(_number);
+
+      expect(qr.spec.size, 250);
+      expect(qr.spec.errorCorrection, 'M');
+      expect(qr.spec.foreground.toARGB32(), 0xFF38BDF8);
+      expect(qr.spec.background.toARGB32(), 0xFF0F172A);
+      expect(qr.fileName, '019-464_qr.png');
+      expect(qr.details.map((r) => r.label), ['Student No.', 'Course']);
+      expect(qr.details.last.value, 'BSIT');
+    });
+
+    test('a missing spec or card falls back to the web page look', () async {
+      // An older server sends only the payload. The card must still come out
+      // the way the web page draws it, not blank.
+      final repo = repoReturning(
+        ok({
+          'student': _student,
+          'qr': {'payload': '019-464'},
+        }),
+      );
+
+      final qr = await repo.issueQrPayload(_number);
+
+      expect(qr.spec.foreground.toARGB32(), 0xFF38BDF8);
+      expect(qr.fileName, '019-464_qr.png');
+      expect(qr.details.map((r) => r.value), [
+        '019-464',
+        'Charles Nixon Cayading',
+        'BS INFORMATION TECHNOLOGY',
+        'BSIT 4-A',
+      ]);
+    });
+
+    test('a file name from the server cannot leave the app folder', () async {
+      final repo = repoReturning(
+        ok({
+          'student': _student,
+          'qr': {
+            'payload': '019-464',
+            'card': {'filename': '../../evil.sh', 'details': []},
+          },
+        }),
+      );
+
+      expect((await repo.issueQrPayload(_number)).fileName, 'evilsh.png');
     });
 
     test(

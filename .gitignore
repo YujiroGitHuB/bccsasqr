@@ -31,6 +31,14 @@ uploads/**
 !uploads/**/
 !uploads/**/.gitkeep
 
+# The system logo and report letterhead uploaded in Settings land in
+# assets/images/ with a timestamped name. They belong to whichever server
+# they were uploaded on — deploy.yml excludes the same patterns so rsync
+# neither ships a local one nor deletes the live one. (logo_1763373990.png
+# was committed before this rule and stays tracked.)
+assets/images/logo_*
+assets/images/letterhead_*
+
 # The live database login. Created by hand on the server (and locally, if
 # you want something other than the XAMPP defaults) from
 # includes/db_credentials.example.php. It is ALSO excluded in

@@ -11,9 +11,12 @@ import 'package:share_plus/share_plus.dart';
 abstract interface class QrExportService {
   /// Rasterises the widget behind [boundaryKey] and hands it to the platform
   /// share sheet. Returns the saved file path.
+  ///
+  /// [fileName] is used as given — callers pass it through
+  /// `QrPayload.safeFileName` first.
   Future<String> export({
     required GlobalKey boundaryKey,
-    required String fileStem,
+    required String fileName,
     String? shareText,
   });
 }
@@ -35,12 +38,12 @@ class ImageQrExportService implements QrExportService {
   @override
   Future<String> export({
     required GlobalKey boundaryKey,
-    required String fileStem,
+    required String fileName,
     String? shareText,
   }) async {
     final bytes = await _rasterise(boundaryKey);
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$fileStem.png');
+    final file = File('${directory.path}/$fileName');
     await file.writeAsBytes(bytes, flush: true);
 
     await SharePlus.instance.share(

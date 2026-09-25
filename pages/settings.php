@@ -512,7 +512,7 @@ $systemLogo = $system['logo'] ?? '';
             <!-- ══ SYSTEM ══════════════════════════════════════ -->
             <div class="set-group-title">System</div>
             <div class="set-list">
-                <div class="set-row">
+                <div class="set-row" id="system-config">
                     <div class="set-icon"><i class="bi bi-gear-fill"></i></div>
                     <div class="set-main">
                         <h3>System Configuration</h3>

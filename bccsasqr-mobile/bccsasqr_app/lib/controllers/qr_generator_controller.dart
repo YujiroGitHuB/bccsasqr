@@ -197,9 +197,9 @@ class QrGeneratorController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await _issuePayload(record.studentNumber);
+      final issued = await _issuePayload(record.studentNumber);
       if (_disposed) return;
-      _payload = QrPayload.issued(record, data);
+      _payload = issued;
     } on StudentLookupException catch (e) {
       if (_disposed) return;
       _payload = null;
@@ -219,7 +219,7 @@ class QrGeneratorController extends ChangeNotifier {
   /// The acceptance is sent without blocking the UI, so on a slow connection
   /// the student can reach Generate before it lands. Sending it again costs a
   /// round trip; making them tick the box twice costs their patience.
-  Future<String> _issuePayload(StudentNumber number) async {
+  Future<QrPayload> _issuePayload(StudentNumber number) async {
     try {
       return await _repository.issueQrPayload(number);
     } on StudentLookupException catch (e) {

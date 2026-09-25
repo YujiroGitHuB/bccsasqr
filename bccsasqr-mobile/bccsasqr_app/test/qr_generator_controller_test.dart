@@ -1,6 +1,7 @@
 import 'package:bccsasqr_app/controllers/qr_generator_controller.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/core/utils/student_number.dart';
+import 'package:bccsasqr_app/models/qr_payload.dart';
 import 'package:bccsasqr_app/models/student_record.dart';
 import 'package:bccsasqr_app/models/terms_document.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
@@ -36,15 +37,19 @@ class _FakeRepository implements StudentRepository {
   }
 
   @override
-  Future<String> issueQrPayload(StudentNumber number) async {
+  Future<QrPayload> issueQrPayload(StudentNumber number) async {
     if (requireAcceptance && !accepted) {
       throw const StudentLookupException(
         'Accept the terms first.',
         code: 'terms_not_accepted',
       );
     }
-    // What the real API issues: the bare student number, nothing else.
-    return number.value;
+    // What the real API encodes: the bare student number, nothing else.
+    return QrPayload(
+      data: number.value,
+      details: const [],
+      fileName: '${number.value}_qr.png',
+    );
   }
 
   @override

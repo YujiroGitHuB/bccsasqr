@@ -1,4 +1,5 @@
 import '../core/utils/student_number.dart';
+import '../models/qr_payload.dart';
 import '../models/student_record.dart';
 import '../models/terms_document.dart';
 
@@ -28,9 +29,9 @@ class StudentLookupException implements Exception {
 abstract interface class StudentRepository {
   Future<StudentRecord?> findByStudentNumber(StudentNumber number);
 
-  /// The string to encode, decided by the server. See the note in
-  /// `models/qr_payload.dart` for why the app must not build it itself.
-  Future<String> issueQrPayload(StudentNumber number);
+  /// The string to encode and how to draw it, decided by the server. See the
+  /// note in `models/qr_payload.dart` for why the app must not build it itself.
+  Future<QrPayload> issueQrPayload(StudentNumber number);
 
   /// The current Terms and Conditions.
   Future<TermsDocument> fetchTerms();
@@ -110,7 +111,7 @@ class InMemoryStudentRepository implements StudentRepository {
   }
 
   @override
-  Future<String> issueQrPayload(StudentNumber number) async {
+  Future<QrPayload> issueQrPayload(StudentNumber number) async {
     final record = await findByStudentNumber(number);
     if (record == null) {
       throw const StudentLookupException(
@@ -118,7 +119,7 @@ class InMemoryStudentRepository implements StudentRepository {
         code: 'student_not_found',
       );
     }
-    return record.studentNumber.value;
+    return QrPayload.forRecord(record);
   }
 
   @override

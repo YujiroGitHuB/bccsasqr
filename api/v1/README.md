@@ -188,7 +188,7 @@ What to encode, how to draw it, and what to print underneath.
     "spec": { "encodes": "student_no", "size": 250, "error_correction": "M",
               "foreground": "#38bdf8", "background": "#0f172a", "quiet_zone": 4 },
     "card": {
-      "filename": "QR-025-571.png",
+      "filename": "025-571_qr.png",
       "details": [
         { "label": "Student No.", "value": "025-571" },
         { "label": "Name",        "value": "Albarida, Jelshian ." },
@@ -241,6 +241,12 @@ Three reasons:
 
 Because `spec` comes from the server, the two images stay identical: same size,
 same error-correction level, same colors. Use it rather than hardcoding.
+
+`card` is the rest of the saved image — the rows printed under the code and
+the file name. The app's `lib/views/widgets/qr_card.dart` is a port of the web
+page's `paintCard()` (`QRgenerator/js/scriptv2.js`) at the same coordinates, so
+a card saved from the phone and one downloaded from the browser are the same
+picture.
 
 **Only the student number is encoded.** The scanner looks up the name, course
 and section from the database at scan time, so putting them inside the code

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../core/config/app_config.dart';
 import '../core/utils/student_number.dart';
+import '../models/qr_payload.dart';
 import '../models/student_record.dart';
 import '../models/terms_document.dart';
 import 'student_repository.dart';
@@ -73,7 +74,7 @@ class HttpStudentRepository implements StudentRepository {
   }
 
   @override
-  Future<String> issueQrPayload(StudentNumber number) async {
+  Future<QrPayload> issueQrPayload(StudentNumber number) async {
     final data = await _get(Uri.parse('${_studentUri(number)}/qr'));
 
     final qr = data['qr'];
@@ -86,8 +87,38 @@ class HttpStudentRepository implements StudentRepository {
       throw const StudentLookupException('The server issued an empty QR code.');
     }
 
-    return payload;
+    // The card is what makes the saved image match the web page's download.
+    // A server too old to send one still gets a card — built from the record
+    // the same way the server would have built it.
+    final card = qr['card'];
+    final rows = _cardRows(
+      card is Map<String, dynamic> ? card['details'] : null,
+    );
+    final student = data['student'];
+    final fallback = rows.isEmpty && student is Map<String, dynamic>
+        ? QrPayload.forRecord(_recordFrom(student))
+        : null;
+    final fileName = card is Map<String, dynamic> ? card['filename'] : null;
+
+    return QrPayload(
+      data: payload,
+      spec: QrSpec.fromJson(qr['spec']),
+      details: fallback?.details ?? rows,
+      fileName: fileName is String && fileName.isNotEmpty
+          ? QrPayload.safeFileName(fileName)
+          : QrPayload.safeFileName('${payload}_qr.png'),
+    );
   }
+
+  /// `card.details` — `[{label, value}, …]` — keeping only well-formed rows.
+  List<QrCardRow> _cardRows(Object? raw) => [
+    if (raw is List)
+      for (final row in raw)
+        if (row is Map<String, dynamic> &&
+            row['label'] is String &&
+            row['value'] is String)
+          (label: row['label'] as String, value: row['value'] as String),
+  ];
 
   @override
   Future<TermsDocument> fetchTerms() async =>

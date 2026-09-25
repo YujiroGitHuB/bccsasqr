@@ -194,7 +194,10 @@ function gen_qr_resource(array $student): array
         'payload' => $student['student_no'],
         'spec'    => gen_qr_spec(),
         'card'    => [
-            'filename' => 'QR-' . preg_replace('/[^A-Za-z0-9\-]/', '', $student['student_no']) . '.png',
+            // The name the web page downloads under (scriptv2.js:
+            // `${id}_qr.png`), so the same student gets the same file
+            // from either client.
+            'filename' => preg_replace('/[^A-Za-z0-9\-]/', '', $student['student_no']) . '_qr.png',
             'details'  => [
                 ['label' => 'Student No.', 'value' => trim((string) $student['student_no'])],
                 ['label' => 'Name',        'value' => trim((string) $student['fullname'])],

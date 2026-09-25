@@ -1,6 +1,18 @@
 /// User-facing copy, kept in one place so the views hold layout only.
 abstract final class AppStrings {
+  /// The app's name: under the home-screen icon (AndroidManifest.xml,
+  /// Info.plist) and in the recent-apps switcher. Short enough that no
+  /// launcher cuts it off.
+  static const String appName = 'BCC SASQR';
+
+  /// The heading on the generator page, where there is room to say what it is.
   static const String appTitle = 'BCC SASQR Code Generator';
+
+  static const String splashBrand = 'BCC ';
+  static const String splashBrandAccent = 'SASQR';
+  static const String splashTagline = 'STUDENT QR CODE GENERATOR';
+  static const String splashFooter = 'Binalatongan Community College';
+  static const String splashSemantics = 'BCC SASQR is starting';
   static const String appTagline =
       'Look up your record and generate the QR code used for attendance.';
 

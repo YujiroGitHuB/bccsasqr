@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../controllers/qr_generator_controller.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/qr_payload.dart';
-import '../../models/student_record.dart';
 import 'dashed_border_box.dart';
+import 'qr_card.dart';
 import 'surface_panel.dart';
 
 /// Right column: the empty state, or the finished code once it exists.
@@ -40,7 +39,6 @@ class QrPreviewPanel extends StatelessWidget {
           : _GeneratedCode(
               key: const ValueKey('code'),
               payload: payload,
-              record: controller.record!,
               boundaryKey: boundaryKey,
             ),
     );
@@ -119,81 +117,31 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// The printable card: white QR on white, with the identifying details under
-/// it so a saved image still says who it belongs to.
+/// The generated card, scaled down to fit a narrow screen.
+///
+/// The [RepaintBoundary] sits INSIDE the [FittedBox], so the export captures
+/// the card at its own full size — never the shrunken copy on screen.
 class _GeneratedCode extends StatelessWidget {
   const _GeneratedCode({
     super.key,
     required this.payload,
-    required this.record,
     required this.boundaryKey,
   });
 
   final QrPayload payload;
-  final StudentRecord record;
   final GlobalKey boundaryKey;
 
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      key: boundaryKey,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            QrImageView(
-              data: payload.encode(),
-              version: QrVersions.auto,
-              size: 208,
-              gapless: true,
-              backgroundColor: Colors.white,
-              errorCorrectionLevel: QrErrorCorrectLevel.Q,
-              eyeStyle: const QrEyeStyle(
-                eyeShape: QrEyeShape.square,
-                color: Color(0xFF0A0D12),
-              ),
-              dataModuleStyle: const QrDataModuleStyle(
-                dataModuleShape: QrDataModuleShape.square,
-                color: Color(0xFF0A0D12),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              record.fullName,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF0A0D12),
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              record.studentNumber.value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
-                color: Color(0xFF4B5563),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${record.course} • ${record.section}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 11.5,
-                height: 1.4,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ],
+    return Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: RepaintBoundary(
+            key: boundaryKey,
+            child: QrCard(payload: payload),
+          ),
         ),
       ),
     );

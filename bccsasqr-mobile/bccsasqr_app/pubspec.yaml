@@ -50,6 +50,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.7
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -61,6 +63,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # The logo on the saved QR card. Bundled rather than fetched so the card
+  # is complete offline; the web card draws the same file
+  # (assets/images/bcc-logo.png in the site root).
+  assets:
+    - assets/images/bcc-logo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -92,3 +100,41 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# The native launch screen — what shows while Flutter starts, before the
+# first frame. Regenerate after changing anything here:
+#
+#   dart run flutter_native_splash:create
+#
+# It must match the first frame of lib/views/splash_page.dart exactly (same
+# colour, same logo, same size, dead centre) so the hand-over is invisible.
+# The colour is AppColors.canvas; the logo is 526 px read as 4x = 131.5 dp,
+# which is SplashPage.logoSize.
+flutter_native_splash:
+  color: "#0A0D12"
+  image: assets/splash/logo.png
+  android_12:
+    # 1152 px canvas, logo inside the 768 px circle Android 12+ keeps.
+    image: assets/splash/android12.png
+    color: "#0A0D12"
+  web: false
+
+# The home-screen icon: the school seal — the system logo
+# (assets/images/logo_1763373990.png in the site root, byte-identical to
+# bcc-logo.png) — on the app's dark canvas, matching the splash. Regenerate
+# after changing anything here:
+#
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/icon/icon.png"
+  # Android 8+: the launcher crops the icon to its own shape (circle,
+  # squircle…), so the seal sits inside the safe zone on a solid canvas.
+  adaptive_icon_background: "#0A0D12"
+  adaptive_icon_foreground: "assets/icon/foreground.png"
+  # foreground.png already carries its own safe-zone padding; the tool's
+  # default 16% inset on top of it would shrink the seal to a dot.
+  adaptive_icon_foreground_inset: 0
+  min_sdk_android: 21

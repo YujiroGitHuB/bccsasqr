@@ -1,11 +1,13 @@
 import 'package:bccsasqr_app/app.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/core/utils/student_number.dart';
+import 'package:bccsasqr_app/models/qr_payload.dart';
 import 'package:bccsasqr_app/models/record_warning.dart';
 import 'package:bccsasqr_app/models/student_record.dart';
 import 'package:bccsasqr_app/models/terms_document.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
+import 'package:bccsasqr_app/views/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -39,7 +41,10 @@ class _StubRepository implements StudentRepository {
   }
 
   @override
-  Future<String> issueQrPayload(StudentNumber number) async => number.value;
+  Future<QrPayload> issueQrPayload(StudentNumber number) async {
+    final record = await findByStudentNumber(number);
+    return QrPayload.forRecord(record!);
+  }
 
   @override
   Future<TermsDocument> fetchTerms() async =>
@@ -51,16 +56,16 @@ class _StubRepository implements StudentRepository {
 
 /// Records the export request instead of touching the file system.
 class _StubExportService implements QrExportService {
-  String? lastFileStem;
+  String? lastFileName;
 
   @override
   Future<String> export({
     required GlobalKey boundaryKey,
-    required String fileStem,
+    required String fileName,
     String? shareText,
   }) async {
-    lastFileStem = fileStem;
-    return 'memory://$fileStem.png';
+    lastFileName = fileName;
+    return 'memory://$fileName';
   }
 }
 
@@ -81,8 +86,59 @@ void main() {
     view.resetDevicePixelRatio();
   });
 
-  Widget harness(_StubExportService exporter) =>
-      BccSasqrApp(repository: _StubRepository(), exportService: exporter);
+  Widget harness(_StubExportService exporter) => BccSasqrApp(
+    repository: _StubRepository(),
+    exportService: exporter,
+    showSplash: false,
+  );
+
+  /// Lets the splash play out — the wait for the logo, the animation, the
+  /// hold — then the cross-fade. Fails the test if it has not handed over
+  /// within six seconds: a splash that never ends is a locked app.
+  Future<void> playSplash(WidgetTester tester) async {
+    for (var i = 0; i < 60; i++) {
+      if (find.byType(SplashPage).evaluate().isEmpty) break;
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('opens on the splash, then hands over to the generator', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      BccSasqrApp(
+        repository: _StubRepository(),
+        exportService: _StubExportService(),
+      ),
+    );
+
+    expect(find.byType(SplashPage), findsOneWidget);
+    expect(find.text(AppStrings.splashTagline), findsOneWidget);
+    expect(find.text(AppStrings.studentNumberLabel), findsNothing);
+
+    await playSplash(tester);
+
+    expect(find.byType(SplashPage), findsNothing);
+    expect(find.text(AppStrings.studentNumberLabel), findsOneWidget);
+  });
+
+  testWidgets('with reduce motion on, the splash still ends', (tester) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+
+    await tester.pumpWidget(
+      BccSasqrApp(
+        repository: _StubRepository(),
+        exportService: _StubExportService(),
+      ),
+    );
+    await playSplash(tester);
+
+    expect(find.byType(SplashPage), findsNothing);
+    expect(find.text(AppStrings.studentNumberLabel), findsOneWidget);
+  });
 
   testWidgets('opens on the empty state with the action locked', (
     tester,
@@ -169,7 +225,8 @@ void main() {
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
 
-    expect(exporter.lastFileStem, contains('019-464'));
+    // The name the web page downloads under.
+    expect(exporter.lastFileName, '019-464_qr.png');
   });
 
   testWidgets('a connected build shows no demo notice', (tester) async {
@@ -187,6 +244,7 @@ void main() {
       BccSasqrApp(
         repository: InMemoryStudentRepository(latency: Duration.zero),
         exportService: _StubExportService(),
+        showSplash: false,
       ),
     );
     await tester.pumpAndSettle();

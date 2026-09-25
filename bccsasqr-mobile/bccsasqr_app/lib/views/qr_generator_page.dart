@@ -87,7 +87,7 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
     try {
       await widget.exportService.export(
         boundaryKey: _qrBoundaryKey,
-        fileStem: _controller.record!.fileStem,
+        fileName: _controller.payload!.fileName,
         shareText:
             'BCC SASQR attendance code for ${_controller.record!.fullName}',
       );
