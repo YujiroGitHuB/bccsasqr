@@ -198,49 +198,59 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
           builder: (context, constraints) {
             final wide = constraints.maxWidth >= _twoColumnBreakpoint;
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.pagePadding,
-                vertical: 18,
-              ),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-                  child: ListenableBuilder(
-                    listenable: _controller,
-                    builder: (context, _) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const AppHeaderCard(),
-                        // Renders nothing when a backend was supplied.
-                        DemoModeBanner(
-                          active:
-                              widget.repository is InMemoryStudentRepository,
-                        ),
-                        const SizedBox(height: 16),
-                        if (wide)
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(child: _details()),
-                                const SizedBox(width: 16),
-                                Expanded(child: _preview(fill: true)),
-                              ],
-                            ),
-                          )
-                        else ...[
-                          _details(),
+            // Pull down to look the number up again. Always scrollable, so
+            // the pull works even when the whole form fits on the screen.
+            return RefreshIndicator(
+              onRefresh: _controller.refresh,
+              color: AppColors.accent,
+              backgroundColor: AppColors.surfaceRaised,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.pagePadding,
+                  vertical: 18,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: _maxContentWidth,
+                    ),
+                    child: ListenableBuilder(
+                      listenable: _controller,
+                      builder: (context, _) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const AppHeaderCard(),
+                          // Renders nothing when a backend was supplied.
+                          DemoModeBanner(
+                            active:
+                                widget.repository is InMemoryStudentRepository,
+                          ),
                           const SizedBox(height: 16),
-                          _preview(),
+                          if (wide)
+                            IntrinsicHeight(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(child: _details()),
+                                  const SizedBox(width: 16),
+                                  Expanded(child: _preview(fill: true)),
+                                ],
+                              ),
+                            )
+                          else ...[
+                            _details(),
+                            const SizedBox(height: 16),
+                            _preview(),
+                          ],
+                          const SizedBox(height: 26),
+                          AppFooter(
+                            onOpenDeveloper: () =>
+                                _openUrl(AppStrings.developerUrl),
+                          ),
+                          const SizedBox(height: 12),
                         ],
-                        const SizedBox(height: 26),
-                        AppFooter(
-                          onOpenDeveloper: () =>
-                              _openUrl(AppStrings.developerUrl),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
+                      ),
                     ),
                   ),
                 ),

@@ -72,6 +72,22 @@ class DetailsPanel extends StatelessWidget {
               color: AppColors.danger,
               message: controller.errorMessage!,
             ),
+            if (controller.canRetry) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: controller.verifyNow,
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                label: const Text(AppStrings.actionRetry),
+                // Same shape as the warning card's button, in the error's red.
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  side: BorderSide(
+                    color: AppColors.danger.withValues(alpha: 0.55),
+                  ),
+                  minimumSize: const Size.fromHeight(40),
+                ),
+              ),
+            ],
           ],
           if (controller.isVerified) ...[
             const SizedBox(height: 8),

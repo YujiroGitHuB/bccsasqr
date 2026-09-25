@@ -92,6 +92,22 @@ class _AlwaysRefusesRepository extends _FakeRepository {
   }
 }
 
+/// A phone whose signal comes and goes: flip [offline] between lookups.
+class _PatchyRepository extends _FakeRepository {
+  _PatchyRepository(StudentRecord record) : super(result: record);
+
+  bool offline = false;
+
+  @override
+  Future<StudentRecord?> findByStudentNumber(StudentNumber number) async {
+    calls++;
+    if (offline) {
+      throw const StudentLookupException('offline', code: 'network');
+    }
+    return result;
+  }
+}
+
 /// Writes down what would have been said; `null` stands for a stop.
 class _RecordingSpeech implements SpeechService {
   final said = <String?>[];
@@ -301,6 +317,68 @@ void main() {
     expect(c.isVerified, isTrue);
   });
 
+  group('refresh', () {
+    test('an empty field has nothing to look up', () async {
+      final repo = _FakeRepository(result: _known);
+      final c = build(repo);
+
+      await c.refresh();
+
+      expect(repo.calls, 0);
+      expect(c.errorMessage, isNull, reason: 'no nagging on a blank form');
+    });
+
+    test('after a dropped connection, the same number verifies', () async {
+      final repo = _PatchyRepository(_known)..offline = true;
+      final c = build(repo);
+
+      c.onStudentNumberChanged('019-464');
+      await c.verifyNow();
+      expect(c.canRetry, isTrue);
+
+      repo.offline = false;
+      await c.refresh();
+
+      expect(c.isVerified, isTrue);
+      expect(c.canRetry, isFalse);
+      expect(c.errorMessage, isNull);
+    });
+
+    test('a record that still verifies keeps its code', () async {
+      final c = build(_PatchyRepository(_known));
+
+      c.onStudentNumberChanged('019-464');
+      await c.verifyNow();
+      c.setTermsAccepted(true);
+      await c.generate();
+
+      await c.refresh();
+
+      expect(c.hasQrCode, isTrue);
+      expect(c.termsAccepted, isTrue);
+    });
+
+    test('a re-check that fails drops the code with the record', () async {
+      final repo = _PatchyRepository(_known);
+      final c = build(repo);
+
+      c.onStudentNumberChanged('019-464');
+      await c.verifyNow();
+      c.setTermsAccepted(true);
+      await c.generate();
+
+      repo.offline = true;
+      await c.refresh();
+
+      expect(
+        c.hasQrCode,
+        isFalse,
+        reason: 'no code without a record behind it',
+      );
+      expect(c.record, isNull);
+    });
+  });
+
   group('the voice reads what the screen shows', () {
     test('a found record: checking, then the verified badge', () async {
       final voice = _RecordingSpeech();
@@ -363,16 +441,19 @@ void main() {
       expect(voice.said.last, c.errorMessage);
     });
 
-    test('a malformed number is read out on submit, not while typing', () async {
-      final voice = _RecordingSpeech();
-      final c = build(_FakeRepository(result: _known), speech: voice);
+    test(
+      'a malformed number is read out on submit, not while typing',
+      () async {
+        final voice = _RecordingSpeech();
+        final c = build(_FakeRepository(result: _known), speech: voice);
 
-      c.onStudentNumberChanged('19-46');
-      expect(voice.said, isEmpty, reason: 'still typing — stay quiet');
+        c.onStudentNumberChanged('19-46');
+        expect(voice.said, isEmpty, reason: 'still typing — stay quiet');
 
-      await c.verifyNow();
-      expect(voice.said, [AppStrings.errorFormat]);
-    });
+        await c.verifyNow();
+        expect(voice.said, [AppStrings.errorFormat]);
+      },
+    );
 
     test('submitting an empty field reads its prompt', () async {
       final voice = _RecordingSpeech();

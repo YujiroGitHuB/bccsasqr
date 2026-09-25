@@ -47,6 +47,7 @@ abstract final class AppStrings {
   static const String actionGenerating = 'Generating…';
   static const String actionDownload = 'Download QR Code';
   static const String actionReset = 'Start over';
+  static const String actionRetry = 'Try again';
 
   static const String emptyQrTitle = 'Nothing to show yet';
   static const String emptyQrBody =

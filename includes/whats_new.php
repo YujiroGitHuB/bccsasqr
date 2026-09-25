@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-25.3';
+const WHATS_NEW_VERSION = '2026-09-25.4';
 
 /**
  * The changelog, newest release first.
@@ -89,6 +89,13 @@ function whats_new_releases(): array
                     'icon'  => 'bi-volume-up',
                     'title' => 'The app talks students through it, like the web page',
                     'text'  => 'Just like the web QR generator, the app now speaks. It reads out the message on the screen as it appears: that it is <strong>checking</strong> a student number, whether the record was <strong>verified</strong> or <strong>not found</strong>, and the <strong>missing photo</strong> warning when there is one. Opening <strong>How this works</strong> reads that too. Anyone who installed the app earlier today gets the voice by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-arrow-clockwise',
+                    'title' => 'A dropped signal is no longer a dead end in the app',
+                    'text'  => 'When the phone lost its connection, the app said it <strong>could not reach the records service</strong> and the only way out was to type the student number again. There is now a <strong>Try again</strong> button under that message, and students can <strong>pull the screen down</strong> to check again at any time &mdash; which also clears the missing photo warning once they have uploaded their photo. Anyone who installed the app earlier today gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
                 ],
                 [

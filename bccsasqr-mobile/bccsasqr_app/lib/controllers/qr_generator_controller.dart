@@ -56,6 +56,9 @@ class QrGeneratorController extends ChangeNotifier {
   bool get isExporting => _exporting;
 
   bool get isVerifying => _status == LookupStatus.verifying;
+
+  /// The lookup never got an answer; the same number may well work on retry.
+  bool get canRetry => _status == LookupStatus.failed;
   bool get isVerified => _status == LookupStatus.verified && _record != null;
   bool get hasQrCode => _payload != null;
 
@@ -156,8 +159,19 @@ class QrGeneratorController extends ChangeNotifier {
       _status = LookupStatus.failed;
       _errorMessage = AppStrings.errorLookupFailed;
     }
+    // A re-check (see [refresh]) keeps the code only while the record behind
+    // it still verifies.
+    if (!isVerified) _payload = null;
     _speakOutcome();
     notifyListeners();
+  }
+
+  /// Pull-to-refresh: looks the same number up again — after a dropped
+  /// connection, or once the student has fixed what a warning pointed at (a
+  /// photo uploaded in the browser). An empty field has nothing to refresh.
+  Future<void> refresh() async {
+    if (_input.trim().isEmpty) return;
+    await verifyNow();
   }
 
   /// Reads out what the lookup left on screen: the error line, or the
@@ -165,8 +179,10 @@ class QrGeneratorController extends ChangeNotifier {
   /// anything the student cannot also read.
   void _speakOutcome() {
     final shown = isVerified
-        ? [AppStrings.verifiedBadge, for (final w in warnings) w.message]
-              .join('. ')
+        ? [
+            AppStrings.verifiedBadge,
+            for (final w in warnings) w.message,
+          ].join('. ')
         : _errorMessage;
     if (shown != null) unawaited(_speech.speak(shown));
   }

@@ -54,6 +54,22 @@ class _StubRepository implements StudentRepository {
   Future<void> acceptTerms(StudentNumber number) async {}
 }
 
+/// No signal for the first lookup, back for the next.
+class _DroppedSignalRepository extends _StubRepository {
+  int _lookups = 0;
+
+  @override
+  Future<StudentRecord?> findByStudentNumber(StudentNumber number) async {
+    if (_lookups++ == 0) {
+      throw const StudentLookupException(
+        'Could not reach the records service.',
+        code: 'network',
+      );
+    }
+    return super.findByStudentNumber(number);
+  }
+}
+
 /// Records the export request instead of touching the file system.
 class _StubExportService implements QrExportService {
   String? lastFileName;
@@ -190,6 +206,56 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+  });
+
+  testWidgets('a dropped connection offers Try again, and it works', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      BccSasqrApp(
+        repository: _DroppedSignalRepository(),
+        exportService: _StubExportService(),
+        showSplash: false,
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField), '019464');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Could not reach the records service.'), findsOneWidget);
+    final retry = find.widgetWithText(OutlinedButton, AppStrings.actionRetry);
+    expect(retry, findsOneWidget);
+
+    await tester.tap(retry);
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.verifiedBadge), findsOneWidget);
+    expect(retry, findsNothing);
+  });
+
+  testWidgets('pulling the page down looks the number up again', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      BccSasqrApp(
+        repository: _DroppedSignalRepository(),
+        exportService: _StubExportService(),
+        showSplash: false,
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField), '019464');
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.verifiedBadge), findsNothing);
+
+    await tester.fling(
+      find.text(AppStrings.appTitle),
+      const Offset(0, 400),
+      1000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.verifiedBadge), findsOneWidget);
   });
 
   testWidgets('an unknown number reports not found', (tester) async {
