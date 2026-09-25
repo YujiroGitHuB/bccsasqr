@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-25';
+const WHATS_NEW_VERSION = '2026-09-25.2';
 
 /**
  * The changelog, newest release first.
@@ -73,10 +73,17 @@ function whats_new_releases(): array
         [
             'id'      => '2026-09-25',
             'date'    => '2026-09-25',
-            'icon'    => 'bi-image',
-            'title'   => 'Your uploaded logo stays put',
-            'summary' => 'A logo or report letterhead uploaded in Settings was being removed every time the system was updated, leaving a broken image in the sidebar and on reports. They are now kept through updates.',
+            'icon'    => 'bi-phone',
+            'title'   => 'An Android app for students, and a logo that stays put',
+            'summary' => 'Students can now install the QR generator as an Android app from its own download page — it makes the very same code as the web page. And a logo or letterhead uploaded in Settings no longer disappears when the system is updated.',
             'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-android2',
+                    'title' => 'Get the app: a download page for students',
+                    'text'  => 'The QR generator is now also an Android app. Students type their student number, accept the terms, and save their QR on the phone &mdash; <strong>the same code the web page makes</strong>, down to the last square, so the scanner treats both alike. It even warns them when their photo is missing, with a button to upload one, before they reach the scanner. Share the download page with your class: it walks them through the install, and on a computer it shows a QR to open the page on their phone.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
                 [
                     'type'  => 'fixed',
                     'icon'  => 'bi-image',

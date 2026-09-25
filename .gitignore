@@ -39,6 +39,10 @@ uploads/**
 assets/images/logo_*
 assets/images/letterhead_*
 
+# The Android app on the download page. Uploaded by hand to the server
+# (see download/index.php); deploy.yml excludes it for the same reason.
+download/*.apk
+
 # The live database login. Created by hand on the server (and locally, if
 # you want something other than the XAMPP defaults) from
 # includes/db_credentials.example.php. It is ALSO excluded in

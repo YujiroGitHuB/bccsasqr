@@ -78,4 +78,8 @@ jobs:
           # uploads/). Like uploads/, they exist in no commit, so --delete
           # removed them: a logo uploaded on 2026-09-23 was gone by the
           # next push and the live site showed a broken image.
-          EXCLUDE: "/.git/, /.github/, /node_modules/, /README.md, /uploads/, /backups/, /bccsasqr-mobile/, /assets/images/logo_*, /assets/images/letterhead_*, /includes/db_credentials.php, /includes/db_error.log, .mcp.json, .DS_Store, Thumbs.db"
+          #
+          # download/*.apk is the Android app, uploaded by hand next to
+          # download/index.php. 50 MB per release does not belong in git,
+          # and without this --delete would remove it on every push.
+          EXCLUDE: "/.git/, /.github/, /node_modules/, /README.md, /uploads/, /backups/, /bccsasqr-mobile/, /assets/images/logo_*, /assets/images/letterhead_*, /download/*.apk, /includes/db_credentials.php, /includes/db_error.log, .mcp.json, .DS_Store, Thumbs.db"
