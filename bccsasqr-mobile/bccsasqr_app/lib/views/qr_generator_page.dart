@@ -9,6 +9,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../models/terms_document.dart';
 import '../services/qr_export_service.dart';
+import '../services/speech_service.dart';
 import '../services/student_repository.dart';
 import 'widgets/app_footer.dart';
 import 'widgets/app_header_card.dart';
@@ -25,10 +26,12 @@ class QrGeneratorPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.exportService,
+    this.speech = const SilentSpeechService(),
   });
 
   final StudentRepository repository;
   final QrExportService exportService;
+  final SpeechService speech;
 
   @override
   State<QrGeneratorPage> createState() => _QrGeneratorPageState();
@@ -41,12 +44,24 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
 
   late final QrGeneratorController _controller = QrGeneratorController(
     repository: widget.repository,
+    speech: widget.speech,
   );
   final TextEditingController _studentNumberField = TextEditingController();
   final GlobalKey _qrBoundaryKey = GlobalKey();
 
+  /// Switching to another app cuts the voice off mid-sentence rather than
+  /// letting the steps play on over whatever the student opened.
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(onHide: _controller.stopSpeaking);
+  }
+
   @override
   void dispose() {
+    _lifecycle.dispose();
     _controller.dispose();
     _studentNumberField.dispose();
     super.dispose();

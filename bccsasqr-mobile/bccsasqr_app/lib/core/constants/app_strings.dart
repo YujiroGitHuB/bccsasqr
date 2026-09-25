@@ -53,6 +53,7 @@ abstract final class AppStrings {
       'Enter your student number and accept the terms — your QR code will '
       'appear here.';
 
+  /// Said aloud while the field's spinner turns.
   static const String verifying = 'Checking the enrolment list…';
   static const String verifiedBadge = 'Record verified';
 

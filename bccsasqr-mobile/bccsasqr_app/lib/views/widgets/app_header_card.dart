@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import 'surface_panel.dart';
@@ -106,7 +107,17 @@ class _BrandMark extends StatelessWidget {
           ),
         ],
       ),
-      child: const Icon(Icons.diamond_outlined, size: 24, color: Colors.white),
+      // The school seal, as on the web hero (.qr-hero-icon: 34px in 52px).
+      alignment: Alignment.center,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7),
+        child: Image.asset(
+          AppAssets.bccLogo,
+          width: 30,
+          height: 30,
+          fit: BoxFit.contain,
+        ),
+      ),
     );
   }
 }

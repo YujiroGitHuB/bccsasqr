@@ -45,7 +45,7 @@ class DetailsPanel extends StatelessWidget {
             label: AppStrings.detailsHeading,
           ),
           const SizedBox(height: 16),
-          const HowThisWorksTile(),
+          HowThisWorksTile(onToggled: controller.onInstructionsToggled),
           const SizedBox(height: 18),
           const Text(
             AppStrings.studentNumberLabel,

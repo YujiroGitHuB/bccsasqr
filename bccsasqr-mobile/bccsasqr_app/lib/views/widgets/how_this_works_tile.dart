@@ -5,7 +5,10 @@ import '../../core/theme/app_colors.dart';
 
 /// Collapsed banner that expands to explain the flow.
 class HowThisWorksTile extends StatefulWidget {
-  const HowThisWorksTile({super.key});
+  const HowThisWorksTile({super.key, this.onToggled});
+
+  /// Told the new state on every tap — the steps are read aloud on open.
+  final ValueChanged<bool>? onToggled;
 
   @override
   State<HowThisWorksTile> createState() => _HowThisWorksTileState();
@@ -26,7 +29,10 @@ class _HowThisWorksTileState extends State<HowThisWorksTile> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(11),
-          onTap: () => setState(() => _open = !_open),
+          onTap: () {
+            setState(() => _open = !_open);
+            widget.onToggled?.call(_open);
+          },
           child: AnimatedSize(
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOut,

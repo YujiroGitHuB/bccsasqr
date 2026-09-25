@@ -8,6 +8,7 @@ import '../models/qr_payload.dart';
 import '../models/record_warning.dart';
 import '../models/student_record.dart';
 import '../models/terms_document.dart';
+import '../services/speech_service.dart';
 import '../services/student_repository.dart';
 
 /// Where the lookup half of the form currently stands.
@@ -19,10 +20,13 @@ enum LookupStatus { idle, verifying, verified, notFound, failed }
 class QrGeneratorController extends ChangeNotifier {
   QrGeneratorController({
     required StudentRepository repository,
+    SpeechService speech = const SilentSpeechService(),
     this.debounce = const Duration(milliseconds: 400),
-  }) : _repository = repository;
+  }) : _repository = repository,
+       _speech = speech;
 
   final StudentRepository _repository;
+  final SpeechService _speech;
 
   /// How long typing must pause before a lookup fires.
   final Duration debounce;
@@ -87,6 +91,7 @@ class QrGeneratorController extends ChangeNotifier {
 
     if (value.trim().isEmpty) {
       _status = LookupStatus.idle;
+      unawaited(_speech.stop());
       notifyListeners();
       return;
     }
@@ -115,6 +120,7 @@ class QrGeneratorController extends ChangeNotifier {
       _errorMessage = _input.trim().isEmpty
           ? AppStrings.errorEmpty
           : AppStrings.errorFormat;
+      _speakOutcome();
       notifyListeners();
       return;
     }
@@ -122,6 +128,7 @@ class QrGeneratorController extends ChangeNotifier {
     final token = ++_lookupToken;
     _status = LookupStatus.verifying;
     _errorMessage = null;
+    unawaited(_speech.speak(AppStrings.verifying));
     notifyListeners();
 
     try {
@@ -149,8 +156,31 @@ class QrGeneratorController extends ChangeNotifier {
       _status = LookupStatus.failed;
       _errorMessage = AppStrings.errorLookupFailed;
     }
+    _speakOutcome();
     notifyListeners();
   }
+
+  /// Reads out what the lookup left on screen: the error line, or the
+  /// verified badge and any warning card under it. The voice never says
+  /// anything the student cannot also read.
+  void _speakOutcome() {
+    final shown = isVerified
+        ? [AppStrings.verifiedBadge, for (final w in warnings) w.message]
+              .join('. ')
+        : _errorMessage;
+    if (shown != null) unawaited(_speech.speak(shown));
+  }
+
+  /// "How this works" was opened or closed: read its text aloud, or stop.
+  void onInstructionsToggled(bool open) {
+    unawaited(
+      open ? _speech.speak(AppStrings.howThisWorksBody) : _speech.stop(),
+    );
+  }
+
+  /// Silences the voice — the app left the screen, as the web does on
+  /// `pagehide`.
+  void stopSpeaking() => unawaited(_speech.stop());
 
   /// The Terms and Conditions to show before the box is ticked. Fetched
   /// rather than bundled: raising the version on the server must reach the app
@@ -247,6 +277,7 @@ class QrGeneratorController extends ChangeNotifier {
     _payload = null;
     _generating = false;
     _exporting = false;
+    unawaited(_speech.stop());
     notifyListeners();
   }
 
@@ -254,6 +285,7 @@ class QrGeneratorController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _debounceTimer?.cancel();
+    unawaited(_speech.stop());
     super.dispose();
   }
 }

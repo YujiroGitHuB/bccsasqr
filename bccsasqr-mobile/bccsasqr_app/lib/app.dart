@@ -5,6 +5,7 @@ import 'core/constants/app_strings.dart';
 import 'core/theme/app_theme.dart';
 import 'services/http_student_repository.dart';
 import 'services/qr_export_service.dart';
+import 'services/speech_service.dart';
 import 'services/student_repository.dart';
 import 'views/qr_generator_page.dart';
 import 'views/splash_page.dart';
@@ -16,12 +17,14 @@ class BccSasqrApp extends StatefulWidget {
     super.key,
     this.repository,
     this.exportService,
+    this.speech,
     this.showSplash = true,
   });
 
   /// Overridable for tests.
   final StudentRepository? repository;
   final QrExportService? exportService;
+  final SpeechService? speech;
 
   /// Tests that are about the generator switch the opening animation off.
   final bool showSplash;
@@ -40,6 +43,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
           : InMemoryStudentRepository());
   late final QrExportService _exportService =
       widget.exportService ?? const ImageQrExportService();
+  late final SpeechService _speech = widget.speech ?? DeviceSpeechService();
 
   late bool _splashing = widget.showSplash;
 
@@ -78,6 +82,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
                 key: const ValueKey('generator'),
                 repository: _repository,
                 exportService: _exportService,
+                speech: _speech,
               ),
       ),
     );
