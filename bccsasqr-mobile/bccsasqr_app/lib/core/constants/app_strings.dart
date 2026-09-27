@@ -35,6 +35,14 @@ abstract final class AppStrings {
   static const String generatorStepVerify = 'Verify';
   static const String generatorStepSave = 'Save QR';
 
+  // The splash after "I'm a student": a student card building itself, and
+  // the three things the student side is for.
+  static const String studentSplashTagline = 'FOR STUDENTS';
+  static const String studentSplashSemantics = 'Opening the student side';
+  static const String studentStepSave = 'Save QR';
+  static const String studentStepScan = 'Get scanned';
+  static const String studentStepCheck = 'See days';
+
   static const String chipVerified = 'Verified records only';
   static const String chipFreeDownload = 'Free download';
 
@@ -152,6 +160,11 @@ abstract final class ScannerStrings {
   static const String retry = 'Try again';
   static const String demoSignInHint =
       'Demo mode — any email and password will sign in.';
+
+  /// Under the sign-in form — for the student who tapped "I'm an
+  /// instructor" to see what was behind it.
+  static const String signInOnlyInstructors =
+      'Only instructors with a BCC SASQR account can sign in here.';
   static const String demoModeBody =
       'This build has no API_BASE_URL, so scans are kept on this phone only '
       'and never reach the school\'s records. Numbers that work:';
@@ -435,4 +448,18 @@ abstract final class NavStrings {
   static const String tracker = 'Attendance';
   static const String settings = 'Settings';
   static const String settingsUnread = 'Settings — new in this update';
+}
+
+/// The card that opens from Settings → Version.
+abstract final class AboutStrings {
+  static const String semantics = 'About BCC SASQR';
+  static String version(String version) => 'Version $version';
+  static String build(String build) => 'build $build';
+  static const String updated = 'Last update';
+  static const String server = 'Server';
+  static const String role = 'Using it as';
+  static const String copy = 'Copy details';
+  static const String copied = 'Copied';
+  static const String done = 'Done';
+  static const String demo = 'Demo mode';
 }

@@ -17,6 +17,7 @@ import 'package:bccsasqr_app/services/whats_new_store.dart';
 import 'package:bccsasqr_app/views/generator_splash.dart';
 import 'package:bccsasqr_app/views/instructor_shell.dart';
 import 'package:bccsasqr_app/views/scanner/scanner_flow.dart';
+import 'package:bccsasqr_app/views/student_splash.dart';
 import 'package:bccsasqr_app/views/tracker_splash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -155,6 +156,34 @@ void main() {
       expect(find.byType(NavigationBar), findsNothing);
       expect(find.byType(ScannerFlow, skipOffstage: false), findsNothing);
       expect(find.text(NavStrings.scanner), findsNothing);
+    });
+
+    testWidgets('"I\'m a student" plays the student\'s splash first', (
+      tester,
+    ) async {
+      await launch(tester);
+      await tester.tap(find.byKey(const ValueKey('role.student')));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(StudentSplash), findsOneWidget);
+      expect(find.text(AppStrings.studentSplashTagline), findsOneWidget);
+
+      await tester.pumpAndSettle();
+      expect(find.byType(StudentSplash), findsNothing);
+      expect(find.byKey(const ValueKey('home.generator')), findsOneWidget);
+    });
+
+    testWidgets('a kept student role opens straight on the home screen', (
+      tester,
+    ) async {
+      roles = MemoryRoleStore(AppRole.student);
+      await tester.pumpWidget(app());
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(StudentSplash), findsNothing);
+      expect(find.byKey(const ValueKey('home.generator')), findsOneWidget);
     });
 
     testWidgets('"I\'m an instructor" is only a sign-in until one goes '

@@ -7,6 +7,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../models/app_role.dart';
 import '../services/app_info.dart';
+import 'about_dialog.dart';
 import 'widgets/surface_panel.dart';
 
 /// Theme, the scanner's beep / buzz / voice, the role, and what version this
@@ -255,9 +256,19 @@ class _SettingsPageState extends State<SettingsPage> {
                           FutureBuilder<AppInfo>(
                             future: _info,
                             builder: (context, snapshot) => _InfoRow(
+                              key: const ValueKey('settings.version'),
                               icon: Icons.verified_outlined,
                               title: SettingsStrings.version,
                               value: snapshot.data?.label ?? '…',
+                              onTap: switch (snapshot.data) {
+                                final info? => () => showAboutCard(
+                                  context,
+                                  info: info,
+                                  role: widget.role,
+                                  serverHost: AppInfo.serverHost,
+                                ),
+                                null => null,
+                              },
                             ),
                           ),
                           if (whatsNew != null)
@@ -411,18 +422,24 @@ class _SwitchRow extends StatelessWidget {
 
 class _InfoRow extends StatelessWidget {
   const _InfoRow({
+    super.key,
     required this.icon,
     required this.title,
     required this.value,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String value;
 
+  /// Opens more about it — the version's About card. With it, the row gets
+  /// the ripple and the chevron the link rows have.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.fromLTRB(0, 10, 8, 10),
       child: MergeSemantics(
         // spaceBetween, so a short value ("1.1.0") sits against the right
@@ -445,9 +462,24 @@ class _InfoRow extends StatelessWidget {
                 ),
               ),
             ),
+            if (onTap != null) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: context.colors.textMuted,
+              ),
+            ],
           ],
         ),
       ),
+    );
+
+    if (onTap == null) return row;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: row,
     );
   }
 }

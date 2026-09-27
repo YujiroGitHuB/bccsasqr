@@ -18,7 +18,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-27.3';
+  static const String version = '2026-09-27.4';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -43,6 +43,30 @@ abstract final class WhatsNewLog {
               'Code** and **My Attendance** — nothing of the scanner. Picked '
               'the wrong one? **Settings → Role** asks again.',
           link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.qr,
+          icon: Icons.badge_outlined,
+          title: 'A welcome for students',
+          text:
+              'Pick **I\'m a student** and a short opening plays first: a '
+              'student card builds itself — the photo, the name, a QR code '
+              'dot by dot and three days ticked off — before **My QR Code** '
+              'and **My Attendance** appear.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.login_rounded,
+          title: 'A new look for the sign-in',
+          text:
+              'The sign-in now opens with the school seal inside the '
+              'scanner\'s frame, and the form rises into place under it. The '
+              'scan line sweeps over the seal while your password is checked, '
+              'and a wrong password shakes the form and turns the corners red '
+              'for a moment.',
         ),
         WhatsNewItem(
           kind: WhatsNewKind.added,

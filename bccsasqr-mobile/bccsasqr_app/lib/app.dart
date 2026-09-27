@@ -33,6 +33,7 @@ import 'views/scanner/scanner_flow.dart';
 import 'views/scanner/scanner_page.dart';
 import 'views/settings_page.dart';
 import 'views/splash_page.dart';
+import 'views/student_splash.dart';
 import 'views/tracker_page.dart';
 import 'views/tracker_splash.dart';
 import 'views/whats_new_page.dart';
@@ -159,6 +160,11 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
 
   bool _scannerOpened = false;
 
+  /// "I'm a student" was just picked: the student's splash plays before the
+  /// home screen, as the scanner's does after "I'm an instructor". Not on a
+  /// launch with the role already kept — the app's own splash has played.
+  bool _studentWelcome = false;
+
   @override
   void initState() {
     super.initState();
@@ -189,6 +195,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   /// The picker's answer. A student's is kept at once; an instructor's only
   /// once the sign-in goes through (see [_instructor]).
   void _chooseRole(AppRole role) {
+    _studentWelcome = role == AppRole.student;
     _role.choose(role, keep: role == AppRole.student);
   }
 
@@ -311,6 +318,10 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       null => RolePickerPage(
         key: const ValueKey('role'),
         onChosen: _chooseRole,
+      ),
+      AppRole.student when _studentWelcome => StudentSplash(
+        key: const ValueKey('student-splash'),
+        onFinished: () => setState(() => _studentWelcome = false),
       ),
       AppRole.student => HomePage(
         key: const ValueKey('home'),

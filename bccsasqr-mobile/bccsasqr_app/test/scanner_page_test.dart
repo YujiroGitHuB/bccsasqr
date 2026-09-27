@@ -10,6 +10,7 @@ import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/views/scanner/scanner_intro.dart';
 import 'package:bccsasqr_app/views/scanner/widgets/scan_result_card.dart';
+import 'package:bccsasqr_app/views/widgets/surface_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bccsasqr_app/models/app_role.dart';
@@ -236,6 +237,30 @@ void main() {
     // The bar's tab, not a page pushed over the scanner.
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byTooltip(AppStrings.homeBack), findsNothing);
+  });
+
+  testWidgets('a refused sign-in shakes the form and says why', (tester) async {
+    // At full speed, as on a phone: the shake is what is being checked.
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    final form = find
+        .ancestor(
+          of: find.byType(TextField).first,
+          matching: find.byType(SurfacePanel),
+        )
+        .first;
+    final rest = tester.getTopLeft(form).dx;
+
+    await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(tester.getTopLeft(form).dx, isNot(rest));
+    expect(find.text(ScannerStrings.errorCredentialsEmpty), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(form).dx, rest);
+    // The note for whoever came to see what was behind the card.
+    expect(find.text(ScannerStrings.signInOnlyInstructors), findsOneWidget);
   });
 
   testWidgets('the scanner tab plays its splash, then asks to sign in', (

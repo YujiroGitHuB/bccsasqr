@@ -11,7 +11,9 @@ import 'package:bccsasqr_app/services/scanner_repository.dart';
 import 'package:bccsasqr_app/services/settings_store.dart';
 import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
+import 'package:bccsasqr_app/views/about_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bccsasqr_app/models/app_role.dart';
 import 'package:bccsasqr_app/services/role_store.dart';
@@ -147,6 +149,53 @@ void main() {
       expect(find.text(SettingsStrings.serverDemo), findsOneWidget);
       // A tab, not a page: nothing to go back to.
       expect(find.byTooltip(AppStrings.homeBack), findsNothing);
+    });
+
+    testWidgets('the version opens the About card, which copies it', (
+      tester,
+    ) async {
+      String? copied;
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String?;
+        }
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+
+      await tester.pumpWidget(app(role: AppRole.student));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('home.settings')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('settings.version')));
+      await tester.pumpAndSettle();
+
+      final card = find.byType(AboutCard);
+      Finder inCard(Finder f) => find.descendant(of: card, matching: f);
+      expect(card, findsOneWidget);
+      expect(
+        inCard(find.textContaining('Version 1.1.0', findRichText: true)),
+        findsOneWidget,
+      );
+      expect(inCard(find.text(AboutStrings.demo)), findsOneWidget);
+      expect(inCard(find.text(RoleStrings.currentStudent)), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('about.copy')));
+      await tester.pump();
+      expect(copied, contains('BCC SASQR 1.1.0 (build 2)'));
+      expect(copied, contains('${AboutStrings.role}: Student'));
+      expect(inCard(find.text(AboutStrings.copied)), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(inCard(find.text(AboutStrings.copy)), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('about.done')));
+      await tester.pumpAndSettle();
+      expect(card, findsNothing);
     });
 
     testWidgets('a student\'s Settings has only the voice, no scanner', (

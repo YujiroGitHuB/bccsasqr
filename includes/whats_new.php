@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.17';
+const WHATS_NEW_VERSION = '2026-09-27.18';
 
 /**
  * The changelog, newest release first.
@@ -124,6 +124,13 @@ function whats_new_releases(): array
                     'icon'  => 'bi-shield-lock',
                     'title' => 'A class list opens only for its own instructor',
                     'text'  => 'The <strong>Present</strong> and <strong>Absent</strong> lists on the dashboard could be opened for any subject and section by anyone signed in, which showed a whole section&rsquo;s names and student numbers. They now open only for a subject assigned to you (admins, any subject), and a refused attempt is recorded in the Security Monitor. Nothing changes for your own classes.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-magic',
+                    'title' => 'The app: a welcome for students, a new sign-in, and the version one tap away',
+                    'text'  => 'Picking <strong>I&rsquo;m a student</strong> in the app now plays a short opening, as the instructor side already did: a student card builds itself &mdash; photo, name, a QR code dot by dot and three days ticked off. The scanner&rsquo;s <strong>Instructor sign-in</strong> is redesigned: the school seal sits inside the scanner&rsquo;s frame, the form rises into place under it, the scan line sweeps over the seal while the password is checked, and a wrong password shakes the form and turns the corners red for a moment. A line under the form says that only instructors with an account can sign in. In <strong>Settings</strong>, tapping <strong>Version</strong> opens a card with the version and build, the date of the last update, the server and the role the phone is set to &mdash; and a <strong>Copy details</strong> button, handy when someone reports a problem. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
                 ],
                 [
                     'type'  => 'improved',
