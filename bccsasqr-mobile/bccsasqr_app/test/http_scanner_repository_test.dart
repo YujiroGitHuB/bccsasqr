@@ -25,7 +25,7 @@ String fail(
 
 const _user = {
   'id': 4,
-  'name': 'Francis L. Crisostomo',
+  'name': 'Paolo R. Mendoza',
   'email': 'francis@example.test',
   'role': 'instructor',
   'avatar_url': null,
@@ -57,7 +57,7 @@ void main() {
     });
 
     final user = await r.signIn(email: ' francis@example.test ', password: 'x');
-    expect(user.name, 'Francis L. Crisostomo');
+    expect(user.name, 'Paolo R. Mendoza');
     expect(await tokens.read(), _token);
 
     final body = jsonDecode(seen.first.body) as Map<String, dynamic>;
@@ -107,8 +107,8 @@ void main() {
       (req) async => json(
         ok({
           'record': {
-            'student_no': '025-802',
-            'name': 'GARCIA, MICAELLA JANE V.',
+            'student_no': '000-802',
+            'name': 'VILLAR, CARMINA JOY P.',
             'course': 'BSIT',
             'section': '2G',
             'subject': 'Multimedia Technologies',
@@ -124,10 +124,10 @@ void main() {
     );
 
     final record = await r.recordScan(
-      studentNumber: '025-802',
+      studentNumber: '000-802',
       subjectCode: 'ELEC2',
     );
-    expect(record.name, 'GARCIA, MICAELLA JANE V.');
+    expect(record.name, 'VILLAR, CARMINA JOY P.');
     expect(record.late, isTrue);
     expect(record.photoUrl, endsWith('1.jpg'));
     expect(record.courseAndSection, 'BSIT — 2G');

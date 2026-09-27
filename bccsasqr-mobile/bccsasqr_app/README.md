@@ -184,7 +184,7 @@ to Hostinger, which passes. `check_host.sh` against
 
 ## Demo records
 
-`019-464`, `025-1023`, `021-318`, `023-770`. The dash is inserted
+`019-464`, `000-1023`, `021-318`, `023-770`. The dash is inserted
 automatically; type digits only.
 
 The scanner's demo signs in with any email and password and keeps its scans

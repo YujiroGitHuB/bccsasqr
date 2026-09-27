@@ -15,7 +15,7 @@
 <div class="qr-field qr-field-primary" id="studentNoField">
     <label for="studentNo">
         Student Number
-        <span class="field-hint">Format: YEAR-Registration No. — e.g. 019-464 or 025-1023</span>
+        <span class="field-hint">Format: YEAR-Registration No. — e.g. 019-464 or 000-1023</span>
     </label>
 
     <input

@@ -22,9 +22,9 @@ class _StubTracker implements TrackerRepository {
   @override
   Future<AttendanceHistory?> fetchAttendance(StudentNumber number) async {
     switch (number.value) {
-      case '025-1023':
+      case '000-1023':
         return AttendanceHistory(
-          studentNumber: '025-1023',
+          studentNumber: '000-1023',
           fullName: 'Maria Isabel Santos',
           course: 'BSCS',
           section: '2-B',
@@ -150,7 +150,7 @@ void main() {
     tester,
   ) async {
     await openTracker(tester);
-    await search(tester, '0251023');
+    await search(tester, '0001023');
 
     expect(find.text('Maria Isabel Santos'), findsOneWidget);
     expect(find.text(TrackerStrings.loaded), findsOneWidget);
@@ -173,7 +173,7 @@ void main() {
 
   testWidgets('a long subject folds after five days', (tester) async {
     await openTracker(tester);
-    await search(tester, '0251023');
+    await search(tester, '0001023');
 
     // Sep 1 and 2 of OOP are folded away; Sep 2 of Discrete shows.
     expect(find.text('Sep 01, 2026'), findsNothing);
@@ -222,7 +222,7 @@ void main() {
     view.physicalSize = const Size(320, 3000);
 
     await openTracker(tester);
-    await search(tester, '0251023');
+    await search(tester, '0001023');
 
     expect(tester.takeException(), isNull);
     expect(find.text('Maria Isabel Santos'), findsOneWidget);
@@ -230,7 +230,7 @@ void main() {
 
   testWidgets('clearing the field brings the placeholder back', (tester) async {
     await openTracker(tester);
-    await search(tester, '0251023');
+    await search(tester, '0001023');
     await search(tester, '');
 
     expect(find.text('Maria Isabel Santos'), findsNothing);

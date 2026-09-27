@@ -495,7 +495,7 @@ void main() {
     });
 
     test('a four-digit registration number', () {
-      expect(forSpeech('Try 025-1023.'), 'Try 0 2 5, dash, 1 0 2 3.');
+      expect(forSpeech('Try 000-1023.'), 'Try 0 0 0, dash, 1 0 2 3.');
     });
 
     test('technical detail in trailing brackets is not read', () {

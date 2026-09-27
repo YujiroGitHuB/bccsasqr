@@ -44,7 +44,7 @@ function generateQR() {
             html: `
                 <div style="text-align: left; line-height: 1.6;">
                     <b>Use format:</b> YEAR-NUMBER<br>
-                    (e.g., 019-464 or 025-1023)<br><br>
+                    (e.g., 019-464 or 000-1023)<br><br>
                     <b>Invalid examples:</b><br>
                     • 2025/001<br>
                     • 25-001<br>

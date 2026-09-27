@@ -152,7 +152,7 @@ function handle_scanner_subjects(mysqli $conn): void
 }
 
 /**
- * POST /api/v1/scanner/scan   { "student_no": "025-571", "subject_code": "IT101" }
+ * POST /api/v1/scanner/scan   { "student_no": "000-1023", "subject_code": "IT101" }
  *
  * The web scanner's crud/save_attendance.php, answer for answer. Each
  * refusal keeps the code the web page branches on (already_marked,

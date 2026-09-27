@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 const _user = ScannerUser(
   id: 4,
-  name: 'Francis L. Crisostomo',
+  name: 'Paolo R. Mendoza',
   email: 'francis@example.test',
   role: 'instructor',
 );
@@ -16,8 +16,8 @@ const _user = ScannerUser(
 const _elec2 = ScanSubject(code: 'ELEC2', name: 'Multimedia Technologies');
 
 ScanRecord _record({
-  String number = '025-802',
-  String name = 'GARCIA, MICAELLA JANE V.',
+  String number = '000-802',
+  String name = 'VILLAR, CARMINA JOY P.',
   bool late = false,
   bool photoMissing = false,
 }) => ScanRecord(
@@ -215,7 +215,7 @@ void main() {
 
     test('signing out forgets everything', () async {
       await ready();
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
       await controller.signOut();
 
       expect(repo.signedOut, isTrue);
@@ -278,35 +278,35 @@ void main() {
   group('scanning', () {
     test('a recorded scan shows, lists and says the name', () async {
       await ready();
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
 
-      expect(repo.scanned, ['025-802']);
-      expect(controller.lastRecord?.name, 'GARCIA, MICAELLA JANE V.');
-      expect(controller.attendance.first.studentNumber, '025-802');
+      expect(repo.scanned, ['000-802']);
+      expect(controller.lastRecord?.name, 'VILLAR, CARMINA JOY P.');
+      expect(controller.attendance.first.studentNumber, '000-802');
       expect(controller.status.tone, ScanTone.success);
       expect(
         controller.status.text,
-        '✓ GARCIA, MICAELLA JANE V. - Multimedia Technologies',
+        '✓ VILLAR, CARMINA JOY P. - Multimedia Technologies',
       );
       // Said as a name, not spelled out as capitals.
-      expect(speech.said.last, 'Micaella Jane Garcia, recorded.');
+      expect(speech.said.last, 'Carmina Joy Villar, recorded.');
       expect(feedback.played.last, ScanTone.success);
     });
 
     test('a late scan says so', () async {
       await ready();
       repo.scanAnswer = _record(late: true);
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
 
       expect(controller.status.tone, ScanTone.warning);
       expect(controller.status.text, endsWith('— LATE'));
-      expect(speech.said.last, 'Micaella Jane Garcia, recorded late.');
+      expect(speech.said.last, 'Carmina Joy Villar, recorded late.');
     });
 
     test('a scan with no photo on file warns in amber', () async {
       await ready();
       repo.scanAnswer = _record(photoMissing: true);
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
 
       expect(controller.status.tone, ScanTone.warning);
       expect(controller.status.text, contains('identity not verified'));
@@ -314,11 +314,11 @@ void main() {
 
     test('a QR held in view is recorded once', () async {
       await ready();
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
       now = now.add(const Duration(milliseconds: 700));
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
       now = now.add(const Duration(milliseconds: 700));
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
 
       expect(repo.scanned, hasLength(1));
     });
@@ -326,7 +326,7 @@ void main() {
     test('a QR kept in view is checked again, and answered "already '
         'marked" — not met with silence', () async {
       await ready();
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
       repo.scanAnswer = const ScannerException(
         'Already marked today.',
         code: 'already_marked',
@@ -334,26 +334,26 @@ void main() {
       // The camera reads a code in view about every 0.7 s.
       for (var i = 0; i < 4; i++) {
         now = now.add(const Duration(milliseconds: 700));
-        await controller.onCodeScanned('025-802');
+        await controller.onCodeScanned('000-802');
       }
 
       expect(repo.scanned, hasLength(2));
-      expect(controller.status.text, '⚠ Already marked: 025-802');
+      expect(controller.status.text, '⚠ Already marked: 000-802');
       expect(speech.said.last, ScannerStrings.sayAlreadyMarked);
     });
 
     test('the same QR shown again later is checked again', () async {
       await ready();
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
       now = now.add(const Duration(seconds: 4));
       repo.scanAnswer = const ScannerException(
         'Already marked today.',
         code: 'already_marked',
       );
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
 
       expect(repo.scanned, hasLength(2));
-      expect(controller.status.text, '⚠ Already marked: 025-802');
+      expect(controller.status.text, '⚠ Already marked: 000-802');
       expect(speech.said.last, ScannerStrings.sayAlreadyMarked);
       expect(feedback.played.last, ScanTone.warning);
     });
@@ -421,7 +421,7 @@ void main() {
         'Your sign-in has expired.',
         code: 'unauthenticated',
       );
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
 
       expect(controller.session, ScannerSession.signedOut);
       expect(controller.sessionMessage, ScannerStrings.sessionExpired);
@@ -430,7 +430,7 @@ void main() {
     test('no signal: says so without a dialog', () async {
       await ready();
       repo.scanAnswer = const ScannerException('offline', code: 'network');
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
       await _delivered();
 
       expect(controller.status.text, '✗ Network error');
@@ -441,7 +441,7 @@ void main() {
       controller.dispose();
       controller = build(resultHold: const Duration(milliseconds: 10));
       await ready();
-      await controller.onCodeScanned('025-802');
+      await controller.onCodeScanned('000-802');
       expect(controller.lastRecord, isNotNull);
 
       await Future<void>.delayed(const Duration(milliseconds: 30));

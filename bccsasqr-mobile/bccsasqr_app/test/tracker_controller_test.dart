@@ -10,7 +10,7 @@ import 'package:bccsasqr_app/services/tracker_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final _history = AttendanceHistory(
-  studentNumber: '025-1023',
+  studentNumber: '000-1023',
   fullName: 'Maria Isabel Santos',
   course: 'BSCS',
   section: '2-B',
@@ -48,7 +48,7 @@ const _neverScanned = AttendanceHistory(
 
 class _FakeTracker implements TrackerRepository {
   _FakeTracker([Map<String, AttendanceHistory>? records])
-    : records = records ?? {'025-1023': _history, '023-770': _neverScanned};
+    : records = records ?? {'000-1023': _history, '023-770': _neverScanned};
 
   final Map<String, AttendanceHistory> records;
   bool offline = false;
@@ -104,7 +104,7 @@ void main() {
     final repo = _FakeTracker();
     final c = build(repo);
 
-    c.onStudentNumberChanged('025-1023');
+    c.onStudentNumberChanged('000-1023');
     expect(c.isSearching, isTrue);
     await settle();
     await settle();
@@ -155,7 +155,7 @@ void main() {
     final repo = _FakeTracker()..offline = true;
     final c = build(repo);
 
-    c.onStudentNumberChanged('025-1023');
+    c.onStudentNumberChanged('000-1023');
     await settle();
     await settle();
     expect(c.status, TrackerStatus.failed);
@@ -172,7 +172,7 @@ void main() {
     final repo = _FakeTracker()..gate = Completer<void>();
     final c = build(repo);
 
-    c.onStudentNumberChanged('025-1023');
+    c.onStudentNumberChanged('000-1023');
     await settle();
     // The student clears the field while the first search is in flight.
     c.onStudentNumberChanged('');
@@ -188,7 +188,7 @@ void main() {
     final speech = _RecordingSpeech();
     final c = build(_FakeTracker(), speech: speech);
 
-    c.onStudentNumberChanged('025-1023');
+    c.onStudentNumberChanged('000-1023');
     await settle();
     await settle();
 

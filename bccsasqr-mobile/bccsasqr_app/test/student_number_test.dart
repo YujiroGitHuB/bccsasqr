@@ -5,7 +5,7 @@ void main() {
   group('StudentNumber.tryParse', () {
     test('accepts three- and four-digit registration numbers', () {
       expect(StudentNumber.tryParse('019-464')?.value, '019-464');
-      expect(StudentNumber.tryParse('025-1023')?.value, '025-1023');
+      expect(StudentNumber.tryParse('000-1023')?.value, '000-1023');
     });
 
     test('trims surrounding whitespace', () {
@@ -50,7 +50,7 @@ void main() {
     });
 
     test('caps the registration number at four digits', () {
-      expect(format('025102399').text, '025-1023');
+      expect(format('000102399').text, '000-1023');
     });
 
     test('leaves a short prefix unpunctuated', () {

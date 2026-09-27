@@ -54,7 +54,7 @@ abstract final class AppStrings {
 
   static const String studentNumberLabel = 'Student Number';
   static const String studentNumberFormat =
-      'Format: YEAR-Registration No. — e.g. 019-464 or 025-1023';
+      'Format: YEAR-Registration No. — e.g. 019-464 or 000-1023';
   static const String studentNumberHint = '019-464';
 
   static const String fieldName = 'NAME';

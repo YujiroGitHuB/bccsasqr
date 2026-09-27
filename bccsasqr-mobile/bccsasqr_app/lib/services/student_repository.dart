@@ -64,7 +64,7 @@ class InMemoryStudentRepository implements StudentRepository {
       'section': 'BSIT 4-A',
     },
     {
-      'student_number': '025-1023',
+      'student_number': '000-1023',
       'full_name': 'Maria Isabel Santos',
       'course': 'BS Computer Science',
       'section': 'BSCS 2-B',

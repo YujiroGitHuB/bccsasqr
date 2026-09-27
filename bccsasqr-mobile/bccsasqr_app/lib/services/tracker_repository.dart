@@ -59,8 +59,8 @@ class InMemoryTrackerRepository implements TrackerRepository {
         ),
       ],
     ),
-    '025-1023': AttendanceHistory(
-      studentNumber: '025-1023',
+    '000-1023': AttendanceHistory(
+      studentNumber: '000-1023',
       fullName: 'Maria Isabel Santos',
       course: 'BS Computer Science',
       section: 'BSCS 2-B',

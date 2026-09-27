@@ -42,7 +42,7 @@ $result = mysqli_query($conn, $query);
                              (`\d{3}-\d{3,4}` in QRgenerator/js/fetch_students.js) —
                              record it wrong here and the student cannot generate
                              a QR. -->
-                        <span class="app-hint" id="student_no_hint">Format: YEAR-Registration No. — e.g. 019-464 or 025-1023</span>
+                        <span class="app-hint" id="student_no_hint">Format: YEAR-Registration No. — e.g. 019-464 or 000-1023</span>
                     </div>
 
                     <!-- Full Name -->

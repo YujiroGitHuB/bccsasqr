@@ -144,7 +144,7 @@ class StudentAvatar extends StatelessWidget {
   final Color? badge;
   final double size;
 
-  /// "GARCIA, MICAELLA JANE V." → "GM", as the web card does it.
+  /// "VILLAR, CARMINA JOY P." → "VC", as the web card does it.
   static String initialsOf(String name) {
     final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
     final initials = words.take(2).map((w) => w[0].toUpperCase()).join();

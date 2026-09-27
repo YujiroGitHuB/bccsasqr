@@ -124,7 +124,7 @@ call is enough to decide whether your Generate button opens.
 
 ```json
 { "success": true, "data": {
-  "student": { "student_no": "025-571", "fullname": "Albarida, Jelshian .", "course": "BSIT", "section": "1I" },
+  "student": { "student_no": "000-1023", "fullname": "Santos, Maria Isabel", "course": "BSCS", "section": "2B" },
   "terms":   { "version": 1, "accepted": false, "accepted_at": null },
   "photo":   { "required": false, "has_photo": false, "url": null, "blocks_attendance": false },
   "can_generate": false,
@@ -159,7 +159,7 @@ clients: a student who accepted in the browser is not asked again in the app.
 POST /api/v1/terms/accept
 Content-Type: application/json
 
-{ "student_no": "025-571" }
+{ "student_no": "000-1023" }
 ```
 
 `201` on success, and the QR payload comes back with it so you can go straight
@@ -167,10 +167,10 @@ to rendering:
 
 ```json
 { "success": true, "data": {
-  "student_no": "025-571",
+  "student_no": "000-1023",
   "terms": { "version": 1, "accepted": true, "accepted_at": "2026-09-07 09:21:09" },
   "can_generate": true,
-  "qr": { "payload": "025-571", "spec": { … }, "card": { … } }
+  "qr": { "payload": "000-1023", "spec": { … }, "card": { … } }
 } }
 ```
 
@@ -186,16 +186,16 @@ What to encode, how to draw it, and what to print underneath.
   "student": { … }, "terms": { … }, "photo": { … },
   "can_generate": true, "warnings": [],
   "qr": {
-    "payload": "025-571",
+    "payload": "000-1023",
     "spec": { "encodes": "student_no", "size": 250, "error_correction": "M",
               "foreground": "#38bdf8", "background": "#0f172a", "quiet_zone": 4 },
     "card": {
-      "filename": "025-571_qr.png",
+      "filename": "000-1023_qr.png",
       "details": [
-        { "label": "Student No.", "value": "025-571" },
-        { "label": "Name",        "value": "Albarida, Jelshian ." },
-        { "label": "Course",      "value": "BSIT" },
-        { "label": "Section",     "value": "1I" }
+        { "label": "Student No.", "value": "000-1023" },
+        { "label": "Name",        "value": "Santos, Maria Isabel" },
+        { "label": "Course",      "value": "BSCS" },
+        { "label": "Section",     "value": "2B" }
       ]
     }
   }
@@ -216,8 +216,8 @@ reads too, so the two cannot count differently.
 
 ```json
 { "success": true, "data": {
-  "student": { "student_no": "025-627", "fullname": "ESTABILLO, ARJEAN KYLLE M.",
-               "course": "BSIT", "section": "2G", "photo_url": "https://…/uploads/photos/student_15969.jpg" },
+  "student": { "student_no": "000-1023", "fullname": "SANTOS, MARIA ISABEL",
+               "course": "BSCS", "section": "2B", "photo_url": "https://…/uploads/photos/student_1.jpg" },
   "summary": { "total": 3, "subjects": 2, "last_attended": "2026-08-24" },
   "subjects": [
     { "subject": "Object Oriented Programming", "instructor": "Charles Nixon Cayading", "count": 2,

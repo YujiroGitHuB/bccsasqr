@@ -94,7 +94,7 @@ class InMemoryScannerRepository implements ScannerRepository {
       subjects: {'CC121', 'ITE211'},
     ),
     (
-      number: '025-1023',
+      number: '000-1023',
       name: 'Maria Isabel Santos',
       course: 'BSCS',
       section: '2-B',
