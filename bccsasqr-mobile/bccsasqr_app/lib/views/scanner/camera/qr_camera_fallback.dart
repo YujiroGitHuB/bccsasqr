@@ -36,26 +36,26 @@ class _QrCameraState extends State<QrCamera> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: AppColors.surfaceSunken,
+      color: context.colors.surfaceSunken,
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.qr_code_scanner_rounded,
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 size: 36,
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 ScannerStrings.cameraUnsupported,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.45,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
               const SizedBox(height: 16),

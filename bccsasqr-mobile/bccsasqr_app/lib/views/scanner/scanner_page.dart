@@ -11,6 +11,7 @@ import '../../models/scanner_models.dart';
 import '../../services/scanner_repository.dart';
 import '../widgets/surface_panel.dart';
 import 'camera/qr_camera.dart';
+import 'widgets/account_sheet.dart';
 import 'widgets/attendance_panel.dart';
 import 'widgets/camera_panel.dart';
 import 'widgets/scan_result_card.dart';
@@ -44,6 +45,7 @@ class ScannerPage extends StatefulWidget {
     this.demo = false,
     this.cameraBuilder = deviceQrCamera,
     this.keepAwake = deviceKeepAwake,
+    this.onOpenSettings,
   });
 
   final ScannerController controller;
@@ -51,6 +53,9 @@ class ScannerPage extends StatefulWidget {
   /// Running on [InMemoryScannerRepository] — say so.
   final bool demo;
   final QrCameraBuilder cameraBuilder;
+
+  /// Opens the app's Settings, from the account sheet.
+  final VoidCallback? onOpenSettings;
 
   /// Holds the screen on while the camera runs. Nobody touches the phone
   /// while a class files past it, and a screen that locks mid-queue stops
@@ -108,14 +113,14 @@ class _ScannerPageState extends State<ScannerPage> {
     final route = DialogRoute<void>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(alert.title),
         content: Text(
           alert.body,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             height: 1.5,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         actions: [
@@ -147,7 +152,7 @@ class _ScannerPageState extends State<ScannerPage> {
 
     final picked = await showModalBottomSheet<ScanSubject>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (context) => SafeArea(
@@ -159,14 +164,14 @@ class _ScannerPageState extends State<ScannerPage> {
             shrinkWrap: true,
             padding: const EdgeInsets.only(bottom: 12),
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                 child: Text(
                   ScannerStrings.subjectSheetTitle,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
               ),
@@ -179,8 +184,8 @@ class _ScannerPageState extends State<ScannerPage> {
                         ? Icons.alarm_rounded
                         : Icons.menu_book_rounded,
                     color: subject.lateMarking
-                        ? AppColors.warning
-                        : AppColors.textSecondary,
+                        ? context.colors.warning
+                        : context.colors.textSecondary,
                   ),
                   title: Text(
                     subject.name,
@@ -190,12 +195,12 @@ class _ScannerPageState extends State<ScannerPage> {
                     subject.lateMarking
                         ? '${subject.code} · ${ScannerStrings.lateTitle} on'
                         : subject.code,
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: context.colors.textSecondary),
                   ),
                   trailing: subject == current
-                      ? const Icon(
+                      ? Icon(
                           Icons.check_circle_rounded,
-                          color: AppColors.accent,
+                          color: context.colors.accent,
                         )
                       : null,
                 ),
@@ -208,15 +213,33 @@ class _ScannerPageState extends State<ScannerPage> {
     if (picked != null) _controller.selectSubject(picked);
   }
 
+  Future<void> _openAccount(ScannerUser user) async {
+    final action = await showAccountSheet(
+      context,
+      user: user,
+      subjectCount: _controller.subjects.length,
+    );
+    if (!mounted) return;
+
+    switch (action) {
+      case AccountAction.settings:
+        widget.onOpenSettings?.call();
+      case AccountAction.signOut:
+        await _confirmSignOut();
+      case null:
+        break;
+    }
+  }
+
   Future<void> _confirmSignOut() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        icon: Icon(Icons.logout_rounded, color: context.colors.danger),
         title: const Text(ScannerStrings.signOutConfirmTitle),
-        content: const Text(
+        content: Text(
           ScannerStrings.signOutConfirmBody,
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 14, color: context.colors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -225,6 +248,11 @@ class _ScannerPageState extends State<ScannerPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 44),
+              backgroundColor: context.colors.danger,
+              foregroundColor: Colors.white,
+            ),
             child: const Text(ScannerStrings.signOut),
           ),
         ],
@@ -239,8 +267,8 @@ class _ScannerPageState extends State<ScannerPage> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _controller.refresh,
-          color: AppColors.accent,
-          backgroundColor: AppColors.surfaceRaised,
+          color: context.colors.accent,
+          backgroundColor: context.colors.surfaceRaised,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(
@@ -259,7 +287,7 @@ class _ScannerPageState extends State<ScannerPage> {
                         ScannerHeader(
                           user: user,
                           subjectCount: _controller.subjects.length,
-                          onSignOut: _confirmSignOut,
+                          onAccount: () => _openAccount(user),
                           onBack: Navigator.of(context).canPop()
                               ? () => Navigator.of(context).maybePop()
                               : null,
@@ -297,8 +325,8 @@ class _ScannerPageState extends State<ScannerPage> {
       ];
     }
     if (c.subjects.isEmpty && c.isLoadingSubjects) {
-      return const [
-        SurfacePanel(
+      return [
+        const SurfacePanel(
           child: SizedBox(
             height: 120,
             child: Center(child: CircularProgressIndicator()),
@@ -377,16 +405,16 @@ class _Notice extends StatelessWidget {
       padding: const EdgeInsets.all(22),
       child: Column(
         children: [
-          Icon(icon, size: 40, color: AppColors.textMuted),
+          Icon(icon, size: 40, color: context.colors.textMuted),
           const SizedBox(height: 12),
           if (title != null) ...[
             Text(
               title!,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
@@ -394,10 +422,10 @@ class _Notice extends StatelessWidget {
           Text(
             body,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               height: 1.5,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
@@ -421,39 +449,37 @@ class _DemoNotice extends StatelessWidget {
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.10),
+        color: context.colors.warning.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: context.colors.warning.withValues(alpha: 0.35),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.science_outlined,
-            size: 18,
-            color: AppColors.warning,
-          ),
+          Icon(Icons.science_outlined, size: 18, color: context.colors.warning),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   AppStrings.demoModeTitle,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.warning,
+                    color: context.colors.warning,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${ScannerStrings.demoModeBody} '
                   '${InMemoryScannerRepository.sampleNumbers.join(' · ')}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],

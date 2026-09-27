@@ -9,8 +9,8 @@ class SurfacePanel extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
-    this.color = AppColors.surface,
-    this.borderColor = AppColors.border,
+    this.color,
+    this.borderColor,
     this.radius = AppTheme.cardRadius,
     this.topAccent = false,
     this.fill = false,
@@ -18,8 +18,10 @@ class SurfacePanel extends StatelessWidget {
 
   final Widget child;
   final EdgeInsetsGeometry padding;
-  final Color color;
-  final Color borderColor;
+
+  /// The theme's surface and border when left out.
+  final Color? color;
+  final Color? borderColor;
   final double radius;
 
   /// Draws the cyan gradient rule along the top edge (used by the header).
@@ -35,9 +37,9 @@ class SurfacePanel extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? context.colors.surface,
         borderRadius: borderRadius,
-        border: Border.all(color: borderColor),
+        border: Border.all(color: borderColor ?? context.colors.border),
       ),
       child: ClipRRect(
         borderRadius: borderRadius,
@@ -45,9 +47,9 @@ class SurfacePanel extends StatelessWidget {
           mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
           children: [
             if (topAccent)
-              const DecoratedBox(
-                decoration: BoxDecoration(gradient: AppColors.headerRule),
-                child: SizedBox(height: 3, width: double.infinity),
+              DecoratedBox(
+                decoration: BoxDecoration(gradient: context.colors.headerRule),
+                child: const SizedBox(height: 3, width: double.infinity),
               ),
             if (fill)
               Expanded(
@@ -73,15 +75,15 @@ class PanelHeading extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.accent),
+        Icon(icon, size: 18, color: context.colors.accent),
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.1,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
       ],

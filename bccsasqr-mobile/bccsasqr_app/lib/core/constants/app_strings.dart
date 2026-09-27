@@ -16,17 +16,25 @@ abstract final class AppStrings {
   static const String appTagline =
       'Look up your record and generate the QR code used for attendance.';
 
-  // The opening screen: which half of the app to open.
-  static const String homeHeading = 'WHAT WOULD YOU LIKE TO DO?';
+  // The opening screen: one section per person, so each finds their own
+  // half without reading both cards.
+  static const String homeStudentSection = 'FOR STUDENTS';
   static const String homeStudentTitle = 'My QR Code';
   static const String homeStudentBody =
-      'For students — look up your record and save the QR code you show '
-      'at attendance.';
+      'Look up your record and save the QR code you show at attendance.';
+  static const String homeInstructorSection = 'FOR INSTRUCTORS';
   static const String homeScannerTitle = 'Attendance Scanner';
   static const String homeScannerBody =
-      'For instructors — sign in and scan student QR codes to record '
-      'attendance.';
+      'Sign in and scan student QR codes to record attendance.';
   static const String homeBack = 'Home';
+
+  // The generator's opening splash: a QR being made, and the three steps.
+  static const String generatorSplashTagline = 'QR CODE GENERATOR';
+  static const String generatorSplashSemantics =
+      'Opening the QR code generator';
+  static const String generatorStepNumber = 'Student no.';
+  static const String generatorStepVerify = 'Verify';
+  static const String generatorStepSave = 'Save QR';
 
   static const String chipVerified = 'Verified records only';
   static const String chipFreeDownload = 'Free download';
@@ -101,7 +109,8 @@ abstract final class AppStrings {
   static const String termsLoadFailed =
       'Could not load the terms. Check your connection and try again.';
 
-  static const String developerUrl = 'https://github.com/';
+  /// The same link as the web footer (System Settings → Developer Link).
+  static const String developerUrl = 'https://cncc.vercel.app/';
 }
 
 /// The scanner's copy. Where the web scanner (Qrscanner/js/scriptV3.js) says
@@ -132,6 +141,14 @@ abstract final class ScannerStrings {
   static const String sessionExpired =
       'Your sign-in has expired. Please sign in again.';
   static const String checkingSession = 'Checking your sign-in…';
+
+  // The scanner's opening splash, and the welcome after a sign-in.
+  static const String splashWord = ' Scanner';
+  static const String splashSemantics = 'Opening the attendance scanner';
+  static String welcomeBack(String name) => 'Welcome back, $name';
+  static const String welcomeLabel = 'SIGNED IN';
+  static String welcomeTitle(String name) => 'Welcome, $name';
+  static const String welcomeBody = 'Opening the scanner…';
   static const String unreachableTitle = 'Could not reach the server';
   static const String retry = 'Try again';
   static const String demoSignInHint =
@@ -173,6 +190,9 @@ abstract final class ScannerStrings {
       'number below to try the scanner here.';
   static const String manualEntryLabel = 'Student number';
   static const String manualEntrySubmit = 'Record';
+  static const String flashlight = 'Flashlight';
+  static const String flashlightOn = 'Turn the flashlight on';
+  static const String flashlightOff = 'Turn the flashlight off';
 
   // Result
   static const String statusLabel = 'Status';
@@ -212,4 +232,41 @@ abstract final class ScannerStrings {
   static const String sayError = 'Error saving attendance.';
   static const String sayNetwork = 'Network error. Please check connection.';
   static const String saySelectSubject = 'Please select a subject first!';
+
+  // The account sheet behind the avatar.
+  static const String account = 'Account';
+  static const String settingsTileBody = 'Theme, sound, vibration and voice';
+}
+
+/// The Settings screen — the whole app's, reached from the home screen and
+/// from the scanner's account sheet.
+abstract final class SettingsStrings {
+  static const String title = 'Settings';
+  static const String open = 'Settings';
+
+  static const String appearance = 'APPEARANCE';
+  static const String theme = 'Theme';
+  static const String themeHint =
+      'System follows your phone — light by day, dark at night if it is set '
+      'to switch.';
+  static const String themeSystem = 'System';
+  static const String themeLight = 'Light';
+  static const String themeDark = 'Dark';
+
+  static const String feedback = 'SCANNER FEEDBACK';
+  static const String sound = 'Sound';
+  static const String soundBody = 'Beep after every scan';
+  static const String vibration = 'Vibration';
+  static const String vibrationBody = 'Buzz after every scan';
+  static const String voice = 'Voice';
+  static const String voiceBody =
+      'Read names and messages aloud, in the scanner and the generator';
+
+  static const String about = 'ABOUT';
+  static const String version = 'Version';
+  static const String server = 'Server';
+  static const String serverDemo = 'Demo mode — not connected';
+  static const String update = 'Get the latest version';
+  static const String updateBody = 'Opens the download page';
+  static const String developer = 'Developer';
 }

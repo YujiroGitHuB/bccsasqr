@@ -1,10 +1,13 @@
 import 'package:bccsasqr_app/app.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
+import 'package:bccsasqr_app/services/app_info.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/scan_feedback.dart';
 import 'package:bccsasqr_app/services/scanner_repository.dart';
+import 'package:bccsasqr_app/services/settings_store.dart';
 import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
+import 'package:bccsasqr_app/views/scanner/scanner_intro.dart';
 import 'package:bccsasqr_app/views/scanner/widgets/scan_result_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,6 +66,8 @@ void main() {
     scanFeedback: const SilentScanFeedback(),
     cameraBuilder: _fakeCamera,
     keepAwake: (on) async => awake.add(on),
+    settingsStore: MemorySettingsStore(),
+    appInfo: () async => const AppInfo(version: '1.1.0', buildNumber: '2'),
     showSplash: false,
   );
 
@@ -175,18 +180,129 @@ void main() {
     await tester.pump(const Duration(seconds: 6));
   });
 
-  testWidgets('signing out asks first, then returns to the sign-in form', (
+  testWidgets('signing out: avatar, then the sheet, then a confirmation', (
     tester,
   ) async {
     await openScanner(tester);
 
-    await tester.tap(find.byTooltip(ScannerStrings.signOut));
+    await tester.tap(find.byTooltip(ScannerStrings.account));
+    await tester.pumpAndSettle();
+    // The sheet says who is signed in before offering to sign out.
+    expect(find.text('demo@bcc.test'), findsOneWidget);
+
+    await tester.tap(find.text(ScannerStrings.signOut).last);
     await tester.pumpAndSettle();
     expect(find.text(ScannerStrings.signOutConfirmTitle), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signOut));
+    await tester.tap(find.text(ScannerStrings.signOut).last);
     await tester.pumpAndSettle();
     expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+  });
+
+  testWidgets('cancelling the confirmation keeps you signed in', (
+    tester,
+  ) async {
+    await openScanner(tester);
+
+    await tester.tap(find.byTooltip(ScannerStrings.account));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ScannerStrings.signOut).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ScannerStrings.cancel));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(find.text(ScannerStrings.signInHeading), findsNothing);
+  });
+
+  testWidgets('the account sheet opens Settings', (tester) async {
+    await openScanner(tester);
+
+    await tester.tap(find.byTooltip(ScannerStrings.account));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(SettingsStrings.title));
+    await tester.pumpAndSettle();
+
+    expect(find.text(SettingsStrings.appearance), findsOneWidget);
+    expect(find.text('1.1.0 (build 2)'), findsOneWidget);
+  });
+
+  testWidgets('opening the scanner plays its splash, then asks to sign in', (
+    tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home.scanner')));
+    // The new route's first frame is laid out offstage, for heroes.
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(ScannerSplash), findsOneWidget);
+    expect(find.text(ScannerStrings.checkingSession), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(find.byType(ScannerSplash), findsNothing);
+    expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+  });
+
+  // At full speed, as on a phone: the timings are what is being checked.
+  Future<void> signInAtFullSpeed(WidgetTester tester) async {
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home.scanner')));
+    await tester.pumpAndSettle();
+    expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).at(0), 'demo@bcc.test');
+    await tester.enterText(find.byType(TextField).at(1), 'secret');
+    await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
+  }
+
+  testWidgets('a sign-in typed in is welcomed by name, then the scanner '
+      'opens', (tester) async {
+    await signInAtFullSpeed(tester);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+
+    expect(find.byType(ScannerWelcome), findsOneWidget);
+    expect(
+      find.text(ScannerStrings.welcomeTitle('Demo Instructor')),
+      findsOneWidget,
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.byType(ScannerWelcome), findsNothing);
+    expect(find.text(ScannerStrings.title), findsOneWidget);
+  });
+
+  testWidgets('a saved sign-in says welcome back on the splash and skips '
+      'the welcome', (tester) async {
+    await signInAtFullSpeed(tester);
+    await tester.pumpAndSettle();
+
+    // Home, then the scanner again: the sign-in is kept on the phone.
+    await tester.tap(find.byTooltip(AppStrings.homeBack));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home.scanner')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 900));
+
+    expect(find.byType(ScannerSplash), findsOneWidget);
+    expect(
+      find.text(ScannerStrings.welcomeBack('Demo Instructor')),
+      findsOneWidget,
+    );
+
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byType(ScannerWelcome), findsNothing);
+    }
+    await tester.pumpAndSettle();
+    expect(find.text(ScannerStrings.title), findsOneWidget);
   });
 
   testWidgets('lays out on a small phone without overflowing', (tester) async {

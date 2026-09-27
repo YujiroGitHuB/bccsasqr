@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.2';
+const WHATS_NEW_VERSION = '2026-09-27.7';
 
 /**
  * The changelog, newest release first.
@@ -86,6 +86,13 @@ function whats_new_releases(): array
                 ],
                 [
                     'type'  => 'new',
+                    'icon'  => 'bi-sliders',
+                    'title' => 'Settings in the app: light or dark, and quiet scanning',
+                    'text'  => 'The app now has <strong>Settings</strong> &mdash; the gear on the opening screen, or tap your picture in the scanner. Pick <strong>Light</strong>, <strong>Dark</strong> or <strong>System</strong>, the same choice the web system gives you. For a quiet room, turn the scanner&rsquo;s <strong>Sound</strong>, <strong>Vibration</strong> or <strong>Voice</strong> off one by one. Settings also shows which <strong>version</strong> is installed, with a link to download the newest. Signing out has moved behind your picture in the scanner, and asks before it signs you out.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'new',
                     'icon'  => 'bi-shield-lock',
                     'title' => 'Lost your phone? Change your password',
                     'text'  => 'Changing your password in <strong>My Profile</strong> signs the app out on <strong>every phone</strong> at once, so a lost phone cannot keep scanning under your name. An admin resetting your password or disabling your account does the same. Taking the scanner permission away in <strong>Manage Access</strong>, or locking the QR pages in Settings, reaches the app on its very next scan.',
@@ -103,6 +110,34 @@ function whats_new_releases(): array
                     'icon'  => 'bi-shield-lock',
                     'title' => 'A class list opens only for its own instructor',
                     'text'  => 'The <strong>Present</strong> and <strong>Absent</strong> lists on the dashboard could be opened for any subject and section by anyone signed in, which showed a whole section&rsquo;s names and student numbers. They now open only for a subject assigned to you (admins, any subject), and a refused attempt is recorded in the Security Monitor. Nothing changes for your own classes.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-phone',
+                    'title' => 'The app’s opening screen: one side for students, one for instructors',
+                    'text'  => 'The first screen of the app is now split in two, each with its own heading: <strong>For Students</strong> holds <strong>My QR Code</strong>, and <strong>For Instructors</strong> holds the <strong>Attendance Scanner</strong>. Students can tell at a glance which button is theirs. The <strong>Lx</strong> credit at the bottom of the app also opens the same developer page as the web footer now, instead of a generic site. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-lightbulb',
+                    'title' => 'The app’s flashlight button no longer covers the scan frame',
+                    'text'  => 'In the app&rsquo;s scanner, the flashlight button sat on top of the camera picture, right on a corner of the frame where the student&rsquo;s QR has to go. It now sits <strong>under the camera, beside the Status line</strong>, and is labelled <strong>Flashlight</strong>. It lights up while the torch is on, so you can tell at a glance, and it only appears on phones that have a flash. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-stars',
+                    'title' => 'The app’s scanner opens and signs you in with an animation',
+                    'text'  => 'Opening <strong>Attendance Scanner</strong> in the app now plays a short opening screen: a QR slides into the viewfinder and the scan line sweeps over it while the app checks your sign-in. If you are already signed in, it greets you with <strong>Welcome back</strong> and goes straight to the camera. After you type your email and password, a check mark is drawn and the app says <strong>Welcome</strong> with your name while your subjects load. It all follows your Light or Dark setting. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-qr-code',
+                    'title' => 'The app’s QR generator opens with its own animation',
+                    'text'  => 'When a student taps <strong>My QR Code</strong> in the app, a short opening screen plays first: a QR code builds itself dot by dot, a light passes over it, and the three steps appear underneath &mdash; <strong>Student no.</strong>, <strong>Verify</strong>, <strong>Save QR</strong> &mdash; so they know what comes next before the form opens. It lasts under two seconds and follows the phone&rsquo;s Light or Dark setting. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
                 ],
             ],
         ],

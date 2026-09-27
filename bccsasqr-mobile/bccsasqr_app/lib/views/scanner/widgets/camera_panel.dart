@@ -5,19 +5,21 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/scan_feedback.dart';
 import '../../widgets/surface_panel.dart';
+import '../camera/torch_control.dart';
 
 /// The colour a scan outcome is shown in. Green, amber and red are the
 /// states the records carry; the idle line stays muted.
-Color scanToneColor(ScanTone? tone) => switch (tone) {
-  ScanTone.success => AppColors.success,
-  ScanTone.warning => AppColors.warning,
-  ScanTone.error => AppColors.danger,
-  null => AppColors.textSecondary,
+Color scanToneColor(AppPalette colors, ScanTone? tone) => switch (tone) {
+  ScanTone.success => colors.success,
+  ScanTone.warning => colors.warning,
+  ScanTone.error => colors.danger,
+  null => colors.textSecondary,
 };
 
 /// The camera square with its frame, and the status line under it — the web
-/// scanner's `#scannerContainer` and `#result`.
-class CameraPanel extends StatelessWidget {
+/// scanner's `#scannerContainer` and `#result`. The flashlight button sits at
+/// the end of the status line, off the picture.
+class CameraPanel extends StatefulWidget {
   const CameraPanel({
     super.key,
     required this.active,
@@ -40,7 +42,22 @@ class CameraPanel extends StatelessWidget {
   final double frameFraction;
 
   @override
+  State<CameraPanel> createState() => _CameraPanelState();
+}
+
+class _CameraPanelState extends State<CameraPanel> {
+  final TorchControl _torch = TorchControl();
+
+  @override
+  void dispose() {
+    _torch.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final active = widget.active;
+
     return SurfacePanel(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -53,10 +70,18 @@ class CameraPanel extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (active) cameraBuilder(context) else const _CameraIdle(),
                   if (active)
-                    IgnorePointer(child: ScanFrame(fraction: frameFraction)),
-                  if (recording)
+                    TorchScope(
+                      control: _torch,
+                      child: Builder(builder: widget.cameraBuilder),
+                    )
+                  else
+                    const _CameraIdle(),
+                  if (active)
+                    IgnorePointer(
+                      child: ScanFrame(fraction: widget.frameFraction),
+                    ),
+                  if (widget.recording)
                     const Positioned(
                       left: 10,
                       bottom: 10,
@@ -67,28 +92,106 @@ class CameraPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: '${ScannerStrings.statusLabel}  ',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+          Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '${ScannerStrings.statusLabel}  ',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: context.colors.textPrimary,
+                          ),
+                        ),
+                        TextSpan(
+                          text: widget.status.text,
+                          style: TextStyle(
+                            color: scanToneColor(
+                              context.colors,
+                              widget.status.tone,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                    style: const TextStyle(fontSize: 13.5, height: 1.4),
                   ),
-                  TextSpan(
-                    text: status.text,
-                    style: TextStyle(color: scanToneColor(status.tone)),
-                  ),
-                ],
+                ),
               ),
-              style: const TextStyle(fontSize: 13.5, height: 1.4),
-            ),
+              ListenableBuilder(
+                listenable: _torch,
+                // `active` too: a camera that has just gone is only detached
+                // after this build, so the control still says available.
+                builder: (context, _) => active && _torch.available
+                    ? Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: _TorchButton(
+                          on: _torch.on,
+                          onPressed: _torch.toggle,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Outlined while off, filled while on — a lit torch should be obvious at a
+/// glance, since it drains the battery.
+class _TorchButton extends StatelessWidget {
+  const _TorchButton({required this.on, required this.onPressed});
+
+  final bool on;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    // The theme's buttons are full width; this one sits beside the status.
+    const size = Size(0, 40);
+    const padding = EdgeInsets.symmetric(horizontal: 14);
+    const label = Text(ScannerStrings.flashlight);
+
+    return Tooltip(
+      message: on ? ScannerStrings.flashlightOff : ScannerStrings.flashlightOn,
+      child: Semantics(
+        toggled: on,
+        child: on
+            ? FilledButton.icon(
+                key: const ValueKey('scanner.torch'),
+                onPressed: onPressed,
+                icon: const Icon(Icons.flashlight_on_rounded, size: 18),
+                label: label,
+                style: FilledButton.styleFrom(
+                  minimumSize: size,
+                  padding: padding,
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              )
+            : OutlinedButton.icon(
+                key: const ValueKey('scanner.torch'),
+                onPressed: onPressed,
+                icon: const Icon(Icons.flashlight_off_rounded, size: 18),
+                label: label,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: size,
+                  padding: padding,
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -99,24 +202,27 @@ class _CameraIdle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ColoredBox(
-      color: AppColors.surfaceSunken,
+    return ColoredBox(
+      color: context.colors.surfaceSunken,
       child: Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.qr_code_scanner_rounded,
                 size: 44,
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
                 ScannerStrings.cameraIdle,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: context.colors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -137,12 +243,12 @@ class _SavingChip extends StatelessWidget {
         color: Colors.black.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: const SizedBox(
+      child: SizedBox(
         height: 16,
         width: 16,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          color: AppColors.accent,
+          color: context.colors.accent,
         ),
       ),
     );
@@ -192,6 +298,7 @@ class _ScanFrameState extends State<ScanFrame>
         painter: _FramePainter(
           fraction: widget.fraction,
           sweep: _sweep.isAnimating ? _sweep.value : null,
+          color: context.colors.accent,
         ),
       ),
     );
@@ -199,10 +306,15 @@ class _ScanFrameState extends State<ScanFrame>
 }
 
 class _FramePainter extends CustomPainter {
-  _FramePainter({required this.fraction, required this.sweep});
+  _FramePainter({
+    required this.fraction,
+    required this.sweep,
+    required this.color,
+  });
 
   final double fraction;
   final double? sweep;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -215,7 +327,7 @@ class _FramePainter extends CustomPainter {
     final arm = side * 0.14;
 
     final corner = Paint()
-      ..color = AppColors.accent
+      ..color = color
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -244,9 +356,9 @@ class _FramePainter extends CustomPainter {
         Paint()
           ..shader = LinearGradient(
             colors: [
-              AppColors.accent.withValues(alpha: 0),
-              AppColors.accent.withValues(alpha: 0.85),
-              AppColors.accent.withValues(alpha: 0),
+              color.withValues(alpha: 0),
+              color.withValues(alpha: 0.85),
+              color.withValues(alpha: 0),
             ],
           ).createShader(line),
       );
@@ -255,5 +367,5 @@ class _FramePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_FramePainter old) =>
-      old.sweep != sweep || old.fraction != fraction;
+      old.sweep != sweep || old.fraction != fraction || old.color != color;
 }

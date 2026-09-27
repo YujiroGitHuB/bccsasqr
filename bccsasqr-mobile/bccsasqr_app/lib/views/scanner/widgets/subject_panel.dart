@@ -26,20 +26,20 @@ class SubjectPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text.rich(
+          Text.rich(
             TextSpan(
               text: ScannerStrings.subjectLabel,
               children: [
                 TextSpan(
                   text: ' *',
-                  style: TextStyle(color: AppColors.danger),
+                  style: TextStyle(color: context.colors.danger),
                 ),
               ],
             ),
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -75,11 +75,13 @@ class _SubjectField extends StatelessWidget {
     final radius = BorderRadius.circular(AppTheme.fieldRadius);
 
     return Material(
-      color: AppColors.surfaceSunken,
+      color: context.colors.surfaceSunken,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(
-          color: label == null ? AppColors.border : AppColors.accentWash(0.5),
+          color: label == null
+              ? context.colors.border
+              : context.colors.accentWash(0.5),
         ),
       ),
       child: InkWell(
@@ -92,7 +94,9 @@ class _SubjectField extends StatelessWidget {
               Icon(
                 Icons.menu_book_rounded,
                 size: 20,
-                color: label == null ? AppColors.textMuted : AppColors.accent,
+                color: label == null
+                    ? context.colors.textMuted
+                    : context.colors.accent,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -104,14 +108,14 @@ class _SubjectField extends StatelessWidget {
                     fontSize: 14.5,
                     fontWeight: FontWeight.w600,
                     color: label == null
-                        ? AppColors.textMuted
-                        : AppColors.textPrimary,
+                        ? context.colors.textMuted
+                        : context.colors.textPrimary,
                   ),
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.expand_more_rounded,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ],
           ),
@@ -142,14 +146,14 @@ class LateMarkingSwitch extends StatelessWidget {
 
     return Material(
       color: on
-          ? AppColors.warning.withValues(alpha: 0.10)
-          : AppColors.surfaceRaised,
+          ? context.colors.warning.withValues(alpha: 0.10)
+          : context.colors.surfaceRaised,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(
           color: on
-              ? AppColors.warning.withValues(alpha: 0.45)
-              : AppColors.border,
+              ? context.colors.warning.withValues(alpha: 0.45)
+              : context.colors.border,
         ),
       ),
       child: InkWell(
@@ -169,8 +173,8 @@ class LateMarkingSwitch extends StatelessWidget {
                           Icons.alarm_rounded,
                           size: 16,
                           color: on
-                              ? AppColors.warning
-                              : AppColors.textSecondary,
+                              ? context.colors.warning
+                              : context.colors.textSecondary,
                         ),
                         const SizedBox(width: 6),
                         Flexible(
@@ -180,8 +184,8 @@ class LateMarkingSwitch extends StatelessWidget {
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
                               color: on
-                                  ? AppColors.warning
-                                  : AppColors.textPrimary,
+                                  ? context.colors.warning
+                                  : context.colors.textPrimary,
                             ),
                           ),
                         ),
@@ -190,9 +194,9 @@ class LateMarkingSwitch extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       on ? ScannerStrings.lateOn : ScannerStrings.lateOff,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -203,13 +207,13 @@ class LateMarkingSwitch extends StatelessWidget {
                 onChanged: busy ? null : (_) => onToggle(),
                 thumbColor: WidgetStateProperty.resolveWith(
                   (states) => states.contains(WidgetState.selected)
-                      ? const Color(0xFF2B1D00)
-                      : AppColors.textSecondary,
+                      ? context.colors.onWarning
+                      : context.colors.textSecondary,
                 ),
                 trackColor: WidgetStateProperty.resolveWith(
                   (states) => states.contains(WidgetState.selected)
-                      ? AppColors.warning
-                      : AppColors.surfaceSunken,
+                      ? context.colors.warning
+                      : context.colors.surfaceSunken,
                 ),
               ),
             ],
@@ -232,10 +236,14 @@ class _Readiness extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: ready ? AppColors.accentWash(0.08) : AppColors.surfaceSunken,
+        color: ready
+            ? context.colors.accentWash(0.08)
+            : context.colors.surfaceSunken,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: ready ? AppColors.accentWash(0.30) : AppColors.border,
+          color: ready
+              ? context.colors.accentWash(0.30)
+              : context.colors.border,
         ),
       ),
       child: Row(
@@ -245,7 +253,7 @@ class _Readiness extends StatelessWidget {
             height: 8,
             width: 8,
             decoration: BoxDecoration(
-              color: ready ? AppColors.accent : AppColors.textMuted,
+              color: ready ? context.colors.accent : context.colors.textMuted,
               shape: BoxShape.circle,
             ),
           ),
@@ -259,7 +267,9 @@ class _Readiness extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: ready ? AppColors.accent : AppColors.textSecondary,
+                color: ready
+                    ? context.colors.accent
+                    : context.colors.textSecondary,
               ),
             ),
           ),

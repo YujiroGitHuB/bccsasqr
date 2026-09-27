@@ -49,7 +49,7 @@ lib/
 │
 └── core/                        cross-cutting concerns
     ├── config/                  AppConfig — the --dart-define values
-    ├── theme/                   AppColors, AppTheme
+    ├── theme/                   AppPalette (light + dark), AppTheme
     ├── constants/               AppStrings (all user-facing copy)
     └── utils/                   StudentNumber value object + input formatter
 ```
@@ -71,8 +71,10 @@ lib/
 - **`StudentNumber` is a value object**, not a `String`. Parsing and validation
   live in one place, so the form and the repository cannot disagree about what a
   well-formed number is.
-- **`AppStrings` / `AppColors` hold no logic**, which keeps copy edits and
-  re-skins out of widget code.
+- **`AppStrings` / `AppPalette` hold no logic**, which keeps copy edits and
+  re-skins out of widget code. Widgets read colours as `context.colors.x` —
+  from the theme, never a static — so switching Light and Dark repaints every
+  widget, `const` ones included.
 
 ## Behaviour
 
@@ -109,6 +111,24 @@ install; the microphone permission the camera plugin declares is removed in
 
 `flutter_zxing` is pinned to 2.2.x: 2.3 and later need Dart 3.11. It builds
 zxing-cpp with NDK 27.0.12077973, which Gradle downloads on the first build.
+
+Signing out is behind the avatar in the scanner's header: it opens an account
+sheet (name, email, role, Settings, **Sign out**), and signing out asks first.
+
+## Settings
+
+The gear on the opening screen, or the account sheet in the scanner. Kept on
+the phone in shared preferences (`services/settings_store.dart`).
+
+| Setting | Effect |
+|---|---|
+| Theme | System, Light or Dark. The light palette is the web's `:root` tokens (`assets/css/theme.css`); the splash stays dark in both, as the native launch screen does. |
+| Sound / Vibration | The beep and the buzz after a scan (`DeviceScanFeedback`). |
+| Voice | Every spoken line, scanner and generator (`ToggleableSpeechService`). |
+| About | Version and build from the installed package, the server in use, and a link to the download page — the app is installed from there, not a store. |
+
+Raise `version:` in `pubspec.yaml` with every APK: a phone only installs an
+update whose build number (after the `+`) is higher than the one it has.
 
 ## Connecting to the PHP backend
 

@@ -1,8 +1,10 @@
+import 'package:camera/camera.dart' show FlashMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
+import 'torch_control.dart';
 
 /// The phone's back camera, decoding QR codes with ZXing.
 ///
@@ -31,6 +33,31 @@ class QrCamera extends StatefulWidget {
 class _QrCameraState extends State<QrCamera> {
   bool _unavailable = false;
 
+  CameraController? _controller;
+  TorchControl? _torch;
+
+  void _onCameraReady(CameraController controller) {
+    _controller?.removeListener(_reportTorch);
+    _controller = controller..addListener(_reportTorch);
+    _torch = TorchScope.maybeOf(context)
+      ?..attach(
+        (on) => controller.setFlashMode(on ? FlashMode.torch : FlashMode.off),
+      );
+  }
+
+  void _reportTorch() {
+    final controller = _controller;
+    if (controller == null) return;
+    _torch?.report(controller.value.flashMode == FlashMode.torch);
+  }
+
+  @override
+  void dispose() {
+    _controller?.removeListener(_reportTorch);
+    _torch?.detach();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_unavailable) {
@@ -45,8 +72,13 @@ class _QrCameraState extends State<QrCamera> {
         }
       },
       onControllerCreated: (controller, error) {
+        if (!mounted) return;
         // A refused permission or a camera held by another app.
-        if (error != null && mounted) setState(() => _unavailable = true);
+        if (error != null) {
+          setState(() => _unavailable = true);
+        } else if (controller != null) {
+          _onCameraReady(controller);
+        }
       },
       codeFormat: Format.qrCode,
       tryInverted: true,
@@ -58,17 +90,14 @@ class _QrCameraState extends State<QrCamera> {
       cropPercent: QrCamera.cropFraction,
       // The corners are drawn by the scanner page, in the app's colours.
       showScannerOverlay: false,
-      // The torch helps in a dim classroom; the gallery and the front camera
-      // have no use here.
-      showFlashlight: true,
+      // No buttons over the picture. The torch has its own, under the camera
+      // (see TorchControl); the gallery and the front camera have no use here.
+      showFlashlight: false,
       showGallery: false,
       showToggleCamera: false,
-      actionButtonsAlignment: Alignment.topRight,
-      actionButtonsBackgroundColor: Colors.black54,
-      actionButtonsBackgroundBorderRadius: BorderRadius.circular(10),
-      loading: const ColoredBox(
-        color: AppColors.surfaceSunken,
-        child: Center(child: CircularProgressIndicator()),
+      loading: ColoredBox(
+        color: context.colors.surfaceSunken,
+        child: const Center(child: CircularProgressIndicator()),
       ),
     );
   }
@@ -82,26 +111,26 @@ class _CameraMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: AppColors.surfaceSunken,
+      color: context.colors.surfaceSunken,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.no_photography_outlined,
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 size: 36,
               ),
               const SizedBox(height: 12),
               Text(
                 text,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   height: 1.45,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ],

@@ -24,15 +24,18 @@ class ScanResultCard extends StatelessWidget {
     return SurfacePanel(
       // Amber for anything the instructor should notice — late, or no face
       // to check — the same colour the status line uses for it.
-      borderColor: (warn || record.late ? AppColors.warning : AppColors.success)
-          .withValues(alpha: 0.45),
+      borderColor:
+          (warn || record.late
+                  ? context.colors.warning
+                  : context.colors.success)
+              .withValues(alpha: 0.45),
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
           StudentAvatar(
             name: record.name,
             photoUrl: record.photoUrl,
-            badge: warn ? AppColors.warning : AppColors.success,
+            badge: warn ? context.colors.warning : context.colors.success,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -41,19 +44,19 @@ class ScanResultCard extends StatelessWidget {
               children: [
                 Text(
                   record.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 if (record.courseAndSection.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     record.courseAndSection,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -71,10 +74,10 @@ class ScanResultCard extends StatelessWidget {
             children: [
               Text(
                 record.timeIn,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const SizedBox(height: 4),
@@ -83,9 +86,9 @@ class ScanResultCard extends StatelessWidget {
               else
                 Text(
                   record.date,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
-                    color: AppColors.accent,
+                    color: context.colors.accent,
                   ),
                 ),
             ],
@@ -104,7 +107,7 @@ class _SubjectBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = warn ? AppColors.warning : AppColors.accent;
+    final color = warn ? context.colors.warning : context.colors.accent;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
@@ -156,7 +159,7 @@ class StudentAvatar extends StatelessWidget {
         style: TextStyle(
           fontSize: size * 0.34,
           fontWeight: FontWeight.w800,
-          color: AppColors.accent,
+          color: context.colors.accent,
         ),
       ),
     );
@@ -171,9 +174,12 @@ class StudentAvatar extends StatelessWidget {
             height: size,
             width: size,
             decoration: BoxDecoration(
-              color: AppColors.accentWash(0.12),
+              color: context.colors.accentWash(0.12),
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.accentWash(0.35), width: 2),
+              border: Border.all(
+                color: context.colors.accentWash(0.35),
+                width: 2,
+              ),
             ),
             clipBehavior: Clip.antiAlias,
             child: photoUrl == null
@@ -196,14 +202,14 @@ class StudentAvatar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: badge,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.surface, width: 2),
+                  border: Border.all(color: context.colors.surface, width: 2),
                 ),
                 child: Icon(
-                  badge == AppColors.success
+                  badge == context.colors.success
                       ? Icons.check_rounded
                       : Icons.priority_high_rounded,
                   size: size * 0.22,
-                  color: AppColors.canvas,
+                  color: context.colors.canvas,
                 ),
               ),
             ),

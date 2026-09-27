@@ -8,14 +8,16 @@ class DashedBorderBox extends StatelessWidget {
     super.key,
     required this.child,
     this.radius = 14,
-    this.color = AppColors.borderStrong,
+    this.color,
     this.dash = 6,
     this.gap = 5,
   });
 
   final Widget child;
   final double radius;
-  final Color color;
+
+  /// The stroke — the theme's strong border when left out.
+  final Color? color;
   final double dash;
   final double gap;
 
@@ -24,7 +26,7 @@ class DashedBorderBox extends StatelessWidget {
     return CustomPaint(
       painter: _DashedRectPainter(
         radius: radius,
-        color: color,
+        color: color ?? context.colors.borderStrong,
         dash: dash,
         gap: gap,
       ),

@@ -14,31 +14,34 @@ class AppFooter extends StatelessWidget {
       children: [
         const Divider(),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           AppStrings.footerRights,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 11.5,
             height: 1.5,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 2),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
+            Text(
               AppStrings.footerDeveloper,
-              style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 11.5,
+                color: context.colors.textSecondary,
+              ),
             ),
             GestureDetector(
               onTap: onOpenDeveloper,
-              child: const Text(
+              child: Text(
                 AppStrings.footerDeveloperName,
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.accent,
+                  color: context.colors.accent,
                 ),
               ),
             ),

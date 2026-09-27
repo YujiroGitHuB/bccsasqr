@@ -21,9 +21,9 @@ class _HowThisWorksTileState extends State<HowThisWorksTile> {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
+        color: context.colors.surfaceRaised,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Material(
         color: Colors.transparent,
@@ -45,20 +45,20 @@ class _HowThisWorksTileState extends State<HowThisWorksTile> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.info_outline,
                         size: 16,
-                        color: AppColors.accent,
+                        color: context.colors.accent,
                       ),
                       const SizedBox(width: 8),
-                      const Flexible(
+                      Flexible(
                         child: Text(
                           AppStrings.howThisWorks,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: context.colors.textPrimary,
                           ),
                         ),
                       ),
@@ -66,22 +66,22 @@ class _HowThisWorksTileState extends State<HowThisWorksTile> {
                       AnimatedRotation(
                         turns: _open ? 0.5 : 0,
                         duration: const Duration(milliseconds: 180),
-                        child: const Icon(
+                        child: Icon(
                           Icons.keyboard_arrow_down_rounded,
                           size: 18,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],
                   ),
                   if (_open) ...[
                     const SizedBox(height: 10),
-                    const Text(
+                    Text(
                       AppStrings.howThisWorksBody,
                       style: TextStyle(
                         fontSize: 12.5,
                         height: 1.5,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],

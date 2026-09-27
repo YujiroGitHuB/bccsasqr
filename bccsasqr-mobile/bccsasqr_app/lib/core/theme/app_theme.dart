@@ -3,70 +3,82 @@ import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 
-/// Builds the single [ThemeData] the app runs on.
+/// Builds the app's [ThemeData] from an [AppPalette] — one for Light and one
+/// for Dark, picked in Settings.
 abstract final class AppTheme {
   static const double cardRadius = 16;
   static const double fieldRadius = 12;
   static const double pagePadding = 16;
 
-  static const SystemUiOverlayStyle overlayStyle = SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    statusBarBrightness: Brightness.dark,
-    systemNavigationBarColor: AppColors.canvas,
-    systemNavigationBarIconBrightness: Brightness.light,
-  );
+  /// Before the theme is known: the splash is always dark, like the native
+  /// launch screen it takes over from.
+  static SystemUiOverlayStyle get overlayStyle => AppPalette.dark.overlayStyle;
 
-  static ThemeData build() {
-    const scheme = ColorScheme.dark(
-      primary: AppColors.accent,
-      onPrimary: Color(0xFF04222B),
-      secondary: AppColors.accentSoft,
-      surface: AppColors.surface,
-      onSurface: AppColors.textPrimary,
-      error: AppColors.danger,
-      outline: AppColors.border,
-    );
+  static ThemeData build(AppPalette p) {
+    final scheme = p.isDark
+        ? ColorScheme.dark(
+            primary: p.accent,
+            onPrimary: p.onAccent,
+            secondary: p.accentSoft,
+            surface: p.surface,
+            onSurface: p.textPrimary,
+            error: p.danger,
+            outline: p.border,
+          )
+        : ColorScheme.light(
+            primary: p.accent,
+            onPrimary: p.onAccent,
+            secondary: p.accentSoft,
+            surface: p.surface,
+            onSurface: p.textPrimary,
+            error: p.danger,
+            outline: p.border,
+          );
 
     final base = ThemeData(
       colorScheme: scheme,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.canvas,
+      brightness: p.brightness,
+      scaffoldBackgroundColor: p.canvas,
       useMaterial3: true,
     );
 
     return base.copyWith(
-      textTheme: _textTheme(base.textTheme),
-      dividerTheme: const DividerThemeData(
-        color: AppColors.border,
-        thickness: 1,
-        space: 1,
+      extensions: [p],
+      textTheme: base.textTheme.apply(
+        bodyColor: p.textPrimary,
+        displayColor: p.textPrimary,
       ),
-      inputDecorationTheme: _inputTheme(),
-      filledButtonTheme: _filledButtonTheme(),
-      outlinedButtonTheme: _outlinedButtonTheme(),
+      dividerTheme: DividerThemeData(color: p.border, thickness: 1, space: 1),
+      inputDecorationTheme: _inputTheme(p),
+      filledButtonTheme: _filledButtonTheme(p),
+      outlinedButtonTheme: _outlinedButtonTheme(p),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.accent,
+          foregroundColor: p.accent,
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      checkboxTheme: _checkboxTheme(),
-      snackBarTheme: const SnackBarThemeData(
-        backgroundColor: AppColors.surfaceRaised,
-        contentTextStyle: TextStyle(color: AppColors.textPrimary),
+      checkboxTheme: _checkboxTheme(p),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: p.surfaceRaised,
+        contentTextStyle: TextStyle(color: p.textPrimary),
         behavior: SnackBarBehavior.floating,
+      ),
+      // Material 3 tints raised surfaces with the primary colour; the app's
+      // surfaces are the palette's, in both themes.
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: p.surface,
+        surfaceTintColor: Colors.transparent,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: p.surface,
+        surfaceTintColor: Colors.transparent,
       ),
       splashFactory: InkSparkle.splashFactory,
     );
   }
 
-  static TextTheme _textTheme(TextTheme base) => base.apply(
-    bodyColor: AppColors.textPrimary,
-    displayColor: AppColors.textPrimary,
-  );
-
-  static InputDecorationTheme _inputTheme() {
+  static InputDecorationTheme _inputTheme(AppPalette p) {
     OutlineInputBorder border(Color color, [double width = 1]) =>
         OutlineInputBorder(
           borderRadius: BorderRadius.circular(fieldRadius),
@@ -75,41 +87,45 @@ abstract final class AppTheme {
 
     return InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.surfaceSunken,
+      fillColor: p.surfaceSunken,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      hintStyle: const TextStyle(
-        color: AppColors.textMuted,
+      hintStyle: TextStyle(
+        color: p.textMuted,
         fontSize: 16,
         fontWeight: FontWeight.w500,
       ),
-      enabledBorder: border(AppColors.border),
-      focusedBorder: border(AppColors.accent, 1.6),
-      errorBorder: border(AppColors.danger),
-      focusedErrorBorder: border(AppColors.danger, 1.6),
-      errorStyle: const TextStyle(color: AppColors.danger, fontSize: 12),
+      prefixIconColor: p.textSecondary,
+      suffixIconColor: p.textSecondary,
+      enabledBorder: border(p.border),
+      disabledBorder: border(p.border),
+      focusedBorder: border(p.accent, 1.6),
+      errorBorder: border(p.danger),
+      focusedErrorBorder: border(p.danger, 1.6),
+      errorStyle: TextStyle(color: p.danger, fontSize: 12),
     );
   }
 
-  static FilledButtonThemeData _filledButtonTheme() => FilledButtonThemeData(
-    style: FilledButton.styleFrom(
-      minimumSize: const Size.fromHeight(52),
-      backgroundColor: AppColors.accent,
-      foregroundColor: const Color(0xFF04222B),
-      disabledBackgroundColor: AppColors.surfaceRaised,
-      disabledForegroundColor: AppColors.textMuted,
-      textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(fieldRadius),
-      ),
-    ),
-  );
+  static FilledButtonThemeData _filledButtonTheme(AppPalette p) =>
+      FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          backgroundColor: p.accent,
+          foregroundColor: p.onAccent,
+          disabledBackgroundColor: p.surfaceRaised,
+          disabledForegroundColor: p.textMuted,
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(fieldRadius),
+          ),
+        ),
+      );
 
-  static OutlinedButtonThemeData _outlinedButtonTheme() =>
+  static OutlinedButtonThemeData _outlinedButtonTheme(AppPalette p) =>
       OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(48),
-          foregroundColor: AppColors.textPrimary,
-          side: const BorderSide(color: AppColors.borderStrong),
+          foregroundColor: p.textPrimary,
+          side: BorderSide(color: p.borderStrong),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(fieldRadius),
@@ -117,13 +133,13 @@ abstract final class AppTheme {
         ),
       );
 
-  static CheckboxThemeData _checkboxTheme() => CheckboxThemeData(
-    side: const BorderSide(color: AppColors.borderStrong, width: 1.5),
+  static CheckboxThemeData _checkboxTheme(AppPalette p) => CheckboxThemeData(
+    side: BorderSide(color: p.borderStrong, width: 1.5),
     fillColor: WidgetStateProperty.resolveWith((states) {
-      if (states.contains(WidgetState.selected)) return AppColors.accent;
-      return AppColors.surfaceRaised;
+      if (states.contains(WidgetState.selected)) return p.accent;
+      return p.surfaceRaised;
     }),
-    checkColor: const WidgetStatePropertyAll(Color(0xFF04222B)),
+    checkColor: WidgetStatePropertyAll(p.onAccent),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
   );

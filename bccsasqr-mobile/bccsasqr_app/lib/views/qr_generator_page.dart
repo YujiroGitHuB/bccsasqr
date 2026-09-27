@@ -83,7 +83,7 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
         SnackBar(
           content: Text(message),
           backgroundColor: isError
-              ? AppColors.danger.withValues(alpha: 0.18)
+              ? context.colors.danger.withValues(alpha: 0.18)
               : null,
         ),
       );
@@ -139,7 +139,7 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
           final error = snapshot.error;
 
           return AlertDialog(
-            backgroundColor: AppColors.surface,
+            backgroundColor: context.colors.surface,
             title: const Text(AppStrings.termsTitle),
             content: SizedBox(
               width: 420,
@@ -159,8 +159,8 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
                           fontSize: 13,
                           height: 1.55,
                           color: failed
-                              ? AppColors.danger
-                              : AppColors.textSecondary,
+                              ? context.colors.danger
+                              : context.colors.textSecondary,
                         ),
                       ),
                     ),
@@ -202,8 +202,8 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
             // the pull works even when the whole form fits on the screen.
             return RefreshIndicator(
               onRefresh: _controller.refresh,
-              color: AppColors.accent,
-              backgroundColor: AppColors.surfaceRaised,
+              color: context.colors.accent,
+              backgroundColor: context.colors.surfaceRaised,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(

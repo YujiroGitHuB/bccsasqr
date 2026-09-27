@@ -84,25 +84,25 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.qr_code_2_rounded,
             size: 52,
-            color: AppColors.textMuted.withValues(alpha: 0.55),
+            color: context.colors.textMuted.withValues(alpha: 0.55),
           ),
           const SizedBox(height: 18),
-          const Text(
+          Text(
             AppStrings.emptyQrTitle,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             AppStrings.emptyQrBody,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.5,
               height: 1.5,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
         ],

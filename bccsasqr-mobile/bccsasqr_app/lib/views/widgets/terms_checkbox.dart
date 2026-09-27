@@ -38,10 +38,12 @@ class _TermsCheckboxState extends State<TermsCheckbox> {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surfaceSunken,
+        color: context.colors.surfaceSunken,
         borderRadius: BorderRadius.circular(11),
         border: Border.all(
-          color: widget.value ? AppColors.accentWash(0.45) : AppColors.border,
+          color: widget.value
+              ? context.colors.accentWash(0.45)
+              : context.colors.border,
         ),
       ),
       child: Material(
@@ -65,20 +67,20 @@ class _TermsCheckboxState extends State<TermsCheckbox> {
                 Expanded(
                   child: Text.rich(
                     TextSpan(
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         height: 1.4,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                       children: [
                         const TextSpan(text: AppStrings.agreePrefix),
                         TextSpan(
                           text: AppStrings.termsLink,
-                          style: const TextStyle(
-                            color: AppColors.accent,
+                          style: TextStyle(
+                            color: context.colors.accent,
                             fontWeight: FontWeight.w600,
                             decoration: TextDecoration.underline,
-                            decorationColor: AppColors.accent,
+                            decorationColor: context.colors.accent,
                           ),
                           recognizer: _termsTap,
                         ),

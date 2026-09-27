@@ -95,6 +95,24 @@ class SilentSpeechService implements SpeechService {
   Future<void> stop() async {}
 }
 
+/// Speaks through [inner] only while [enabled] says so — the Voice switch in
+/// Settings. Checked on every call, so turning it off silences the very next
+/// message without rebuilding anything.
+class ToggleableSpeechService implements SpeechService {
+  const ToggleableSpeechService(this.inner, {required this.enabled});
+
+  final SpeechService inner;
+  final bool Function() enabled;
+
+  @override
+  Future<void> speak(String text) async {
+    if (enabled()) await inner.speak(text);
+  }
+
+  @override
+  Future<void> stop() => inner.stop();
+}
+
 /// The phone's own text-to-speech engine.
 ///
 /// Every failure is swallowed: a phone with no engine or no English voice

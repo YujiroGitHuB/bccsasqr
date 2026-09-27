@@ -1,0 +1,187 @@
+import 'package:bccsasqr_app/app.dart';
+import 'package:bccsasqr_app/controllers/settings_controller.dart';
+import 'package:bccsasqr_app/core/constants/app_strings.dart';
+import 'package:bccsasqr_app/core/theme/app_colors.dart';
+import 'package:bccsasqr_app/models/app_settings.dart';
+import 'package:bccsasqr_app/services/app_info.dart';
+import 'package:bccsasqr_app/services/qr_export_service.dart';
+import 'package:bccsasqr_app/services/scan_feedback.dart';
+import 'package:bccsasqr_app/services/scanner_repository.dart';
+import 'package:bccsasqr_app/services/settings_store.dart';
+import 'package:bccsasqr_app/services/speech_service.dart';
+import 'package:bccsasqr_app/services/student_repository.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+class _NoExport implements QrExportService {
+  @override
+  Future<String> export({
+    required GlobalKey boundaryKey,
+    required String fileName,
+    String? shareText,
+  }) async => fileName;
+}
+
+class _RecordingSpeech implements SpeechService {
+  final List<String> said = [];
+
+  @override
+  Future<void> speak(String text) async => said.add(text);
+
+  @override
+  Future<void> stop() async {}
+}
+
+void main() {
+  group('SettingsController', () {
+    test('starts from what was saved', () async {
+      final c = SettingsController(
+        store: MemorySettingsStore(
+          const AppSettings(themeMode: ThemeMode.dark, sound: false),
+        ),
+      );
+      await c.load();
+
+      expect(c.themeMode, ThemeMode.dark);
+      expect(c.sound, isFalse);
+      expect(c.vibration, isTrue);
+    });
+
+    test('saves every change', () async {
+      final store = MemorySettingsStore();
+      final c = SettingsController(store: store);
+      await c.load();
+
+      c.setThemeMode(ThemeMode.light);
+      c.setVoice(false);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(store.saved.themeMode, ThemeMode.light);
+      expect(store.saved.voice, isFalse);
+    });
+
+    test('an unchanged value does not rebuild the app', () async {
+      final c = SettingsController(store: MemorySettingsStore());
+      await c.load();
+      var notified = 0;
+      c.addListener(() => notified++);
+
+      c.setSound(true);
+      expect(notified, 0);
+    });
+  });
+
+  test(
+    'the Voice switch silences speech without touching the engine',
+    () async {
+      final inner = _RecordingSpeech();
+      var on = true;
+      final speech = ToggleableSpeechService(inner, enabled: () => on);
+
+      await speech.speak('one');
+      on = false;
+      await speech.speak('two');
+
+      expect(inner.said, ['one']);
+    },
+  );
+
+  group('screens', () {
+    late MemorySettingsStore store;
+
+    setUp(() {
+      store = MemorySettingsStore();
+      final view =
+          TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+      view.devicePixelRatio = 1.0;
+      view.physicalSize = const Size(420, 1800);
+    });
+
+    tearDown(() {
+      final view =
+          TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+      view.resetPhysicalSize();
+      view.resetDevicePixelRatio();
+    });
+
+    Widget app() => BccSasqrApp(
+      repository: InMemoryStudentRepository(latency: Duration.zero),
+      exportService: _NoExport(),
+      speech: const SilentSpeechService(),
+      scannerRepository: InMemoryScannerRepository(latency: Duration.zero),
+      scanFeedback: const SilentScanFeedback(),
+      settingsStore: store,
+      appInfo: () async => const AppInfo(version: '1.1.0', buildNumber: '2'),
+      cameraBuilder: (context, onCode) => const SizedBox.shrink(),
+      keepAwake: (on) async {},
+      showSplash: false,
+    );
+
+    Brightness brightnessOf(WidgetTester tester) => Theme.of(
+      tester.element(find.text(SettingsStrings.title).first),
+    ).brightness;
+
+    Future<void> openSettings(WidgetTester tester) async {
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('home.settings')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the home screen opens Settings, with the version', (
+      tester,
+    ) async {
+      await openSettings(tester);
+
+      expect(find.text(SettingsStrings.appearance), findsOneWidget);
+      expect(find.text(SettingsStrings.feedback), findsOneWidget);
+      expect(find.text('1.1.0 (build 2)'), findsOneWidget);
+      // No API_BASE_URL in a test build.
+      expect(find.text(SettingsStrings.serverDemo), findsOneWidget);
+    });
+
+    testWidgets('picking Dark repaints the app dark, and is remembered', (
+      tester,
+    ) async {
+      await openSettings(tester);
+      expect(brightnessOf(tester), Brightness.light);
+
+      await tester.tap(find.text(SettingsStrings.themeDark));
+      await tester.pumpAndSettle();
+
+      expect(brightnessOf(tester), Brightness.dark);
+      final canvas = tester
+          .widget<Scaffold>(find.byType(Scaffold).last)
+          .backgroundColor;
+      expect(
+        canvas ??
+            Theme.of(
+              tester.element(find.byType(Scaffold).last),
+            ).scaffoldBackgroundColor,
+        AppPalette.dark.canvas,
+      );
+      expect(store.saved.themeMode, ThemeMode.dark);
+    });
+
+    testWidgets('a saved theme is there from the first screen', (tester) async {
+      store = MemorySettingsStore(const AppSettings(themeMode: ThemeMode.dark));
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.text(AppStrings.homeScannerTitle));
+      expect(Theme.of(context).brightness, Brightness.dark);
+    });
+
+    testWidgets('the feedback switches flip and are saved', (tester) async {
+      await openSettings(tester);
+
+      await tester.tap(find.text(SettingsStrings.sound));
+      await tester.tap(find.text(SettingsStrings.voice));
+      await tester.pumpAndSettle();
+
+      expect(store.saved.sound, isFalse);
+      expect(store.saved.voice, isFalse);
+      expect(store.saved.vibration, isTrue);
+    });
+  });
+}

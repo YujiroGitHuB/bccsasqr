@@ -47,18 +47,21 @@ class DetailsPanel extends StatelessWidget {
           const SizedBox(height: 16),
           HowThisWorksTile(onToggled: controller.onInstructionsToggled),
           const SizedBox(height: 18),
-          const Text(
+          Text(
             AppStrings.studentNumberLabel,
             style: TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             AppStrings.studentNumberFormat,
-            style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+            style: TextStyle(
+              fontSize: 11.5,
+              color: context.colors.textSecondary,
+            ),
           ),
           const SizedBox(height: 10),
           _StudentNumberField(
@@ -69,7 +72,7 @@ class DetailsPanel extends StatelessWidget {
             const SizedBox(height: 8),
             _InlineMessage(
               icon: Icons.error_outline_rounded,
-              color: AppColors.danger,
+              color: context.colors.danger,
               message: controller.errorMessage!,
             ),
             if (controller.canRetry) ...[
@@ -80,9 +83,9 @@ class DetailsPanel extends StatelessWidget {
                 label: const Text(AppStrings.actionRetry),
                 // Same shape as the warning card's button, in the error's red.
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.danger,
+                  foregroundColor: context.colors.danger,
                   side: BorderSide(
-                    color: AppColors.danger.withValues(alpha: 0.55),
+                    color: context.colors.danger.withValues(alpha: 0.55),
                   ),
                   minimumSize: const Size.fromHeight(40),
                 ),
@@ -91,9 +94,9 @@ class DetailsPanel extends StatelessWidget {
           ],
           if (controller.isVerified) ...[
             const SizedBox(height: 8),
-            const _InlineMessage(
+            _InlineMessage(
               icon: Icons.verified_rounded,
-              color: AppColors.success,
+              color: context.colors.success,
               message: AppStrings.verifiedBadge,
             ),
           ],
@@ -138,28 +141,28 @@ class _StudentNumberField extends StatelessWidget {
       keyboardType: TextInputType.number,
       textInputAction: TextInputAction.done,
       inputFormatters: const [StudentNumberInputFormatter()],
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.5,
-        color: AppColors.textPrimary,
+        color: context.colors.textPrimary,
       ),
       decoration: InputDecoration(
         hintText: AppStrings.studentNumberHint,
         suffixIcon: controller.isVerifying
-            ? const Padding(
-                padding: EdgeInsets.all(14),
+            ? Padding(
+                padding: const EdgeInsets.all(14),
                 child: SizedBox(
                   height: 18,
                   width: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.accent,
+                    color: context.colors.accent,
                   ),
                 ),
               )
             : controller.isVerified
-            ? const Icon(Icons.check_circle_rounded, color: AppColors.success)
+            ? Icon(Icons.check_circle_rounded, color: context.colors.success)
             : null,
       ),
     );
@@ -180,9 +183,9 @@ class _RecordBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceSunken,
+        color: context.colors.surfaceSunken,
         borderRadius: BorderRadius.circular(AppTheme.fieldRadius),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         children: [
@@ -232,12 +235,12 @@ class _PrimaryActionButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (busy)
-            const SizedBox(
+            SizedBox(
               height: 16,
               width: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             )
           else
@@ -299,17 +302,19 @@ class _WarningCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.10),
+        color: context.colors.warning.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(AppTheme.fieldRadius),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: context.colors.warning.withValues(alpha: 0.35),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.warning_amber_rounded,
             size: 17,
-            color: AppColors.warning,
+            color: context.colors.warning,
           ),
           const SizedBox(width: 9),
           Expanded(
@@ -318,10 +323,10 @@ class _WarningCard extends StatelessWidget {
               children: [
                 Text(
                   warning.message,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 if (warning.hasAction) ...[
@@ -331,9 +336,9 @@ class _WarningCard extends StatelessWidget {
                     icon: const Icon(Icons.open_in_new_rounded, size: 15),
                     label: Text(warning.actionLabel!),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.warning,
+                      foregroundColor: context.colors.warning,
                       side: BorderSide(
-                        color: AppColors.warning.withValues(alpha: 0.55),
+                        color: context.colors.warning.withValues(alpha: 0.55),
                       ),
                       // Full width like every button in the app, a little
                       // shorter so it reads as secondary to Generate.

@@ -54,170 +54,190 @@ class _ScannerSignInPageState extends State<ScannerSignInPage> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
-              child: ListenableBuilder(
-                listenable: c,
-                builder: (context, _) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (Navigator.of(context).canPop())
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: () => Navigator.of(context).maybePop(),
-                          icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                          label: const Text(AppStrings.homeBack),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.textSecondary,
+              // The form rises into place as the splash fades out. Played
+              // once: rebuilding with the same end value does not replay it.
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOutCubic,
+                builder: (context, t, child) => Opacity(
+                  opacity: t,
+                  child: Transform.translate(
+                    offset: Offset(0, 24 * (1 - t)),
+                    child: child,
+                  ),
+                ),
+                child: ListenableBuilder(
+                  listenable: c,
+                  builder: (context, _) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (Navigator.of(context).canPop())
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: () => Navigator.of(context).maybePop(),
+                            icon: const Icon(
+                              Icons.arrow_back_rounded,
+                              size: 18,
+                            ),
+                            label: const Text(AppStrings.homeBack),
+                            style: TextButton.styleFrom(
+                              foregroundColor: context.colors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                      SurfacePanel(
+                        topAccent: true,
+                        padding: const EdgeInsets.all(20),
+                        child: AutofillGroup(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  const BrandMark(size: 40),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          ScannerStrings.title,
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                            color: context.colors.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          ScannerStrings.subtitle,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            color: context.colors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 22),
+                              Text(
+                                ScannerStrings.signInHeading,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.colors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                ScannerStrings.signInBody,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  height: 1.45,
+                                  color: context.colors.textSecondary,
+                                ),
+                              ),
+                              if (c.sessionMessage case final message?) ...[
+                                const SizedBox(height: 14),
+                                _Callout(
+                                  text: message,
+                                  color: context.colors.warning,
+                                ),
+                              ],
+                              if (widget.demo) ...[
+                                const SizedBox(height: 14),
+                                _Callout(
+                                  text: ScannerStrings.demoSignInHint,
+                                  color: context.colors.warning,
+                                ),
+                              ],
+                              const SizedBox(height: 18),
+                              TextField(
+                                controller: _email,
+                                enabled: !c.isSigningIn,
+                                keyboardType: TextInputType.emailAddress,
+                                autofillHints: const [
+                                  AutofillHints.email,
+                                  AutofillHints.username,
+                                ],
+                                autocorrect: false,
+                                textInputAction: TextInputAction.next,
+                                decoration: const InputDecoration(
+                                  hintText: ScannerStrings.emailLabel,
+                                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: _password,
+                                enabled: !c.isSigningIn,
+                                obscureText: _hidePassword,
+                                autofillHints: const [AutofillHints.password],
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => _submit(),
+                                decoration: InputDecoration(
+                                  hintText: ScannerStrings.passwordLabel,
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline_rounded,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    tooltip: _hidePassword
+                                        ? ScannerStrings.showPassword
+                                        : ScannerStrings.hidePassword,
+                                    onPressed: () => setState(
+                                      () => _hidePassword = !_hidePassword,
+                                    ),
+                                    icon: Icon(
+                                      _hidePassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (c.signInError case final error?) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  error,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    height: 1.4,
+                                    color: context.colors.danger,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 18),
+                              FilledButton(
+                                onPressed: c.isSigningIn ? null : _submit,
+                                child: c.isSigningIn
+                                    ? const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SizedBox(
+                                            height: 16,
+                                            width: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(ScannerStrings.signingIn),
+                                        ],
+                                      )
+                                    : const Text(ScannerStrings.signIn),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    const SizedBox(height: 12),
-                    SurfacePanel(
-                      topAccent: true,
-                      padding: const EdgeInsets.all(20),
-                      child: AutofillGroup(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Row(
-                              children: [
-                                BrandMark(size: 40),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        ScannerStrings.title,
-                                        style: TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      SizedBox(height: 2),
-                                      Text(
-                                        ScannerStrings.subtitle,
-                                        style: TextStyle(
-                                          fontSize: 12.5,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 22),
-                            const Text(
-                              ScannerStrings.signInHeading,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              ScannerStrings.signInBody,
-                              style: TextStyle(
-                                fontSize: 13,
-                                height: 1.45,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            if (c.sessionMessage case final message?) ...[
-                              const SizedBox(height: 14),
-                              _Callout(text: message, color: AppColors.warning),
-                            ],
-                            if (widget.demo) ...[
-                              const SizedBox(height: 14),
-                              const _Callout(
-                                text: ScannerStrings.demoSignInHint,
-                                color: AppColors.warning,
-                              ),
-                            ],
-                            const SizedBox(height: 18),
-                            TextField(
-                              controller: _email,
-                              enabled: !c.isSigningIn,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [
-                                AutofillHints.email,
-                                AutofillHints.username,
-                              ],
-                              autocorrect: false,
-                              textInputAction: TextInputAction.next,
-                              decoration: const InputDecoration(
-                                hintText: ScannerStrings.emailLabel,
-                                prefixIcon: Icon(Icons.mail_outline_rounded),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: _password,
-                              enabled: !c.isSigningIn,
-                              obscureText: _hidePassword,
-                              autofillHints: const [AutofillHints.password],
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _submit(),
-                              decoration: InputDecoration(
-                                hintText: ScannerStrings.passwordLabel,
-                                prefixIcon: const Icon(
-                                  Icons.lock_outline_rounded,
-                                ),
-                                suffixIcon: IconButton(
-                                  tooltip: _hidePassword
-                                      ? ScannerStrings.showPassword
-                                      : ScannerStrings.hidePassword,
-                                  onPressed: () => setState(
-                                    () => _hidePassword = !_hidePassword,
-                                  ),
-                                  icon: Icon(
-                                    _hidePassword
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (c.signInError case final error?) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                error,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  height: 1.4,
-                                  color: AppColors.danger,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 18),
-                            FilledButton(
-                              onPressed: c.isSigningIn ? null : _submit,
-                              child: c.isSigningIn
-                                  ? const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          height: 16,
-                                          width: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                        SizedBox(width: 10),
-                                        Text(ScannerStrings.signingIn),
-                                      ],
-                                    )
-                                  : const Text(ScannerStrings.signIn),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

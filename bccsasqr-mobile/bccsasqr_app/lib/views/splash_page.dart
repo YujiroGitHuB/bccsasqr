@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../core/constants/app_assets.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
+import 'widgets/viewfinder.dart';
 
 /// The opening screen: the school seal is "scanned", the name settles in
 /// under it, and the app fades through to the generator.
@@ -142,7 +143,7 @@ class _SplashPageState extends State<SplashPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: AppPalette.dark.canvas,
       body: Semantics(
         label: AppStrings.splashSemantics,
         child: AnimatedBuilder(
@@ -181,12 +182,12 @@ class _SplashPageState extends State<SplashPage>
                     minimum: const EdgeInsets.only(bottom: 28),
                     child: Opacity(
                       opacity: _footer.value,
-                      child: const Text(
+                      child: Text(
                         AppStrings.splashFooter,
                         style: TextStyle(
                           fontSize: 12,
                           letterSpacing: 0.4,
-                          color: AppColors.textMuted,
+                          color: AppPalette.dark.textMuted,
                         ),
                       ),
                     ),
@@ -235,7 +236,10 @@ class _ScannedSeal extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.accentWash(0.26), AppColors.accentWash(0)],
+                  colors: [
+                    AppPalette.dark.accentWash(0.26),
+                    AppPalette.dark.accentWash(0),
+                  ],
                 ),
               ),
             ),
@@ -244,9 +248,9 @@ class _ScannedSeal extends StatelessWidget {
             opacity: shown,
             child: Transform.scale(
               scale: 1.3 - 0.3 * frame,
-              child: const CustomPaint(
-                size: Size.square(_viewfinder),
-                painter: _ViewfinderPainter(color: AppColors.accent),
+              child: CustomPaint(
+                size: const Size.square(_viewfinder),
+                painter: ViewfinderPainter(color: AppPalette.dark.accent),
               ),
             ),
           ),
@@ -270,7 +274,10 @@ class _ScannedSeal extends StatelessWidget {
                       height: _trail + 2,
                       child: Opacity(
                         opacity: scanOpacity,
-                        child: const _ScanLine(trail: _trail),
+                        child: ScanBeam(
+                          trail: _trail,
+                          palette: AppPalette.dark,
+                        ),
                       ),
                     ),
                 ],
@@ -281,106 +288,6 @@ class _ScannedSeal extends StatelessWidget {
       ),
     );
   }
-}
-
-/// A bright line with a soft wash trailing above it.
-class _ScanLine extends StatelessWidget {
-  const _ScanLine({required this.trail});
-
-  final double trail;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          height: trail,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.accentWash(0), AppColors.accentWash(0.28)],
-            ),
-          ),
-        ),
-        Container(
-          height: 2,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0x002DD4F5),
-                AppColors.accentSoft,
-                Color(0x002DD4F5),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(color: AppColors.accentWash(0.7), blurRadius: 8),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Four rounded corner brackets — a camera viewfinder.
-class _ViewfinderPainter extends CustomPainter {
-  const _ViewfinderPainter({required this.color});
-
-  final Color color;
-
-  static const double _arm = 26;
-  static const double _radius = 10;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    const a = _arm;
-    const r = _radius;
-
-    final path = Path()
-      // top left
-      ..moveTo(0, a)
-      ..lineTo(0, r)
-      ..arcToPoint(const Offset(r, 0), radius: const Radius.circular(r))
-      ..lineTo(a, 0)
-      // top right
-      ..moveTo(w - a, 0)
-      ..lineTo(w - r, 0)
-      ..arcToPoint(Offset(w, r), radius: const Radius.circular(r))
-      ..lineTo(w, a)
-      // bottom right
-      ..moveTo(w, h - a)
-      ..lineTo(w, h - r)
-      ..arcToPoint(Offset(w - r, h), radius: const Radius.circular(r))
-      ..lineTo(w - a, h)
-      // bottom left
-      ..moveTo(a, h)
-      ..lineTo(r, h)
-      ..arcToPoint(Offset(0, h - r), radius: const Radius.circular(r))
-      ..lineTo(0, h - a);
-
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5
-      ..strokeCap = StrokeCap.round
-      ..color = color;
-
-    // A blurred pass under the crisp one reads as a glow.
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 6
-        ..color = color.withValues(alpha: 0.35)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
-    );
-    canvas.drawPath(path, stroke);
-  }
-
-  @override
-  bool shouldRepaint(_ViewfinderPainter old) => old.color != color;
 }
 
 /// "BCC SASQR" and what it is.
@@ -405,31 +312,34 @@ class _Wordmark extends StatelessWidget {
                   text: AppStrings.splashBrandAccent,
                   style: TextStyle(
                     foreground: Paint()
-                      ..shader = const LinearGradient(
-                        colors: [AppColors.accentSoft, AppColors.accentDeep],
+                      ..shader = LinearGradient(
+                        colors: [
+                          AppPalette.dark.accentSoft,
+                          AppPalette.dark.accentDeep,
+                        ],
                       ).createShader(const Rect.fromLTWH(0, 0, 110, 36)),
                   ),
                 ),
               ],
             ),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 30,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.2,
-              color: AppColors.textPrimary,
+              color: AppPalette.dark.textPrimary,
             ),
           ),
         ),
         const SizedBox(height: 8),
         Opacity(
           opacity: tagline.clamp(0.0, 1.0),
-          child: const Text(
+          child: Text(
             AppStrings.splashTagline,
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
               letterSpacing: 2.4,
-              color: AppColors.textSecondary,
+              color: AppPalette.dark.textSecondary,
             ),
           ),
         ),

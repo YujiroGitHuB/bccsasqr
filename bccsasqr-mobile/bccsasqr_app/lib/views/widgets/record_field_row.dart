@@ -32,11 +32,11 @@ class RecordFieldRow extends StatelessWidget {
             width: 72,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.8,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),
@@ -44,7 +44,7 @@ class RecordFieldRow extends StatelessWidget {
           Icon(
             _filled ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
             size: 13,
-            color: _filled ? AppColors.accent : AppColors.textMuted,
+            color: _filled ? context.colors.accent : context.colors.textMuted,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -66,8 +66,8 @@ class RecordFieldRow extends StatelessWidget {
                         height: 1.3,
                         fontWeight: _filled ? FontWeight.w600 : FontWeight.w400,
                         color: _filled
-                            ? AppColors.textPrimary
-                            : AppColors.textMuted,
+                            ? context.colors.textPrimary
+                            : context.colors.textMuted,
                       ),
                     ),
                   ),
@@ -107,7 +107,7 @@ class _ValueShimmerState extends State<_ValueShimmer>
         height: 11,
         margin: const EdgeInsets.only(top: 3, right: 40),
         decoration: BoxDecoration(
-          color: AppColors.borderStrong,
+          color: context.colors.borderStrong,
           borderRadius: BorderRadius.circular(4),
         ),
       ),

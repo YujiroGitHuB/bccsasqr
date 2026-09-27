@@ -65,21 +65,21 @@ class _TitleBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           AppStrings.appTitle,
           style: TextStyle(
             fontSize: 19,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             height: 1.2,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           AppStrings.appTagline,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             height: 1.35,
           ),
         ),
@@ -101,11 +101,11 @@ class BrandMark extends StatelessWidget {
       height: size,
       width: size,
       decoration: BoxDecoration(
-        gradient: AppColors.brandMark,
+        gradient: AppPalette.brandMark,
         borderRadius: BorderRadius.circular(size * 0.28),
         boxShadow: [
           BoxShadow(
-            color: AppColors.accentWash(0.35),
+            color: context.colors.accentWash(0.35),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -159,23 +159,23 @@ class _HeaderChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
+        color: context.colors.surfaceRaised,
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: AppColors.borderStrong),
+        border: Border.all(color: context.colors.borderStrong),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.textSecondary),
+          Icon(icon, size: 14, color: context.colors.textSecondary),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
           ),

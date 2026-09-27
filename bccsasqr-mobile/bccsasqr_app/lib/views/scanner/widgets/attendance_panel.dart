@@ -97,7 +97,7 @@ class _AttendanceRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 11),
       decoration: BoxDecoration(
         border: divider
-            ? const Border(top: BorderSide(color: AppColors.border))
+            ? Border(top: BorderSide(color: context.colors.border))
             : null,
       ),
       child: Row(
@@ -109,10 +109,10 @@ class _AttendanceRow extends StatelessWidget {
               children: [
                 Text(
                   entry.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -122,18 +122,18 @@ class _AttendanceRow extends StatelessWidget {
                     if (entry.courseAndSection.isNotEmpty)
                       entry.courseAndSection,
                   ].join(' · '),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 if (entry.subject.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     entry.subject,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                     ),
                   ),
                 ],
@@ -146,10 +146,10 @@ class _AttendanceRow extends StatelessWidget {
             children: [
               Text(
                 entry.timeIn,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
               if (entry.late) ...[const SizedBox(height: 4), const LateTag()],
@@ -170,16 +170,18 @@ class LateTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.14),
+        color: context.colors.warning.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.45)),
+        border: Border.all(
+          color: context.colors.warning.withValues(alpha: 0.45),
+        ),
       ),
-      child: const Text(
+      child: Text(
         ScannerStrings.lateTag,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: AppColors.warning,
+          color: context.colors.warning,
         ),
       ),
     );
@@ -196,16 +198,16 @@ class _CountChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
+        color: context.colors.surfaceRaised,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Text(
         '$count',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          color: context.colors.textPrimary,
         ),
       ),
     );
@@ -224,7 +226,7 @@ class _Empty extends StatelessWidget {
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
       ),
     );
   }

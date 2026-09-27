@@ -7,6 +7,7 @@ import 'package:bccsasqr_app/models/student_record.dart';
 import 'package:bccsasqr_app/models/terms_document.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
+import 'package:bccsasqr_app/views/generator_splash.dart';
 import 'package:bccsasqr_app/views/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -151,6 +152,32 @@ void main() {
     // Students are one tap from the generator.
     await tester.tap(find.byKey(const ValueKey('home.generator')));
     await tester.pumpAndSettle();
+    expect(find.text(AppStrings.studentNumberLabel), findsOneWidget);
+  });
+
+  testWidgets('the generator plays its own splash before the form', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      BccSasqrApp(
+        repository: _StubRepository(),
+        exportService: _StubExportService(),
+        showSplash: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home.generator')));
+    // The new route's first frame is laid out offstage, for heroes.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 900));
+
+    expect(find.byType(GeneratorSplash), findsOneWidget);
+    expect(find.text(AppStrings.generatorSplashTagline), findsOneWidget);
+    expect(find.text(AppStrings.generatorStepSave), findsOneWidget);
+    expect(find.text(AppStrings.studentNumberLabel), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.byType(GeneratorSplash), findsNothing);
     expect(find.text(AppStrings.studentNumberLabel), findsOneWidget);
   });
 

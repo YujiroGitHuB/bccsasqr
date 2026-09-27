@@ -30,38 +30,36 @@ class DemoModeBanner extends StatelessWidget {
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.10),
+        color: context.colors.warning.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: context.colors.warning.withValues(alpha: 0.35),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.science_outlined,
-            size: 18,
-            color: AppColors.warning,
-          ),
+          Icon(Icons.science_outlined, size: 18, color: context.colors.warning),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   AppStrings.demoModeTitle,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.warning,
+                    color: context.colors.warning,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   AppStrings.demoModeBody,
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -70,12 +68,12 @@ class DemoModeBanner extends StatelessWidget {
                 Text(
                   '${AppStrings.demoModeNumbers} '
                   '${InMemoryStudentRepository.sampleNumbers.join(' · ')}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.3,
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
               ],

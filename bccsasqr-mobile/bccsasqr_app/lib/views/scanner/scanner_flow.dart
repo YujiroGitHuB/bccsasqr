@@ -6,6 +6,8 @@ import '../../core/theme/app_colors.dart';
 import '../../services/scan_feedback.dart';
 import '../../services/scanner_repository.dart';
 import '../../services/speech_service.dart';
+import '../widgets/fade_scale_switcher.dart';
+import 'scanner_intro.dart';
 import 'scanner_page.dart';
 import 'scanner_sign_in_page.dart';
 
@@ -20,11 +22,15 @@ class ScannerFlow extends StatefulWidget {
     this.feedback = const SilentScanFeedback(),
     this.cameraBuilder = deviceQrCamera,
     this.keepAwake = deviceKeepAwake,
+    this.onOpenSettings,
   });
 
   final ScannerRepository repository;
   final SpeechService speech;
   final ScanFeedback feedback;
+
+  /// Opens the app's Settings; see [ScannerPage.onOpenSettings].
+  final VoidCallback? onOpenSettings;
 
   /// Overridable for tests; see [ScannerPage].
   final QrCameraBuilder cameraBuilder;
@@ -45,73 +51,103 @@ class _ScannerFlowState extends State<ScannerFlow> {
   /// result over whatever was opened.
   late final AppLifecycleListener _lifecycle;
 
+  /// The splash has played its intro. Until then it stays up even when the
+  /// sign-in check has already answered.
+  bool _introDone = false;
+
+  /// A sign-in typed just now, not one restored: it gets the welcome.
+  bool _welcoming = false;
+  late ScannerSession _seen = _controller.session;
+
   bool get _demo => widget.repository is InMemoryScannerRepository;
 
   @override
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(onHide: _controller.stopSpeaking);
+    _controller.addListener(_onSessionChange);
     _controller.start();
+  }
+
+  void _onSessionChange() {
+    final now = _controller.session;
+    if (now == _seen) return;
+    setState(() {
+      if (_seen == ScannerSession.signedOut && now == ScannerSession.signedIn) {
+        _welcoming = true;
+      } else if (now != ScannerSession.signedIn) {
+        _welcoming = false;
+      }
+      _seen = now;
+    });
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onSessionChange);
     _lifecycle.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  Widget _screen() {
+    final session = _controller.session;
+    final user = _controller.user;
+
+    if (!_introDone || session == ScannerSession.checking) {
+      final back = session == ScannerSession.signedIn && user != null;
+      return ScannerSplash(
+        key: const ValueKey('splash'),
+        message: back
+            ? ScannerStrings.welcomeBack(user.name)
+            : ScannerStrings.checkingSession,
+        done: back,
+        onIntroDone: () {
+          if (mounted) setState(() => _introDone = true);
+        },
+      );
+    }
+
+    if (_welcoming && session == ScannerSession.signedIn) {
+      return ScannerWelcome(
+        key: const ValueKey('welcome'),
+        name: user?.name ?? '',
+        onFinished: () {
+          if (mounted) setState(() => _welcoming = false);
+        },
+      );
+    }
+
+    return switch (session) {
+      // Handled above; here only to keep the switch exhaustive.
+      ScannerSession.checking => const SizedBox.shrink(),
+      ScannerSession.unreachable => _Unreachable(
+        key: const ValueKey('unreachable'),
+        message: _controller.sessionMessage,
+        onRetry: _controller.start,
+        onSignOut: _controller.signOut,
+      ),
+      ScannerSession.signedOut => ScannerSignInPage(
+        key: const ValueKey('sign-in'),
+        controller: _controller,
+        demo: _demo,
+      ),
+      ScannerSession.signedIn => ScannerPage(
+        key: const ValueKey('scanner'),
+        controller: _controller,
+        demo: _demo,
+        cameraBuilder: widget.cameraBuilder,
+        keepAwake: widget.keepAwake,
+        onOpenSettings: widget.onOpenSettings,
+      ),
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: _controller,
-      builder: (context, _) => AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        child: switch (_controller.session) {
-          ScannerSession.checking => const _Checking(key: ValueKey('checking')),
-          ScannerSession.unreachable => _Unreachable(
-            key: const ValueKey('unreachable'),
-            message: _controller.sessionMessage,
-            onRetry: _controller.start,
-            onSignOut: _controller.signOut,
-          ),
-          ScannerSession.signedOut => ScannerSignInPage(
-            key: const ValueKey('sign-in'),
-            controller: _controller,
-            demo: _demo,
-          ),
-          ScannerSession.signedIn => ScannerPage(
-            key: const ValueKey('scanner'),
-            controller: _controller,
-            demo: _demo,
-            cameraBuilder: widget.cameraBuilder,
-            keepAwake: widget.keepAwake,
-          ),
-        },
-      ),
-    );
-  }
-}
-
-class _Checking extends StatelessWidget {
-  const _Checking({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text(
-              ScannerStrings.checkingSession,
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-      ),
+      builder: (context, _) => FadeScaleSwitcher(child: _screen()),
     );
   }
 }
@@ -143,19 +179,19 @@ class _Unreachable extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.cloud_off_rounded,
                     size: 44,
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                   ),
                   const SizedBox(height: 14),
-                  const Text(
+                  Text(
                     ScannerStrings.unreachableTitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   if (message != null) ...[
@@ -163,10 +199,10 @@ class _Unreachable extends StatelessWidget {
                     Text(
                       message!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         height: 1.5,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],

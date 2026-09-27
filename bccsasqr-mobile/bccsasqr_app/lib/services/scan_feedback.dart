@@ -29,10 +29,20 @@ class SilentScanFeedback implements ScanFeedback {
 ///
 /// Every failure is swallowed: a phone on silent, or with haptics off, still
 /// shows the result on screen.
+///
+/// [sound] and [vibration] are the Settings switches, asked on every scan so
+/// a change counts from the next one.
 class DeviceScanFeedback implements ScanFeedback {
-  DeviceScanFeedback() : _player = AudioPlayer();
+  DeviceScanFeedback({bool Function()? sound, bool Function()? vibration})
+    : _player = AudioPlayer(),
+      _sound = sound ?? _always,
+      _vibration = vibration ?? _always;
+
+  static bool _always() => true;
 
   final AudioPlayer _player;
+  final bool Function() _sound;
+  final bool Function() _vibration;
   Future<void>? _ready;
 
   Future<void> _configure() async {
@@ -43,7 +53,8 @@ class DeviceScanFeedback implements ScanFeedback {
 
   @override
   Future<void> play(ScanTone tone) async {
-    unawaited(_beep());
+    if (_sound()) unawaited(_beep());
+    if (!_vibration()) return;
 
     try {
       switch (tone) {
