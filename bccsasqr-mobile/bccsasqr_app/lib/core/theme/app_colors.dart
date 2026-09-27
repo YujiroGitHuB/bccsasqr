@@ -39,6 +39,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.warning,
     required this.onWarning,
     required this.danger,
+    required this.violet,
   });
 
   /// The app's original look, and the web's `[data-theme="dark"]`.
@@ -61,6 +62,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     warning: Color(0xFFFBBF24),
     onWarning: Color(0xFF2B1D00),
     danger: Color(0xFFF87171),
+    violet: Color(0xFFC4B5FD),
   );
 
   /// The web's `:root` light palette: `--bg` #eef2f7 under white surfaces,
@@ -84,6 +86,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     warning: Color(0xFFB45309),
     onWarning: Color(0xFFFFFFFF),
     danger: Color(0xFFDC2626),
+    violet: Color(0xFF6D28D9),
   );
 
   final Brightness brightness;
@@ -117,6 +120,10 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// The thumb of a switch whose track is [warning].
   final Color onWarning;
   final Color danger;
+
+  /// The web's second accent (`--att-ink`): the Improved chip in What's New,
+  /// as on the web. Not a state — only sky, emerald, amber and red are.
+  final Color violet;
 
   bool get isDark => brightness == Brightness.dark;
 

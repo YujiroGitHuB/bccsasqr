@@ -351,7 +351,48 @@ abstract final class SettingsStrings {
   static const String version = 'Version';
   static const String server = 'Server';
   static const String serverDemo = 'Demo mode — not connected';
+  static const String whatsNew = 'What\'s New';
   static const String update = 'Get the latest version';
   static const String updateBody = 'Opens the download page';
   static const String developer = 'Developer';
+}
+
+/// The What's New page and the home screen's card for it. The entries
+/// themselves are in whats_new_log.dart.
+abstract final class WhatsNewStrings {
+  static const String title = 'What\'s New';
+  static const String open = 'What\'s New';
+  static const String openUnread = 'What\'s New — new in this update';
+  static const String intro =
+      'What changed in My QR Code, My Attendance and the Attendance Scanner.';
+
+  static const String latest = 'LATEST';
+
+  // The filter along the top.
+  static const String filterAll = 'All';
+  static const String filterQr = 'QR Code';
+  static const String filterTracker = 'Tracker';
+  static const String filterScanner = 'Scanner';
+
+  // The chip on each item — the web's New / Improved / Fixed.
+  static const String kindAdded = 'NEW';
+  static const String kindImproved = 'IMPROVED';
+  static const String kindFixed = 'FIXED';
+
+  // The chip naming the part of the app, and the button that opens it.
+  static const String areaQr = 'MY QR CODE';
+  static const String areaTracker = 'MY ATTENDANCE';
+  static const String areaScanner = 'SCANNER';
+  static const String openQr = 'Open My QR Code';
+  static const String openTracker = 'Open My Attendance';
+  static const String openScanner = 'Open the Scanner';
+
+  // The home screen's card, until the page is opened once.
+  static const String cardTitle = 'New in this update';
+  static const String cardBody =
+      'See what changed in My QR Code, My Attendance and the Scanner.';
+  static const String cardClose = 'Dismiss';
+
+  // The row in Settings → About.
+  static const String settingsBody = 'What changed in this version';
 }

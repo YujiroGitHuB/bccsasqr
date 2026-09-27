@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'controllers/settings_controller.dart';
+import 'controllers/whats_new_controller.dart';
 import 'core/config/app_config.dart';
 import 'core/constants/app_strings.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'models/whats_new.dart';
 import 'services/app_info.dart';
 import 'services/device_lock.dart';
 import 'services/http_scanner_repository.dart';
@@ -18,6 +20,7 @@ import 'services/speech_service.dart';
 import 'services/student_repository.dart';
 import 'services/token_store.dart';
 import 'services/tracker_repository.dart';
+import 'services/whats_new_store.dart';
 import 'views/generator_splash.dart';
 import 'views/home_page.dart';
 import 'views/qr_generator_page.dart';
@@ -27,6 +30,7 @@ import 'views/settings_page.dart';
 import 'views/splash_page.dart';
 import 'views/tracker_page.dart';
 import 'views/tracker_splash.dart';
+import 'views/whats_new_page.dart';
 import 'views/widgets/fade_scale_switcher.dart';
 
 /// Root widget. Composes the dependency graph in one place so the views take
@@ -41,6 +45,7 @@ class BccSasqrApp extends StatefulWidget {
     this.scannerRepository,
     this.scanFeedback,
     this.settingsStore,
+    this.whatsNewStore,
     this.deviceLock,
     this.scannerLockStore,
     this.appInfo = AppInfo.load,
@@ -57,6 +62,9 @@ class BccSasqrApp extends StatefulWidget {
   final ScannerRepository? scannerRepository;
   final ScanFeedback? scanFeedback;
   final SettingsStore? settingsStore;
+
+  /// Which What's New this phone has opened. Preferences when left out.
+  final WhatsNewStore? whatsNewStore;
 
   /// The phone's fingerprint, face or screen lock for the scanner, and the
   /// switch for it. The real ones when left out.
@@ -119,6 +127,10 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         vibration: () => _settings.vibration,
       );
 
+  late final WhatsNewController _whatsNew = WhatsNewController(
+    store: widget.whatsNewStore ?? SharedPrefsWhatsNewStore(),
+  );
+
   late bool _splashing = widget.showSplash;
 
   bool _scannerOpened = false;
@@ -129,6 +141,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     // Read while the splash plays, so the first real screen already wears
     // the chosen theme.
     _settings.load();
+    _whatsNew.load();
   }
 
   @override
@@ -142,6 +155,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       if (feedback is DeviceScanFeedback) feedback.dispose();
     }
     _settings.dispose();
+    _whatsNew.dispose();
     super.dispose();
   }
 
@@ -157,8 +171,27 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     page: (context) => TrackerPage(repository: _tracker, speech: _speech),
   );
 
-  Widget _settingsPage(BuildContext context) =>
-      SettingsPage(controller: _settings, appInfo: widget.appInfo);
+  Widget _settingsPage(BuildContext context) => SettingsPage(
+    controller: _settings,
+    appInfo: widget.appInfo,
+    // No links from here: Settings can be open over the scanner, and a link
+    // to the scanner would open a second one on top of it.
+    whatsNewBuilder: (context) => WhatsNewPage(onShown: _whatsNew.markSeen),
+  );
+
+  /// From the home screen, where each item can open the part it is about.
+  Widget _whatsNewPage(BuildContext context) => WhatsNewPage(
+    onShown: _whatsNew.markSeen,
+    onOpen: (area) => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: switch (area) {
+          WhatsNewArea.qr => _generator,
+          WhatsNewArea.tracker => _trackerPage,
+          WhatsNewArea.scanner => _scanner,
+        },
+      ),
+    ),
+  );
 
   Widget _scanner(BuildContext context) {
     _scannerOpened = true;
@@ -216,6 +249,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
                   trackerBuilder: _trackerPage,
                   scannerBuilder: _scanner,
                   settingsBuilder: _settingsPage,
+                  whatsNewBuilder: _whatsNewPage,
+                  whatsNew: _whatsNew,
                 ),
         ),
       ),

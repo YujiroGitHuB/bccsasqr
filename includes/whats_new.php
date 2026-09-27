@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.14';
+const WHATS_NEW_VERSION = '2026-09-27.15';
 
 /**
  * The changelog, newest release first.
@@ -186,6 +186,13 @@ function whats_new_releases(): array
                     'icon'  => 'bi-phone-flip',
                     'title' => 'The download page shows all three screens',
                     'text'  => 'The phones at the top of the download page now show every part of the app &mdash; <strong>My QR Code</strong>, <strong>My Attendance</strong> and the <strong>Scanner</strong> &mdash; one in front and the other two behind it. Swipe on a phone, drag with the mouse, or tap <strong>My QR Code</strong>, <strong>Attendance</strong> or <strong>Scanner</strong> under them to bring one to the front. Handy when you show the page to your class.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-stars',
+                    'title' => 'The app has its own What’s New',
+                    'text'  => 'Like this list, the app now tells students and instructors what changed after each update &mdash; but only about <strong>My QR Code</strong>, <strong>My Attendance</strong> and the <strong>Attendance Scanner</strong>, the parts they use. After an update, a <strong>New in this update</strong> card sits on the app&rsquo;s first screen until it is opened; the full list is always under the stars button beside the gear, or in <strong>Settings</strong>. Each change has a button that opens the part of the app it is about, and a filter shows one part at a time. Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
                 ],
             ],

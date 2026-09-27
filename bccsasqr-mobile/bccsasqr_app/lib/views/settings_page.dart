@@ -16,9 +16,13 @@ class SettingsPage extends StatefulWidget {
     super.key,
     required this.controller,
     this.appInfo = AppInfo.load,
+    this.whatsNewBuilder,
   });
 
   final SettingsController controller;
+
+  /// The What's New page, under About — the same one as on the home screen.
+  final WidgetBuilder? whatsNewBuilder;
 
   /// Overridable for tests: the real one asks the installed package.
   final Future<AppInfo> Function() appInfo;
@@ -49,6 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final c = widget.controller;
     final colors = context.colors;
     final download = AppInfo.downloadPageUrl;
+    final whatsNew = widget.whatsNewBuilder;
 
     return Scaffold(
       body: SafeArea(
@@ -196,6 +201,17 @@ class _SettingsPageState extends State<SettingsPage> {
                               value: snapshot.data?.label ?? '…',
                             ),
                           ),
+                          if (whatsNew != null)
+                            _LinkRow(
+                              key: const ValueKey('settings.whatsNew'),
+                              icon: Icons.auto_awesome_outlined,
+                              title: SettingsStrings.whatsNew,
+                              body: WhatsNewStrings.settingsBody,
+                              external: false,
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(builder: whatsNew),
+                              ),
+                            ),
                           _InfoRow(
                             icon: Icons.dns_outlined,
                             title: SettingsStrings.server,
@@ -379,16 +395,21 @@ class _InfoRow extends StatelessWidget {
 
 class _LinkRow extends StatelessWidget {
   const _LinkRow({
+    super.key,
     required this.icon,
     required this.title,
     required this.body,
     required this.onTap,
+    this.external = true,
   });
 
   final IconData icon;
   final String title;
   final String body;
   final VoidCallback onTap;
+
+  /// Leaves the app (the browser) rather than opening a page inside it.
+  final bool external;
 
   @override
   Widget build(BuildContext context) {
@@ -404,8 +425,10 @@ class _LinkRow extends StatelessWidget {
                 child: _RowBody(icon: icon, title: title, body: body),
               ),
               Icon(
-                Icons.open_in_new_rounded,
-                size: 18,
+                external
+                    ? Icons.open_in_new_rounded
+                    : Icons.chevron_right_rounded,
+                size: external ? 18 : 22,
                 color: context.colors.textMuted,
               ),
             ],

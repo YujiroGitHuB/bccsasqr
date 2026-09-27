@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../controllers/whats_new_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
@@ -21,6 +22,8 @@ class HomePage extends StatelessWidget {
     required this.trackerBuilder,
     required this.scannerBuilder,
     this.settingsBuilder,
+    this.whatsNewBuilder,
+    this.whatsNew,
   });
 
   final WidgetBuilder generatorBuilder;
@@ -31,34 +34,59 @@ class HomePage extends StatelessWidget {
   /// too, not only instructors behind a sign-in.
   final WidgetBuilder? settingsBuilder;
 
+  /// The What's New page, beside the gear. While [whatsNew] says this phone
+  /// has not opened the newest release, the button carries a dot and a card
+  /// sits above the destinations — until the page is opened or the card
+  /// closed.
+  final WidgetBuilder? whatsNewBuilder;
+  final WhatsNewController? whatsNew;
+
   static const double _maxContentWidth = 560;
 
   void _open(BuildContext context, WidgetBuilder builder) {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: builder));
   }
 
+  bool get _unread => whatsNew?.unread ?? false;
+
   @override
   Widget build(BuildContext context) {
     final settings = settingsBuilder;
+    final news = whatsNewBuilder;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            _content(context),
-            if (settings != null)
+    // Only the home screen listens: the mark changing must not rebuild the
+    // whole app the way a theme change does.
+    return ListenableBuilder(
+      listenable: whatsNew ?? const _Silent(),
+      builder: (context, _) => Scaffold(
+        body: SafeArea(
+          child: Stack(
+            children: [
+              _content(context),
               Positioned(
                 top: 8,
                 right: 8,
-                child: IconButton(
-                  key: const ValueKey('home.settings'),
-                  onPressed: () => _open(context, settings),
-                  tooltip: SettingsStrings.open,
-                  icon: const Icon(Icons.settings_outlined),
-                  color: context.colors.textSecondary,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (news != null)
+                      _WhatsNewButton(
+                        unread: _unread,
+                        onPressed: () => _open(context, news),
+                      ),
+                    if (settings != null)
+                      IconButton(
+                        key: const ValueKey('home.settings'),
+                        onPressed: () => _open(context, settings),
+                        tooltip: SettingsStrings.open,
+                        icon: const Icon(Icons.settings_outlined),
+                        color: context.colors.textSecondary,
+                      ),
+                  ],
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -107,6 +135,22 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
+              // Folds away rather than vanishing, so the cards below slide
+              // up instead of jumping.
+              AnimatedSize(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                alignment: Alignment.topCenter,
+                child: _unread && whatsNewBuilder != null
+                    ? Padding(
+                        padding: const EdgeInsets.only(bottom: 28),
+                        child: _WhatsNewCard(
+                          onTap: () => _open(context, whatsNewBuilder!),
+                          onClose: whatsNew!.markSeen,
+                        ),
+                      )
+                    : const SizedBox(width: double.infinity),
+              ),
               const PanelHeading(
                 icon: Icons.school_outlined,
                 label: AppStrings.homeStudentSection,
@@ -235,6 +279,140 @@ class _Destination extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A [Listenable] that never fires — for a home screen with no What's New.
+class _Silent implements Listenable {
+  const _Silent();
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
+}
+
+/// The web topbar's stars button, dot and all.
+class _WhatsNewButton extends StatelessWidget {
+  const _WhatsNewButton({required this.unread, required this.onPressed});
+
+  final bool unread;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return IconButton(
+      key: const ValueKey('home.whatsNew'),
+      onPressed: onPressed,
+      tooltip: unread ? WhatsNewStrings.openUnread : WhatsNewStrings.open,
+      color: unread ? colors.accent : colors.textSecondary,
+      icon: Badge(
+        isLabelVisible: unread,
+        smallSize: 9,
+        backgroundColor: colors.accent,
+        child: const Icon(Icons.auto_awesome_outlined),
+      ),
+    );
+  }
+}
+
+/// "New in this update" — above the destinations until the page is opened
+/// once or the card is closed.
+class _WhatsNewCard extends StatelessWidget {
+  const _WhatsNewCard({required this.onTap, required this.onClose});
+
+  final VoidCallback onTap;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    // Laid out like a destination, with the ink on top of the panel; the
+    // close button sits above the ink so a tap on it only closes.
+    return Stack(
+      key: const ValueKey('home.whatsNewCard'),
+      children: [
+        MergeSemantics(
+          child: Stack(
+            children: [
+              SurfacePanel(
+                borderColor: colors.accentWash(0.35),
+                padding: const EdgeInsets.fromLTRB(16, 14, 44, 14),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 40,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        gradient: AppPalette.brandMark,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      // The brand fill is the same cyan in both themes, so
+                      // the ink on it is the dark set's in both.
+                      child: Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 21,
+                        color: AppPalette.dark.onAccent,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            WhatsNewStrings.cardTitle,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            WhatsNewStrings.cardBody,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              height: 1.4,
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned.fill(
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          top: 4,
+          right: 4,
+          child: IconButton(
+            key: const ValueKey('home.whatsNewClose'),
+            onPressed: onClose,
+            tooltip: WhatsNewStrings.cardClose,
+            iconSize: 18,
+            icon: const Icon(Icons.close_rounded),
+            color: colors.textMuted,
+          ),
+        ),
+      ],
     );
   }
 }
