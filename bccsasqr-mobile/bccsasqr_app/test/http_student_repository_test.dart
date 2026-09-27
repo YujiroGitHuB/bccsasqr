@@ -382,6 +382,100 @@ void main() {
       expect(jsonDecode(seen!.body), {'student_no': '019-464'});
     });
   });
+
+  group('fetchAttendance', () {
+    // What api/v1/handlers/tracker.php answered for a real record.
+    final body = ok({
+      'student': {..._student, 'photo_url': 'https://example.test/p/1.jpg'},
+      'summary': {'total': 3, 'subjects': 2, 'last_attended': '2026-08-24'},
+      'subjects': [
+        {
+          'subject': 'Multimedia Technologies',
+          'instructor': 'Paolo R. Mendoza',
+          'count': 1,
+          'records': [
+            {'date': '2026-08-24', 'time_in': '03:32:26 PM', 'late': false},
+          ],
+        },
+        {
+          'subject': 'Object Oriented Programming',
+          'instructor': 'Charles Nixon Cayading',
+          'count': 2,
+          'records': [
+            {'date': '2026-08-24', 'time_in': '10:07:17 AM', 'late': true},
+            {'date': '2026-08-17', 'time_in': '11:59:50 AM', 'late': false},
+          ],
+        },
+      ],
+    });
+
+    test('asks for the attendance under the student', () async {
+      Uri? seen;
+      final repo = repoReturning(body, onRequest: (r) => seen = r.url);
+
+      await repo.fetchAttendance(_number);
+
+      expect(seen.toString(), '$_base/students/019-464/attendance');
+    });
+
+    test('parses the summary, subjects and days', () async {
+      final history = (await repoReturning(body).fetchAttendance(_number))!;
+
+      expect(history.fullName, 'Charles Nixon Cayading');
+      expect(history.photoUrl, 'https://example.test/p/1.jpg');
+      expect(history.total, 3);
+      expect(history.lastAttended, DateTime(2026, 8, 24));
+      expect(history.subjects, hasLength(2));
+
+      final oop = history.subjects[1];
+      expect(oop.count, 2);
+      expect(oop.days.first.date, DateTime(2026, 8, 24));
+      expect(oop.days.first.timeIn, '10:07:17 AM');
+      expect(oop.days.first.late, isTrue);
+      expect(oop.days.last.late, isFalse);
+    });
+
+    test('a record with no scans is empty, not missing', () async {
+      final repo = repoReturning(
+        ok({
+          'student': {..._student, 'photo_url': null},
+          'summary': {'total': 0, 'subjects': 0, 'last_attended': null},
+          'subjects': [],
+        }),
+      );
+
+      final history = (await repo.fetchAttendance(_number))!;
+
+      expect(history.isEmpty, isTrue);
+      expect(history.photoUrl, isNull);
+      expect(history.lastAttended, isNull);
+    });
+
+    test('student_not_found returns null', () async {
+      final repo = repoReturning(fail('student_not_found'), status: 404);
+      expect(await repo.fetchAttendance(_number), isNull);
+    });
+
+    test('a locked tracker raises with its code', () async {
+      final repo = repoReturning(
+        fail('tracker_locked', 'The attendance tracker is closed.'),
+        status: 503,
+      );
+
+      expect(
+        () => repo.fetchAttendance(_number),
+        throwsA(
+          isA<StudentLookupException>()
+              .having((e) => e.code, 'code', 'tracker_locked')
+              .having(
+                (e) => e.message,
+                'message',
+                'The attendance tracker is closed.',
+              ),
+        ),
+      );
+    });
+  });
 }
 
 /// Stands in for a transport-level failure (DNS, TLS, refused connection).

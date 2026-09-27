@@ -1,5 +1,5 @@
 /* ============================================================
-   DOWNLOAD PAGE — where students get the Android app.
+   DOWNLOAD PAGE — where students and instructors get the Android app.
 
    Same design language as the admin pages (see
    assets/css/students-page.css): the sky/cyan accent, surfaces and
@@ -436,8 +436,9 @@ body.dl-page {
     transform: translateZ(70px);
 }
 
-/* Far enough left that its seal and wordmark clear the front phone —
-   otherwise it reads as a blank dark slab. */
+/* The instructor's scanner. Far enough left that its viewfinder and
+   scan result clear the front phone — otherwise it reads as a blank
+   dark slab. */
 .dl-phone.is-back {
     left: -26%;
     top: 14%;
@@ -593,9 +594,9 @@ body.dl-page {
     color: var(--ink-3);
 }
 
-/* ─── Cards (steps and features) ──────────────────────────── */
+/* ─── Cards (steps and the two sides) ─────────────────────── */
 .dl-steps,
-.dl-features {
+.dl-sides {
     display: grid;
     gap: 1rem;
     margin: 0;
@@ -608,14 +609,8 @@ body.dl-page {
         grid-template-columns: repeat(3, 1fr);
     }
 
-    .dl-features {
+    .dl-sides {
         grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (min-width: 1000px) {
-    .dl-features {
-        grid-template-columns: repeat(4, 1fr);
     }
 }
 
@@ -686,6 +681,70 @@ body.dl-page {
     font-weight: 800;
     line-height: 1;
     color: rgba(var(--tint), .06);
+}
+
+/* ─── The two sides (students / instructors) ──────────────── */
+.dl-side {
+    padding: 1.4rem 1.35rem 1.3rem;
+}
+
+.dl-side-head {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--dl-border);
+}
+
+.dl-side-head .dl-card-icon {
+    flex-shrink: 0;
+    margin-bottom: 0;
+}
+
+.dl-side-head h3 {
+    margin: .1rem 0 0;
+    font-size: 1.15rem;
+}
+
+/* The same voice as .dl-kicker, a size down. */
+.dl-side-for {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--dl-ink);
+}
+
+.dl-side-list {
+    display: grid;
+    gap: .8rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dl-side-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    font-size: .9rem;
+    line-height: 1.6;
+    color: var(--ink-3);
+}
+
+/* Lined up with the first line of text, not the middle of the item. */
+.dl-side-list i {
+    flex-shrink: 0;
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin-top: -.1rem;
+    border-radius: 8px;
+    font-size: .9rem;
+    color: var(--dl-ink);
+    background: var(--dl-soft);
 }
 
 /* ─── FAQ ─────────────────────────────────────────────────── */

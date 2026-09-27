@@ -1,9 +1,11 @@
 <?php require_once __DIR__ . '/../includes/asset.php';
 
 /* ============================================================
- * download/ — where students get the Android app.
+ * download/ — where students and instructors get the Android app.
  *
- * Public, like the QR generator: students do not log in.
+ * Public, like the QR generator: students do not log in. The app
+ * holds both halves — the students' QR generator and attendance
+ * tracker, and the instructors' scanner — so the page speaks to both.
  *
  * The APK itself is NOT in git. It is a 50 MB build artifact, and
  * a new one per release would bloat every clone forever. It is
@@ -45,7 +47,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Get the app · <?= htmlspecialchars($acronym) ?></title>
-    <meta name="description" content="Download the <?= htmlspecialchars($acronym) ?> Android app and keep your attendance QR on your phone.">
+    <meta name="description" content="Download the <?= htmlspecialchars($acronym) ?> Android app: students keep their attendance QR on their phone and check their attendance, instructors scan it.">
     <link rel="icon" href="<?= htmlspecialchars($logo) ?>">
 
     <script>document.documentElement.classList.add('dl-js');</script>
@@ -83,13 +85,14 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
         <!-- ══ HERO ══════════════════════════════════════════════ -->
         <section class="dl-hero">
             <div class="dl-hero-copy">
-                <span class="dl-chip"><i class="bi bi-android2" aria-hidden="true"></i> Android app</span>
+                <span class="dl-chip"><i class="bi bi-android2" aria-hidden="true"></i> Android app · Students &amp; Instructors</span>
 
-                <h1>Your attendance QR, <span class="dl-grad">in your pocket.</span></h1>
+                <h1>Your QR and the scanner, <span class="dl-grad">in one app.</span></h1>
 
                 <p class="dl-lead">
-                    Look up your record, accept the terms once, and save the same
-                    QR code the classroom scanner reads — right on your phone.
+                    Students save the same QR code the classroom scanner reads
+                    and check their attendance. Instructors sign in and scan it — into the same Attendance
+                    List as the web system.
                 </p>
 
                 <div class="dl-cta">
@@ -137,10 +140,12 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                 <div class="dl-scene" id="scene">
                     <div class="dl-ring"></div>
 
+                    <!-- Behind: the instructor's scanner, having just read the
+                         student's code in front. Same student on both. -->
                     <div class="dl-phone is-back">
                         <div class="dl-phone-body"></div>
                         <div class="dl-phone-screen">
-                            <img src="<?= asset('assets/screen-splash.webp') ?>" alt="" width="390" height="844" loading="lazy">
+                            <img src="<?= asset('assets/screen-scanner.webp') ?>" alt="" width="390" height="844" loading="lazy">
                         </div>
                     </div>
 
@@ -159,6 +164,52 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                         <div class="dl-coin-face"><img src="<?= htmlspecialchars($logo) ?>" alt=""></div>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- ══ TWO SIDES ═════════════════════════════════════════ -->
+        <!-- The app's first screen splits the same way: My QR Code for
+             students, Attendance Scanner for instructors. -->
+        <section class="dl-section" id="inside">
+            <div class="dl-section-head">
+                <span class="dl-kicker">Inside the app</span>
+                <h2>One app, two sides</h2>
+                <p>The first screen splits in two: students open their QR code or their attendance, instructors open the scanner.</p>
+            </div>
+
+            <div class="dl-sides">
+                <article class="dl-card dl-side dl-reveal">
+                    <div class="dl-side-head">
+                        <i class="bi bi-qr-code dl-card-icon" aria-hidden="true"></i>
+                        <div>
+                            <span class="dl-side-for">For students</span>
+                            <h3>My QR Code &amp; My Attendance</h3>
+                        </div>
+                    </div>
+                    <ul class="dl-side-list">
+                        <li><i class="bi bi-intersect" aria-hidden="true"></i><span><strong>The same code as the web page</strong> — built by the same rules on the same server, so the scanner reads both alike.</span></li>
+                        <li><i class="bi bi-image" aria-hidden="true"></i><span><strong>Saved to your phone.</strong> Keep it as an image or share it; it shows at the door even without signal.</span></li>
+                        <li><i class="bi bi-person-bounding-box" aria-hidden="true"></i><span><strong>Photo reminder.</strong> If your photo is missing you are told right away, with a button to upload it — not by the scanner in class.</span></li>
+                        <li><i class="bi bi-calendar2-check" aria-hidden="true"></i><span><strong>Your attendance, per subject.</strong> Tap My Attendance to see every day you were marked present, with the time and any late mark.</span></li>
+                        <li><i class="bi bi-patch-check" aria-hidden="true"></i><span><strong>Verified records only.</strong> Only student numbers on the enrolment list get a code.</span></li>
+                    </ul>
+                </article>
+
+                <article class="dl-card dl-side dl-reveal">
+                    <div class="dl-side-head">
+                        <i class="bi bi-qr-code-scan dl-card-icon" aria-hidden="true"></i>
+                        <div>
+                            <span class="dl-side-for">For instructors</span>
+                            <h3>Attendance Scanner</h3>
+                        </div>
+                    </div>
+                    <ul class="dl-side-list">
+                        <li><i class="bi bi-person-lock" aria-hidden="true"></i><span><strong>Your web system account.</strong> Sign in once with the same email and password; the phone keeps you signed in until you sign out.</span></li>
+                        <li><i class="bi bi-camera" aria-hidden="true"></i><span><strong>Pick a subject, then scan.</strong> Each scan shows the student’s photo, beeps, vibrates and reads the name aloud.</span></li>
+                        <li><i class="bi bi-alarm" aria-hidden="true"></i><span><strong>Late marking and a flashlight</strong> are a tap away — for a class that has started, or a dim room.</span></li>
+                        <li><i class="bi bi-list-check" aria-hidden="true"></i><span><strong>The same Attendance List.</strong> The app follows the web scanner’s rules, and both fill the same records.</span></li>
+                    </ul>
+                </article>
             </div>
         </section>
 
@@ -185,42 +236,11 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                 </li>
                 <li class="dl-card dl-reveal">
                     <span class="dl-step-no">3</span>
-                    <i class="bi bi-qr-code dl-card-icon" aria-hidden="true"></i>
-                    <h3>Get your QR</h3>
-                    <p>Open <strong><?= htmlspecialchars($acronym) ?></strong>, type your student number, accept the terms, and tap <strong>Generate</strong>. Save it — done.</p>
+                    <i class="bi bi-box-arrow-in-right dl-card-icon" aria-hidden="true"></i>
+                    <h3>Open your side</h3>
+                    <p>Open <strong><?= htmlspecialchars($acronym) ?></strong>. Students: tap <strong>My QR Code</strong>, type your student number, accept the terms, and save your QR &mdash; or tap <strong>My Attendance</strong> to see your days present. Instructors: tap <strong>Attendance Scanner</strong> and sign in.</p>
                 </li>
             </ol>
-        </section>
-
-        <!-- ══ WHY ═══════════════════════════════════════════════ -->
-        <section class="dl-section">
-            <div class="dl-section-head">
-                <span class="dl-kicker">Why the app</span>
-                <h2>The same code, closer at hand</h2>
-            </div>
-
-            <div class="dl-features">
-                <article class="dl-card dl-reveal">
-                    <i class="bi bi-intersect dl-card-icon" aria-hidden="true"></i>
-                    <h3>Identical to the web</h3>
-                    <p>Built from the same rules on the same server, so the scanner reads it exactly like the one from the web page.</p>
-                </article>
-                <article class="dl-card dl-reveal">
-                    <i class="bi bi-image dl-card-icon" aria-hidden="true"></i>
-                    <h3>Saved to your phone</h3>
-                    <p>Keep the card as an image or share it. A saved code shows at the door even without signal.</p>
-                </article>
-                <article class="dl-card dl-reveal">
-                    <i class="bi bi-person-bounding-box dl-card-icon" aria-hidden="true"></i>
-                    <h3>Photo reminder</h3>
-                    <p>If your photo is missing, the app tells you right away — with a button to upload it — instead of the scanner telling you in class.</p>
-                </article>
-                <article class="dl-card dl-reveal">
-                    <i class="bi bi-patch-check dl-card-icon" aria-hidden="true"></i>
-                    <h3>Verified records only</h3>
-                    <p>Only student numbers on the enrolment list get a code, so nobody can make one for a name that is not theirs.</p>
-                </article>
-            </div>
         </section>
 
         <!-- ══ FAQ ═══════════════════════════════════════════════ -->
@@ -245,21 +265,24 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                     <p>
                         Yes. Open the app, choose <strong>Attendance Scanner</strong>, and sign in with the
                         same email and password you use on the web system. It records attendance by the
-                        same rules as the web scanner, into the same Attendance List.
+                        same rules as the web scanner, into the same Attendance List. Lost your phone?
+                        Change your password in <strong>My Profile</strong> and every phone is signed out.
                     </p>
                 </details>
                 <details class="dl-reveal">
                     <summary>I have an iPhone.</summary>
                     <p>
                         The app is Android only for now. The <a href="../QRgenerator/QRcode.php">web generator</a>
-                        makes the very same QR code — open it in Safari and save the image.
+                        makes the very same QR code — open it in Safari and save the image. Instructors can
+                        sign in to the web system in Safari and use the <a href="../Qrscanner/qrscanner.php">web scanner</a>.
                     </p>
                 </details>
                 <details class="dl-reveal">
                     <summary>Do I need internet?</summary>
                     <p>
                         To look up your record and generate the code, yes. Once it is saved, the image
-                        works anywhere — you do not need signal to show it.
+                        works anywhere — you do not need signal to show it. My Attendance and the scanner
+                        need internet too: they read and save the records on the server.
                     </p>
                 </details>
                 <details class="dl-reveal">

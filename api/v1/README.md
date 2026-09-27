@@ -206,6 +206,36 @@ Errors: `generator_locked` (503), `invalid_student_no` (400),
 `student_not_found` (404), `terms_not_accepted` (409 — call
 `POST /terms/accept` first, then retry).
 
+### `GET /students/{student_no}/attendance`
+
+The Attendance Tracker (`Tracker/view.php`) as data: how many times the
+student was marked present, in which subjects, and when. Public like the web
+tracker — no sign-in — and closed by the same Settings lock. The lookup and
+the grouping live in `includes/attendance_history.php`, which the web tracker
+reads too, so the two cannot count differently.
+
+```json
+{ "success": true, "data": {
+  "student": { "student_no": "025-627", "fullname": "ESTABILLO, ARJEAN KYLLE M.",
+               "course": "BSIT", "section": "2G", "photo_url": "https://…/uploads/photos/student_15969.jpg" },
+  "summary": { "total": 3, "subjects": 2, "last_attended": "2026-08-24" },
+  "subjects": [
+    { "subject": "Object Oriented Programming", "instructor": "Charles Nixon Cayading", "count": 2,
+      "records": [ { "date": "2026-08-24", "time_in": "10:07:17 AM", "late": false },
+                   { "date": "2026-08-17", "time_in": "11:59:50 AM", "late": false } ] }
+  ]
+} }
+```
+
+Subjects come in name order, each one's dates newest first. A student with no
+scans yet is still a `200`, with `total: 0` and an empty `subjects` — the
+record exists, it just has nothing in it. `photo_url` is `null` without a
+photo; show initials.
+
+Errors: `tracker_locked` (503), `invalid_student_no` (400),
+`student_not_found` (404), `tracker_failed` (500 — offer a retry). Rate
+limited like the lookup: 20 a minute per IP.
+
 ---
 
 ## Scanner endpoints (signed in)
@@ -287,6 +317,8 @@ request. Its refusals keep the web scanner's codes:
 | 429 | `rate_limited` | Wait `details.retry_after` seconds. |
 | 500 | `accept_failed` | Offer a retry. |
 | 503 | `generator_locked` | Show the closed sign from `config.generator.message`. |
+| 503 | `tracker_locked` | The same lock, reached from the tracker. |
+| 500 | `tracker_failed` | Offer a retry. |
 | 503 | `service_unavailable` | Server or database is down — offer a retry. |
 | 401 | `unauthenticated` | Scanner token missing, expired or revoked — sign in again. |
 | 401 | `invalid_credentials` | Wrong email or password. |
@@ -366,6 +398,7 @@ Which file does what in the app:
 | `handlers/students.php` | `/students/{no}`, `/students/{no}/qr` |
 | `handlers/terms.php` | `POST /terms/accept` |
 | `handlers/scanner.php` | `/auth/*`, `/scanner/*` |
+| `handlers/tracker.php` | `/students/{no}/attendance` |
 | `lib/auth.php` | The scanner's token check and permissions |
 
 ## If you change the web page, change these
@@ -379,6 +412,7 @@ The API deliberately reads the same sources rather than copying them:
 | Terms text and version | `includes/terms.php` | `handle_terms()`, `gen_terms_state()` |
 | Photo requirement | `includes/photo_requirement.php` | `gen_photo_state()` |
 | QR colors and size | `QRgenerator/js/scriptv2.js` | `gen_qr_spec()` — **the one copy**; keep them in step |
+| Attendance history | `includes/attendance_history.php` | `handle_student_attendance()` and `Tracker/crud/att_display.php` |
 
 One known inconsistency, inherited from the web app: `fetch_students.js`
 validates `\d{3}-\d{3,4}` while `scriptv2.js` validates `\d{3}-\d{1,5}`. The API

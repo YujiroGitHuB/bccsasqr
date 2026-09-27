@@ -1,80 +1,35 @@
 <?php
-require_once __DIR__ . '/../../includes/late.php';
+require_once __DIR__ . '/../../includes/attendance_history.php';
 
 $attendance_records = [];
 $student_info = null;
 $total_attendance = 0;
 $search_performed = false;
 $status = '';
-$subjects_summary = []; // NEW: For grouping by subject
+$subjects_summary = [];
+$latest_date = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
     $student_no = trim($_POST['student_no']);
 
     try {
-        // STEP 1: Check if student exists
-        //
-        // LEFT JOIN, not INNER: the photo is optional here. A student
-        // with no row in student_photos still has an attendance record
-        // to look at, and the identity card falls back to initials.
-        // Same join the dashboard, the scanner and the generator use.
-        $check_student = $conn->prepare("
-            SELECT s.student_no, s.fullname, s.course, s.section,
-                   p.photo_path
-            FROM students_tbl s
-            LEFT JOIN student_photos p ON p.s_id = s.id
-            WHERE s.student_no = ?
-        ");
-        $check_student->bind_param("s", $student_no);
-        $check_student->execute();
-        $student_result = $check_student->get_result();
+        // The lookup, the grouping by subject and the late marks live in
+        // includes/attendance_history.php, which the app's
+        // GET /api/v1/students/{no}/attendance reads too — so the phone
+        // and this page cannot count differently.
+        $history = attendance_history($conn, $student_no);
 
-        if ($student_result->num_rows > 0) {
-            $student_info = $student_result->fetch_assoc();
-
-            // STEP 2: Get attendance records WITH subject grouping
-            // A student looking up their own record should see a late
-            // mark before the instructor mentions it, not after.
-            $lateCol = late_ready($conn) ? 'is_late' : '0 AS is_late';
-            $stmt = $conn->prepare("
-                SELECT id, date, student_no, name, course, section, 
-                       subject, instructor, time_in, $lateCol
-                FROM attendance_tbl 
-                WHERE student_no = ? 
-                ORDER BY subject, date DESC
-            ");
-            $stmt->bind_param("s", $student_no);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $attendance_records = $result->fetch_all(MYSQLI_ASSOC);
-            $total_attendance = count($attendance_records);
-
-            // NEW: Group attendance by subject
-            foreach ($attendance_records as $record) {
-                $subject = $record['subject'] ?? 'No Subject';
-                if (!isset($subjects_summary[$subject])) {
-                    $subjects_summary[$subject] = [
-                        'count' => 0,
-                        'instructor' => $record['instructor'] ?? 'N/A',
-                        'records' => []
-                    ];
-                }
-                $subjects_summary[$subject]['count']++;
-                $subjects_summary[$subject]['records'][] = $record;
-            }
-
-            if ($total_attendance > 0) {
-                $status = 'success';
-            } else {
-                $status = 'no-attendance';
-            }
-
-            $stmt->close();
+        if ($history) {
+            $student_info       = $history['student'];
+            $attendance_records = $history['records'];
+            $subjects_summary   = $history['subjects'];
+            $total_attendance   = $history['total'];
+            $latest_date        = $history['last_attended'];
+            $status = $total_attendance > 0 ? 'success' : 'no-attendance';
         } else {
             $status = 'not-found';
         }
 
-        $check_student->close();
         $search_performed = true;
     } catch (Exception $e) {
         error_log(
@@ -132,16 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
             return $html . $letters . '</div>';
         };
 
-        // Last attendance. The query sorts by subject before date, so
-        // the first row is not the most recent overall — the maximum
-        // has to be found.
-        $latest_date = null;
-        foreach ($attendance_records as $record) {
-            $ts = strtotime((string) $record['date']);
-            if ($ts && (!$latest_date || $ts > $latest_date)) {
-                $latest_date = $ts;
-            }
-        }
 ?>
         <div class="results-container" data-status="<?= $status ?>">
             <?php if ($status === 'success'): ?>

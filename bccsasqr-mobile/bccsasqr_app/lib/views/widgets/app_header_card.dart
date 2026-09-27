@@ -5,12 +5,33 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import 'surface_panel.dart';
 
-/// Branded header: app mark, title, tagline and the two reassurance chips.
+/// One reassurance chip in the header.
+typedef HeaderChip = ({IconData icon, String label});
+
+/// Branded header: app mark, title, tagline and the reassurance chips. The
+/// generator's words unless a page brings its own — the tracker does.
 class AppHeaderCard extends StatelessWidget {
-  const AppHeaderCard({super.key});
+  const AppHeaderCard({
+    super.key,
+    this.title = AppStrings.appTitle,
+    this.tagline = AppStrings.appTagline,
+    this.chips = generatorChips,
+  });
+
+  final String title;
+  final String tagline;
+  final List<HeaderChip> chips;
+
+  static const List<HeaderChip> generatorChips = [
+    (icon: Icons.verified_user_outlined, label: AppStrings.chipVerified),
+    (icon: Icons.download_outlined, label: AppStrings.chipFreeDownload),
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final identity = _Identity(title: title, tagline: tagline);
+    final chipRow = _HeaderChips(chips: chips);
+
     return SurfacePanel(
       topAccent: true,
       padding: const EdgeInsets.all(18),
@@ -20,18 +41,18 @@ class AppHeaderCard extends StatelessWidget {
           final stacked = constraints.maxWidth < 560;
 
           if (stacked) {
-            return const Column(
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [_Identity(), SizedBox(height: 16), _HeaderChips()],
+              children: [identity, const SizedBox(height: 16), chipRow],
             );
           }
 
-          return const Row(
+          return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _Identity()),
-              SizedBox(width: 16),
-              _HeaderChips(),
+              Expanded(child: identity),
+              const SizedBox(width: 16),
+              chipRow,
             ],
           );
         },
@@ -42,23 +63,31 @@ class AppHeaderCard extends StatelessWidget {
 
 /// App mark plus the title block, kept together so both layouts reuse it.
 class _Identity extends StatelessWidget {
-  const _Identity();
+  const _Identity({required this.title, required this.tagline});
+
+  final String title;
+  final String tagline;
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BrandMark(),
-        SizedBox(width: 14),
-        Expanded(child: _TitleBlock()),
+        const BrandMark(),
+        const SizedBox(width: 14),
+        Expanded(
+          child: _TitleBlock(title: title, tagline: tagline),
+        ),
       ],
     );
   }
 }
 
 class _TitleBlock extends StatelessWidget {
-  const _TitleBlock();
+  const _TitleBlock({required this.title, required this.tagline});
+
+  final String title;
+  final String tagline;
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +95,7 @@ class _TitleBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppStrings.appTitle,
+          title,
           style: TextStyle(
             fontSize: 19,
             fontWeight: FontWeight.w700,
@@ -76,7 +105,7 @@ class _TitleBlock extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          AppStrings.appTagline,
+          tagline,
           style: TextStyle(
             fontSize: 13,
             color: context.colors.textSecondary,
@@ -127,22 +156,18 @@ class BrandMark extends StatelessWidget {
 }
 
 class _HeaderChips extends StatelessWidget {
-  const _HeaderChips();
+  const _HeaderChips({required this.chips});
+
+  final List<HeaderChip> chips;
 
   @override
   Widget build(BuildContext context) {
-    return const Wrap(
+    return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
-        _HeaderChip(
-          icon: Icons.verified_user_outlined,
-          label: AppStrings.chipVerified,
-        ),
-        _HeaderChip(
-          icon: Icons.download_outlined,
-          label: AppStrings.chipFreeDownload,
-        ),
+        for (final chip in chips)
+          _HeaderChip(icon: chip.icon, label: chip.label),
       ],
     );
   }

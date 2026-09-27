@@ -4,10 +4,12 @@ import 'package:http/http.dart' as http;
 
 import '../core/config/app_config.dart';
 import '../core/utils/student_number.dart';
+import '../models/attendance_history.dart';
 import '../models/qr_payload.dart';
 import '../models/student_record.dart';
 import '../models/terms_document.dart';
 import 'student_repository.dart';
+import 'tracker_repository.dart';
 
 /// Talks to `/api/v1`, the REST API that sits on the same rules as the web
 /// generator page.
@@ -24,7 +26,10 @@ import 'student_repository.dart';
 /// [StudentRepository]. Everything else raises a [StudentLookupException]
 /// carrying the server's `code`, so the controller can act on
 /// `terms_not_accepted` instead of merely showing it.
-class HttpStudentRepository implements StudentRepository {
+///
+/// It serves the Attendance Tracker too ([TrackerRepository]): the same
+/// public, student-number-keyed half of the API, over the same connection.
+class HttpStudentRepository implements StudentRepository, TrackerRepository {
   HttpStudentRepository({
     http.Client? client,
     String? baseUrl,
@@ -127,6 +132,25 @@ class HttpStudentRepository implements StudentRepository {
   @override
   Future<void> acceptTerms(StudentNumber number) async {
     await _post(_endpoint('terms/accept'), {'student_no': number.value});
+  }
+
+  @override
+  Future<AttendanceHistory?> fetchAttendance(StudentNumber number) async {
+    final Map<String, dynamic> data;
+    try {
+      data = await _get(Uri.parse('${_studentUri(number)}/attendance'));
+    } on StudentLookupException catch (e) {
+      if (e.code == 'student_not_found') return null;
+      rethrow;
+    }
+
+    try {
+      return AttendanceHistory.fromJson(data);
+    } on FormatException catch (e) {
+      throw StudentLookupException(
+        'Malformed attendance from the server. ($e)',
+      );
+    }
   }
 
   // ------------------------------------------------------------- transport

@@ -8,8 +8,9 @@ import 'widgets/app_footer.dart';
 import 'widgets/app_header_card.dart';
 import 'widgets/surface_panel.dart';
 
-/// The opening screen: one app, two people. Students open the generator;
-/// instructors open the scanner, which asks them to sign in.
+/// The opening screen: one app, two people. Students open the generator or
+/// the attendance tracker; instructors open the scanner, which asks them to
+/// sign in.
 ///
 /// The destinations are built by the caller, so this screen knows nothing
 /// about repositories or services.
@@ -17,11 +18,13 @@ class HomePage extends StatelessWidget {
   const HomePage({
     super.key,
     required this.generatorBuilder,
+    required this.trackerBuilder,
     required this.scannerBuilder,
     this.settingsBuilder,
   });
 
   final WidgetBuilder generatorBuilder;
+  final WidgetBuilder trackerBuilder;
   final WidgetBuilder scannerBuilder;
 
   /// The gear in the corner. Students get the theme and the voice switch
@@ -115,6 +118,14 @@ class HomePage extends StatelessWidget {
                 title: AppStrings.homeStudentTitle,
                 body: AppStrings.homeStudentBody,
                 onTap: () => _open(context, generatorBuilder),
+              ),
+              const SizedBox(height: 12),
+              _Destination(
+                key: const ValueKey('home.tracker'),
+                icon: Icons.event_available_rounded,
+                title: AppStrings.homeTrackerTitle,
+                body: AppStrings.homeTrackerBody,
+                onTap: () => _open(context, trackerBuilder),
               ),
               const SizedBox(height: 28),
               const PanelHeading(

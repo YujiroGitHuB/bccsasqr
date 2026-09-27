@@ -16,6 +16,7 @@ import 'services/settings_store.dart';
 import 'services/speech_service.dart';
 import 'services/student_repository.dart';
 import 'services/token_store.dart';
+import 'services/tracker_repository.dart';
 import 'views/generator_splash.dart';
 import 'views/home_page.dart';
 import 'views/qr_generator_page.dart';
@@ -23,6 +24,7 @@ import 'views/scanner/scanner_flow.dart';
 import 'views/scanner/scanner_page.dart';
 import 'views/settings_page.dart';
 import 'views/splash_page.dart';
+import 'views/tracker_page.dart';
 import 'views/widgets/fade_scale_switcher.dart';
 
 /// Root widget. Composes the dependency graph in one place so the views take
@@ -31,6 +33,7 @@ class BccSasqrApp extends StatefulWidget {
   const BccSasqrApp({
     super.key,
     this.repository,
+    this.trackerRepository,
     this.exportService,
     this.speech,
     this.scannerRepository,
@@ -44,6 +47,7 @@ class BccSasqrApp extends StatefulWidget {
 
   /// Overridable for tests.
   final StudentRepository? repository;
+  final TrackerRepository? trackerRepository;
   final QrExportService? exportService;
   final SpeechService? speech;
   final ScannerRepository? scannerRepository;
@@ -72,6 +76,16 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       (AppConfig.hasRemoteApi
           ? HttpStudentRepository()
           : InMemoryStudentRepository());
+
+  /// The tracker reads the same public half of the API as the generator, so
+  /// the HTTP repository serves both. Demo mode has its own sample history.
+  late final TrackerRepository _tracker =
+      widget.trackerRepository ??
+      switch (_repository) {
+        final TrackerRepository both => both,
+        _ => InMemoryTrackerRepository(),
+      };
+
   late final QrExportService _exportService =
       widget.exportService ?? const ImageQrExportService();
 
@@ -130,6 +144,9 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     ),
   );
 
+  Widget _trackerPage(BuildContext context) =>
+      TrackerPage(repository: _tracker, speech: _speech);
+
   Widget _settingsPage(BuildContext context) =>
       SettingsPage(controller: _settings, appInfo: widget.appInfo);
 
@@ -184,6 +201,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
               : HomePage(
                   key: const ValueKey('home'),
                   generatorBuilder: _generator,
+                  trackerBuilder: _trackerPage,
                   scannerBuilder: _scanner,
                   settingsBuilder: _settingsPage,
                 ),

@@ -6,6 +6,10 @@ One Android app, two people, chosen on the opening screen:
   their student number, the app matches it against the verified enrolment
   list, and — once the terms are accepted — renders a QR code the attendance
   scanner reads.
+- **My Attendance** — the web Attendance Tracker (`Tracker/view.php`). A
+  student types their student number and sees how many times they were
+  marked present, per subject, with every date and any late mark. The server
+  reads the same rules as the web page (`includes/attendance_history.php`).
 - **Attendance Scanner** — the web scanner (`Qrscanner/qrscanner.php`) for a
   phone. An instructor signs in with their web account, picks a subject and
   scans; the server applies the web scanner's own rules
@@ -25,11 +29,13 @@ lib/
 │   ├── student_record.dart      a verified enrolment record
 │   ├── terms_document.dart      the terms text as the server authored them
 │   ├── qr_payload.dart          holds the string the SERVER issued for the QR
+│   ├── attendance_history.dart  the tracker: subjects, days, late marks
 │   └── scanner_models.dart      signed-in user, subjects, scans
 │
 ├── services/                    I/O boundaries, behind interfaces
 │   ├── student_repository.dart  the contract + InMemoryStudentRepository
-│   ├── http_student_repository.dart   the /api/v1 client
+│   ├── http_student_repository.dart   the /api/v1 client (generator + tracker)
+│   ├── tracker_repository.dart  the tracker's contract + its demo version
 │   ├── qr_export_service.dart   QrExportService  + ImageQrExportService
 │   ├── scanner_repository.dart  the scanner's contract + its demo version
 │   ├── http_scanner_repository.dart   /api/v1/auth and /scanner
@@ -39,11 +45,13 @@ lib/
 │
 ├── controllers/                 all mutable state and every decision
 │   ├── qr_generator_controller.dart
+│   ├── tracker_controller.dart  port of Tracker/js/script.js
 │   └── scanner_controller.dart  port of Qrscanner/js/scriptV3.js
 │
 ├── views/                       layout only — no business rules
-│   ├── home_page.dart           the opening screen: generator or scanner
+│   ├── home_page.dart           the opening screen: generator, tracker or scanner
 │   ├── qr_generator_page.dart   the generator; owns its controller
+│   ├── tracker_page.dart        the attendance tracker; owns its controller
 │   ├── scanner/                 sign-in, scanner page, camera
 │   └── widgets/                 composable, single-purpose pieces
 │

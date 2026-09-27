@@ -35,6 +35,7 @@ require_once __DIR__ . '/handlers/system.php';
 require_once __DIR__ . '/handlers/students.php';
 require_once __DIR__ . '/handlers/terms.php';
 require_once __DIR__ . '/handlers/scanner.php';
+require_once __DIR__ . '/handlers/tracker.php';
 
 $path   = api_path();
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -48,6 +49,7 @@ $routes = [
     ['GET',  '#^terms$#',                  fn() => handle_terms()],
     ['POST', '#^terms/accept$#',           fn() => handle_terms_accept($GLOBALS['conn'])],
     ['GET',  '#^students/([^/]+)/qr$#',    fn($m) => handle_student_qr($GLOBALS['conn'], $m[1])],
+    ['GET',  '#^students/([^/]+)/attendance$#', fn($m) => handle_student_attendance($GLOBALS['conn'], $m[1])],
     ['GET',  '#^students/([^/]+)$#',       fn($m) => handle_student($GLOBALS['conn'], $m[1])],
 
     // The scanner — signed in, see handlers/scanner.php.

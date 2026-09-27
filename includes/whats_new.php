@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.7';
+const WHATS_NEW_VERSION = '2026-09-27.9';
 
 /**
  * The changelog, newest release first.
@@ -74,8 +74,8 @@ function whats_new_releases(): array
             'id'      => '2026-09-27',
             'date'    => '2026-09-27',
             'icon'    => 'bi-qr-code-scan',
-            'title'   => 'Scan attendance with the Android app, and accounts only from the admin',
-            'summary' => 'The BCC SASQR app now has the QR scanner in it. Sign in with the same email and password you use here, pick a subject, and scan — no browser needed. It follows the web scanner’s rules to the letter, and both fill the same Attendance List. Two gaps are closed as well: nobody can make their own account any more, and a class list only opens for the instructor whose subject it is.',
+            'title'   => 'The Android app scans and tracks attendance, and accounts only from the admin',
+            'summary' => 'The BCC SASQR app now has the QR scanner in it. Sign in with the same email and password you use here, pick a subject, and scan — no browser needed. It follows the web scanner’s rules to the letter, and both fill the same Attendance List. Students get the Attendance Tracker in the app too, so the QR generator, the tracker and the scanner are all in one place. Two gaps are closed as well: nobody can make their own account any more, and a class list only opens for the instructor whose subject it is.',
             'items'   => [
                 [
                     'type'  => 'new',
@@ -83,6 +83,13 @@ function whats_new_releases(): array
                     'title' => 'The scanner, in the app',
                     'text'  => 'Open the app and choose <strong>Attendance Scanner</strong>. Sign in once with your usual email and password &mdash; the phone keeps you signed in until you tap <strong>Sign out</strong>. From there it works like the web scanner: pick a subject and the camera starts, flip <strong>Late marking</strong> once class has begun, and each scan shows the student&rsquo;s photo, beeps, vibrates and reads the name aloud. Everything the web scanner refuses, the app refuses with the same message: <em>already marked</em>, <em>not enrolled</em>, <em>no photo on file</em>. The screen stays on while the camera is running, so it does not lock halfway through the line. Scans from the app and from the browser land in the same <strong>Attendance List</strong>. Anyone with the app already installed gets the scanner by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-calendar2-check',
+                    'title' => 'The Attendance Tracker, in the app',
+                    'text'  => 'Students can now check their own attendance from the app: open it, tap <strong>My Attendance</strong>, and type the student number. It shows the same thing as the web <strong>Attendance Tracker</strong> &mdash; how many days they were marked present, in how many subjects, the last day they attended, and every subject with its dates, times and any <strong>Late</strong> mark. Both read the same records, so the phone and the browser always agree, and closing the QR pages in Settings closes it in the app too. When a student asks whether they were marked, point them here. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/#inside', 'label' => 'Open the download page'],
                 ],
                 [
                     'type'  => 'new',
@@ -138,6 +145,13 @@ function whats_new_releases(): array
                     'title' => 'The app’s QR generator opens with its own animation',
                     'text'  => 'When a student taps <strong>My QR Code</strong> in the app, a short opening screen plays first: a QR code builds itself dot by dot, a light passes over it, and the three steps appear underneath &mdash; <strong>Student no.</strong>, <strong>Verify</strong>, <strong>Save QR</strong> &mdash; so they know what comes next before the form opens. It lasts under two seconds and follows the phone&rsquo;s Light or Dark setting. Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-layout-split',
+                    'title' => 'The download page speaks to instructors too',
+                    'text'  => 'The download page used to talk only to students. It now shows <strong>both sides of the app</strong> in two cards &mdash; <strong>My QR Code</strong> and <strong>My Attendance</strong> for students, <strong>Attendance Scanner</strong> for instructors &mdash; each with what it does. The install steps tell each side which button to tap, and the picture at the top shows the scanner beside the student&rsquo;s QR. One link now works for your class and for your fellow instructors.',
+                    'link'  => ['href' => 'download/#inside', 'label' => 'Open the download page'],
                 ],
             ],
         ],

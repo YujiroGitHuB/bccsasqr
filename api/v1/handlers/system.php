@@ -22,6 +22,7 @@ function handle_index(): void
             'POST ' . $base . '/terms/accept',
             'GET  ' . $base . '/students/{student_no}',
             'GET  ' . $base . '/students/{student_no}/qr',
+            'GET  ' . $base . '/students/{student_no}/attendance',
             'POST ' . $base . '/auth/login',
             'POST ' . $base . '/auth/logout',
             'GET  ' . $base . '/auth/me',

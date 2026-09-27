@@ -22,6 +22,9 @@ abstract final class AppStrings {
   static const String homeStudentTitle = 'My QR Code';
   static const String homeStudentBody =
       'Look up your record and save the QR code you show at attendance.';
+  static const String homeTrackerTitle = 'My Attendance';
+  static const String homeTrackerBody =
+      'See how many times you were marked present in each subject.';
   static const String homeInstructorSection = 'FOR INSTRUCTORS';
   static const String homeScannerTitle = 'Attendance Scanner';
   static const String homeScannerBody =
@@ -238,6 +241,54 @@ abstract final class ScannerStrings {
   static const String settingsTileBody = 'Theme, sound, vibration and voice';
 }
 
+/// The Attendance Tracker's copy — the web tracker's (`Tracker/view.php`,
+/// `Tracker/js/script.js`) words, including what it says aloud.
+abstract final class TrackerStrings {
+  static const String title = 'Attendance Tracker';
+  static const String tagline =
+      'Check how many times you have been marked present in each subject.';
+  static const String chipViewOnly = 'View only';
+  static const String chipLive = 'Updated live';
+
+  static const String findHeading = 'FIND YOUR RECORD';
+  static const String autoSearchHint =
+      'The search runs on its own — no need to press anything.';
+
+  static const String placeholderTitle = 'No record shown yet';
+  static const String placeholderBody =
+      'Enter your student number above to see your attendance per subject.';
+
+  // The three numbers at the top.
+  static const String statPresent = 'Days present';
+  static const String statSubjects = 'Subjects';
+  static const String statLast = 'Last attended';
+
+  static String days(int n) => n == 1 ? '$n day' : '$n days';
+  static const String tableDate = 'Date';
+  static const String tableTimeIn = 'Time in';
+  static String showAll(int n) => 'Show all $n';
+  static const String showLess = 'Show less';
+
+  static const String emptyTitle = 'No attendance yet';
+  static const String emptyBody =
+      'This record exists, but no scan has been logged for it. Your first '
+      'scan will show up here.';
+  static const String notFoundTitle = 'Student not found';
+  static const String notFoundBody =
+      'No record matches that student number. Check for a missing dash or a '
+      'typo, then try again.';
+
+  // Status lines — shown, and read aloud word for word as the web does.
+  static const String searching = 'Searching Student Attendance record';
+  static const String loaded = 'Attendance Records loaded successfully!';
+  static const String noAttendance =
+      'Student found but no attendance records yet.';
+  static const String notFound =
+      'Student not found. Please check your student number and try again.';
+  static const String failed =
+      'Could not load the attendance records. Try again in a moment.';
+}
+
 /// The Settings screen — the whole app's, reached from the home screen and
 /// from the scanner's account sheet.
 abstract final class SettingsStrings {
@@ -260,7 +311,7 @@ abstract final class SettingsStrings {
   static const String vibrationBody = 'Buzz after every scan';
   static const String voice = 'Voice';
   static const String voiceBody =
-      'Read names and messages aloud, in the scanner and the generator';
+      'Read names and messages aloud — scanner, generator and tracker';
 
   static const String about = 'ABOUT';
   static const String version = 'Version';
