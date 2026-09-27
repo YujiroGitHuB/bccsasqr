@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
+import '../widgets/splash_parts.dart';
 import '../widgets/viewfinder.dart';
 
 /// What an instructor sees while the scanner opens: a QR in a viewfinder with
@@ -33,7 +34,12 @@ class ScannerSplash extends StatefulWidget {
   /// soon as the check answers, whichever is later.
   final VoidCallback onIntroDone;
 
-  static const Duration intro = Duration(milliseconds: 1200);
+  /// Slow enough to watch the code slide in, then a hold so "Welcome back"
+  /// can be read before the scanner takes over.
+  static const SplashTimeline timeline = SplashTimeline(
+    play: Duration(milliseconds: 1800),
+    hold: Duration(milliseconds: 500),
+  );
 
   @override
   State<ScannerSplash> createState() => _ScannerSplashState();
@@ -43,13 +49,13 @@ class _ScannerSplashState extends State<ScannerSplash>
     with TickerProviderStateMixin {
   late final AnimationController _intro = AnimationController(
     vsync: this,
-    duration: ScannerSplash.intro,
+    duration: ScannerSplash.timeline.total,
   )..addStatusListener(_onIntroStatus);
 
   /// The scan line, round and round for as long as the splash is up.
   late final AnimationController _sweep = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1500),
+    duration: const Duration(milliseconds: 1900),
   );
 
   late final Animation<double> _frame = _slice(0.00, 0.45, Curves.easeOutBack);
@@ -62,7 +68,7 @@ class _ScannerSplashState extends State<ScannerSplash>
   Animation<double> _slice(double begin, double end, Curve curve) =>
       CurvedAnimation(
         parent: _intro,
-        curve: Interval(begin, end, curve: curve),
+        curve: ScannerSplash.timeline.interval(begin, end, curve),
       );
 
   void _onIntroStatus(AnimationStatus status) {
@@ -397,7 +403,11 @@ class ScannerWelcome extends StatefulWidget {
   /// Called once, when the welcome has played. The caller shows the scanner.
   final VoidCallback onFinished;
 
-  static const Duration duration = Duration(milliseconds: 1600);
+  /// Unhurried, then a hold so the name can be read.
+  static const SplashTimeline timeline = SplashTimeline(
+    play: Duration(milliseconds: 2300),
+    hold: Duration(milliseconds: 400),
+  );
 
   @override
   State<ScannerWelcome> createState() => _ScannerWelcomeState();
@@ -407,10 +417,10 @@ class _ScannerWelcomeState extends State<ScannerWelcome>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: ScannerWelcome.duration,
+    duration: ScannerWelcome.timeline.total,
   )..addStatusListener(_onStatus);
 
-  // The last sixth of the timeline is a hold, so the name can be read.
+  // Everything lands by 0.85 of the play; the rest, and the hold, is still.
   late final Animation<double> _pop = _slice(0.00, 0.32, Curves.easeOutBack);
   late final Animation<double> _ring = _slice(0.00, 0.40, Curves.easeOutCubic);
   late final Animation<double> _tick = _slice(0.30, 0.55, Curves.easeOutCubic);
@@ -422,7 +432,7 @@ class _ScannerWelcomeState extends State<ScannerWelcome>
   Animation<double> _slice(double begin, double end, Curve curve) =>
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(begin, end, curve: curve),
+        curve: ScannerWelcome.timeline.interval(begin, end, curve),
       );
 
   void _onStatus(AnimationStatus status) {

@@ -6,6 +6,7 @@ import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/services/tracker_repository.dart';
 import 'package:bccsasqr_app/views/tracker_page.dart';
+import 'package:bccsasqr_app/views/tracker_splash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -111,6 +112,30 @@ void main() {
     expect(find.text(AppStrings.homeTrackerBody), findsOneWidget);
   });
 
+  testWidgets('plays its own splash before the page', (tester) async {
+    await tester.pumpWidget(
+      BccSasqrApp(
+        trackerRepository: _StubTracker(),
+        speech: const SilentSpeechService(),
+        showSplash: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home.tracker')));
+    // The new route's first frame is laid out offstage, for heroes.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1500));
+
+    expect(find.byType(TrackerSplash), findsOneWidget);
+    expect(find.text(TrackerStrings.splashTagline), findsOneWidget);
+    expect(find.text(TrackerStrings.stepDays), findsOneWidget);
+    expect(find.byType(TrackerPage), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.byType(TrackerSplash), findsNothing);
+    expect(find.byType(TrackerPage), findsOneWidget);
+  });
+
   testWidgets('opens on the placeholder', (tester) async {
     await openTracker(tester);
 
@@ -191,9 +216,7 @@ void main() {
     expect(find.text(AppStrings.actionRetry), findsOneWidget);
   });
 
-  testWidgets('lays out on a small phone without overflowing', (
-    tester,
-  ) async {
+  testWidgets('lays out on a small phone without overflowing', (tester) async {
     final view =
         TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.physicalSize = const Size(320, 3000);

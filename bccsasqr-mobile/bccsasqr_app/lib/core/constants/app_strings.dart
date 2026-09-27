@@ -247,6 +247,13 @@ abstract final class TrackerStrings {
   static const String title = 'Attendance Tracker';
   static const String tagline =
       'Check how many times you have been marked present in each subject.';
+
+  // The opening splash: a calendar filling with checks, and the three steps.
+  static const String splashTagline = 'ATTENDANCE TRACKER';
+  static const String splashSemantics = 'Opening the attendance tracker';
+  static const String stepNumber = 'Student no.';
+  static const String stepSearch = 'Search';
+  static const String stepDays = 'Your days';
   static const String chipViewOnly = 'View only';
   static const String chipLive = 'Updated live';
 

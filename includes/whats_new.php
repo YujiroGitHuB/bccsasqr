@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.9';
+const WHATS_NEW_VERSION = '2026-09-27.10';
 
 /**
  * The changelog, newest release first.
@@ -152,6 +152,13 @@ function whats_new_releases(): array
                     'title' => 'The download page speaks to instructors too',
                     'text'  => 'The download page used to talk only to students. It now shows <strong>both sides of the app</strong> in two cards &mdash; <strong>My QR Code</strong> and <strong>My Attendance</strong> for students, <strong>Attendance Scanner</strong> for instructors &mdash; each with what it does. The install steps tell each side which button to tap, and the picture at the top shows the scanner beside the student&rsquo;s QR. One link now works for your class and for your fellow instructors.',
                     'link'  => ['href' => 'download/#inside', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-stars',
+                    'title' => 'The app’s opening animations take their time',
+                    'text'  => 'The opening animations of <strong>My QR Code</strong> and the <strong>Attendance Scanner</strong> were over almost before they could be seen. They now play a little slower and rest on the finished picture for a moment before the page opens, so <strong>Welcome back</strong> and the three steps can actually be read. <strong>My Attendance</strong> has its own now too: a calendar whose days are checked off one by one, one of them amber for a late. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
                 ],
             ],
         ],

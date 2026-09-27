@@ -25,6 +25,7 @@ import 'views/scanner/scanner_page.dart';
 import 'views/settings_page.dart';
 import 'views/splash_page.dart';
 import 'views/tracker_page.dart';
+import 'views/tracker_splash.dart';
 import 'views/widgets/fade_scale_switcher.dart';
 
 /// Root widget. Composes the dependency graph in one place so the views take
@@ -144,8 +145,9 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     ),
   );
 
-  Widget _trackerPage(BuildContext context) =>
-      TrackerPage(repository: _tracker, speech: _speech);
+  Widget _trackerPage(BuildContext context) => TrackerIntro(
+    page: (context) => TrackerPage(repository: _tracker, speech: _speech),
+  );
 
   Widget _settingsPage(BuildContext context) =>
       SettingsPage(controller: _settings, appInfo: widget.appInfo);
