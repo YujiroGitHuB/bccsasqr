@@ -1,4 +1,4 @@
-# QR Generator API (v1)
+# QR Generator and Scanner API (v1)
 
 A read-mostly REST API over the same rules as the web QR generator
 (`QRgenerator/QRcode.php`), meant for the Flutter app. Everything the page
@@ -32,7 +32,9 @@ Local (XAMPP): `http://localhost/bccsasqr/api/v1/…`
 
 ## Authentication
 
-None by default: students do not log in, exactly as on the web page.
+None for the generator: students do not log in, exactly as on the web page.
+The scanner endpoints are the exception — an instructor signs in, as on the
+web scanner; see [Scanner endpoints](#scanner-endpoints-signed-in).
 
 To lock the API down (recommended if it is reachable from the public
 internet), set a key in `includes/config.php`:
@@ -206,6 +208,70 @@ Errors: `generator_locked` (503), `invalid_student_no` (400),
 
 ---
 
+## Scanner endpoints (signed in)
+
+The app's attendance scanner — the web scanner (`Qrscanner/qrscanner.php`)
+for a phone. Every rule it applies lives in `includes/scan_attendance.php`,
+which the web endpoints (`crud/save_attendance.php`, `crud/get_attendance.php`,
+`crud/set_scan_late.php`) call too, so the two scanners cannot drift apart.
+
+### Signing in
+
+```
+POST /api/v1/auth/login
+{ "email": "…", "password": "…", "device": "BCC SASQR app" }
+```
+
+The same `users` row, `password_verify` and Security Monitor entries as
+`crud/login_process.php`. An account without the **QR scanner** permission is
+refused here (`403 no_scanner_access`) rather than handed a token for a screen
+that would refuse it. `201` on success:
+
+```json
+{ "success": true, "data": { "token": "64 hex characters",
+  "user": { "id": 4, "name": "…", "email": "…", "role": "instructor", "avatar_url": null } } }
+```
+
+Send the token on every call below as `X-Auth-Token: <token>`
+(`Authorization: Bearer <token>` also works, but shared hosts running PHP as
+CGI often drop that header). Only a SHA-256 of it is stored, in
+`api_tokens_tbl` (`includes/api_tokens.php`, created on first use). It stops
+working when the app signs out (`POST /auth/logout`), after 60 days unused,
+when the account is disabled, and when the password is changed — by the owner
+in My Profile or by an admin. A dead token answers `401 unauthenticated`; the
+app goes back to its sign-in screen.
+
+`GET /auth/me` — who the token belongs to, plus `can_scan`.
+
+### Scanning
+
+Every scanner call checks, in order: a live token, the **QR scanner**
+permission (`403 forbidden`), and the Settings page lock
+(`503 scanner_locked` — the lock that closes the web scanner closes the app's).
+
+| Endpoint | Body | Answers |
+|---|---|---|
+| `GET /scanner/subjects` | — | `{user, date, subjects: [{code, name, late}]}` — admins every subject with an instructor, instructors their own |
+| `POST /scanner/scan` | `{student_no, subject_code}` | `201 {record: {student_no, name, course, section, subject, date, time_in, late, photo_url, photo_missing}}` |
+| `GET /scanner/attendance` | — | `{date, records: [{date, student_no, name, course, section, subject, time_in, late}]}` — today, this account, newest first |
+| `POST /scanner/late` | `{subject_code, on}` | `{subject_code, on}` — the switch the server settled on |
+
+`/scanner/scan` also needs the **Record attendance** permission. Who scanned,
+the date and the time come from the token and the server's clock, never the
+request. Its refusals keep the web scanner's codes:
+
+| HTTP | `code` | Meaning |
+|---|---|---|
+| 409 | `already_marked` | This student, this subject, today — already in |
+| 403 | `not_authorized` | The subject is not assigned to this instructor |
+| 404 | `student_not_found` | No such student number |
+| 422 | `photo_required` | Photo requirement is on and none is on file; `details.name` |
+| 422 | `not_enrolled` | Not enrolled in this subject |
+| 400 | `missing_data` | No student number, or no such subject |
+| 500 | `scan_failed` | Database error — logged, offer a retry |
+
+---
+
 ## Error codes
 
 | HTTP | `code` | What the app should do |
@@ -222,6 +288,11 @@ Errors: `generator_locked` (503), `invalid_student_no` (400),
 | 500 | `accept_failed` | Offer a retry. |
 | 503 | `generator_locked` | Show the closed sign from `config.generator.message`. |
 | 503 | `service_unavailable` | Server or database is down — offer a retry. |
+| 401 | `unauthenticated` | Scanner token missing, expired or revoked — sign in again. |
+| 401 | `invalid_credentials` | Wrong email or password. |
+| 403 | `account_disabled` | The account is disabled. |
+| 403 | `no_scanner_access` / `forbidden` | The account lacks the scanner (or record) permission. |
+| 503 | `scanner_locked` | The QR pages are locked in Settings. |
 
 ---
 
@@ -294,6 +365,8 @@ Which file does what in the app:
 | `handlers/system.php` | `/health`, `/config`, `/terms` |
 | `handlers/students.php` | `/students/{no}`, `/students/{no}/qr` |
 | `handlers/terms.php` | `POST /terms/accept` |
+| `handlers/scanner.php` | `/auth/*`, `/scanner/*` |
+| `lib/auth.php` | The scanner's token check and permissions |
 
 ## If you change the web page, change these
 

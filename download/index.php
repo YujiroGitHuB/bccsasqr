@@ -241,6 +241,14 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                     </p>
                 </details>
                 <details class="dl-reveal">
+                    <summary>I am an instructor. Can I scan with this app?</summary>
+                    <p>
+                        Yes. Open the app, choose <strong>Attendance Scanner</strong>, and sign in with the
+                        same email and password you use on the web system. It records attendance by the
+                        same rules as the web scanner, into the same Attendance List.
+                    </p>
+                </details>
+                <details class="dl-reveal">
                     <summary>I have an iPhone.</summary>
                     <p>
                         The app is Android only for now. The <a href="../QRgenerator/QRcode.php">web generator</a>

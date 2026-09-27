@@ -4,7 +4,7 @@ session_start();
 include __DIR__ . "/../includes/auth.php";
 include "../includes/db_connect.php";
 include __DIR__ . "/../includes/permissions.php";
-require_once __DIR__ . "/../includes/late.php";
+require_once __DIR__ . "/../includes/scan_attendance.php";
 requirePermission('qr.scanner', '../pages/dashboard.php');
 
 // Fetch lock setting
@@ -22,29 +22,9 @@ $instructor_name = $_SESSION['user_name'] ?? 'Admin';
 $instructor_id   = $_SESSION['user_id']   ?? 0;
 $role            = $_SESSION['role']       ?? 'instructor';
 
-if ($role === 'admin') {
-    // Admin sees ALL subjects
-    $subjects_query = $conn->query("
-        SELECT DISTINCT s.subject_code, s.subject_name
-        FROM subjects_tbl s
-        INNER JOIN subject_instructors_tbl si ON s.id = si.subject_id
-        ORDER BY s.subject_name
-    ");
-    $subjects = $subjects_query ? $subjects_query->fetch_all(MYSQLI_ASSOC) : [];
-} else {
-    // Instructor sees only assigned subjects
-    $subjects_query = $conn->prepare("
-        SELECT s.subject_code, s.subject_name
-        FROM subjects_tbl s
-        INNER JOIN subject_instructors_tbl si ON s.id = si.subject_id
-        WHERE si.instructor_id = ?
-        ORDER BY s.subject_name
-    ");
-    $subjects_query->bind_param("i", $instructor_id);
-    $subjects_query->execute();
-    $result  = $subjects_query->get_result();
-    $subjects = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
-}
+// Admin sees every subject, an instructor only their assigned ones —
+// the same list the phone app's scanner shows (includes/scan_attendance.php).
+$subjects = scan_subjects($conn, (int) $instructor_id, $role === 'admin');
 
 // Whether late marking is on for each of this instructor's subjects
 // today, so switching subjects shows the right switch without a round

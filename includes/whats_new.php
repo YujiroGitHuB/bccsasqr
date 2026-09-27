@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-25.4';
+const WHATS_NEW_VERSION = '2026-09-27';
 
 /**
  * The changelog, newest release first.
@@ -69,6 +69,30 @@ const WHATS_NEW_VERSION = '2026-09-25.4';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-27',
+            'date'    => '2026-09-27',
+            'icon'    => 'bi-qr-code-scan',
+            'title'   => 'Scan attendance with the Android app',
+            'summary' => 'The BCC SASQR app now has the QR scanner in it. Sign in with the same email and password you use here, pick a subject, and scan — no browser needed. It follows the web scanner’s rules to the letter, and both fill the same Attendance List.',
+            'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-phone',
+                    'title' => 'The scanner, in the app',
+                    'text'  => 'Open the app and choose <strong>Attendance Scanner</strong>. Sign in once with your usual email and password &mdash; the phone keeps you signed in until you tap <strong>Sign out</strong>. From there it works like the web scanner: pick a subject and the camera starts, flip <strong>Late marking</strong> once class has begun, and each scan shows the student&rsquo;s photo, beeps, vibrates and reads the name aloud. Everything the web scanner refuses, the app refuses with the same message: <em>already marked</em>, <em>not enrolled</em>, <em>no photo on file</em>. The screen stays on while the camera is running, so it does not lock halfway through the line. Scans from the app and from the browser land in the same <strong>Attendance List</strong>. Anyone with the app already installed gets the scanner by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-shield-lock',
+                    'title' => 'Lost your phone? Change your password',
+                    'text'  => 'Changing your password in <strong>My Profile</strong> signs the app out on <strong>every phone</strong> at once, so a lost phone cannot keep scanning under your name. An admin resetting your password or disabling your account does the same. Taking the scanner permission away in <strong>Manage Access</strong>, or locking the QR pages in Settings, reaches the app on its very next scan.',
+                    'link'  => ['href' => 'pages/profile.php', 'label' => 'Open My Profile'],
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-25',

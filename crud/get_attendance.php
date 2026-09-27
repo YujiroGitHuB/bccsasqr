@@ -1,7 +1,7 @@
 <?php
 session_start();
 include("../includes/db_connect.php");
-require_once __DIR__ . "/../includes/late.php";
+require_once __DIR__ . "/../includes/scan_attendance.php";
 
 header('Content-Type: application/json');
 
@@ -12,27 +12,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Set timezone to Philippines
-date_default_timezone_set('Asia/Manila');
-$user_id = $_SESSION['user_id'];
-$today = date('Y-m-d'); // Current PH date
-
-// Fetch only this user's attendance for today
-// is_late for the Late tag in the scanner's list, once the column exists.
-$lateCol = late_ready($conn) ? 'is_late' : '0 AS is_late';
-
-$sql = "SELECT date, student_no, name, course, section, subject, time_in, $lateCol
-        FROM attendance_tbl 
-        WHERE user_id = '$user_id' 
-          AND DATE(date) = '$today'
-        ORDER BY time_in DESC";
-
-$result = $conn->query($sql);
-
-$attendance = [];
-while ($row = $result->fetch_assoc()) {
-    $attendance[] = $row;
-}
-
-echo json_encode($attendance);
-?>
+// Only this user's attendance for today (Philippine date), newest
+// first — the same list the phone app's scanner shows. is_late rides
+// along for the Late tag in the scanner's list.
+echo json_encode(scan_today($conn, (int) $_SESSION['user_id']));

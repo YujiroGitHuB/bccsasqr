@@ -4,4 +4,8 @@ abstract final class AppAssets {
   /// web card draws the same file (`assets/images/bcc-logo.png` in the site
   /// root).
   static const String bccLogo = 'assets/images/bcc-logo.png';
+
+  /// The scanner's beep. audioplayers resolves asset sources under `assets/`
+  /// itself, so the path it is handed leaves that prefix off.
+  static const String scanBeepSource = 'sounds/scan_beep.wav';
 }

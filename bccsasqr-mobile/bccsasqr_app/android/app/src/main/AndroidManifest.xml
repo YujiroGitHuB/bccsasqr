@@ -1,7 +1,23 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Required so release builds can reach the records API. The Flutter
          template only declares this for debug/profile builds. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- The attendance scanner. Asked for the first time the camera opens,
+         not at install — a student who only uses the generator is never
+         asked. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Not required: the same app is the students' QR generator, and a
+         phone with no usable camera must still be able to install it. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- The camera plugin (camera_android_camerax) declares both of these for
+         video recording. The scanner never records — flutter_zxing opens the
+         camera with enableAudio: false — so the microphone is removed rather
+         than listed among the app's permissions, and "any camera" is made
+         optional for the same reason as above. -->
+    <uses-feature android:name="android.hardware.camera.any" android:required="false"
+        tools:replace="android:required"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
 
     <application
         android:label="BCC SASQR"

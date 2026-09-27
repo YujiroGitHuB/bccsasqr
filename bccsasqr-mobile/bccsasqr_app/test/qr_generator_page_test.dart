@@ -108,6 +108,15 @@ void main() {
     showSplash: false,
   );
 
+  /// Pumps the app and opens the generator from the home screen — where a
+  /// student lands once the splash has gone.
+  Future<void> openGenerator(WidgetTester tester, Widget app) async {
+    await tester.pumpWidget(app);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home.generator')));
+    await tester.pumpAndSettle();
+  }
+
   /// Lets the splash play out — the wait for the logo, the animation, the
   /// hold — then the cross-fade. Fails the test if it has not handed over
   /// within six seconds: a splash that never ends is a locked app.
@@ -119,7 +128,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('opens on the splash, then hands over to the generator', (
+  testWidgets('opens on the splash, then hands over to the home screen', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -136,6 +145,12 @@ void main() {
     await playSplash(tester);
 
     expect(find.byType(SplashPage), findsNothing);
+    expect(find.text(AppStrings.homeStudentTitle), findsOneWidget);
+    expect(find.text(AppStrings.homeScannerTitle), findsOneWidget);
+
+    // Students are one tap from the generator.
+    await tester.tap(find.byKey(const ValueKey('home.generator')));
+    await tester.pumpAndSettle();
     expect(find.text(AppStrings.studentNumberLabel), findsOneWidget);
   });
 
@@ -153,13 +168,13 @@ void main() {
     await playSplash(tester);
 
     expect(find.byType(SplashPage), findsNothing);
-    expect(find.text(AppStrings.studentNumberLabel), findsOneWidget);
+    expect(find.text(AppStrings.homeStudentTitle), findsOneWidget);
   });
 
   testWidgets('opens on the empty state with the action locked', (
     tester,
   ) async {
-    await tester.pumpWidget(harness(_StubExportService()));
+    await openGenerator(tester, harness(_StubExportService()));
 
     expect(find.text(AppStrings.appTitle), findsOneWidget);
     expect(find.text(AppStrings.emptyQrTitle), findsOneWidget);
@@ -172,7 +187,7 @@ void main() {
   testWidgets('verifies a known number and fills the record rows', (
     tester,
   ) async {
-    await tester.pumpWidget(harness(_StubExportService()));
+    await openGenerator(tester, harness(_StubExportService()));
 
     await tester.enterText(find.byType(TextField), '019464');
     await tester.pumpAndSettle();
@@ -186,7 +201,7 @@ void main() {
   testWidgets('a missing photo warns, with the upload page one tap away', (
     tester,
   ) async {
-    await tester.pumpWidget(harness(_StubExportService()));
+    await openGenerator(tester, harness(_StubExportService()));
 
     await tester.enterText(find.byType(TextField), '0251102');
     await tester.pumpAndSettle();
@@ -200,7 +215,7 @@ void main() {
   });
 
   testWidgets('a student with a photo sees no warning', (tester) async {
-    await tester.pumpWidget(harness(_StubExportService()));
+    await openGenerator(tester, harness(_StubExportService()));
 
     await tester.enterText(find.byType(TextField), '019464');
     await tester.pumpAndSettle();
@@ -211,7 +226,8 @@ void main() {
   testWidgets('a dropped connection offers Try again, and it works', (
     tester,
   ) async {
-    await tester.pumpWidget(
+    await openGenerator(
+      tester,
       BccSasqrApp(
         repository: _DroppedSignalRepository(),
         exportService: _StubExportService(),
@@ -236,7 +252,8 @@ void main() {
   testWidgets('pulling the page down looks the number up again', (
     tester,
   ) async {
-    await tester.pumpWidget(
+    await openGenerator(
+      tester,
       BccSasqrApp(
         repository: _DroppedSignalRepository(),
         exportService: _StubExportService(),
@@ -259,7 +276,7 @@ void main() {
   });
 
   testWidgets('an unknown number reports not found', (tester) async {
-    await tester.pumpWidget(harness(_StubExportService()));
+    await openGenerator(tester, harness(_StubExportService()));
 
     await tester.enterText(find.byType(TextField), '0219999');
     await tester.pumpAndSettle();
@@ -272,7 +289,7 @@ void main() {
     tester,
   ) async {
     final exporter = _StubExportService();
-    await tester.pumpWidget(harness(exporter));
+    await openGenerator(tester, harness(exporter));
 
     await tester.enterText(find.byType(TextField), '019464');
     await tester.pumpAndSettle();
@@ -296,7 +313,7 @@ void main() {
   });
 
   testWidgets('a connected build shows no demo notice', (tester) async {
-    await tester.pumpWidget(harness(_StubExportService()));
+    await openGenerator(tester, harness(_StubExportService()));
 
     expect(find.text(AppStrings.demoModeTitle), findsNothing);
   });
@@ -306,7 +323,8 @@ void main() {
     // real student number with "No verified record matches" — the same words
     // an unknown number gets — so the API looks broken when it was never
     // called. The notice must name the four numbers that do work.
-    await tester.pumpWidget(
+    await openGenerator(
+      tester,
       BccSasqrApp(
         repository: InMemoryStudentRepository(latency: Duration.zero),
         exportService: _StubExportService(),
@@ -332,7 +350,7 @@ void main() {
         TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.physicalSize = const Size(320, 1800); // narrowest phone we support
 
-    await tester.pumpWidget(harness(_StubExportService()));
+    await openGenerator(tester, harness(_StubExportService()));
     await tester.enterText(find.byType(TextField), '019464');
     await tester.pumpAndSettle();
     await tester.tap(find.byType(Checkbox));
@@ -349,7 +367,7 @@ void main() {
   testWidgets('start over clears the form back to the empty state', (
     tester,
   ) async {
-    await tester.pumpWidget(harness(_StubExportService()));
+    await openGenerator(tester, harness(_StubExportService()));
 
     await tester.enterText(find.byType(TextField), '019464');
     await tester.pumpAndSettle();

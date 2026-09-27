@@ -336,6 +336,13 @@ if ($stmt->execute()) {
         $_SESSION['user_avatar'] = $avatarPath;
     }
 
+    // A new password signs the phone app out everywhere — what someone
+    // who lost their phone does first (includes/api_tokens.php).
+    if ($password !== '') {
+        require_once __DIR__ . '/../includes/api_tokens.php';
+        api_tokens_revoke_user($conn, (int) $userId);
+    }
+
     echo json_encode([
         "status"         => "success",
         "message"        => "Profile updated successfully!",

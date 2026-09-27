@@ -13,7 +13,7 @@ function handle_index(): void
     $base = api_base_url() . '/api/v1';
 
     api_ok([
-        'name'      => 'BCC QR Attendance — QR Generator API',
+        'name'      => 'BCC QR Attendance — QR Generator and Scanner API',
         'version'   => API_VERSION,
         'endpoints' => [
             'GET  ' . $base . '/health',
@@ -22,6 +22,13 @@ function handle_index(): void
             'POST ' . $base . '/terms/accept',
             'GET  ' . $base . '/students/{student_no}',
             'GET  ' . $base . '/students/{student_no}/qr',
+            'POST ' . $base . '/auth/login',
+            'POST ' . $base . '/auth/logout',
+            'GET  ' . $base . '/auth/me',
+            'GET  ' . $base . '/scanner/subjects',
+            'POST ' . $base . '/scanner/scan',
+            'GET  ' . $base . '/scanner/attendance',
+            'POST ' . $base . '/scanner/late',
         ],
         'docs' => $base . '/README.md',
     ]);

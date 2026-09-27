@@ -14,7 +14,7 @@
 //  endpoint ang tawagin nito, iisa ang paraan ng pagbasa.
 // ============================================================
 
-const API_VERSION = '1.0.0';
+const API_VERSION = '1.1.0';
 
 /**
  * Called once at the top of index.php.
@@ -31,7 +31,7 @@ function api_boot(): void
     header('Content-Type: application/json; charset=utf-8');
     header('Access-Control-Allow-Origin: ' . (defined('ALLOWED_ORIGIN') ? ALLOWED_ORIGIN : '*'));
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-API-Key');
+    header('Access-Control-Allow-Headers: Content-Type, X-API-Key, X-Auth-Token, Authorization');
     header('Access-Control-Max-Age: 86400');
 
     // Student records change the moment an admin edits them; a cached

@@ -126,6 +126,14 @@ if ($isEdit) {
         ? 'User updated and password reset.'
         : 'User updated successfully.';
 
+    // A password reset signs the phone app out everywhere, so the old
+    // password's sign-in on a lost phone dies with it
+    // (includes/api_tokens.php).
+    if ($ok && $password !== '') {
+        require_once __DIR__ . '/../includes/api_tokens.php';
+        api_tokens_revoke_user($conn, $userId);
+    }
+
     // If you edited yourself, the topbar has to follow.
     if ($ok && $userId === (int)$_SESSION['user_id']) {
         $_SESSION['user_name'] = $name;

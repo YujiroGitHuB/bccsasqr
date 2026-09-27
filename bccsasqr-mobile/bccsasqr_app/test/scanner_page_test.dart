@@ -1,0 +1,212 @@
+import 'package:bccsasqr_app/app.dart';
+import 'package:bccsasqr_app/core/constants/app_strings.dart';
+import 'package:bccsasqr_app/services/qr_export_service.dart';
+import 'package:bccsasqr_app/services/scan_feedback.dart';
+import 'package:bccsasqr_app/services/scanner_repository.dart';
+import 'package:bccsasqr_app/services/speech_service.dart';
+import 'package:bccsasqr_app/services/student_repository.dart';
+import 'package:bccsasqr_app/views/scanner/widgets/scan_result_card.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+class _NoExport implements QrExportService {
+  @override
+  Future<String> export({
+    required GlobalKey boundaryKey,
+    required String fileName,
+    String? shareText,
+  }) async => fileName;
+}
+
+/// Stands in for the camera: one button per code a test wants "scanned".
+Widget _fakeCamera(BuildContext context, ValueChanged<String> onCode) =>
+    ColoredBox(
+      color: Colors.black,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final code in ['019-464', '023-770', 'not-a-student'])
+              TextButton(
+                key: ValueKey('scan:$code'),
+                onPressed: () => onCode(code),
+                child: Text('scan $code'),
+              ),
+          ],
+        ),
+      ),
+    );
+
+void main() {
+  late List<bool> awake;
+
+  setUp(() {
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    view.devicePixelRatio = 1.0;
+    view.physicalSize = const Size(420, 2000);
+    awake = [];
+  });
+
+  tearDown(() {
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    view.resetPhysicalSize();
+    view.resetDevicePixelRatio();
+  });
+
+  Widget app() => BccSasqrApp(
+    repository: InMemoryStudentRepository(latency: Duration.zero),
+    exportService: _NoExport(),
+    speech: const SilentSpeechService(),
+    scannerRepository: InMemoryScannerRepository(latency: Duration.zero),
+    scanFeedback: const SilentScanFeedback(),
+    cameraBuilder: _fakeCamera,
+    keepAwake: (on) async => awake.add(on),
+    showSplash: false,
+  );
+
+  /// Home → scanner → signed in → subject picked.
+  Future<void> openScanner(WidgetTester tester) async {
+    // The scan line sweeps forever; with reduced motion it holds still, so
+    // pumpAndSettle can settle.
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home.scanner')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+    await tester.enterText(find.byType(TextField).at(0), 'demo@bcc.test');
+    await tester.enterText(find.byType(TextField).at(1), 'secret');
+    await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> pickSubject(WidgetTester tester) async {
+    await tester.tap(find.text(ScannerStrings.subjectPlaceholder));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Object Oriented Programming').last);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('the camera waits for a subject', (tester) async {
+    await openScanner(tester);
+
+    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(find.text(ScannerStrings.selectSubjectFirst), findsOneWidget);
+    expect(find.text(ScannerStrings.cameraIdle), findsOneWidget);
+    expect(find.byKey(const ValueKey('scan:019-464')), findsNothing);
+    expect(awake, isEmpty);
+
+    await pickSubject(tester);
+
+    expect(find.text(ScannerStrings.readyToScan), findsOneWidget);
+    expect(find.text(ScannerStrings.lateTitle), findsOneWidget);
+    expect(find.byKey(const ValueKey('scan:019-464')), findsOneWidget);
+    // The screen is held on only once the camera runs.
+    expect(awake, [true]);
+  });
+
+  testWidgets('a scan shows the student and lands in the list', (tester) async {
+    await openScanner(tester);
+    await pickSubject(tester);
+
+    await tester.tap(find.byKey(const ValueKey('scan:019-464')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ScanResultCard), findsOneWidget);
+    expect(find.text('✓ Object Oriented Programming'), findsOneWidget);
+    expect(
+      find.textContaining('✓ Charles Nixon Cayading - Object Oriented'),
+      findsOneWidget,
+    );
+    // The card and the list row.
+    expect(find.text('Charles Nixon Cayading'), findsNWidgets(2));
+
+    // Let the card's hold run out, or its timer outlives the test.
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('no photo on file is said plainly on the card', (tester) async {
+    await openScanner(tester);
+    await pickSubject(tester);
+
+    await tester.tap(find.byKey(const ValueKey('scan:023-770')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ScannerStrings.noPhoto), findsOneWidget);
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('late marking tags the next scan', (tester) async {
+    await openScanner(tester);
+    await pickSubject(tester);
+
+    await tester.tap(find.text(ScannerStrings.lateTitle));
+    await tester.pumpAndSettle();
+    expect(find.text(ScannerStrings.lateOn), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('scan:019-464')));
+    await tester.pumpAndSettle();
+
+    // On the card and in the list.
+    expect(find.text(ScannerStrings.lateTag), findsNWidgets(2));
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('a foreign QR gets the Invalid QR Code dialog, which closes', (
+    tester,
+  ) async {
+    await openScanner(tester);
+    await pickSubject(tester);
+
+    await tester.tap(find.byKey(const ValueKey('scan:not-a-student')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text(ScannerStrings.invalidQrTitle), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.text(ScannerStrings.invalidQrTitle), findsNothing);
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('signing out asks first, then returns to the sign-in form', (
+    tester,
+  ) async {
+    await openScanner(tester);
+
+    await tester.tap(find.byTooltip(ScannerStrings.signOut));
+    await tester.pumpAndSettle();
+    expect(find.text(ScannerStrings.signOutConfirmTitle), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signOut));
+    await tester.pumpAndSettle();
+    expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+  });
+
+  testWidgets('lays out on a small phone without overflowing', (tester) async {
+    TestWidgetsFlutterBinding
+        .instance
+        .platformDispatcher
+        .views
+        .first
+        .physicalSize = const Size(
+      320,
+      2200,
+    );
+
+    await openScanner(tester);
+    await pickSubject(tester);
+    await tester.tap(find.byKey(const ValueKey('scan:023-770')));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(ScanResultCard), findsOneWidget);
+    await tester.pump(const Duration(seconds: 6));
+  });
+}

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.10.8
@@ -40,6 +40,10 @@ dependencies:
   url_launcher: ^6.3.2
   http: ^1.6.0
   flutter_tts: ^4.2.5
+  flutter_zxing: ^2.2.1
+  flutter_secure_storage: ^11.2.0
+  audioplayers: ^6.7.1
+  wakelock_plus: ^1.6.1
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +74,8 @@ flutter:
   # (assets/images/bcc-logo.png in the site root).
   assets:
     - assets/images/bcc-logo.png
+    # The scanner's beep after every scan (lib/services/scan_feedback.dart).
+    - assets/sounds/scan_beep.wav
 
   # To add assets to your application, add an assets section, like this:
   # assets:

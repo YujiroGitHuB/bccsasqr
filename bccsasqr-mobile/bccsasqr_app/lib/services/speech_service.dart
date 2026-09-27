@@ -27,6 +27,52 @@ String forSpeech(String text) {
       .trim();
 }
 
+/// A record's name, made to sound like a person being called — the port of
+/// `TTSManager.nameForSpeech` (assets/js/tts.js).
+///
+/// Names come out of the school's export as "DELA CRUZ, JUAN P.", and every
+/// engine reads an all-caps word as an initialism, spelling it out letter by
+/// letter. So: "LAST, FIRST" is turned round, each part is title-cased, a lone
+/// initial is dropped, and a suffix is said as the word after the surname.
+String nameForSpeech(String name) {
+  var s = name.trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (s.isEmpty) return '';
+
+  final comma = s.indexOf(',');
+  if (comma > -1) {
+    s = '${s.substring(comma + 1).trim()} ${s.substring(0, comma).trim()}';
+  }
+
+  const suffixes = {
+    'jr': 'Junior',
+    'sr': 'Senior',
+    'ii': 'the Second',
+    'iii': 'the Third',
+    'iv': 'the Fourth',
+  };
+
+  final spoken = <String>[];
+  var suffix = '';
+
+  for (final word in s.split(' ')) {
+    final bare = word.replaceAll(RegExp(r'\.$'), '').toLowerCase();
+    if (suffixes.containsKey(bare)) {
+      suffix = suffixes[bare]!;
+      continue;
+    }
+    if (RegExp(r'^[A-Za-z]\.?$').hasMatch(word)) continue;
+    spoken.add(
+      word.toLowerCase().replaceAllMapped(
+        RegExp(r"(^|[-'’])([a-zà-ÿ])"),
+        (m) => '${m[1]}${m[2]!.toUpperCase()}',
+      ),
+    );
+  }
+
+  if (suffix.isNotEmpty) spoken.add(suffix);
+  return spoken.join(' ').trim();
+}
+
 /// Reads the form's feedback aloud — the app's counterpart to the web
 /// generator's `TTSManager` (assets/js/tts.js). It is handed the very text
 /// the screen shows; the controller decides when.

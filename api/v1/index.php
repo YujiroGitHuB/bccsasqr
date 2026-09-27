@@ -34,6 +34,7 @@ require_once __DIR__ . '/lib/generator.php';
 require_once __DIR__ . '/handlers/system.php';
 require_once __DIR__ . '/handlers/students.php';
 require_once __DIR__ . '/handlers/terms.php';
+require_once __DIR__ . '/handlers/scanner.php';
 
 $path   = api_path();
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -48,6 +49,15 @@ $routes = [
     ['POST', '#^terms/accept$#',           fn() => handle_terms_accept($GLOBALS['conn'])],
     ['GET',  '#^students/([^/]+)/qr$#',    fn($m) => handle_student_qr($GLOBALS['conn'], $m[1])],
     ['GET',  '#^students/([^/]+)$#',       fn($m) => handle_student($GLOBALS['conn'], $m[1])],
+
+    // The scanner — signed in, see handlers/scanner.php.
+    ['POST', '#^auth/login$#',             fn() => handle_auth_login($GLOBALS['conn'])],
+    ['POST', '#^auth/logout$#',            fn() => handle_auth_logout($GLOBALS['conn'])],
+    ['GET',  '#^auth/me$#',                fn() => handle_auth_me($GLOBALS['conn'])],
+    ['GET',  '#^scanner/subjects$#',       fn() => handle_scanner_subjects($GLOBALS['conn'])],
+    ['POST', '#^scanner/scan$#',           fn() => handle_scanner_scan($GLOBALS['conn'])],
+    ['GET',  '#^scanner/attendance$#',     fn() => handle_scanner_attendance($GLOBALS['conn'])],
+    ['POST', '#^scanner/late$#',           fn() => handle_scanner_late($GLOBALS['conn'])],
 ];
 
 // Collected while matching so a wrong verb on a real route answers

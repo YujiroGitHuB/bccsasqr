@@ -49,7 +49,7 @@ class _Identity extends StatelessWidget {
     return const Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _BrandMark(),
+        BrandMark(),
         SizedBox(width: 14),
         Expanded(child: _TitleBlock()),
       ],
@@ -88,17 +88,21 @@ class _TitleBlock extends StatelessWidget {
   }
 }
 
-class _BrandMark extends StatelessWidget {
-  const _BrandMark();
+/// The school seal on the cyan tile — the app's mark, on the generator's
+/// header, the opening screen and the scanner.
+class BrandMark extends StatelessWidget {
+  const BrandMark({super.key, this.size = 46});
+
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 46,
-      width: 46,
+      height: size,
+      width: size,
       decoration: BoxDecoration(
         gradient: AppColors.brandMark,
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(size * 0.28),
         boxShadow: [
           BoxShadow(
             color: AppColors.accentWash(0.35),
@@ -110,11 +114,11 @@ class _BrandMark extends StatelessWidget {
       // The school seal, as on the web hero (.qr-hero-icon: 34px in 52px).
       alignment: Alignment.center,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(size * 0.15),
         child: Image.asset(
           AppAssets.bccLogo,
-          width: 30,
-          height: 30,
+          width: size * 0.65,
+          height: size * 0.65,
           fit: BoxFit.contain,
         ),
       ),

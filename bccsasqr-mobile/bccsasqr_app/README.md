@@ -1,8 +1,15 @@
-# BCC SASQR Code Generator
+# BCC SASQR
 
-Flutter port of the BCC SASQR attendance QR generator. A student types their
-student number, the app matches it against the verified enrolment list, and —
-once the terms are accepted — renders a QR code the attendance scanner reads.
+One Android app, two people, chosen on the opening screen:
+
+- **My QR Code** — the Flutter port of the web QR generator. A student types
+  their student number, the app matches it against the verified enrolment
+  list, and — once the terms are accepted — renders a QR code the attendance
+  scanner reads.
+- **Attendance Scanner** — the web scanner (`Qrscanner/qrscanner.php`) for a
+  phone. An instructor signs in with their web account, picks a subject and
+  scans; the server applies the web scanner's own rules
+  (`includes/scan_attendance.php`), and both fill the same Attendance List.
 
 ## Architecture
 
@@ -17,18 +24,27 @@ lib/
 ├── models/                      data + the rules that belong to the data
 │   ├── student_record.dart      a verified enrolment record
 │   ├── terms_document.dart      the terms text as the server authored them
-│   └── qr_payload.dart          holds the string the SERVER issued for the QR
+│   ├── qr_payload.dart          holds the string the SERVER issued for the QR
+│   └── scanner_models.dart      signed-in user, subjects, scans
 │
 ├── services/                    I/O boundaries, behind interfaces
 │   ├── student_repository.dart  the contract + InMemoryStudentRepository
 │   ├── http_student_repository.dart   the /api/v1 client
-│   └── qr_export_service.dart   QrExportService  + ImageQrExportService
+│   ├── qr_export_service.dart   QrExportService  + ImageQrExportService
+│   ├── scanner_repository.dart  the scanner's contract + its demo version
+│   ├── http_scanner_repository.dart   /api/v1/auth and /scanner
+│   ├── token_store.dart         the sign-in token, in the keystore
+│   ├── scan_feedback.dart       beep + vibration after a scan
+│   └── speech_service.dart      the voice, for both halves
 │
 ├── controllers/                 all mutable state and every decision
-│   └── qr_generator_controller.dart
+│   ├── qr_generator_controller.dart
+│   └── scanner_controller.dart  port of Qrscanner/js/scriptV3.js
 │
 ├── views/                       layout only — no business rules
-│   ├── qr_generator_page.dart   the screen; owns controller lifecycle
+│   ├── home_page.dart           the opening screen: generator or scanner
+│   ├── qr_generator_page.dart   the generator; owns its controller
+│   ├── scanner/                 sign-in, scanner page, camera
 │   └── widgets/                 composable, single-purpose pieces
 │
 └── core/                        cross-cutting concerns
@@ -73,6 +89,26 @@ lib/
 
 Changing the student number or withdrawing consent discards a generated code —
 a QR always matches the record currently on screen.
+
+## The scanner
+
+| Step | What the app does |
+|---|---|
+| Sign in | Email and password of the web account → a token kept in the Android Keystore. It stays until **Sign out**, 60 days unused, the account is disabled, or the password changes. |
+| Subject | Required, as on the web. The camera does not start until one is picked. |
+| Late marking | The same per-subject switch as the web; amber while on. |
+| Scan | ZXing with `tryInverted`, so the light-on-dark BCC QR and a photocopied dark-on-light one both read. ML Kit (`mobile_scanner`) cannot read an inverted code, which is why it is not used. |
+| Result | Photo (or initials and an amber *no photo* warning), name, course and section, the server's time; beep, vibration and the name read aloud. |
+| Refusals | The web scanner's own messages and dialogs — *already marked*, *not enrolled*, *photo required*, *not assigned*, *Invalid QR Code*. |
+| List | Today's scans by this account, from the web and the app alike, with search. |
+
+The screen is held on while the camera runs (`wakelock_plus`). The camera
+permission is asked the first time the scanner's camera opens, never at
+install; the microphone permission the camera plugin declares is removed in
+`AndroidManifest.xml`.
+
+`flutter_zxing` is pinned to 2.2.x: 2.3 and later need Dart 3.11. It builds
+zxing-cpp with NDK 27.0.12077973, which Gradle downloads on the first build.
 
 ## Connecting to the PHP backend
 
@@ -119,6 +155,11 @@ to Hostinger, which passes. `check_host.sh` against
 `019-464`, `025-1023`, `021-318`, `023-770`. The dash is inserted
 automatically; type digits only.
 
+The scanner's demo signs in with any email and password and keeps its scans
+on the phone. The same four numbers scan; `023-770` has no photo on file.
+In a web build, where the native decoder does not run, a text field stands in
+for the camera.
+
 These are what a build without `API_BASE_URL` reads. A real student number will
 report "not found" against them — the yellow notice at the top of the screen
 names the four that do work, so that state is never mistaken for a broken
@@ -129,7 +170,7 @@ API.
 ```bash
 flutter pub get
 flutter run --dart-define=API_BASE_URL=http://localhost:8000/api/v1
-flutter test      # 49 unit + widget tests
+flutter test      # unit + widget tests, generator and scanner
 flutter analyze
 ```
 
@@ -147,6 +188,6 @@ API must be HTTPS.
 
 ## Layout
 
-Single responsive screen. Panels sit side by side at ≥ 760 px wide and stack
+The generator is a single responsive screen. Panels sit side by side at ≥ 760 px wide and stack
 below that; the header chips wrap under the title at ≥ 560 px. Content is
 capped at 1040 px and centred.
