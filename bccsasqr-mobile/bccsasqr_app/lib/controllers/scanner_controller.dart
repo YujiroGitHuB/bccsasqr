@@ -234,17 +234,22 @@ class ScannerController extends ChangeNotifier {
     }
   }
 
-  Future<void> signOut() async {
+  /// Signs out on this phone. [message] is shown on the sign-in screen —
+  /// why the password is being asked for, when it was not the user's idea.
+  Future<void> signOut({String? message}) async {
     await _repository.signOut();
     if (_disposed) return;
     _clearScanner();
     _session = ScannerSession.signedOut;
-    _sessionMessage = null;
+    _sessionMessage = message;
     _notify();
   }
 
   /// The server no longer accepts this phone's token.
   void _signedOutByServer() {
+    // Already signed out on this phone — a request still in flight when it
+    // happened comes back refused. The reason already on screen stands.
+    if (_session == ScannerSession.signedOut) return;
     _clearScanner();
     _session = ScannerSession.signedOut;
     _sessionMessage = ScannerStrings.sessionExpired;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../controllers/scanner_lock_controller.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../models/scanner_models.dart';
@@ -8,7 +9,8 @@ import 'scanner_header.dart';
 /// What the account sheet was closed with.
 enum AccountAction { settings, signOut }
 
-/// The sheet behind the avatar: who is signed in, Settings, and Sign out.
+/// The sheet behind the avatar: who is signed in, the fingerprint lock,
+/// Settings, and Sign out.
 ///
 /// Returns what was picked, and leaves acting on it to the caller — the
 /// sheet has to be off the screen before a confirmation or a new page opens
@@ -17,18 +19,25 @@ Future<AccountAction?> showAccountSheet(
   BuildContext context, {
   required ScannerUser user,
   required int subjectCount,
+  ScannerLockController? lock,
 }) => showModalBottomSheet<AccountAction>(
   context: context,
   showDragHandle: true,
   isScrollControlled: true,
-  builder: (context) => _AccountSheet(user: user, subjectCount: subjectCount),
+  builder: (context) =>
+      _AccountSheet(user: user, subjectCount: subjectCount, lock: lock),
 );
 
 class _AccountSheet extends StatelessWidget {
-  const _AccountSheet({required this.user, required this.subjectCount});
+  const _AccountSheet({
+    required this.user,
+    required this.subjectCount,
+    this.lock,
+  });
 
   final ScannerUser user;
   final int subjectCount;
+  final ScannerLockController? lock;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +86,11 @@ class _AccountSheet extends StatelessWidget {
             const SizedBox(height: 14),
             UserChips(user: user, subjectCount: subjectCount),
             const SizedBox(height: 18),
+            // Only on a phone with a screen lock to ask for.
+            if (lock case final lock? when lock.available) ...[
+              _LockTile(lock: lock),
+              const SizedBox(height: 10),
+            ],
             Material(
               color: colors.surfaceRaised,
               borderRadius: BorderRadius.circular(14),
@@ -115,6 +129,47 @@ class _AccountSheet extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The lock's switch. Turning it on asks for the phone's lock first, so the
+/// finger that opens the scanner later is the owner's.
+class _LockTile extends StatelessWidget {
+  const _LockTile({required this.lock});
+
+  final ScannerLockController lock;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return ListenableBuilder(
+      listenable: lock,
+      builder: (context, _) => Material(
+        color: colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
+        child: SwitchListTile(
+          key: const ValueKey('account.lock'),
+          value: lock.enabled,
+          onChanged: lock.unlocking
+              ? null
+              : (on) => on ? lock.enable() : lock.disable(),
+          secondary: Icon(Icons.fingerprint_rounded, color: colors.accent),
+          title: Text(
+            ScannerStrings.lockTile,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: colors.textPrimary,
+            ),
+          ),
+          subtitle: Text(
+            ScannerStrings.lockTileBody,
+            style: TextStyle(color: colors.textSecondary),
+          ),
         ),
       ),
     );

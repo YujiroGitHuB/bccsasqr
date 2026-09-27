@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
+import 'scan_highlight.dart';
 
 /// Stands in for the camera where the native decoder does not run — the web
 /// build, used to look at the screens in a browser. A typed number goes
@@ -29,6 +30,8 @@ class _QrCameraState extends State<QrCamera> {
   void _submit() {
     final text = _field.text.trim();
     if (text.isEmpty) return;
+    // No code to outline, so the frame itself lights up.
+    ScanHighlightScope.maybeOf(context)?.show(null);
     widget.onCode(text);
     _field.clear();
   }

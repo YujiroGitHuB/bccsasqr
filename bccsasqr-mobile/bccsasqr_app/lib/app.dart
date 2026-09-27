@@ -7,6 +7,7 @@ import 'core/constants/app_strings.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'services/app_info.dart';
+import 'services/device_lock.dart';
 import 'services/http_scanner_repository.dart';
 import 'services/http_student_repository.dart';
 import 'services/qr_export_service.dart';
@@ -40,6 +41,8 @@ class BccSasqrApp extends StatefulWidget {
     this.scannerRepository,
     this.scanFeedback,
     this.settingsStore,
+    this.deviceLock,
+    this.scannerLockStore,
     this.appInfo = AppInfo.load,
     this.cameraBuilder = deviceQrCamera,
     this.keepAwake = deviceKeepAwake,
@@ -54,6 +57,11 @@ class BccSasqrApp extends StatefulWidget {
   final ScannerRepository? scannerRepository;
   final ScanFeedback? scanFeedback;
   final SettingsStore? settingsStore;
+
+  /// The phone's fingerprint, face or screen lock for the scanner, and the
+  /// switch for it. The real ones when left out.
+  final DeviceLock? deviceLock;
+  final ScannerLockStore? scannerLockStore;
   final Future<AppInfo> Function() appInfo;
   final QrCameraBuilder cameraBuilder;
   final Future<void> Function(bool on) keepAwake;
@@ -160,6 +168,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       feedback: _scanFeedback,
       cameraBuilder: widget.cameraBuilder,
       keepAwake: widget.keepAwake,
+      deviceLock: widget.deviceLock ?? LocalAuthDeviceLock(),
+      lockStore: widget.scannerLockStore ?? SharedPrefsScannerLockStore(),
       onOpenSettings: () => Navigator.of(
         context,
       ).push(MaterialPageRoute<void>(builder: _settingsPage)),

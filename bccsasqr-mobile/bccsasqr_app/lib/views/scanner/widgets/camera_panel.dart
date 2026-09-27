@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../../../controllers/scanner_controller.dart';
@@ -5,6 +6,7 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/scan_feedback.dart';
 import '../../widgets/surface_panel.dart';
+import '../camera/scan_highlight.dart';
 import '../camera/torch_control.dart';
 
 /// The colour a scan outcome is shown in. Green, amber and red are the
@@ -47,10 +49,12 @@ class CameraPanel extends StatefulWidget {
 
 class _CameraPanelState extends State<CameraPanel> {
   final TorchControl _torch = TorchControl();
+  final ScanHighlightControl _highlight = ScanHighlightControl();
 
   @override
   void dispose() {
     _torch.dispose();
+    _highlight.dispose();
     super.dispose();
   }
 
@@ -73,13 +77,27 @@ class _CameraPanelState extends State<CameraPanel> {
                   if (active)
                     TorchScope(
                       control: _torch,
-                      child: Builder(builder: widget.cameraBuilder),
+                      child: ScanHighlightScope(
+                        control: _highlight,
+                        child: Builder(builder: widget.cameraBuilder),
+                      ),
                     )
                   else
                     const _CameraIdle(),
                   if (active)
                     IgnorePointer(
-                      child: ScanFrame(fraction: widget.frameFraction),
+                      child: ScanFrame(
+                        fraction: widget.frameFraction,
+                        locked: _highlight.locked,
+                      ),
+                    ),
+                  // The web scanner's green box, over the code just read.
+                  if (active)
+                    IgnorePointer(
+                      child: ScanHighlight(
+                        control: _highlight,
+                        fraction: widget.frameFraction,
+                      ),
                     ),
                   if (widget.recording)
                     const Positioned(
@@ -257,9 +275,12 @@ class _SavingChip extends StatelessWidget {
 
 /// Four corners and a sweeping line over the camera — where to hold the QR.
 class ScanFrame extends StatefulWidget {
-  const ScanFrame({super.key, required this.fraction});
+  const ScanFrame({super.key, required this.fraction, this.locked});
 
   final double fraction;
+
+  /// True while a read code is outlined in green: the line steps aside.
+  final ValueListenable<bool>? locked;
 
   @override
   State<ScanFrame> createState() => _ScanFrameState();
@@ -292,12 +313,16 @@ class _ScanFrameState extends State<ScanFrame>
 
   @override
   Widget build(BuildContext context) {
+    final locked = widget.locked;
+
     return AnimatedBuilder(
-      animation: _sweep,
+      animation: Listenable.merge([_sweep, ?locked]),
       builder: (context, _) => CustomPaint(
         painter: _FramePainter(
           fraction: widget.fraction,
-          sweep: _sweep.isAnimating ? _sweep.value : null,
+          sweep: _sweep.isAnimating && !(locked?.value ?? false)
+              ? _sweep.value
+              : null,
           color: context.colors.accent,
         ),
       ),
@@ -318,34 +343,18 @@ class _FramePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final side = size.shortestSide * fraction;
-    final box = Rect.fromCenter(
-      center: size.center(Offset.zero),
-      width: side,
-      height: side,
+    final box = scanFrameBox(size, fraction);
+    final side = box.width;
+
+    paintFrameCorners(
+      canvas,
+      box,
+      Paint()
+        ..color = color
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke,
     );
-    final arm = side * 0.14;
-
-    final corner = Paint()
-      ..color = color
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    for (final (point, dx, dy) in [
-      (box.topLeft, 1.0, 1.0),
-      (box.topRight, -1.0, 1.0),
-      (box.bottomLeft, 1.0, -1.0),
-      (box.bottomRight, -1.0, -1.0),
-    ]) {
-      canvas.drawPath(
-        Path()
-          ..moveTo(point.dx, point.dy + arm * dy)
-          ..lineTo(point.dx, point.dy)
-          ..lineTo(point.dx + arm * dx, point.dy),
-        corner,
-      );
-    }
 
     final t = sweep;
     if (t != null) {

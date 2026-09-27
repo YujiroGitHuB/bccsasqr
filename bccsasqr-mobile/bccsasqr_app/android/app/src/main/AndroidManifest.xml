@@ -18,6 +18,9 @@
     <uses-feature android:name="android.hardware.camera.any" android:required="false"
         tools:replace="android:required"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
+    <!-- The scanner's lock: the phone's fingerprint, face or screen lock
+         opens a saved instructor sign-in (local_auth). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
 
     <application
         android:label="BCC SASQR"

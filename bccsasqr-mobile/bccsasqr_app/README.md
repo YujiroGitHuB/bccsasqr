@@ -14,6 +14,10 @@ One Android app, two people, chosen on the opening screen:
   phone. An instructor signs in with their web account, picks a subject and
   scans; the server applies the web scanner's own rules
   (`includes/scan_attendance.php`), and both fill the same Attendance List.
+  After a sign-in with the password, the instructor can put the phone's own
+  lock (fingerprint, face or PIN, via `local_auth`) in front of it — see
+  `controllers/scanner_lock_controller.dart`. Signing out drops the lock with
+  the sign-in.
 
 ## Architecture
 

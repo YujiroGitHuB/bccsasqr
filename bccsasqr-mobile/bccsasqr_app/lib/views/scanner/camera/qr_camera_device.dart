@@ -1,9 +1,11 @@
 import 'package:camera/camera.dart' show FlashMode;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show DeviceOrientation;
 import 'package:flutter_zxing/flutter_zxing.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
+import 'scan_highlight.dart';
 import 'torch_control.dart';
 
 /// The phone's back camera, decoding QR codes with ZXing.
@@ -45,6 +47,33 @@ class _QrCameraState extends State<QrCamera> {
       );
   }
 
+  /// Where [code] sits inside the scan frame, for the green outline.
+  ///
+  /// ZXing reports the corners in the frame as the sensor sees it — on its
+  /// side on most phones — and inside the square it was asked to read, so
+  /// they are turned the right way up and scaled to that square. Null when
+  /// there is no position, or it does not land inside the frame.
+  ScanQuad? _quadOf(Code code) {
+    final pos = code.position;
+    if (pos == null) return null;
+    final controller = _controller;
+    return ScanQuad.fromCrop(
+      imageWidth: pos.imageWidth,
+      imageHeight: pos.imageHeight,
+      cropFraction: QrCamera.cropFraction,
+      points: [
+        Offset(pos.topLeftX.toDouble(), pos.topLeftY.toDouble()),
+        Offset(pos.topRightX.toDouble(), pos.topRightY.toDouble()),
+        Offset(pos.bottomRightX.toDouble(), pos.bottomRightY.toDouble()),
+        Offset(pos.bottomLeftX.toDouble(), pos.bottomLeftY.toDouble()),
+      ],
+      rotation: ScanQuad.displayRotation(
+        controller?.description.sensorOrientation ?? 90,
+        controller?.value.deviceOrientation ?? DeviceOrientation.portraitUp,
+      ),
+    );
+  }
+
   void _reportTorch() {
     final controller = _controller;
     if (controller == null) return;
@@ -68,6 +97,9 @@ class _QrCameraState extends State<QrCamera> {
       onScan: (code) {
         final text = code.text;
         if (code.isValid && text != null && text.isNotEmpty) {
+          // Outlined the moment it is read, as the web scanner does —
+          // before the server has said anything about it.
+          if (mounted) ScanHighlightScope.maybeOf(context)?.show(_quadOf(code));
           widget.onCode(text);
         }
       },

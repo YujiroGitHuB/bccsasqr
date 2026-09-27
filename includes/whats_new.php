@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.10';
+const WHATS_NEW_VERSION = '2026-09-27.12';
 
 /**
  * The changelog, newest release first.
@@ -159,6 +159,20 @@ function whats_new_releases(): array
                     'title' => 'The app’s opening animations take their time',
                     'text'  => 'The opening animations of <strong>My QR Code</strong> and the <strong>Attendance Scanner</strong> were over almost before they could be seen. They now play a little slower and rest on the finished picture for a moment before the page opens, so <strong>Welcome back</strong> and the three steps can actually be read. <strong>My Attendance</strong> has its own now too: a calendar whose days are checked off one by one, one of them amber for a late. Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-bounding-box',
+                    'title' => 'The app’s scanner outlines the code it reads, in green',
+                    'text'  => 'Like the web scanner, the app now shows the moment it has read a code: the frame&rsquo;s corners turn <strong>green</strong>, a green outline draws itself around the student&rsquo;s QR with a mark on each corner, a green line passes over it once, and a ring ripples out from the middle. The outline follows the code if the phone moves, and fades once it is taken away. You can see at a glance that the code was caught before the student&rsquo;s name comes up. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-fingerprint',
+                    'title' => 'Lock the app’s scanner with your fingerprint',
+                    'text'  => 'The app keeps you signed in, so anyone who picked up your phone could open the scanner. You can now put your phone&rsquo;s own lock in front of it: after you sign in with your email and password, the app asks <strong>Lock the scanner?</strong> Say yes, and from then on the scanner opens only with your <strong>fingerprint</strong>, face, or the phone&rsquo;s PIN or pattern &mdash; and asks again if you have been away from the app for more than a minute. The camera does not start until it is unlocked. It works only after a sign-in with your password, and signing out removes it; if your finger will not read, tap <strong>Sign in with password instead</strong>. Turn it on or off any time from your picture at the top of the scanner. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
             ],
         ],

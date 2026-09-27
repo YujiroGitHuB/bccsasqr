@@ -204,7 +204,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                         </div>
                     </div>
                     <ul class="dl-side-list">
-                        <li><i class="bi bi-person-lock" aria-hidden="true"></i><span><strong>Your web system account.</strong> Sign in once with the same email and password; the phone keeps you signed in until you sign out.</span></li>
+                        <li><i class="bi bi-person-lock" aria-hidden="true"></i><span><strong>Your web system account.</strong> Sign in once with the same email and password; the phone keeps you signed in until you sign out, and can keep the scanner behind your fingerprint.</span></li>
                         <li><i class="bi bi-camera" aria-hidden="true"></i><span><strong>Pick a subject, then scan.</strong> Each scan shows the student’s photo, beeps, vibrates and reads the name aloud.</span></li>
                         <li><i class="bi bi-alarm" aria-hidden="true"></i><span><strong>Late marking and a flashlight</strong> are a tap away — for a class that has started, or a dim room.</span></li>
                         <li><i class="bi bi-list-check" aria-hidden="true"></i><span><strong>The same Attendance List.</strong> The app follows the web scanner’s rules, and both fill the same records.</span></li>

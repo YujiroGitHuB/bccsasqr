@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../controllers/scanner_controller.dart';
+import '../../controllers/scanner_lock_controller.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -46,9 +47,14 @@ class ScannerPage extends StatefulWidget {
     this.cameraBuilder = deviceQrCamera,
     this.keepAwake = deviceKeepAwake,
     this.onOpenSettings,
+    this.lock,
   });
 
   final ScannerController controller;
+
+  /// The phone's lock in front of the sign-in; its switch is in the
+  /// account sheet.
+  final ScannerLockController? lock;
 
   /// Running on [InMemoryScannerRepository] — say so.
   final bool demo;
@@ -218,6 +224,7 @@ class _ScannerPageState extends State<ScannerPage> {
       context,
       user: user,
       subjectCount: _controller.subjects.length,
+      lock: widget.lock,
     );
     if (!mounted) return;
 

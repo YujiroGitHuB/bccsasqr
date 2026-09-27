@@ -42,3 +42,9 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // The AppCompat themes in res/values*/styles.xml, which the fingerprint
+    // prompt needs on Android 8 and older.
+    implementation("androidx.appcompat:appcompat:1.7.0")
+}

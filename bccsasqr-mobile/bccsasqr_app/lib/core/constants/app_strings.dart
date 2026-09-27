@@ -239,6 +239,32 @@ abstract final class ScannerStrings {
   // The account sheet behind the avatar.
   static const String account = 'Account';
   static const String settingsTileBody = 'Theme, sound, vibration and voice';
+
+  // The lock: the phone's fingerprint, face or screen lock in front of a
+  // saved sign-in.
+  static const String lockTitle = 'Scanner locked';
+  static const String lockBody =
+      'Open it with this phone\'s fingerprint, face or screen lock.';
+  static const String lockUnlock = 'Unlock';
+  static const String lockUsePassword = 'Sign in with password instead';
+  static const String lockNotUnlocked =
+      'Not unlocked yet. Tap Unlock to try again.';
+  static const String lockReason = 'Unlock the attendance scanner';
+  static const String lockEnableReason =
+      'Confirm it is you to lock the scanner';
+  static const String lockLost =
+      'This phone\'s screen lock was turned off, so sign in with your '
+      'password again.';
+  static const String lockOfferTitle = 'Lock the scanner?';
+  static const String lockOfferBody =
+      'Next time, the scanner opens with this phone\'s fingerprint, face or '
+      'screen lock — so nobody else who picks up the phone can scan under '
+      'your name. You can turn it off from your picture at the top.';
+  static const String lockOfferLater = 'Not now';
+  static const String lockOfferOn = 'Turn on';
+  static const String lockOn = 'Scanner lock is on';
+  static const String lockTile = 'Fingerprint lock';
+  static const String lockTileBody = 'Open the scanner with this phone\'s lock';
 }
 
 /// The Attendance Tracker's copy — the web tracker's (`Tracker/view.php`,

@@ -3,6 +3,7 @@ import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/services/app_info.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/scan_feedback.dart';
+import 'package:bccsasqr_app/services/device_lock.dart';
 import 'package:bccsasqr_app/services/scanner_repository.dart';
 import 'package:bccsasqr_app/services/settings_store.dart';
 import 'package:bccsasqr_app/services/speech_service.dart';
@@ -67,6 +68,8 @@ void main() {
     cameraBuilder: _fakeCamera,
     keepAwake: (on) async => awake.add(on),
     settingsStore: MemorySettingsStore(),
+    deviceLock: const NoDeviceLock(),
+    scannerLockStore: MemoryScannerLockStore(),
     appInfo: () async => const AppInfo(version: '1.1.0', buildNumber: '2'),
     showSplash: false,
   );
