@@ -79,7 +79,15 @@ class _CameraPanelState extends State<CameraPanel> {
                       control: _torch,
                       child: ScanHighlightScope(
                         control: _highlight,
-                        child: Builder(builder: widget.cameraBuilder),
+                        // Out of sight — another tab of the instructor's bar,
+                        // or a page over the scanner — the camera is let go
+                        // and started again on the way back, rather than
+                        // left running behind it.
+                        child: Builder(
+                          builder: (context) => TickerMode.of(context)
+                              ? widget.cameraBuilder(context)
+                              : const SizedBox.shrink(),
+                        ),
                       ),
                     )
                   else

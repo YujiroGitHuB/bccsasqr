@@ -5,10 +5,13 @@ import '../controllers/settings_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import '../models/app_role.dart';
 import '../services/app_info.dart';
 import 'widgets/surface_panel.dart';
 
-/// Theme, the scanner's beep / buzz / voice, and what version this is.
+/// Theme, the scanner's beep / buzz / voice, the role, and what version this
+/// is. A pushed page on a student's phone; a tab of the bar on an
+/// instructor's.
 ///
 /// Every switch applies the moment it is flipped — there is no Save.
 class SettingsPage extends StatefulWidget {
@@ -17,9 +20,18 @@ class SettingsPage extends StatefulWidget {
     required this.controller,
     this.appInfo = AppInfo.load,
     this.whatsNewBuilder,
+    this.role,
+    this.onSwitchRole,
   });
 
   final SettingsController controller;
+
+  /// Who this phone is for. A student's has no scanner, so its beep and
+  /// buzz are left out. Null shows everything.
+  final AppRole? role;
+
+  /// Asks the first launch's question again. No Role row without it.
+  final VoidCallback? onSwitchRole;
 
   /// The What's New page, under About — the same one as on the home screen.
   final WidgetBuilder? whatsNewBuilder;
@@ -54,6 +66,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final colors = context.colors;
     final download = AppInfo.downloadPageUrl;
     final whatsNew = widget.whatsNewBuilder;
+    final role = widget.role;
+    final switchRole = widget.onSwitchRole;
+    final scanner = role != AppRole.student;
 
     return Scaffold(
       body: SafeArea(
@@ -72,12 +87,17 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Row(
                       children: [
-                        IconButton(
-                          onPressed: () => Navigator.of(context).maybePop(),
-                          tooltip: AppStrings.homeBack,
-                          icon: const Icon(Icons.arrow_back_rounded),
-                          color: colors.textSecondary,
-                        ),
+                        // A tab of the instructor's bar has nowhere to go
+                        // back to.
+                        if (Navigator.of(context).canPop())
+                          IconButton(
+                            onPressed: () => Navigator.of(context).maybePop(),
+                            tooltip: AppStrings.homeBack,
+                            icon: const Icon(Icons.arrow_back_rounded),
+                            color: colors.textSecondary,
+                          )
+                        else
+                          const SizedBox(height: 48),
                         const SizedBox(width: 4),
                         Text(
                           SettingsStrings.title,
@@ -151,29 +171,35 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const PanelHeading(
+                          PanelHeading(
                             icon: Icons.tune_rounded,
-                            label: SettingsStrings.feedback,
+                            label: scanner
+                                ? SettingsStrings.feedback
+                                : SettingsStrings.feedbackStudent,
                           ),
                           const SizedBox(height: 6),
-                          _SwitchRow(
-                            icon: Icons.volume_up_outlined,
-                            title: SettingsStrings.sound,
-                            body: SettingsStrings.soundBody,
-                            value: c.sound,
-                            onChanged: c.setSound,
-                          ),
-                          _SwitchRow(
-                            icon: Icons.vibration_rounded,
-                            title: SettingsStrings.vibration,
-                            body: SettingsStrings.vibrationBody,
-                            value: c.vibration,
-                            onChanged: c.setVibration,
-                          ),
+                          if (scanner) ...[
+                            _SwitchRow(
+                              icon: Icons.volume_up_outlined,
+                              title: SettingsStrings.sound,
+                              body: SettingsStrings.soundBody,
+                              value: c.sound,
+                              onChanged: c.setSound,
+                            ),
+                            _SwitchRow(
+                              icon: Icons.vibration_rounded,
+                              title: SettingsStrings.vibration,
+                              body: SettingsStrings.vibrationBody,
+                              value: c.vibration,
+                              onChanged: c.setVibration,
+                            ),
+                          ],
                           _SwitchRow(
                             icon: Icons.record_voice_over_outlined,
                             title: SettingsStrings.voice,
-                            body: SettingsStrings.voiceBody,
+                            body: scanner
+                                ? SettingsStrings.voiceBody
+                                : SettingsStrings.voiceBodyStudent,
                             value: c.voice,
                             onChanged: c.setVoice,
                           ),
@@ -181,6 +207,39 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // ── Role ───────────────────────────────────────────
+                    if (role != null && switchRole != null) ...[
+                      SurfacePanel(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const PanelHeading(
+                              icon: Icons.switch_account_outlined,
+                              label: SettingsStrings.role,
+                            ),
+                            const SizedBox(height: 6),
+                            _LinkRow(
+                              key: const ValueKey('settings.switchRole'),
+                              icon: switch (role) {
+                                AppRole.student => Icons.school_outlined,
+                                AppRole.instructor => Icons.badge_outlined,
+                              },
+                              title: switch (role) {
+                                AppRole.student => RoleStrings.currentStudent,
+                                AppRole.instructor =>
+                                  RoleStrings.currentInstructor,
+                              },
+                              body: RoleStrings.switchBody,
+                              external: false,
+                              onTap: switchRole,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     // ── About ──────────────────────────────────────────
                     SurfacePanel(

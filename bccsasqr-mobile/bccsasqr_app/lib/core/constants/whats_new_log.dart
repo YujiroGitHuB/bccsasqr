@@ -18,7 +18,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-27';
+  static const String version = '2026-09-27.2';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -27,17 +27,43 @@ abstract final class WhatsNewLog {
       title: 'The scanner and your attendance, in the app',
       summary:
           'Instructors can now scan attendance with the app, and students can '
-          'check their own attendance right beside their QR code. The scanner '
-          'can be locked with your fingerprint, and it shows each code it '
-          'reads in green.',
+          'check their own attendance right beside their QR code. The app '
+          'asks whether you are a student or an instructor, and shows each '
+          'only their own side. The scanner can be locked with your '
+          'fingerprint, and it shows each code it reads in green.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.qr,
+          icon: Icons.switch_account_outlined,
+          title: 'Student or instructor? The app asks once',
+          text:
+              'The first time it opens, the app asks **Who is using this '
+              'phone?** Pick **I\'m a student** and you see only **My QR '
+              'Code** and **My Attendance** — nothing of the scanner. Picked '
+              'the wrong one? **Settings → Role** asks again.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.scanner,
+          icon: Icons.call_to_action_outlined,
+          title: 'Scanner, QR code and attendance on one bar',
+          text:
+              'Pick **I\'m an instructor** and a bar along the bottom holds '
+              '**QR Code**, **Scanner**, **Attendance** and **Settings**. It '
+              'opens on the scanner, and a subject you picked stays picked '
+              'while you look a student up on another tab. The camera '
+              'switches off until you come back to it, and switching roles '
+              'keeps you signed in.',
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.added,
           area: WhatsNewArea.scanner,
           icon: Icons.qr_code_scanner_rounded,
           title: 'Scan attendance with the app',
           text:
-              'Tap **Attendance Scanner** and sign in with the email and '
+              'Choose **I\'m an instructor** and sign in with the email and '
               'password you use on the web system — the phone keeps you '
               'signed in. Pick a subject and the camera starts; flip **Late '
               'marking** on once class has begun. Each scan shows the '
@@ -99,8 +125,8 @@ abstract final class WhatsNewLog {
           title: 'Quiet scanning for a quiet room',
           text:
               'Turn the scanner\'s **Sound**, **Vibration** or **Voice** off '
-              'one by one in **Settings** — the gear on the first screen, or '
-              'tap your picture in the scanner.',
+              'one by one in **Settings** — the tab at the bottom, or tap '
+              'your picture in the scanner.',
         ),
         WhatsNewItem(
           kind: WhatsNewKind.improved,

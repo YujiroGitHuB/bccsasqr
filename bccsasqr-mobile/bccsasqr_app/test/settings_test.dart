@@ -12,6 +12,8 @@ import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bccsasqr_app/models/app_role.dart';
+import 'package:bccsasqr_app/services/role_store.dart';
 
 class _NoExport implements QrExportService {
   @override
@@ -104,7 +106,9 @@ void main() {
       view.resetDevicePixelRatio();
     });
 
-    Widget app() => BccSasqrApp(
+    // The instructor's Settings: the one with the scanner's switches.
+    Widget app({AppRole role = AppRole.instructor}) => BccSasqrApp(
+      roleStore: MemoryRoleStore(role),
       repository: InMemoryStudentRepository(latency: Duration.zero),
       exportService: _NoExport(),
       speech: const SilentSpeechService(),
@@ -124,20 +128,38 @@ void main() {
     Future<void> openSettings(WidgetTester tester) async {
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('home.settings')));
+      await tester.tap(find.byKey(const ValueKey('nav.settings')));
       await tester.pumpAndSettle();
     }
 
-    testWidgets('the home screen opens Settings, with the version', (
-      tester,
-    ) async {
+    testWidgets('the bar opens Settings, with the version', (tester) async {
       await openSettings(tester);
 
       expect(find.text(SettingsStrings.appearance), findsOneWidget);
       expect(find.text(SettingsStrings.feedback), findsOneWidget);
+      expect(find.text(SettingsStrings.sound), findsOneWidget);
       expect(find.text('1.1.0 (build 2)'), findsOneWidget);
       // No API_BASE_URL in a test build.
       expect(find.text(SettingsStrings.serverDemo), findsOneWidget);
+      // A tab, not a page: nothing to go back to.
+      expect(find.byTooltip(AppStrings.homeBack), findsNothing);
+    });
+
+    testWidgets('a student\'s Settings has only the voice, no scanner', (
+      tester,
+    ) async {
+      await tester.pumpWidget(app(role: AppRole.student));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('home.settings')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(SettingsStrings.feedbackStudent), findsOneWidget);
+      expect(find.text(SettingsStrings.voice), findsOneWidget);
+      expect(find.text(SettingsStrings.feedback), findsNothing);
+      expect(find.text(SettingsStrings.sound), findsNothing);
+      expect(find.text(SettingsStrings.vibration), findsNothing);
+      expect(find.text(RoleStrings.currentStudent), findsOneWidget);
+      expect(find.byTooltip(AppStrings.homeBack), findsOneWidget);
     });
 
     testWidgets('picking Dark repaints the app dark, and is remembered', (
@@ -168,7 +190,7 @@ void main() {
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
 
-      final context = tester.element(find.text(AppStrings.homeScannerTitle));
+      final context = tester.element(find.text(NavStrings.scanner));
       expect(Theme.of(context).brightness, Brightness.dark);
     });
 

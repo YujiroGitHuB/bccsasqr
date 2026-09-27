@@ -12,6 +12,8 @@ import 'package:bccsasqr_app/views/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:bccsasqr_app/models/app_role.dart';
+import 'package:bccsasqr_app/services/role_store.dart';
 
 class _StubRepository implements StudentRepository {
   @override
@@ -104,6 +106,7 @@ void main() {
   });
 
   Widget harness(_StubExportService exporter) => BccSasqrApp(
+    roleStore: MemoryRoleStore(AppRole.student),
     repository: _StubRepository(),
     exportService: exporter,
     showSplash: false,
@@ -134,6 +137,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
         repository: _StubRepository(),
         exportService: _StubExportService(),
       ),
@@ -147,7 +151,7 @@ void main() {
 
     expect(find.byType(SplashPage), findsNothing);
     expect(find.text(AppStrings.homeStudentTitle), findsOneWidget);
-    expect(find.text(AppStrings.homeScannerTitle), findsOneWidget);
+    expect(find.text(AppStrings.homeTrackerTitle), findsOneWidget);
 
     // Students are one tap from the generator.
     await tester.tap(find.byKey(const ValueKey('home.generator')));
@@ -160,6 +164,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
         repository: _StubRepository(),
         exportService: _StubExportService(),
         showSplash: false,
@@ -188,6 +193,7 @@ void main() {
 
     await tester.pumpWidget(
       BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
         repository: _StubRepository(),
         exportService: _StubExportService(),
       ),
@@ -256,6 +262,7 @@ void main() {
     await openGenerator(
       tester,
       BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
         repository: _DroppedSignalRepository(),
         exportService: _StubExportService(),
         showSplash: false,
@@ -282,6 +289,7 @@ void main() {
     await openGenerator(
       tester,
       BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
         repository: _DroppedSignalRepository(),
         exportService: _StubExportService(),
         showSplash: false,
@@ -353,6 +361,7 @@ void main() {
     await openGenerator(
       tester,
       BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
         repository: InMemoryStudentRepository(latency: Duration.zero),
         exportService: _StubExportService(),
         showSplash: false,

@@ -16,6 +16,8 @@ import 'package:bccsasqr_app/views/tracker_splash.dart';
 import 'package:bccsasqr_app/views/whats_new_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bccsasqr_app/models/app_role.dart';
+import 'package:bccsasqr_app/services/role_store.dart';
 
 class _NoExport implements QrExportService {
   @override
@@ -107,7 +109,8 @@ void main() {
       view.resetDevicePixelRatio();
     });
 
-    Widget app() => BccSasqrApp(
+    Widget app({AppRole role = AppRole.student}) => BccSasqrApp(
+      roleStore: MemoryRoleStore(role),
       repository: InMemoryStudentRepository(latency: Duration.zero),
       trackerRepository: InMemoryTrackerRepository(latency: Duration.zero),
       exportService: _NoExport(),
@@ -184,7 +187,13 @@ void main() {
       final scanner = find.text('Lock the scanner with your fingerprint');
       final qr = find.text('Make and save your QR on your phone');
       expect(tracker, findsOneWidget);
-      expect(scanner, findsOneWidget);
+      // A student's phone has no scanner: not its items, not its filter.
+      expect(scanner, findsNothing);
+      expect(
+        find.byKey(const ValueKey('whatsNew.filter.scanner')),
+        findsNothing,
+      );
+      expect(find.text(WhatsNewStrings.introStudent), findsOneWidget);
       await tester.scrollUntilVisible(qr, 300);
       expect(qr, findsOneWidget);
 
@@ -276,6 +285,37 @@ void main() {
       expect(latestTitle, findsOneWidget);
       expect(find.text(WhatsNewStrings.openTracker), findsNothing);
       expect(find.text(WhatsNewStrings.openScanner), findsNothing);
+    });
+
+    testWidgets('an instructor gets a dot on Settings, and the scanner too', (
+      tester,
+    ) async {
+      await tester.pumpWidget(app(role: AppRole.instructor));
+      await tester.pumpAndSettle();
+      expect(card, findsNothing);
+      expect(find.byTooltip(NavStrings.settingsUnread), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('nav.settings')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('settings.whatsNew')));
+      await tester.pumpAndSettle();
+
+      expect(store.seen, WhatsNewLog.version);
+      expect(find.text(WhatsNewStrings.intro), findsOneWidget);
+      expect(
+        find.text('Lock the scanner with your fingerprint'),
+        findsOneWidget,
+      );
+
+      // An item opens its tab of the bar, not a page over it.
+      await tester.tap(find.byKey(const ValueKey('whatsNew.filter.tracker')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(WhatsNewStrings.openTracker));
+      await tester.pumpAndSettle();
+      expect(find.byType(WhatsNewPage), findsNothing);
+      expect(find.byType(TrackerIntro), findsOneWidget);
+      expect(find.byTooltip(NavStrings.settingsUnread), findsNothing);
+      expect(find.byTooltip(NavStrings.settings), findsOneWidget);
     });
 
     testWidgets('lays out on a small phone without overflowing', (

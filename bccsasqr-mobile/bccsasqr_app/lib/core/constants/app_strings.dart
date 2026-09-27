@@ -16,8 +16,8 @@ abstract final class AppStrings {
   static const String appTagline =
       'Look up your record and generate the QR code used for attendance.';
 
-  // The opening screen: one section per person, so each finds their own
-  // half without reading both cards.
+  // The student's opening screen. The instructor's is the bottom bar
+  // (NavStrings).
   static const String homeStudentSection = 'FOR STUDENTS';
   static const String homeStudentTitle = 'My QR Code';
   static const String homeStudentBody =
@@ -25,10 +25,6 @@ abstract final class AppStrings {
   static const String homeTrackerTitle = 'My Attendance';
   static const String homeTrackerBody =
       'See how many times you were marked present in each subject.';
-  static const String homeInstructorSection = 'FOR INSTRUCTORS';
-  static const String homeScannerTitle = 'Attendance Scanner';
-  static const String homeScannerBody =
-      'Sign in and scan student QR codes to record attendance.';
   static const String homeBack = 'Home';
 
   // The generator's opening splash: a QR being made, and the three steps.
@@ -347,6 +343,13 @@ abstract final class SettingsStrings {
   static const String voiceBody =
       'Read names and messages aloud — scanner, generator and tracker';
 
+  // A student's phone has no scanner, so only the voice is left to set.
+  static const String feedbackStudent = 'READ ALOUD';
+  static const String voiceBodyStudent =
+      'Read each step aloud in My QR Code and My Attendance';
+
+  static const String role = 'ROLE';
+
   static const String about = 'ABOUT';
   static const String version = 'Version';
   static const String server = 'Server';
@@ -365,6 +368,8 @@ abstract final class WhatsNewStrings {
   static const String openUnread = 'What\'s New — new in this update';
   static const String intro =
       'What changed in My QR Code, My Attendance and the Attendance Scanner.';
+  static const String introStudent =
+      'What changed in My QR Code and My Attendance.';
 
   static const String latest = 'LATEST';
 
@@ -387,12 +392,43 @@ abstract final class WhatsNewStrings {
   static const String openTracker = 'Open My Attendance';
   static const String openScanner = 'Open the Scanner';
 
-  // The home screen's card, until the page is opened once.
+  // The student's home screen card, until the page is opened once. The
+  // instructor's bar puts a dot on Settings instead.
   static const String cardTitle = 'New in this update';
   static const String cardBody =
-      'See what changed in My QR Code, My Attendance and the Scanner.';
+      'See what changed in My QR Code and My Attendance.';
   static const String cardClose = 'Dismiss';
 
   // The row in Settings → About.
   static const String settingsBody = 'What changed in this version';
+}
+
+/// The question on the first launch, and the row in Settings that asks it
+/// again.
+abstract final class RoleStrings {
+  static const String question = 'Who is using this phone?';
+  static const String hint =
+      'The app only shows what is yours. You can change this later in '
+      'Settings.';
+
+  static const String studentTitle = 'I\'m a student';
+  static const String studentBody =
+      'Save your QR code and check your own attendance.';
+  static const String instructorTitle = 'I\'m an instructor';
+  static const String instructorBody =
+      'Scan attendance — plus the QR generator and the tracker.';
+
+  // Settings → Role.
+  static const String currentStudent = 'Student';
+  static const String currentInstructor = 'Instructor';
+  static const String switchBody = 'Tap to choose again';
+}
+
+/// The instructor's bottom bar.
+abstract final class NavStrings {
+  static const String qr = 'QR Code';
+  static const String scanner = 'Scanner';
+  static const String tracker = 'Attendance';
+  static const String settings = 'Settings';
+  static const String settingsUnread = 'Settings — new in this update';
 }

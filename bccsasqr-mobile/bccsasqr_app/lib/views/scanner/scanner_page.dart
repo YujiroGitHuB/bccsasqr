@@ -82,11 +82,22 @@ class _ScannerPageState extends State<ScannerPage> {
   Timer? _alertTimer;
   bool _awake = false;
 
+  /// On screen: not on another tab of the instructor's bar, nor under a
+  /// page. The camera stops out of sight (CameraPanel), so the screen need
+  /// not stay on for it.
+  bool _shown = true;
+
   @override
   void initState() {
     super.initState();
     _alerts = _controller.alerts.listen(_showAlert);
     _controller.addListener(_syncKeepAwake);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _shown = TickerMode.of(context);
     _syncKeepAwake();
   }
 
@@ -100,7 +111,7 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   void _syncKeepAwake() {
-    final want = _controller.cameraActive;
+    final want = _controller.cameraActive && _shown;
     if (want == _awake) return;
     _awake = want;
     unawaited(widget.keepAwake(want));

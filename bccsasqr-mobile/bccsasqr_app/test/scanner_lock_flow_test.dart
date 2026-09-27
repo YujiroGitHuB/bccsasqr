@@ -10,6 +10,8 @@ import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/views/scanner/scanner_lock_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bccsasqr_app/models/app_role.dart';
+import 'package:bccsasqr_app/services/role_store.dart';
 
 /// A phone whose lock answers from a script: the next results in order,
 /// "unlocked" once the script runs out.
@@ -31,10 +33,12 @@ class _FakeDeviceLock implements DeviceLock {
 void main() {
   late _FakeDeviceLock device;
   late MemoryScannerLockStore store;
+  late InMemoryScannerRepository scanner;
 
   setUp(() {
     device = _FakeDeviceLock();
     store = MemoryScannerLockStore();
+    scanner = InMemoryScannerRepository(latency: Duration.zero);
     final view =
         TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.devicePixelRatio = 1.0;
@@ -49,9 +53,10 @@ void main() {
   });
 
   Widget app() => BccSasqrApp(
+    roleStore: MemoryRoleStore(AppRole.instructor),
     repository: InMemoryStudentRepository(latency: Duration.zero),
     speech: const SilentSpeechService(),
-    scannerRepository: InMemoryScannerRepository(latency: Duration.zero),
+    scannerRepository: scanner,
     scanFeedback: const SilentScanFeedback(),
     cameraBuilder: (context, onCode) => const ColoredBox(color: Colors.black),
     keepAwake: (on) async {},
@@ -62,7 +67,8 @@ void main() {
     showSplash: false,
   );
 
-  /// Home → scanner → signed in with the password.
+  /// The instructor's bar opens on the scanner → signed in with the
+  /// password.
   Future<void> signIn(WidgetTester tester) async {
     // The scan lines sweep forever; held still, pumpAndSettle can settle.
     tester.platformDispatcher.accessibilityFeaturesTestValue =
@@ -70,8 +76,6 @@ void main() {
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
     await tester.pumpWidget(app());
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('home.scanner')));
     await tester.pumpAndSettle();
 
     // No lock before a sign-in: there is nothing to unlock.
@@ -91,12 +95,16 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Back to the home screen and into the scanner again — the saved sign-in.
+  /// The app closed and opened again, on the scanner tab — the saved
+  /// sign-in, the lock's switch and the phone all kept.
+  Future<void> relaunch(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+  }
+
   Future<void> reopen(WidgetTester tester) async {
-    await tester.tap(find.byTooltip(AppStrings.homeBack));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('home.scanner')));
-    await tester.pumpAndSettle();
+    await relaunch(tester);
     // The lock screen is up a moment before the prompt covers it.
     await tester.pump(ScannerLockScreen.promptDelay);
     await tester.pumpAndSettle();
@@ -166,10 +174,7 @@ void main() {
     tester,
   ) async {
     await signInWithLock(tester);
-    await tester.tap(find.byTooltip(AppStrings.homeBack));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('home.scanner')));
-    await tester.pumpAndSettle();
+    await relaunch(tester);
 
     // The lock screen first; the prompt only after a moment.
     expect(find.byType(ScannerLockScreen), findsOneWidget);

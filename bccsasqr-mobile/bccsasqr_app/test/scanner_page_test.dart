@@ -12,6 +12,8 @@ import 'package:bccsasqr_app/views/scanner/scanner_intro.dart';
 import 'package:bccsasqr_app/views/scanner/widgets/scan_result_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bccsasqr_app/models/app_role.dart';
+import 'package:bccsasqr_app/services/role_store.dart';
 
 class _NoExport implements QrExportService {
   @override
@@ -43,6 +45,7 @@ Widget _fakeCamera(BuildContext context, ValueChanged<String> onCode) =>
 
 void main() {
   late List<bool> awake;
+  late InMemoryScannerRepository scanner;
 
   setUp(() {
     final view =
@@ -50,6 +53,7 @@ void main() {
     view.devicePixelRatio = 1.0;
     view.physicalSize = const Size(420, 2000);
     awake = [];
+    scanner = InMemoryScannerRepository(latency: Duration.zero);
   });
 
   tearDown(() {
@@ -60,10 +64,11 @@ void main() {
   });
 
   Widget app() => BccSasqrApp(
+    roleStore: MemoryRoleStore(AppRole.instructor),
     repository: InMemoryStudentRepository(latency: Duration.zero),
     exportService: _NoExport(),
     speech: const SilentSpeechService(),
-    scannerRepository: InMemoryScannerRepository(latency: Duration.zero),
+    scannerRepository: scanner,
     scanFeedback: const SilentScanFeedback(),
     cameraBuilder: _fakeCamera,
     keepAwake: (on) async => awake.add(on),
@@ -74,7 +79,7 @@ void main() {
     showSplash: false,
   );
 
-  /// Home → scanner → signed in → subject picked.
+  /// The bar opens on the scanner → signed in → subject picked.
   Future<void> openScanner(WidgetTester tester) async {
     // The scan line sweeps forever; with reduced motion it holds still, so
     // pumpAndSettle can settle.
@@ -84,7 +89,7 @@ void main() {
 
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('home.scanner')));
+    await tester.tap(find.byKey(const ValueKey('nav.scanner')));
     await tester.pumpAndSettle();
 
     expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
@@ -218,29 +223,31 @@ void main() {
     expect(find.text(ScannerStrings.signInHeading), findsNothing);
   });
 
-  testWidgets('the account sheet opens Settings', (tester) async {
+  testWidgets('the account sheet opens the Settings tab', (tester) async {
     await openScanner(tester);
 
     await tester.tap(find.byTooltip(ScannerStrings.account));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(SettingsStrings.title));
+    // The sheet's row, over the bar's own Settings.
+    await tester.tap(find.text(SettingsStrings.title).last);
     await tester.pumpAndSettle();
 
     expect(find.text(SettingsStrings.appearance), findsOneWidget);
     expect(find.text('1.1.0 (build 2)'), findsOneWidget);
+    // The bar's tab, not a page pushed over the scanner.
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byTooltip(AppStrings.homeBack), findsNothing);
   });
 
-  testWidgets('opening the scanner plays its splash, then asks to sign in', (
+  testWidgets('the scanner tab plays its splash, then asks to sign in', (
     tester,
   ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
+    // The instructor's bar opens on it, once the role has been read.
     await tester.pumpWidget(app());
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('home.scanner')));
-    // The new route's first frame is laid out offstage, for heroes.
     await tester.pump();
     await tester.pump();
 
@@ -256,7 +263,7 @@ void main() {
   Future<void> signInAtFullSpeed(WidgetTester tester) async {
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('home.scanner')));
+    await tester.tap(find.byKey(const ValueKey('nav.scanner')));
     await tester.pumpAndSettle();
     expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
 
@@ -287,10 +294,9 @@ void main() {
     await signInAtFullSpeed(tester);
     await tester.pumpAndSettle();
 
-    // Home, then the scanner again: the sign-in is kept on the phone.
-    await tester.tap(find.byTooltip(AppStrings.homeBack));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('home.scanner')));
+    // The app closed and opened again: the sign-in is kept on the phone.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(app());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 900));
 

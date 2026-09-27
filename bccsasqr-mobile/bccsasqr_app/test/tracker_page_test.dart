@@ -9,6 +9,8 @@ import 'package:bccsasqr_app/views/tracker_page.dart';
 import 'package:bccsasqr_app/views/tracker_splash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bccsasqr_app/models/app_role.dart';
+import 'package:bccsasqr_app/services/role_store.dart';
 
 AttendanceDay _day(int day, {bool late = false}) => AttendanceDay(
   date: DateTime(2026, 9, day),
@@ -81,6 +83,7 @@ void main() {
   Future<void> openTracker(WidgetTester tester) async {
     await tester.pumpWidget(
       BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
         trackerRepository: _StubTracker(),
         speech: const SilentSpeechService(),
         showSplash: false,
@@ -101,6 +104,7 @@ void main() {
   testWidgets('the home screen offers the tracker to students', (tester) async {
     await tester.pumpWidget(
       BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
         trackerRepository: _StubTracker(),
         speech: const SilentSpeechService(),
         showSplash: false,
@@ -115,6 +119,7 @@ void main() {
   testWidgets('plays its own splash before the page', (tester) async {
     await tester.pumpWidget(
       BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
         trackerRepository: _StubTracker(),
         speech: const SilentSpeechService(),
         showSplash: false,

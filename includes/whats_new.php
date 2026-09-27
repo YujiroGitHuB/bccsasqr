@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.15';
+const WHATS_NEW_VERSION = '2026-09-27.16';
 
 /**
  * The changelog, newest release first.
@@ -75,13 +75,13 @@ function whats_new_releases(): array
             'date'    => '2026-09-27',
             'icon'    => 'bi-qr-code-scan',
             'title'   => 'The Android app scans and tracks attendance, and accounts only from the admin',
-            'summary' => 'The BCC SASQR app now has the QR scanner in it. Sign in with the same email and password you use here, pick a subject, and scan — no browser needed. It follows the web scanner’s rules to the letter, and both fill the same Attendance List. Students get the Attendance Tracker in the app too, so the QR generator, the tracker and the scanner are all in one place. Two gaps are closed as well: nobody can make their own account any more, and a class list only opens for the instructor whose subject it is.',
+            'summary' => 'The BCC SASQR app now has the QR scanner in it. Sign in with the same email and password you use here, pick a subject, and scan — no browser needed. It follows the web scanner’s rules to the letter, and both fill the same Attendance List. Students get the Attendance Tracker in the app too, so the QR generator, the tracker and the scanner are all in one place — and the app asks on first launch whether you are a student or an instructor, so each sees only their own side. Two gaps are closed as well: nobody can make their own account any more, and a class list only opens for the instructor whose subject it is.',
             'items'   => [
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-phone',
                     'title' => 'The scanner, in the app',
-                    'text'  => 'Open the app and choose <strong>Attendance Scanner</strong>. Sign in once with your usual email and password &mdash; the phone keeps you signed in until you tap <strong>Sign out</strong>. From there it works like the web scanner: pick a subject and the camera starts, flip <strong>Late marking</strong> once class has begun, and each scan shows the student&rsquo;s photo, beeps, vibrates and reads the name aloud. Everything the web scanner refuses, the app refuses with the same message: <em>already marked</em>, <em>not enrolled</em>, <em>no photo on file</em>. The screen stays on while the camera is running, so it does not lock halfway through the line. Scans from the app and from the browser land in the same <strong>Attendance List</strong>. Anyone with the app already installed gets the scanner by downloading it again.',
+                    'text'  => 'Open the app and choose <strong>I&rsquo;m an instructor</strong> &mdash; the scanner opens first. Sign in once with your usual email and password &mdash; the phone keeps you signed in until you tap <strong>Sign out</strong>. From there it works like the web scanner: pick a subject and the camera starts, flip <strong>Late marking</strong> once class has begun, and each scan shows the student&rsquo;s photo, beeps, vibrates and reads the name aloud. Everything the web scanner refuses, the app refuses with the same message: <em>already marked</em>, <em>not enrolled</em>, <em>no photo on file</em>. The screen stays on while the camera is running, so it does not lock halfway through the line. Scans from the app and from the browser land in the same <strong>Attendance List</strong>. Anyone with the app already installed gets the scanner by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
                 [
@@ -95,7 +95,7 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-sliders',
                     'title' => 'Settings in the app: light or dark, and quiet scanning',
-                    'text'  => 'The app now has <strong>Settings</strong> &mdash; the gear on the opening screen, or tap your picture in the scanner. Pick <strong>Light</strong>, <strong>Dark</strong> or <strong>System</strong>, the same choice the web system gives you. For a quiet room, turn the scanner&rsquo;s <strong>Sound</strong>, <strong>Vibration</strong> or <strong>Voice</strong> off one by one. Settings also shows which <strong>version</strong> is installed, with a link to download the newest. Signing out has moved behind your picture in the scanner, and asks before it signs you out.',
+                    'text'  => 'The app now has <strong>Settings</strong> &mdash; the <strong>Settings</strong> tab on an instructor&rsquo;s bar (or tap your picture in the scanner), the gear on a student&rsquo;s first screen. Pick <strong>Light</strong>, <strong>Dark</strong> or <strong>System</strong>, the same choice the web system gives you. For a quiet room, turn the scanner&rsquo;s <strong>Sound</strong>, <strong>Vibration</strong> or <strong>Voice</strong> off one by one. Settings also shows which <strong>version</strong> is installed, with a link to download the newest. Signing out has moved behind your picture in the scanner, and asks before it signs you out.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
                 ],
                 [
@@ -104,6 +104,13 @@ function whats_new_releases(): array
                     'title' => 'Lost your phone? Change your password',
                     'text'  => 'Changing your password in <strong>My Profile</strong> signs the app out on <strong>every phone</strong> at once, so a lost phone cannot keep scanning under your name. An admin resetting your password or disabling your account does the same. Taking the scanner permission away in <strong>Manage Access</strong>, or locking the QR pages in Settings, reaches the app on its very next scan.',
                     'link'  => ['href' => 'pages/profile.php', 'label' => 'Open My Profile'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-person-badge',
+                    'title' => 'The app asks: student or instructor — and shows each only their side',
+                    'text'  => 'The first time the app opens, it asks <strong>Who is using this phone?</strong> A student who picks <strong>I&rsquo;m a student</strong> sees only <strong>My QR Code</strong> and <strong>My Attendance</strong> &mdash; nothing of the scanner. An instructor who picks <strong>I&rsquo;m an instructor</strong> gets a bar along the bottom: <strong>QR Code</strong>, <strong>Scanner</strong>, <strong>Attendance</strong> and <strong>Settings</strong>. It opens on the scanner; a subject you picked stays picked while you look a student up on another tab, and the camera switches off until you come back. Picked the wrong one? <strong>Settings &rarr; Role</strong> asks again, and the scanner stays signed in. The scanner still needs your web system sign-in whichever side is picked. The <strong>Lx</strong> credit at the bottom of the app also opens the same developer page as the web footer now. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/#inside', 'label' => 'Open the download page'],
                 ],
                 [
                     'type'  => 'fixed',
@@ -120,13 +127,6 @@ function whats_new_releases(): array
                 ],
                 [
                     'type'  => 'improved',
-                    'icon'  => 'bi-phone',
-                    'title' => 'The app’s opening screen: one side for students, one for instructors',
-                    'text'  => 'The first screen of the app is now split in two, each with its own heading: <strong>For Students</strong> holds <strong>My QR Code</strong>, and <strong>For Instructors</strong> holds the <strong>Attendance Scanner</strong>. Students can tell at a glance which button is theirs. The <strong>Lx</strong> credit at the bottom of the app also opens the same developer page as the web footer now, instead of a generic site. Anyone with the app already installed gets this by downloading it again.',
-                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
-                ],
-                [
-                    'type'  => 'improved',
                     'icon'  => 'bi-lightbulb',
                     'title' => 'The app’s flashlight button no longer covers the scan frame',
                     'text'  => 'In the app&rsquo;s scanner, the flashlight button sat on top of the camera picture, right on a corner of the frame where the student&rsquo;s QR has to go. It now sits <strong>under the camera, beside the Status line</strong>, and is labelled <strong>Flashlight</strong>. It lights up while the torch is on, so you can tell at a glance, and it only appears on phones that have a flash. Anyone with the app already installed gets this by downloading it again.',
@@ -136,7 +136,7 @@ function whats_new_releases(): array
                     'type'  => 'improved',
                     'icon'  => 'bi-stars',
                     'title' => 'The app’s scanner opens and signs you in with an animation',
-                    'text'  => 'Opening <strong>Attendance Scanner</strong> in the app now plays a short opening screen: a QR slides into the viewfinder and the scan line sweeps over it while the app checks your sign-in. If you are already signed in, it greets you with <strong>Welcome back</strong> and goes straight to the camera. After you type your email and password, a check mark is drawn and the app says <strong>Welcome</strong> with your name while your subjects load. It all follows your Light or Dark setting. Anyone with the app already installed gets this by downloading it again.',
+                    'text'  => 'Opening the <strong>Scanner</strong> in the app now plays a short opening screen: a QR slides into the viewfinder and the scan line sweeps over it while the app checks your sign-in. If you are already signed in, it greets you with <strong>Welcome back</strong> and goes straight to the camera. After you type your email and password, a check mark is drawn and the app says <strong>Welcome</strong> with your name while your subjects load. It all follows your Light or Dark setting. Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
                 [
@@ -192,7 +192,7 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-stars',
                     'title' => 'The app has its own What’s New',
-                    'text'  => 'Like this list, the app now tells students and instructors what changed after each update &mdash; but only about <strong>My QR Code</strong>, <strong>My Attendance</strong> and the <strong>Attendance Scanner</strong>, the parts they use. After an update, a <strong>New in this update</strong> card sits on the app&rsquo;s first screen until it is opened; the full list is always under the stars button beside the gear, or in <strong>Settings</strong>. Each change has a button that opens the part of the app it is about, and a filter shows one part at a time. Anyone with the app already installed gets this by downloading it again.',
+                    'text'  => 'Like this list, the app now tells students and instructors what changed after each update &mdash; but only about <strong>My QR Code</strong>, <strong>My Attendance</strong> and the <strong>Attendance Scanner</strong>, the parts they use. After an update, a <strong>New in this update</strong> card sits on a student&rsquo;s first screen, and a dot on an instructor&rsquo;s <strong>Settings</strong> tab, until it is opened; the full list is always in <strong>Settings</strong>, and beside the gear on a student&rsquo;s first screen. Students see only what changed on their side. Each change has a button that opens the part of the app it is about, and a filter shows one part at a time. Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
                 ],
             ],

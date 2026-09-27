@@ -200,13 +200,14 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
         </section>
 
         <!-- ══ TWO SIDES ═════════════════════════════════════════ -->
-        <!-- The app's first screen splits the same way: My QR Code for
-             students, Attendance Scanner for instructors. -->
+        <!-- The app splits the same way: on its first launch it asks who is
+             using the phone, and shows students their side only and
+             instructors the scanner's bar (lib/views/role_picker_page.dart). -->
         <section class="dl-section" id="inside">
             <div class="dl-section-head">
                 <span class="dl-kicker">Inside the app</span>
                 <h2>One app, two sides</h2>
-                <p>The first screen splits in two: students open their QR code or their attendance, instructors open the scanner.</p>
+                <p>The first time it opens, the app asks who you are. Students see only their QR code and their attendance; instructors get the scanner.</p>
             </div>
 
             <div class="dl-sides">
@@ -240,6 +241,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                         <li><i class="bi bi-camera" aria-hidden="true"></i><span><strong>Pick a subject, then scan.</strong> Each scan shows the student’s photo, beeps, vibrates and reads the name aloud.</span></li>
                         <li><i class="bi bi-alarm" aria-hidden="true"></i><span><strong>Late marking and a flashlight</strong> are a tap away — for a class that has started, or a dim room.</span></li>
                         <li><i class="bi bi-list-check" aria-hidden="true"></i><span><strong>The same Attendance List.</strong> The app follows the web scanner’s rules, and both fill the same records.</span></li>
+                        <li><i class="bi bi-window-dock" aria-hidden="true"></i><span><strong>Everything on one bar.</strong> The scanner, the QR generator and the attendance tracker sit side by side along the bottom, so you can look a student up without losing your subject.</span></li>
                     </ul>
                 </article>
             </div>
@@ -270,7 +272,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                     <span class="dl-step-no">3</span>
                     <i class="bi bi-box-arrow-in-right dl-card-icon" aria-hidden="true"></i>
                     <h3>Open your side</h3>
-                    <p>Open <strong><?= htmlspecialchars($acronym) ?></strong>. Students: tap <strong>My QR Code</strong>, type your student number, accept the terms, and save your QR &mdash; or tap <strong>My Attendance</strong> to see your days present. Instructors: tap <strong>Attendance Scanner</strong> and sign in.</p>
+                    <p>Open <strong><?= htmlspecialchars($acronym) ?></strong> and pick <strong>I&rsquo;m a student</strong> or <strong>I&rsquo;m an instructor</strong>. Students: tap <strong>My QR Code</strong>, type your student number, accept the terms, and save your QR &mdash; or tap <strong>My Attendance</strong> to see your days present. Instructors: the scanner opens first &mdash; sign in once.</p>
                 </li>
             </ol>
         </section>
@@ -295,7 +297,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                 <details class="dl-reveal">
                     <summary>I am an instructor. Can I scan with this app?</summary>
                     <p>
-                        Yes. Open the app, choose <strong>Attendance Scanner</strong>, and sign in with the
+                        Yes. Open the app, choose <strong>I&rsquo;m an instructor</strong>, and sign in with the
                         same email and password you use on the web system. It records attendance by the
                         same rules as the web scanner, into the same Attendance List. Lost your phone?
                         Change your password in <strong>My Profile</strong> and every phone is signed out.

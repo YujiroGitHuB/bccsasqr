@@ -155,6 +155,47 @@ class BrandMark extends StatelessWidget {
   }
 }
 
+/// The big seal, "BCC SASQR" and the school's name, centred — the top of the
+/// home screen and of the role picker.
+class BrandHeading extends StatelessWidget {
+  const BrandHeading({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Center(child: BrandMark(size: 72)),
+        const SizedBox(height: 18),
+        Text.rich(
+          TextSpan(
+            text: AppStrings.splashBrand,
+            children: [
+              TextSpan(
+                text: AppStrings.splashBrandAccent,
+                style: TextStyle(color: context.colors.accent),
+              ),
+            ],
+          ),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            color: context.colors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          AppStrings.splashFooter,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
+        ),
+      ],
+    );
+  }
+}
+
 class _HeaderChips extends StatelessWidget {
   const _HeaderChips({required this.chips});
 

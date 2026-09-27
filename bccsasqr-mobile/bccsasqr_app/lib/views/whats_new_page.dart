@@ -14,11 +14,16 @@ class WhatsNewPage extends StatefulWidget {
   const WhatsNewPage({
     super.key,
     this.releases = WhatsNewLog.releases,
+    this.areas = const {...WhatsNewArea.values},
     this.onShown,
     this.onOpen,
   });
 
   final List<WhatsNewRelease> releases;
+
+  /// The parts of the app this phone has. A student's has no scanner, so
+  /// its items and its filter are left out.
+  final Set<WhatsNewArea> areas;
 
   /// Told once the page is on screen: opening it is reading it, so this is
   /// what clears the card and the dot on the home screen.
@@ -52,6 +57,9 @@ class _WhatsNewPageState extends State<WhatsNewPage> {
   static const double _maxContentWidth = 560;
 
   _Filter _filter = _Filter.all;
+
+  bool _shows(WhatsNewItem item) =>
+      widget.areas.contains(item.area) && _filter.shows(item);
 
   @override
   void initState() {
@@ -103,7 +111,9 @@ class _WhatsNewPageState extends State<WhatsNewPage> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(4, 4, 4, 16),
                     child: Text(
-                      WhatsNewStrings.intro,
+                      widget.areas.contains(WhatsNewArea.scanner)
+                          ? WhatsNewStrings.intro
+                          : WhatsNewStrings.introStudent,
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.45,
@@ -114,15 +124,16 @@ class _WhatsNewPageState extends State<WhatsNewPage> {
                   SegmentedButton<_Filter>(
                     segments: [
                       for (final f in _Filter.values)
-                        ButtonSegment(
-                          value: f,
-                          label: Text(
-                            f.label,
-                            key: ValueKey('whatsNew.filter.${f.name}'),
-                            maxLines: 1,
-                            softWrap: false,
+                        if (f.area == null || widget.areas.contains(f.area))
+                          ButtonSegment(
+                            value: f,
+                            label: Text(
+                              f.label,
+                              key: ValueKey('whatsNew.filter.${f.name}'),
+                              maxLines: 1,
+                              softWrap: false,
+                            ),
                           ),
-                        ),
                     ],
                     selected: {_filter},
                     showSelectedIcon: false,
@@ -143,11 +154,11 @@ class _WhatsNewPageState extends State<WhatsNewPage> {
                   ),
                   const SizedBox(height: 24),
                   for (final release in widget.releases)
-                    if (release.items.any(_filter.shows))
+                    if (release.items.any(_shows))
                       _Release(
                         release: release,
                         latest: identical(release, latest),
-                        items: release.items.where(_filter.shows).toList(),
+                        items: release.items.where(_shows).toList(),
                         onOpen: widget.onOpen,
                       ),
                 ],
