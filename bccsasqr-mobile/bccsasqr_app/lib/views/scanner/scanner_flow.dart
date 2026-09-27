@@ -9,6 +9,7 @@ import '../../services/scan_feedback.dart';
 import '../../services/scanner_repository.dart';
 import '../../services/speech_service.dart';
 import '../widgets/fade_scale_switcher.dart';
+import '../widgets/island.dart';
 import 'scanner_intro.dart';
 import 'scanner_lock_screen.dart';
 import 'scanner_page.dart';
@@ -40,9 +41,15 @@ class ScannerFlow extends StatefulWidget {
     this.onLeave,
   });
 
-  /// What a signed-in instructor sees, handed the scanner to place in it.
-  /// The scanner alone when left out.
-  final Widget Function(BuildContext context, WidgetBuilder scanner)? home;
+  /// What a signed-in instructor sees, handed the scanner to place in it and
+  /// the scanner's controller — who is signed in, and the sign-out — for the
+  /// rest of it. The scanner alone when left out.
+  final Widget Function(
+    BuildContext context,
+    WidgetBuilder scanner,
+    ScannerController session,
+  )?
+  home;
 
   /// A sign-in typed or restored — the phone is an instructor's.
   final VoidCallback? onSignedIn;
@@ -174,7 +181,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
   }
 
   /// The lock covers the whole of the instructor's side, so nothing opened
-  /// over it — What's New, a scan's dialog — may stay in front of it.
+  /// over it — What's New, the account sheet — may stay in front of it.
   void _closePagesAbove() {
     if (!mounted) return;
     final route = ModalRoute.of(context);
@@ -194,9 +201,14 @@ class _ScannerFlowState extends State<ScannerFlow> {
     if (!yes || !mounted) return;
     final on = await _lock.enable();
     if (!on || !mounted) return;
-    ScaffoldMessenger.of(
+    Island.show(
       context,
-    ).showSnackBar(const SnackBar(content: Text(ScannerStrings.lockOn)));
+      const IslandMessage(
+        title: ScannerStrings.lockOn,
+        tone: IslandTone.success,
+        icon: Icons.fingerprint_rounded,
+      ),
+    );
   }
 
   @override
@@ -252,6 +264,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
       return ScannerWelcome(
         key: const ValueKey('welcome'),
         name: user?.name ?? '',
+        user: user,
         onFinished: () {
           if (!mounted) return;
           setState(() => _welcoming = false);
@@ -266,6 +279,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
       return ScannerWelcome.unlocked(
         key: const ValueKey('unlocked'),
         name: user?.name ?? '',
+        user: user,
         onFinished: () {
           if (mounted) setState(() => _welcomingBack = false);
         },
@@ -315,8 +329,9 @@ class _ScannerFlowState extends State<ScannerFlow> {
           _home ??= KeyedSubtree(
             key: const ValueKey('home'),
             child: Builder(
-              builder: (context) =>
-                  home == null ? _scanner(context) : home(context, _scanner),
+              builder: (context) => home == null
+                  ? _scanner(context)
+                  : home(context, _scanner, _controller),
             ),
           );
         }
@@ -354,14 +369,8 @@ class _ScannerFlowState extends State<ScannerFlow> {
                     ),
                   ),
                 ),
-                // A messenger of their own: a snack bar for the signed-in
-                // side ("Scanner lock is on") shows on the bar's scaffold
-                // only, not again on a cover still fading out over it.
-                ScaffoldMessenger(
-                  child: FadeScaleSwitcher(
-                    child:
-                        cover ?? const SizedBox.shrink(key: ValueKey('open')),
-                  ),
+                FadeScaleSwitcher(
+                  child: cover ?? const SizedBox.shrink(key: ValueKey('open')),
                 ),
               ],
             ),

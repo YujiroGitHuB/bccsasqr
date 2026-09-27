@@ -15,6 +15,7 @@ import 'widgets/app_footer.dart';
 import 'widgets/app_header_card.dart';
 import 'widgets/demo_mode_banner.dart';
 import 'widgets/details_panel.dart';
+import 'widgets/island.dart';
 import 'widgets/qr_preview_panel.dart';
 
 /// The single screen of the app.
@@ -71,22 +72,20 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
     final uri = Uri.parse(url);
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
-      _showMessage('Could not open $url');
+      _showMessage('Could not open $url', isError: true);
     }
   }
 
   void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError
-              ? context.colors.danger.withValues(alpha: 0.18)
-              : null,
-        ),
-      );
+    Island.show(
+      context,
+      IslandMessage(
+        title: message,
+        tone: isError ? IslandTone.error : IslandTone.success,
+        icon: isError ? null : Icons.download_done_rounded,
+      ),
+    );
   }
 
   /// One button drives two intents: generate, then download.

@@ -29,7 +29,8 @@ class ScanStatus {
   final ScanTone? tone;
 }
 
-/// A dialog the page should put up — the web scanner's SweetAlert.
+/// A message the page should put up — the web scanner's SweetAlert, shown
+/// on the island.
 class ScanAlert {
   const ScanAlert({required this.title, required this.body, this.autoDismiss});
 

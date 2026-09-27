@@ -27,6 +27,14 @@ abstract final class AppStrings {
       'See how many times you were marked present in each subject.';
   static const String homeBack = 'Home';
 
+  // The top of the student's home screen, by the time of day.
+  static const String homeMorning = 'Good morning';
+  static const String homeAfternoon = 'Good afternoon';
+  static const String homeEvening = 'Good evening';
+  static const String homeQuestion = 'What do you need today?';
+  static const String homeOpen = 'Open';
+  static const String homeHowItWorks = 'HOW IT WORKS';
+
   // The generator's opening splash: a QR being made, and the three steps.
   static const String generatorSplashTagline = 'QR CODE GENERATOR';
   static const String generatorSplashSemantics =
@@ -222,7 +230,6 @@ abstract final class ScannerStrings {
   static const String attendanceNoMatch = 'No scans match your search.';
 
   // Alerts — the web scanner's SweetAlert titles.
-  static const String alertOk = 'OK';
   static const String invalidQrTitle = 'Invalid QR Code';
   static const String invalidQrBody =
       'This QR code is not a valid BCC student QR.';
@@ -363,6 +370,10 @@ abstract final class SettingsStrings {
 
   static const String role = 'ROLE';
 
+  // An instructor's: who is signed in, and the way out.
+  static const String account = 'ACCOUNT';
+  static const String signOutBody = 'Sign this phone out of the scanner';
+
   static const String about = 'ABOUT';
   static const String version = 'Version';
   static const String server = 'Server';
@@ -420,9 +431,11 @@ abstract final class WhatsNewStrings {
 /// again.
 abstract final class RoleStrings {
   static const String question = 'Who is using this phone?';
-  static const String hint =
-      'The app only shows what is yours. You can change this later in '
-      'Settings.';
+  static const String lead = 'Pick one, and the app shows only what is yours.';
+  static const String hint = 'You can change this later in Settings.';
+
+  // Under the instructor's card: what is behind it.
+  static const String signInChip = 'Sign-in';
 
   static const String studentTitle = 'I\'m a student';
   static const String studentBody =

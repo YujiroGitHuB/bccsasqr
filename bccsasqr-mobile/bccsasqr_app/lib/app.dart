@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'controllers/role_controller.dart';
+import 'controllers/scanner_controller.dart';
 import 'controllers/settings_controller.dart';
 import 'controllers/whats_new_controller.dart';
 import 'core/config/app_config.dart';
@@ -38,6 +39,7 @@ import 'views/tracker_page.dart';
 import 'views/tracker_splash.dart';
 import 'views/whats_new_page.dart';
 import 'views/widgets/fade_scale_switcher.dart';
+import 'views/widgets/island.dart';
 
 /// Root widget. Composes the dependency graph in one place so the views take
 /// their collaborators by constructor rather than reaching for globals.
@@ -258,20 +260,23 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   // The sign-in, then the bottom bar. Settings is one of its tabs, so
   // nothing is pushed over the scanner but What's New.
 
-  Widget _instructorSettings(BuildContext context) => SettingsPage(
-    controller: _settings,
-    appInfo: widget.appInfo,
-    role: AppRole.instructor,
-    onSwitchRole: () => _switchRole(context),
-    whatsNewBuilder: (context) => WhatsNewPage(
-      onShown: _whatsNew.markSeen,
-      // Back down to the bar, on the item's tab.
-      onOpen: (area) {
-        Navigator.of(context).pop();
-        _tab.value = InstructorTab.of(area);
-      },
-    ),
-  );
+  Widget _instructorSettings(BuildContext context, ScannerController session) =>
+      SettingsPage(
+        controller: _settings,
+        appInfo: widget.appInfo,
+        role: AppRole.instructor,
+        account: session.user,
+        onSignOut: session.signOut,
+        onSwitchRole: () => _switchRole(context),
+        whatsNewBuilder: (context) => WhatsNewPage(
+          onShown: _whatsNew.markSeen,
+          // Back down to the bar, on the item's tab.
+          onOpen: (area) {
+            Navigator.of(context).pop();
+            _tab.value = InstructorTab.of(area);
+          },
+        ),
+      );
 
   /// The whole instructor side sits behind the scanner's sign-in: until an
   /// instructor account is signed in — and past the phone's lock, when it is
@@ -297,12 +302,12 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         _role.choose(AppRole.instructor);
       },
       onLeave: _role.clear,
-      home: (context, scanner) => InstructorShell(
+      home: (context, scanner, session) => InstructorShell(
         tab: _tab,
         generatorBuilder: _generator,
         scannerBuilder: scanner,
         trackerBuilder: _trackerPage,
-        settingsBuilder: _instructorSettings,
+        settingsBuilder: (context) => _instructorSettings(context, session),
         whatsNew: _whatsNew,
       ),
     );
@@ -347,9 +352,11 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         themeMode: _settings.themeMode,
         // Status and navigation bar icons follow the theme, so they stay
         // readable on a light screen.
+        // The island rides over the navigator, so a message shows over any
+        // page, dialog or sheet.
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: context.colors.overlayStyle,
-          child: child ?? const SizedBox.shrink(),
+          child: IslandHost(child: child ?? const SizedBox.shrink()),
         ),
         // A cross-fade rather than a route push: there is nothing to go
         // "back" to, and the splash should not sit under the page on the

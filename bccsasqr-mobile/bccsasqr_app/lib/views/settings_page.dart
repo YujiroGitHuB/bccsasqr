@@ -6,13 +6,17 @@ import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../models/app_role.dart';
+import '../models/scanner_models.dart';
 import '../services/app_info.dart';
 import 'about_dialog.dart';
+import 'scanner/widgets/account_sheet.dart';
+import 'scanner/widgets/scanner_header.dart';
+import 'widgets/island.dart';
 import 'widgets/surface_panel.dart';
 
-/// Theme, the scanner's beep / buzz / voice, the role, and what version this
-/// is. A pushed page on a student's phone; a tab of the bar on an
-/// instructor's.
+/// The instructor's account, theme, the scanner's beep / buzz / voice, the
+/// role, and what version this is. A pushed page on a student's phone; a tab
+/// of the bar on an instructor's.
 ///
 /// Every switch applies the moment it is flipped — there is no Save.
 class SettingsPage extends StatefulWidget {
@@ -23,7 +27,17 @@ class SettingsPage extends StatefulWidget {
     this.whatsNewBuilder,
     this.role,
     this.onSwitchRole,
+    this.account,
+    this.onSignOut,
   });
+
+  /// The instructor signed in on this phone. The Account panel shows only
+  /// with one.
+  final ScannerUser? account;
+
+  /// Signs the scanner out, after asking — the same as the account sheet's.
+  /// The instructor's side goes with it, back to the sign-in.
+  final Future<void> Function()? onSignOut;
 
   final SettingsController controller;
 
@@ -49,15 +63,22 @@ class _SettingsPageState extends State<SettingsPage> {
 
   late final Future<AppInfo> _info = widget.appInfo();
 
+  Future<void> _signOut() async {
+    final signOut = widget.onSignOut;
+    if (signOut == null) return;
+    if (await confirmSignOut(context)) await signOut();
+  }
+
   Future<void> _open(String url) async {
     final opened = await launchUrl(
       Uri.parse(url),
       mode: LaunchMode.externalApplication,
     );
     if (!opened && mounted) {
-      ScaffoldMessenger.of(
+      Island.show(
         context,
-      ).showSnackBar(SnackBar(content: Text('Could not open $url')));
+        IslandMessage(title: 'Could not open $url', tone: IslandTone.error),
+      );
     }
   }
 
@@ -111,6 +132,17 @@ class _SettingsPageState extends State<SettingsPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
+
+                    // ── Account ────────────────────────────────────────
+                    // First: on an instructor's phone, whose sign-in this
+                    // is comes before how it looks.
+                    if (widget.account case final account?) ...[
+                      _AccountPanel(
+                        account: account,
+                        onSignOut: widget.onSignOut == null ? null : _signOut,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     // ── Appearance ─────────────────────────────────────
                     SurfacePanel(
@@ -525,6 +557,126 @@ class _LinkRow extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Who is signed in on this instructor's phone, and the sign-out — the
+/// account sheet's, where the rest of Settings is.
+class _AccountPanel extends StatelessWidget {
+  const _AccountPanel({required this.account, required this.onSignOut});
+
+  final ScannerUser account;
+  final VoidCallback? onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final signOut = onSignOut;
+
+    return SurfacePanel(
+      padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const PanelHeading(
+            icon: Icons.account_circle_outlined,
+            label: SettingsStrings.account,
+          ),
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Row(
+              children: [
+                UserAvatar(user: account, size: 48),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        account.name,
+                        style: TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      if (account.email.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          account.email,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (signOut != null) ...[
+            const SizedBox(height: 8),
+            MergeSemantics(
+              child: InkWell(
+                key: const ValueKey('settings.signOut'),
+                onTap: signOut,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 8, 8, 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        height: 36,
+                        width: 36,
+                        decoration: BoxDecoration(
+                          color: colors.danger.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.logout_rounded,
+                          size: 19,
+                          color: colors.danger,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ScannerStrings.signOut,
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w600,
+                                color: colors.danger,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              SettingsStrings.signOutBody,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                height: 1.35,
+                                color: colors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

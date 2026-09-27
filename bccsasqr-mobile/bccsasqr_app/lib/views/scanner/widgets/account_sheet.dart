@@ -175,3 +175,35 @@ class _LockTile extends StatelessWidget {
     );
   }
 }
+
+/// "Sign out of the scanner?" — asked the same way from the account sheet
+/// and from Settings. True only for a yes.
+Future<bool> confirmSignOut(BuildContext context) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      icon: Icon(Icons.logout_rounded, color: context.colors.danger),
+      title: const Text(ScannerStrings.signOutConfirmTitle),
+      content: Text(
+        ScannerStrings.signOutConfirmBody,
+        style: TextStyle(fontSize: 14, color: context.colors.textSecondary),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text(ScannerStrings.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, 44),
+            backgroundColor: context.colors.danger,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text(ScannerStrings.signOut),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
+}

@@ -123,11 +123,17 @@ void main() {
     expect(find.text(ScannerStrings.lockOfferTitle), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('lock.offer.on')));
-    await tester.pumpAndSettle();
+    // The dialog closing, then the island open — before it closes itself.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(device.asked, [ScannerStrings.lockEnableReason]);
     expect(store.enabled, isTrue);
     expect(find.text(ScannerStrings.lockOn), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(find.text(ScannerStrings.lockOn), findsNothing);
     expect(find.text(ScannerStrings.title), findsOneWidget);
   });
 

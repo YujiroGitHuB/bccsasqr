@@ -18,7 +18,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-27.4';
+  static const String version = '2026-09-27.6';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -42,6 +42,88 @@ abstract final class WhatsNewLog {
               'phone?** Pick **I\'m a student** and you see only **My QR '
               'Code** and **My Attendance** — nothing of the scanner. Picked '
               'the wrong one? **Settings → Role** asks again.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.qr,
+          icon: Icons.home_rounded,
+          title: 'A new home for students',
+          text:
+              'The student home now greets you by the time of day, puts **My '
+              'QR Code** in a big card with a code beside it, and shows the '
+              'three steps — **Save QR**, **Get scanned**, **See days** — '
+              'under **My Attendance**. Everything slides into place when the '
+              'app opens.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.qr,
+          icon: Icons.switch_account_outlined,
+          title: 'A clearer student-or-instructor question',
+          text:
+              '**Who is using this phone?** now shows what is behind each '
+              'answer, and the card you pick lights up with a tick before the '
+              'app moves on.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.fingerprint_rounded,
+          title: 'The fingerprint lock, redesigned',
+          text:
+              'Your name sits at the top, so you know whose scanner it is. '
+              'While the phone asks for your finger, a light runs over the '
+              'fingerprint and rings go out from it; if the prompt is closed '
+              'without unlocking, it shakes and turns red for a moment.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.notifications_active_outlined,
+          title: 'Scan messages no longer stop the line',
+          text:
+              'When the scanner turns a code away — **Invalid QR Code**, '
+              '**Not Enrolled**, **Student Photo Required** — the reason now '
+              'drops out of the top of the screen in a black bar and goes '
+              'away by itself, instead of a box you had to tap **OK** on. The '
+              'next student can be scanned while it shows; tap it to put it '
+              'away sooner.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.qr,
+          icon: Icons.notifications_none_rounded,
+          title: 'Messages at the top of the screen',
+          text:
+              '**QR code saved and ready to share**, and any problem saving '
+              'it, now drop out of the top of the screen and go away by '
+              'themselves.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.verified_rounded,
+          title: 'A brighter welcome',
+          text:
+              'After you sign in, your photo — or your initials — appears in '
+              'a ring that closes round it, a check lands on its corner with '
+              'a burst of light, and a bar fills while your subjects load.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.scanner,
+          icon: Icons.logout_rounded,
+          title: 'Sign out from Settings',
+          text:
+              '**Settings** now shows who is signed in at the top, with a '
+              '**Sign out** button — as well as the one behind your picture '
+              'in the scanner. It asks before it signs you out.',
           link: false,
         ),
         WhatsNewItem(

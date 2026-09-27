@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.18';
+const WHATS_NEW_VERSION = '2026-09-27.20';
 
 /**
  * The changelog, newest release first.
@@ -124,6 +124,20 @@ function whats_new_releases(): array
                     'icon'  => 'bi-shield-lock',
                     'title' => 'A class list opens only for its own instructor',
                     'text'  => 'The <strong>Present</strong> and <strong>Absent</strong> lists on the dashboard could be opened for any subject and section by anyone signed in, which showed a whole section&rsquo;s names and student numbers. They now open only for a subject assigned to you (admins, any subject), and a refused attempt is recorded in the Security Monitor. Nothing changes for your own classes.',
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-phone-vibrate',
+                    'title' => 'The app’s home, its first question and its fingerprint lock, redesigned',
+                    'text'  => 'The student home in the app now greets students by the time of day, puts <strong>My QR Code</strong> in one big card with a code beside it, and shows the three steps &mdash; <strong>Save QR</strong>, <strong>Get scanned</strong>, <strong>See days</strong> &mdash; under <strong>My Attendance</strong>. The first-launch question, <strong>Who is using this phone?</strong>, shows what is behind each answer, and the picked card lights up with a tick. The scanner&rsquo;s fingerprint lock shows whose scanner it is at the top; while the phone asks for a finger, a light runs over the fingerprint and rings go out from it, and a prompt closed without unlocking shakes it red for a moment. Everything slides into place as it opens. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-app-indicator',
+                    'title' => 'The app’s scan messages no longer stop the line, and Sign out is in Settings',
+                    'text'  => 'When the app&rsquo;s scanner turns a code away &mdash; <strong>Invalid QR Code</strong>, <strong>Not Enrolled</strong>, <strong>Student Photo Required</strong> &mdash; the reason now drops out of the top of the screen in a black bar, the way a new phone shows a notice, and goes away by itself. It used to be a box you had to tap <strong>OK</strong> on before the next student; now the queue keeps moving while it shows, and a tap puts it away sooner. The app&rsquo;s other messages, like <strong>QR code saved</strong>, use the same bar. Instructors also get a new welcome after signing in &mdash; their photo or initials in a ring that closes, with a check and a burst of light &mdash; and <strong>Settings</strong> now shows who is signed in, with a <strong>Sign out</strong> button, as well as the one behind the picture in the scanner. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
                 [
                     'type'  => 'improved',

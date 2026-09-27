@@ -158,12 +158,39 @@ void main() {
       expect(find.text(NavStrings.scanner), findsNothing);
     });
 
+    testWidgets('a picked card lights up with a tick before the app moves on', (
+      tester,
+    ) async {
+      // At full speed, as on a phone: the moment is what is being checked.
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      final tick = find.descendant(
+        of: find.byKey(const ValueKey('role.instructor')),
+        matching: find.byIcon(Icons.check_rounded),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('role.instructor')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text(RoleStrings.question), findsOneWidget);
+      expect(tick, findsOneWidget);
+      expect(roles.saved, isNull);
+
+      await tester.pumpAndSettle();
+      expect(find.text(RoleStrings.question), findsNothing);
+      expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+    });
+
     testWidgets('"I\'m a student" plays the student\'s splash first', (
       tester,
     ) async {
       await launch(tester);
       await tester.tap(find.byKey(const ValueKey('role.student')));
+      // The card lights up first — a twentieth of its length with reduce
+      // motion on — then the splash takes over.
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
       await tester.pump();
 
       expect(find.byType(StudentSplash), findsOneWidget);
@@ -285,6 +312,37 @@ void main() {
       // Still an instructor's phone: the next launch shows the form, not
       // the question.
       expect(roles.saved, AppRole.instructor);
+    });
+
+    testWidgets('an instructor can sign out from Settings too', (tester) async {
+      await openAsInstructor(tester);
+      await tester.tap(find.byKey(const ValueKey('nav.settings')));
+      await tester.pumpAndSettle();
+
+      // Who is signed in, at the top.
+      expect(find.text(SettingsStrings.account), findsOneWidget);
+      expect(find.text('demo@bcc.test'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('settings.signOut')));
+      await tester.pumpAndSettle();
+      expect(find.text(ScannerStrings.signOutConfirmTitle), findsOneWidget);
+      await tester.tap(find.text(ScannerStrings.signOut).last);
+      await tester.pumpAndSettle();
+
+      expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+      expect(find.byType(InstructorShell, skipOffstage: false), findsNothing);
+    });
+
+    testWidgets('a student\'s Settings has no account and no sign-out', (
+      tester,
+    ) async {
+      roles = MemoryRoleStore(AppRole.student);
+      await launch(tester);
+      await tester.tap(find.byKey(const ValueKey('home.settings')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(SettingsStrings.account), findsNothing);
+      expect(find.byKey(const ValueKey('settings.signOut')), findsNothing);
     });
 
     testWidgets('Settings → Role asks again, from either half', (tester) async {

@@ -10,6 +10,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/scanner_models.dart';
 import '../../services/scanner_repository.dart';
+import '../widgets/island.dart';
 import '../widgets/surface_panel.dart';
 import 'camera/qr_camera.dart';
 import 'widgets/account_sheet.dart';
@@ -78,8 +79,6 @@ class _ScannerPageState extends State<ScannerPage> {
   ScannerController get _controller => widget.controller;
 
   late final StreamSubscription<ScanAlert> _alerts;
-  Route<void>? _alertRoute;
-  Timer? _alertTimer;
   bool _awake = false;
 
   /// On screen: not on another tab of the instructor's bar, nor under a
@@ -104,7 +103,6 @@ class _ScannerPageState extends State<ScannerPage> {
   @override
   void dispose() {
     _alerts.cancel();
-    _alertTimer?.cancel();
     _controller.removeListener(_syncKeepAwake);
     if (_awake) unawaited(widget.keepAwake(false));
     super.dispose();
@@ -117,50 +115,22 @@ class _ScannerPageState extends State<ScannerPage> {
     unawaited(widget.keepAwake(want));
   }
 
-  /// One dialog at a time, the newest winning — SweetAlert's behaviour, and
-  /// the right one: a dialog about the previous student is stale the moment
-  /// the next one is scanned.
+  /// On the island, the newest winning — SweetAlert's one-at-a-time, without
+  /// its OK button: the queue at the door keeps moving while the reason
+  /// shows, and a message about the previous student is stale the moment the
+  /// next one is scanned. The web's self-closing ones keep their length; the
+  /// rest stay long enough to read.
   void _showAlert(ScanAlert alert) {
     if (!mounted) return;
-    final navigator = Navigator.of(context);
-
-    final previous = _alertRoute;
-    if (previous != null && previous.isActive) navigator.removeRoute(previous);
-
-    final route = DialogRoute<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.colors.surface,
-        title: Text(alert.title),
-        content: Text(
-          alert.body,
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.5,
-            color: context.colors.textSecondary,
-          ),
-        ),
-        actions: [
-          if (alert.autoDismiss == null)
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(ScannerStrings.alertOk),
-            ),
-        ],
+    Island.show(
+      context,
+      IslandMessage(
+        title: alert.title,
+        body: alert.body,
+        tone: IslandTone.error,
+        hold: alert.autoDismiss ?? const Duration(seconds: 4),
       ),
     );
-    _alertRoute = route;
-    navigator.push(route).whenComplete(() {
-      if (_alertRoute == route) _alertRoute = null;
-    });
-
-    _alertTimer?.cancel();
-    final dismissAfter = alert.autoDismiss;
-    if (dismissAfter != null) {
-      _alertTimer = Timer(dismissAfter, () {
-        if (route.isActive) navigator.removeRoute(route);
-      });
-    }
   }
 
   Future<void> _pickSubject() async {
@@ -243,40 +213,10 @@ class _ScannerPageState extends State<ScannerPage> {
       case AccountAction.settings:
         widget.onOpenSettings?.call();
       case AccountAction.signOut:
-        await _confirmSignOut();
+        if (await confirmSignOut(context)) await _controller.signOut();
       case null:
         break;
     }
-  }
-
-  Future<void> _confirmSignOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: Icon(Icons.logout_rounded, color: context.colors.danger),
-        title: const Text(ScannerStrings.signOutConfirmTitle),
-        content: Text(
-          ScannerStrings.signOutConfirmBody,
-          style: TextStyle(fontSize: 14, color: context.colors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(ScannerStrings.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(0, 44),
-              backgroundColor: context.colors.danger,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text(ScannerStrings.signOut),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) await _controller.signOut();
   }
 
   @override

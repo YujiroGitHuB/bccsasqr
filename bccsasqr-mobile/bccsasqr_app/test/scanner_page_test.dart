@@ -171,7 +171,7 @@ void main() {
     await tester.pump(const Duration(seconds: 6));
   });
 
-  testWidgets('a foreign QR gets the Invalid QR Code dialog, which closes', (
+  testWidgets('a foreign QR says Invalid QR Code on the island, which closes', (
     tester,
   ) async {
     await openScanner(tester);
@@ -181,6 +181,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text(ScannerStrings.invalidQrTitle), findsOneWidget);
+    // Not a dialog: nothing to tap before the next student.
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byKey(const ValueKey('scan:019-464')).hitTestable(), findsOne);
 
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
@@ -305,6 +308,15 @@ void main() {
       find.text(ScannerStrings.welcomeTitle('Demo Instructor')),
       findsOneWidget,
     );
+    // Their own initials in the ring, with the signed-in chip under it.
+    expect(
+      find.descendant(
+        of: find.byType(ScannerWelcome),
+        matching: find.text('DI'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(ScannerStrings.welcomeLabel), findsOneWidget);
 
     await tester.pumpAndSettle();
     expect(find.byType(ScannerWelcome), findsNothing);
