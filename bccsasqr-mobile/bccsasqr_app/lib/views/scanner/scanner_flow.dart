@@ -80,6 +80,10 @@ class _ScannerFlowState extends State<ScannerFlow> {
 
   /// The phone's screen lock went away while the lock was on — signing out.
   bool _signingOutForLock = false;
+
+  /// The fingerprint just opened the saved sign-in: it gets a welcome too.
+  bool _welcomingBack = false;
+  bool _wasLocked = false;
   late ScannerSession _seen = _controller.session;
 
   bool get _demo => widget.repository is InMemoryScannerRepository;
@@ -109,6 +113,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
         _offerLock = true;
       } else if (now != ScannerSession.signedIn) {
         _welcoming = false;
+        _welcomingBack = false;
         _offerLock = false;
       }
       _seen = now;
@@ -123,6 +128,15 @@ class _ScannerFlowState extends State<ScannerFlow> {
   /// The phone no longer has a screen lock, so the lock cannot be asked
   /// for: the saved sign-in is closed, and the password asked for instead.
   void _onLockChange() {
+    final locked = _lock.locked;
+    if (_wasLocked &&
+        !locked &&
+        _lock.enabled &&
+        _controller.session == ScannerSession.signedIn) {
+      setState(() => _welcomingBack = true);
+    }
+    _wasLocked = locked;
+
     if (!_lock.lost || _signingOutForLock) return;
     if (_controller.session != ScannerSession.signedIn) return;
     _signingOutForLock = true;
@@ -193,6 +207,16 @@ class _ScannerFlowState extends State<ScannerFlow> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) _maybeOfferLock();
           });
+        },
+      );
+    }
+
+    if (_welcomingBack && signedIn) {
+      return ScannerWelcome.unlocked(
+        key: const ValueKey('unlocked'),
+        name: user?.name ?? '',
+        onFinished: () {
+          if (mounted) setState(() => _welcomingBack = false);
         },
       );
     }

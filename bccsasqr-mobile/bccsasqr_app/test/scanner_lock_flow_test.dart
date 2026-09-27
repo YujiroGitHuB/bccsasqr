@@ -97,6 +97,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('home.scanner')));
     await tester.pumpAndSettle();
+    // The lock screen is up a moment before the prompt covers it.
+    await tester.pump(ScannerLockScreen.promptDelay);
+    await tester.pumpAndSettle();
   }
 
   testWidgets('after a password sign-in the lock is offered, and turning it '
@@ -159,11 +162,31 @@ void main() {
     expect(find.text(ScannerStrings.title), findsOneWidget);
   });
 
-  testWidgets('the owner\'s finger opens it straight away', (tester) async {
+  testWidgets('the owner\'s finger opens it, with a welcome back', (
+    tester,
+  ) async {
     await signInWithLock(tester);
-    await reopen(tester);
+    await tester.tap(find.byTooltip(AppStrings.homeBack));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home.scanner')));
+    await tester.pumpAndSettle();
 
-    // Asked on arrival, and answered: straight to the scanner.
+    // The lock screen first; the prompt only after a moment.
+    expect(find.byType(ScannerLockScreen), findsOneWidget);
+    expect(device.asked, [ScannerStrings.lockEnableReason]);
+
+    await tester.pump(ScannerLockScreen.promptDelay);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Opened: the welcome plays before the scanner.
+    expect(find.text(ScannerStrings.lockUnlockedLabel), findsOneWidget);
+    expect(
+      find.text(ScannerStrings.welcomeBack('Demo Instructor')),
+      findsOneWidget,
+    );
+
+    await tester.pumpAndSettle();
     expect(device.asked, [
       ScannerStrings.lockEnableReason,
       ScannerStrings.lockReason,

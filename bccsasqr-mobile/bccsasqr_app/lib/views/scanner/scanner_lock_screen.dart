@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../controllers/scanner_lock_controller.dart';
@@ -24,6 +26,10 @@ class ScannerLockScreen extends StatefulWidget {
   /// someone else's phone lock.
   final VoidCallback onUsePassword;
 
+  /// How long the screen is up before the system prompt covers it, so the
+  /// instructor sees whose scanner it is and what is being asked.
+  static const Duration promptDelay = Duration(milliseconds: 700);
+
   @override
   State<ScannerLockScreen> createState() => _ScannerLockScreenState();
 }
@@ -36,12 +42,15 @@ class _ScannerLockScreenState extends State<ScannerLockScreen>
     duration: const Duration(milliseconds: 1400),
   );
 
+  Timer? _prompt;
+
   @override
   void initState() {
     super.initState();
     widget.lock.addListener(_onLock);
-    // Ask at once: the instructor opened the scanner to use it.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Ask straight away — the instructor opened the scanner to use it — but
+    // not before this screen has faded in.
+    _prompt = Timer(ScannerLockScreen.promptDelay, () {
       if (mounted) widget.lock.unlock();
     });
   }
@@ -67,6 +76,7 @@ class _ScannerLockScreenState extends State<ScannerLockScreen>
 
   @override
   void dispose() {
+    _prompt?.cancel();
     widget.lock.removeListener(_onLock);
     _pulse.dispose();
     super.dispose();

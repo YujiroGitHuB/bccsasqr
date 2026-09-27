@@ -246,6 +246,7 @@ abstract final class ScannerStrings {
   static const String lockBody =
       'Open it with this phone\'s fingerprint, face or screen lock.';
   static const String lockUnlock = 'Unlock';
+  static const String lockUnlockedLabel = 'UNLOCKED';
   static const String lockUsePassword = 'Sign in with password instead';
   static const String lockNotUnlocked =
       'Not unlocked yet. Tap Unlock to try again.';

@@ -390,15 +390,25 @@ class _StatusLine extends StatelessWidget {
 /// Plays once after the email and password are accepted: a ring closes, a
 /// tick is drawn, and the instructor is greeted by name while their subjects
 /// load behind it. A saved sign-in skips this — the splash says "Welcome
-/// back" instead.
+/// back" instead — unless it was behind the fingerprint lock: opening that
+/// plays this too, as [ScannerWelcome.unlocked].
 class ScannerWelcome extends StatefulWidget {
   const ScannerWelcome({
     super.key,
     required this.name,
     required this.onFinished,
-  });
+  }) : unlocked = false;
+
+  /// After the phone's lock opened a saved sign-in: "UNLOCKED",
+  /// "Welcome back".
+  const ScannerWelcome.unlocked({
+    super.key,
+    required this.name,
+    required this.onFinished,
+  }) : unlocked = true;
 
   final String name;
+  final bool unlocked;
 
   /// Called once, when the welcome has played. The caller shows the scanner.
   final VoidCallback onFinished;
@@ -525,7 +535,9 @@ class _ScannerWelcomeState extends State<ScannerWelcome>
                   _rise(
                     _label,
                     Text(
-                      ScannerStrings.welcomeLabel,
+                      widget.unlocked
+                          ? ScannerStrings.lockUnlockedLabel
+                          : ScannerStrings.welcomeLabel,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -540,7 +552,9 @@ class _ScannerWelcomeState extends State<ScannerWelcome>
                     Semantics(
                       liveRegion: true,
                       child: Text(
-                        ScannerStrings.welcomeTitle(widget.name),
+                        widget.unlocked
+                            ? ScannerStrings.welcomeBack(widget.name)
+                            : ScannerStrings.welcomeTitle(widget.name),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 22,

@@ -68,8 +68,11 @@ class ScannerController extends ChangeNotifier {
   /// "Scanning for …" — the web's 5-second card.
   final Duration resultHold;
 
-  /// A code already read is ignored until it has been out of view this long,
-  /// so a QR held up to the camera is recorded once, not once per frame.
+  /// A code just read is ignored for this long, so a QR held up to the camera
+  /// is sent once, not once per frame. Counted from when it was sent, not
+  /// from when it was last seen — as the web scanner's 1.5 s guard is — so a
+  /// code held there, or shown again, is checked again and answered
+  /// ("Already marked today.") instead of silence.
   final Duration repeatGuard;
 
   /// The web's ERROR_COOLDOWN: at most one "Invalid QR Code" dialog per this.
@@ -395,11 +398,10 @@ class ScannerController extends ChangeNotifier {
   Future<void> onCodeScanned(String raw) async {
     final now = _clock();
 
-    // Still in view since the last read: the same scan, not a new one.
+    // The same code as the one just sent: the same scan, not a new one.
     if (raw == _lastCode &&
         _lastCodeAt != null &&
         now.difference(_lastCodeAt!) < repeatGuard) {
-      _lastCodeAt = now;
       return;
     }
     // One scan at a time. The next student's code is read again on the next

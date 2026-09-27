@@ -323,6 +323,25 @@ void main() {
       expect(repo.scanned, hasLength(1));
     });
 
+    test('a QR kept in view is checked again, and answered "already '
+        'marked" — not met with silence', () async {
+      await ready();
+      await controller.onCodeScanned('025-802');
+      repo.scanAnswer = const ScannerException(
+        'Already marked today.',
+        code: 'already_marked',
+      );
+      // The camera reads a code in view about every 0.7 s.
+      for (var i = 0; i < 4; i++) {
+        now = now.add(const Duration(milliseconds: 700));
+        await controller.onCodeScanned('025-802');
+      }
+
+      expect(repo.scanned, hasLength(2));
+      expect(controller.status.text, '⚠ Already marked: 025-802');
+      expect(speech.said.last, ScannerStrings.sayAlreadyMarked);
+    });
+
     test('the same QR shown again later is checked again', () async {
       await ready();
       await controller.onCodeScanned('025-802');

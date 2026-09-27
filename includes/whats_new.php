@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.12';
+const WHATS_NEW_VERSION = '2026-09-27.13';
 
 /**
  * The changelog, newest release first.
@@ -171,7 +171,14 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-fingerprint',
                     'title' => 'Lock the app’s scanner with your fingerprint',
-                    'text'  => 'The app keeps you signed in, so anyone who picked up your phone could open the scanner. You can now put your phone&rsquo;s own lock in front of it: after you sign in with your email and password, the app asks <strong>Lock the scanner?</strong> Say yes, and from then on the scanner opens only with your <strong>fingerprint</strong>, face, or the phone&rsquo;s PIN or pattern &mdash; and asks again if you have been away from the app for more than a minute. The camera does not start until it is unlocked. It works only after a sign-in with your password, and signing out removes it; if your finger will not read, tap <strong>Sign in with password instead</strong>. Turn it on or off any time from your picture at the top of the scanner. Anyone with the app already installed gets this by downloading it again.',
+                    'text'  => 'The app keeps you signed in, so anyone who picked up your phone could open the scanner. You can now put your phone&rsquo;s own lock in front of it: after you sign in with your email and password, the app asks <strong>Lock the scanner?</strong> Say yes, and from then on the scanner opens only with your <strong>fingerprint</strong>, face, or the phone&rsquo;s PIN or pattern &mdash; and asks again if you have been away from the app for more than a minute. The camera does not start until it is unlocked, and once it is, a short <strong>Welcome back</strong> plays before the scanner opens. It works only after a sign-in with your password, and signing out removes it; if your finger will not read, tap <strong>Sign in with password instead</strong>. Turn it on or off any time from your picture at the top of the scanner. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-arrow-repeat',
+                    'title' => 'The app says “Already marked” again',
+                    'text'  => 'In the app&rsquo;s scanner, showing a student&rsquo;s QR a second time &mdash; or leaving it in front of the camera &mdash; got no answer at all: no <strong>Already marked</strong> on the status line and nothing said aloud, so it looked as if the scanner had stopped. The app now checks the code again after two and a half seconds, like the web scanner does, and answers <strong>&ldquo;Already marked today.&rdquo;</strong> Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
             ],
