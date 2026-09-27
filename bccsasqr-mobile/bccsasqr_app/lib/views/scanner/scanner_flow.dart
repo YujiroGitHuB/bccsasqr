@@ -14,10 +14,15 @@ import 'scanner_lock_screen.dart';
 import 'scanner_page.dart';
 import 'scanner_sign_in_page.dart';
 
-/// The scanner, from opening to signing out. Owns the controller and shows
-/// whichever screen the sign-in calls for: a saved sign-in goes straight to
-/// the camera — through the phone's lock first, when the instructor turned
-/// it on — anything else to the sign-in form.
+/// The instructor's side of the app, from opening to signing out. Owns the
+/// scanner's controller and shows whichever screen the sign-in calls for: a
+/// saved sign-in goes straight in — through the phone's lock first, when the
+/// instructor turned it on — anything else to the sign-in form.
+///
+/// Signed in, it shows [home] (the instructor's bar) with the scanner in it.
+/// Nothing of [home] is built before the sign-in, and it goes with the
+/// sign-out: a student who taps "I'm an instructor" gets the form and no
+/// more. The lock covers all of it, not just the scanner.
 class ScannerFlow extends StatefulWidget {
   const ScannerFlow({
     super.key,
@@ -29,7 +34,22 @@ class ScannerFlow extends StatefulWidget {
     this.onOpenSettings,
     this.deviceLock = const NoDeviceLock(),
     this.lockStore,
+    this.lockClock,
+    this.home,
+    this.onSignedIn,
+    this.onLeave,
   });
+
+  /// What a signed-in instructor sees, handed the scanner to place in it.
+  /// The scanner alone when left out.
+  final Widget Function(BuildContext context, WidgetBuilder scanner)? home;
+
+  /// A sign-in typed or restored — the phone is an instructor's.
+  final VoidCallback? onSignedIn;
+
+  /// The back arrow on the sign-in form, and the phone's back button there:
+  /// away from the instructor's side. None when left out.
+  final VoidCallback? onLeave;
 
   final ScannerRepository repository;
 
@@ -37,6 +57,9 @@ class ScannerFlow extends StatefulWidget {
   /// for it is kept. See [ScannerLockController].
   final DeviceLock deviceLock;
   final ScannerLockStore? lockStore;
+
+  /// The lock's clock; tests step it past [ScannerLockController.relockAfter].
+  final DateTime Function()? lockClock;
   final SpeechService speech;
   final ScanFeedback feedback;
 
@@ -61,6 +84,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
   late final ScannerLockController _lock = ScannerLockController(
     device: widget.deviceLock,
     store: widget.lockStore ?? MemoryScannerLockStore(),
+    clock: widget.lockClock,
   );
 
   /// Leaving the app cuts the voice off rather than letting it read the last
@@ -85,6 +109,12 @@ class _ScannerFlowState extends State<ScannerFlow> {
   bool _welcomingBack = false;
   bool _wasLocked = false;
   late ScannerSession _seen = _controller.session;
+
+  /// The signed-in side, built once the sign-in has nothing left to show
+  /// over it, and kept — under the lock too — until the sign-out. The same
+  /// instance each time, so the scanner's every change does not rebuild
+  /// the tabs beside it.
+  Widget? _home;
 
   bool get _demo => widget.repository is InMemoryScannerRepository;
 
@@ -123,24 +153,33 @@ class _ScannerFlowState extends State<ScannerFlow> {
       _signingOutForLock = false;
       _lock.forget();
     }
+    if (now == ScannerSession.signedIn) widget.onSignedIn?.call();
   }
 
   /// The phone no longer has a screen lock, so the lock cannot be asked
   /// for: the saved sign-in is closed, and the password asked for instead.
   void _onLockChange() {
     final locked = _lock.locked;
-    if (_wasLocked &&
-        !locked &&
-        _lock.enabled &&
-        _controller.session == ScannerSession.signedIn) {
+    final signedIn = _controller.session == ScannerSession.signedIn;
+    if (_wasLocked && !locked && _lock.enabled && signedIn) {
       setState(() => _welcomingBack = true);
     }
+    if (!_wasLocked && locked && signedIn) _closePagesAbove();
     _wasLocked = locked;
 
     if (!_lock.lost || _signingOutForLock) return;
     if (_controller.session != ScannerSession.signedIn) return;
     _signingOutForLock = true;
     _controller.signOut(message: ScannerStrings.lockLost);
+  }
+
+  /// The lock covers the whole of the instructor's side, so nothing opened
+  /// over it — What's New, a scan's dialog — may stay in front of it.
+  void _closePagesAbove() {
+    if (!mounted) return;
+    final route = ModalRoute.of(context);
+    if (route == null || route.isCurrent) return;
+    Navigator.of(context).popUntil((r) => r == route);
   }
 
   /// Right after a sign-in with the password: offer to put the phone's lock
@@ -170,7 +209,19 @@ class _ScannerFlowState extends State<ScannerFlow> {
     super.dispose();
   }
 
-  Widget _screen() {
+  Widget _scanner(BuildContext context) => ScannerPage(
+    key: const ValueKey('scanner'),
+    controller: _controller,
+    demo: _demo,
+    cameraBuilder: widget.cameraBuilder,
+    keepAwake: widget.keepAwake,
+    onOpenSettings: widget.onOpenSettings,
+    lock: _lock,
+  );
+
+  /// Whatever the sign-in has to show in front of the signed-in side — the
+  /// splash, the form, a welcome, the lock — or null when it is open.
+  Widget? _cover() {
     final session = _controller.session;
     final user = _controller.user;
 
@@ -243,16 +294,9 @@ class _ScannerFlowState extends State<ScannerFlow> {
         key: const ValueKey('sign-in'),
         controller: _controller,
         demo: _demo,
+        onBack: widget.onLeave,
       ),
-      ScannerSession.signedIn => ScannerPage(
-        key: const ValueKey('scanner'),
-        controller: _controller,
-        demo: _demo,
-        cameraBuilder: widget.cameraBuilder,
-        keepAwake: widget.keepAwake,
-        onOpenSettings: widget.onOpenSettings,
-        lock: _lock,
-      ),
+      ScannerSession.signedIn => null,
     };
   }
 
@@ -260,7 +304,70 @@ class _ScannerFlowState extends State<ScannerFlow> {
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: Listenable.merge([_controller, _lock]),
-      builder: (context, _) => FadeScaleSwitcher(child: _screen()),
+      builder: (context, _) {
+        final cover = _cover();
+        final session = _controller.session;
+
+        if (session != ScannerSession.signedIn) {
+          _home = null;
+        } else if (cover == null) {
+          final home = widget.home;
+          _home ??= KeyedSubtree(
+            key: const ValueKey('home'),
+            child: Builder(
+              builder: (context) =>
+                  home == null ? _scanner(context) : home(context, _scanner),
+            ),
+          );
+        }
+
+        final covered = cover != null;
+        final leaving =
+            session == ScannerSession.signedOut &&
+            _introDone &&
+            widget.onLeave != null;
+
+        return PopScope(
+          canPop: !leaving,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && leaving) widget.onLeave?.call();
+          },
+          // Under the covers as they fade: the canvas, not black.
+          child: ColoredBox(
+            color: context.colors.canvas,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Kept under a cover rather than dropped, so a lock after a
+                // minute away does not lose the tab or a half-typed number.
+                // Out of sight it is still: no camera, no taps, no focus.
+                TickerMode(
+                  enabled: !covered,
+                  child: IgnorePointer(
+                    ignoring: covered,
+                    child: ExcludeSemantics(
+                      excluding: covered,
+                      child: ExcludeFocus(
+                        excluding: covered,
+                        child: _home ?? const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
+                // A messenger of their own: a snack bar for the signed-in
+                // side ("Scanner lock is on") shows on the bar's scaffold
+                // only, not again on a cover still fading out over it.
+                ScaffoldMessenger(
+                  child: FadeScaleSwitcher(
+                    child:
+                        cover ?? const SizedBox.shrink(key: ValueKey('open')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

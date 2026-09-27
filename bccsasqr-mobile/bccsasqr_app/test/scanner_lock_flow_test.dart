@@ -7,7 +7,10 @@ import 'package:bccsasqr_app/services/scanner_repository.dart';
 import 'package:bccsasqr_app/services/settings_store.dart';
 import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
+import 'package:bccsasqr_app/controllers/scanner_lock_controller.dart';
 import 'package:bccsasqr_app/views/scanner/scanner_lock_screen.dart';
+import 'package:bccsasqr_app/views/tracker_splash.dart';
+import 'package:bccsasqr_app/views/whats_new_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bccsasqr_app/models/app_role.dart';
@@ -34,11 +37,13 @@ void main() {
   late _FakeDeviceLock device;
   late MemoryScannerLockStore store;
   late InMemoryScannerRepository scanner;
+  late DateTime now;
 
   setUp(() {
     device = _FakeDeviceLock();
     store = MemoryScannerLockStore();
     scanner = InMemoryScannerRepository(latency: Duration.zero);
+    now = DateTime(2026, 9, 27, 8);
     final view =
         TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.devicePixelRatio = 1.0;
@@ -64,6 +69,7 @@ void main() {
     appInfo: () async => const AppInfo(version: '1.3.2', buildNumber: '6'),
     deviceLock: device,
     scannerLockStore: store,
+    scannerLockClock: () => now,
     showSplash: false,
   );
 
@@ -162,12 +168,60 @@ void main() {
     expect(find.text(ScannerStrings.lockNotUnlocked), findsOneWidget);
     expect(find.text(ScannerStrings.title), findsNothing);
     expect(device.asked.last, ScannerStrings.lockReason);
+    // Not just the scanner: nothing of the instructor's side is there.
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.text(NavStrings.qr), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('lock.unlock')));
     await tester.pumpAndSettle();
 
     expect(find.byType(ScannerLockScreen), findsNothing);
     expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+  });
+
+  testWidgets('a minute away locks the whole bar, and unlocking finds it '
+      'as it was left', (tester) async {
+    await signInWithLock(tester);
+    await tester.tap(find.byKey(const ValueKey('nav.tracker')));
+    await tester.pumpAndSettle();
+    expect(find.byType(TrackerSplash), findsNothing);
+    // A page over the bar, which the lock must not stay behind.
+    await tester.tap(find.byKey(const ValueKey('nav.settings')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings.whatsNew')));
+    await tester.pumpAndSettle();
+    expect(find.byType(WhatsNewPage), findsOneWidget);
+
+    // Away, a minute passes, back — one lifecycle step at a time.
+    void step(AppLifecycleState state) =>
+        tester.binding.handleAppLifecycleStateChanged(state);
+    step(AppLifecycleState.inactive);
+    step(AppLifecycleState.hidden);
+    now = now.add(ScannerLockController.relockAfter);
+    device.script.add(DeviceUnlock.cancelled);
+    step(AppLifecycleState.inactive);
+    step(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    await tester.pump(ScannerLockScreen.promptDelay);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WhatsNewPage), findsNothing);
+    expect(find.byType(ScannerLockScreen), findsOneWidget);
+    // Kept under the lock, but out of reach.
+    expect(find.byType(NavigationBar).hitTestable(), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('lock.unlock')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ScannerLockScreen), findsNothing);
+    expect(find.byType(NavigationBar).hitTestable(), findsOneWidget);
+    // The same bar: still on Settings, and the tracker was not built again.
+    expect(find.text(SettingsStrings.appearance), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('nav.tracker')));
+    await tester.pump();
+    expect(find.byType(TrackerSplash), findsNothing);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('the owner\'s finger opens it, with a welcome back', (

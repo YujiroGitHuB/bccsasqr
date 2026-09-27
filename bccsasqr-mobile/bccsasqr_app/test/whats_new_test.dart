@@ -4,6 +4,7 @@ import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/core/constants/whats_new_log.dart';
 import 'package:bccsasqr_app/models/whats_new.dart';
 import 'package:bccsasqr_app/services/app_info.dart';
+import 'package:bccsasqr_app/services/device_lock.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/scan_feedback.dart';
 import 'package:bccsasqr_app/services/scanner_repository.dart';
@@ -119,6 +120,8 @@ void main() {
       scanFeedback: const SilentScanFeedback(),
       settingsStore: MemorySettingsStore(),
       whatsNewStore: store,
+      deviceLock: const NoDeviceLock(),
+      scannerLockStore: MemoryScannerLockStore(),
       appInfo: () async => const AppInfo(version: '1.5.0', buildNumber: '9'),
       cameraBuilder: (context, onCode) => const SizedBox.shrink(),
       keepAwake: (on) async {},
@@ -292,6 +295,7 @@ void main() {
     ) async {
       await tester.pumpWidget(app(role: AppRole.instructor));
       await tester.pumpAndSettle();
+      await signInAsInstructor(tester);
       expect(card, findsNothing);
       expect(find.byTooltip(NavStrings.settingsUnread), findsOneWidget);
 
@@ -340,3 +344,15 @@ void main() {
 }
 
 void _ignore(WhatsNewArea area) {}
+
+/// An instructor's phone opens on the sign-in; the bar is behind it.
+Future<void> signInAsInstructor(WidgetTester tester) async {
+  // The scan line sweeps forever; held still, pumpAndSettle can settle.
+  tester.platformDispatcher.accessibilityFeaturesTestValue =
+      const FakeAccessibilityFeatures(disableAnimations: true);
+  addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+  await tester.enterText(find.byType(TextField).at(0), 'demo@bcc.test');
+  await tester.enterText(find.byType(TextField).at(1), 'secret');
+  await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
+  await tester.pumpAndSettle();
+}

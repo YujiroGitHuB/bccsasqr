@@ -79,7 +79,8 @@ void main() {
     showSplash: false,
   );
 
-  /// The bar opens on the scanner → signed in → subject picked.
+  /// An instructor's phone opens on the sign-in → signed in → subject
+  /// picked.
   Future<void> openScanner(WidgetTester tester) async {
     // The scan line sweeps forever; with reduced motion it holds still, so
     // pumpAndSettle can settle.
@@ -88,8 +89,6 @@ void main() {
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
     await tester.pumpWidget(app());
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('nav.scanner')));
     await tester.pumpAndSettle();
 
     expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
@@ -262,8 +261,6 @@ void main() {
   // At full speed, as on a phone: the timings are what is being checked.
   Future<void> signInAtFullSpeed(WidgetTester tester) async {
     await tester.pumpWidget(app());
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('nav.scanner')));
     await tester.pumpAndSettle();
     expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
 

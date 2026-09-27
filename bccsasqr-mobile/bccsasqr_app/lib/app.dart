@@ -54,6 +54,7 @@ class BccSasqrApp extends StatefulWidget {
     this.roleStore,
     this.deviceLock,
     this.scannerLockStore,
+    this.scannerLockClock,
     this.appInfo = AppInfo.load,
     this.cameraBuilder = deviceQrCamera,
     this.keepAwake = deviceKeepAwake,
@@ -80,6 +81,9 @@ class BccSasqrApp extends StatefulWidget {
   /// switch for it. The real ones when left out.
   final DeviceLock? deviceLock;
   final ScannerLockStore? scannerLockStore;
+
+  /// The lock's clock. Overridable for tests: see [ScannerFlow.lockClock].
+  final DateTime Function()? scannerLockClock;
   final Future<AppInfo> Function() appInfo;
   final QrCameraBuilder cameraBuilder;
   final Future<void> Function(bool on) keepAwake;
@@ -182,10 +186,10 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     super.dispose();
   }
 
-  /// The picker's answer. An instructor starts on the scanner.
+  /// The picker's answer. A student's is kept at once; an instructor's only
+  /// once the sign-in goes through (see [_instructor]).
   void _chooseRole(AppRole role) {
-    _tab.value = InstructorTab.scanner;
-    _role.choose(role);
+    _role.choose(role, keep: role == AppRole.student);
   }
 
   /// Settings → Role: close whatever is open over the home screen, then ask
@@ -244,8 +248,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   );
 
   // ── Instructor ──────────────────────────────────────────────────────
-  // The bottom bar. Settings is one of its tabs, so nothing is pushed over
-  // the scanner but What's New.
+  // The sign-in, then the bottom bar. Settings is one of its tabs, so
+  // nothing is pushed over the scanner but What's New.
 
   Widget _instructorSettings(BuildContext context) => SettingsPage(
     controller: _settings,
@@ -262,9 +266,14 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     ),
   );
 
-  Widget _scanner(BuildContext context) {
+  /// The whole instructor side sits behind the scanner's sign-in: until an
+  /// instructor account is signed in — and past the phone's lock, when it is
+  /// on — there is no bar, no QR Code tab, no Attendance tab. Only the form,
+  /// and a way back to the question.
+  Widget _instructor() {
     _scannerOpened = true;
     return ScannerFlow(
+      key: const ValueKey('instructor'),
       repository: _scannerRepository,
       speech: _speech,
       feedback: _scanFeedback,
@@ -272,7 +281,23 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       keepAwake: widget.keepAwake,
       deviceLock: widget.deviceLock ?? LocalAuthDeviceLock(),
       lockStore: widget.scannerLockStore ?? SharedPrefsScannerLockStore(),
+      lockClock: widget.scannerLockClock,
       onOpenSettings: () => _tab.value = InstructorTab.settings,
+      // A fresh bar opens on the scanner, and the phone is now known to be
+      // an instructor's.
+      onSignedIn: () {
+        _tab.value = InstructorTab.scanner;
+        _role.choose(AppRole.instructor);
+      },
+      onLeave: _role.clear,
+      home: (context, scanner) => InstructorShell(
+        tab: _tab,
+        generatorBuilder: _generator,
+        scannerBuilder: scanner,
+        trackerBuilder: _trackerPage,
+        settingsBuilder: _instructorSettings,
+        whatsNew: _whatsNew,
+      ),
     );
   }
 
@@ -295,15 +320,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         whatsNewBuilder: _studentWhatsNew,
         whatsNew: _whatsNew,
       ),
-      AppRole.instructor => InstructorShell(
-        key: const ValueKey('instructor'),
-        tab: _tab,
-        generatorBuilder: _generator,
-        scannerBuilder: _scanner,
-        trackerBuilder: _trackerPage,
-        settingsBuilder: _instructorSettings,
-        whatsNew: _whatsNew,
-      ),
+      AppRole.instructor => _instructor(),
     };
   }
 

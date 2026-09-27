@@ -4,6 +4,7 @@ import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/core/theme/app_colors.dart';
 import 'package:bccsasqr_app/models/app_settings.dart';
 import 'package:bccsasqr_app/services/app_info.dart';
+import 'package:bccsasqr_app/services/device_lock.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/scan_feedback.dart';
 import 'package:bccsasqr_app/services/scanner_repository.dart';
@@ -115,6 +116,8 @@ void main() {
       scannerRepository: InMemoryScannerRepository(latency: Duration.zero),
       scanFeedback: const SilentScanFeedback(),
       settingsStore: store,
+      deviceLock: const NoDeviceLock(),
+      scannerLockStore: MemoryScannerLockStore(),
       appInfo: () async => const AppInfo(version: '1.1.0', buildNumber: '2'),
       cameraBuilder: (context, onCode) => const SizedBox.shrink(),
       keepAwake: (on) async {},
@@ -128,6 +131,7 @@ void main() {
     Future<void> openSettings(WidgetTester tester) async {
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
+      await signInAsInstructor(tester);
       await tester.tap(find.byKey(const ValueKey('nav.settings')));
       await tester.pumpAndSettle();
     }
@@ -190,7 +194,7 @@ void main() {
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
 
-      final context = tester.element(find.text(NavStrings.scanner));
+      final context = tester.element(find.text(ScannerStrings.signInHeading));
       expect(Theme.of(context).brightness, Brightness.dark);
     });
 
@@ -206,4 +210,16 @@ void main() {
       expect(store.saved.vibration, isTrue);
     });
   });
+}
+
+/// An instructor's phone opens on the sign-in; the bar is behind it.
+Future<void> signInAsInstructor(WidgetTester tester) async {
+  // The scan line sweeps forever; held still, pumpAndSettle can settle.
+  tester.platformDispatcher.accessibilityFeaturesTestValue =
+      const FakeAccessibilityFeatures(disableAnimations: true);
+  addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+  await tester.enterText(find.byType(TextField).at(0), 'demo@bcc.test');
+  await tester.enterText(find.byType(TextField).at(1), 'secret');
+  await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
+  await tester.pumpAndSettle();
 }

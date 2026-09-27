@@ -18,7 +18,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-27.2';
+  static const String version = '2026-09-27.3';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -50,12 +50,13 @@ abstract final class WhatsNewLog {
           icon: Icons.call_to_action_outlined,
           title: 'Scanner, QR code and attendance on one bar',
           text:
-              'Pick **I\'m an instructor** and a bar along the bottom holds '
-              '**QR Code**, **Scanner**, **Attendance** and **Settings**. It '
-              'opens on the scanner, and a subject you picked stays picked '
-              'while you look a student up on another tab. The camera '
-              'switches off until you come back to it, and switching roles '
-              'keeps you signed in.',
+              'Pick **I\'m an instructor** and sign in, and a bar along the '
+              'bottom holds **QR Code**, **Scanner**, **Attendance** and '
+              '**Settings**. Nothing of it shows before the sign-in, and '
+              'signing out takes it away again; the fingerprint lock covers '
+              'all of it, not just the scanner. It opens on the scanner, and '
+              'a subject you picked stays picked while you look a student up '
+              'on another tab — the camera switches off until you come back.',
         ),
         WhatsNewItem(
           kind: WhatsNewKind.added,

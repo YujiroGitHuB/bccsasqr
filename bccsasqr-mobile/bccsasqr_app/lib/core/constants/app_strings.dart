@@ -416,7 +416,11 @@ abstract final class RoleStrings {
       'Save your QR code and check your own attendance.';
   static const String instructorTitle = 'I\'m an instructor';
   static const String instructorBody =
-      'Scan attendance — plus the QR generator and the tracker.';
+      'Sign in to scan attendance, with the QR generator and the tracker '
+      'beside it.';
+
+  // Above the instructor's sign-in form: back to the question.
+  static const String signInBack = 'Back';
 
   // Settings → Role.
   static const String currentStudent = 'Student';

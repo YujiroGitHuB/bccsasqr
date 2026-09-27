@@ -207,7 +207,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
             <div class="dl-section-head">
                 <span class="dl-kicker">Inside the app</span>
                 <h2>One app, two sides</h2>
-                <p>The first time it opens, the app asks who you are. Students see only their QR code and their attendance; instructors get the scanner.</p>
+                <p>The first time it opens, the app asks who you are. Students see only their QR code and their attendance; instructors sign in and get the scanner.</p>
             </div>
 
             <div class="dl-sides">
@@ -272,7 +272,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                     <span class="dl-step-no">3</span>
                     <i class="bi bi-box-arrow-in-right dl-card-icon" aria-hidden="true"></i>
                     <h3>Open your side</h3>
-                    <p>Open <strong><?= htmlspecialchars($acronym) ?></strong> and pick <strong>I&rsquo;m a student</strong> or <strong>I&rsquo;m an instructor</strong>. Students: tap <strong>My QR Code</strong>, type your student number, accept the terms, and save your QR &mdash; or tap <strong>My Attendance</strong> to see your days present. Instructors: the scanner opens first &mdash; sign in once.</p>
+                    <p>Open <strong><?= htmlspecialchars($acronym) ?></strong> and pick <strong>I&rsquo;m a student</strong> or <strong>I&rsquo;m an instructor</strong>. Students: tap <strong>My QR Code</strong>, type your student number, accept the terms, and save your QR &mdash; or tap <strong>My Attendance</strong> to see your days present. Instructors: sign in once with your web system account, and the scanner opens.</p>
                 </li>
             </ol>
         </section>

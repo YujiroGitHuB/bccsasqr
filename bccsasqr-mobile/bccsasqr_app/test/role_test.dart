@@ -1,6 +1,7 @@
 import 'package:bccsasqr_app/app.dart';
 import 'package:bccsasqr_app/controllers/role_controller.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
+import 'package:bccsasqr_app/core/constants/whats_new_log.dart';
 import 'package:bccsasqr_app/models/app_role.dart';
 import 'package:bccsasqr_app/services/app_info.dart';
 import 'package:bccsasqr_app/services/device_lock.dart';
@@ -13,10 +14,10 @@ import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/services/tracker_repository.dart';
 import 'package:bccsasqr_app/services/whats_new_store.dart';
-import 'package:bccsasqr_app/core/constants/whats_new_log.dart';
 import 'package:bccsasqr_app/views/generator_splash.dart';
 import 'package:bccsasqr_app/views/instructor_shell.dart';
 import 'package:bccsasqr_app/views/scanner/scanner_flow.dart';
+import 'package:bccsasqr_app/views/tracker_splash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -50,15 +51,30 @@ void main() {
       expect(role.role, isNull);
       expect(store.saved, isNull);
     });
+
+    test('a role not kept is shown but not saved, until it is', () async {
+      final store = MemoryRoleStore();
+      final role = RoleController(store: store);
+      await role.load();
+
+      role.choose(AppRole.instructor, keep: false);
+      expect(role.role, AppRole.instructor);
+      expect(store.saved, isNull);
+
+      role.choose(AppRole.instructor);
+      expect(store.saved, AppRole.instructor);
+    });
   });
 
   group('the app', () {
     late MemoryRoleStore roles;
     late List<bool> awake;
+    late InMemoryScannerRepository scanner;
 
     setUp(() {
       roles = MemoryRoleStore();
       awake = [];
+      scanner = InMemoryScannerRepository(latency: Duration.zero);
       final view =
           TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
       view.devicePixelRatio = 1.0;
@@ -78,7 +94,7 @@ void main() {
       trackerRepository: InMemoryTrackerRepository(latency: Duration.zero),
       exportService: _NoExport(),
       speech: const SilentSpeechService(),
-      scannerRepository: InMemoryScannerRepository(latency: Duration.zero),
+      scannerRepository: scanner,
       scanFeedback: const SilentScanFeedback(),
       settingsStore: MemorySettingsStore(),
       whatsNewStore: MemoryWhatsNewStore(WhatsNewLog.version),
@@ -93,19 +109,38 @@ void main() {
 
     /// The scan line sweeps forever; with reduced motion it holds still, so
     /// pumpAndSettle can settle.
-    void reduceMotion(WidgetTester tester) {
+    Future<void> launch(WidgetTester tester) async {
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           const FakeAccessibilityFeatures(disableAnimations: true);
       addTearDown(
         tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
       );
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+    }
+
+    /// The instructor's form, filled in and sent.
+    Future<void> signIn(WidgetTester tester) async {
+      await tester.enterText(find.byType(TextField).at(0), 'demo@bcc.test');
+      await tester.enterText(find.byType(TextField).at(1), 'secret');
+      await tester.tap(
+        find.widgetWithText(FilledButton, ScannerStrings.signIn),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// Launch, "I'm an instructor", and the form sent.
+    Future<void> openAsInstructor(WidgetTester tester) async {
+      await launch(tester);
+      await tester.tap(find.byKey(const ValueKey('role.instructor')));
+      await tester.pumpAndSettle();
+      await signIn(tester);
     }
 
     testWidgets('the first launch asks; a student gets no scanner', (
       tester,
     ) async {
-      await tester.pumpWidget(app());
-      await tester.pumpAndSettle();
+      await launch(tester);
 
       expect(find.text(RoleStrings.question), findsOneWidget);
       expect(find.byKey(const ValueKey('home.generator')), findsNothing);
@@ -122,13 +157,22 @@ void main() {
       expect(find.text(NavStrings.scanner), findsNothing);
     });
 
-    testWidgets('an instructor gets the bar, opening on the scanner', (
-      tester,
-    ) async {
-      await tester.pumpWidget(app());
-      await tester.pumpAndSettle();
+    testWidgets('"I\'m an instructor" is only a sign-in until one goes '
+        'through', (tester) async {
+      await launch(tester);
       await tester.tap(find.byKey(const ValueKey('role.instructor')));
       await tester.pumpAndSettle();
+
+      // A student who taps it gets the form, and nothing behind it.
+      expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+      expect(find.byType(NavigationBar, skipOffstage: false), findsNothing);
+      expect(find.byType(InstructorShell, skipOffstage: false), findsNothing);
+      expect(find.byType(GeneratorIntro, skipOffstage: false), findsNothing);
+      expect(find.text(NavStrings.qr), findsNothing);
+      // Not kept either: the next launch asks again.
+      expect(roles.saved, isNull);
+
+      await signIn(tester);
 
       expect(roles.saved, AppRole.instructor);
       expect(find.byType(NavigationBar), findsOneWidget);
@@ -140,29 +184,83 @@ void main() {
       ]) {
         expect(find.text(label), findsOneWidget);
       }
-      expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
-      // The other tabs are built the first time they are opened.
+      // Opening on the scanner; the other tabs built when first opened.
+      expect(find.text(ScannerStrings.title), findsOneWidget);
       expect(find.byType(GeneratorIntro, skipOffstage: false), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey('nav.qr')));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.studentNumberLabel), findsOneWidget);
-      expect(find.text(ScannerStrings.signInHeading), findsNothing);
     });
 
-    testWidgets('a saved role skips the question', (tester) async {
-      roles = MemoryRoleStore(AppRole.instructor);
+    testWidgets('the sign-in\'s back arrow, and the phone\'s back button, '
+        'go back to the question', (tester) async {
+      await launch(tester);
+      await tester.tap(find.byKey(const ValueKey('role.instructor')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('signIn.back')));
+      await tester.pumpAndSettle();
+      expect(find.text(RoleStrings.question), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('role.instructor')));
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text(RoleStrings.question), findsOneWidget);
+      expect(roles.saved, isNull);
+    });
+
+    testWidgets('a saved sign-in opens straight on the bar next time', (
+      tester,
+    ) async {
+      await openAsInstructor(tester);
+
+      // The app closed and opened again, the phone's storage kept.
+      await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
 
       expect(find.text(RoleStrings.question), findsNothing);
-      expect(find.byType(InstructorShell), findsOneWidget);
+      expect(find.text(ScannerStrings.signInHeading), findsNothing);
+      expect(find.byType(NavigationBar), findsOneWidget);
+    });
+
+    testWidgets('an instructor\'s phone, signed out, asks for the sign-in '
+        'and not the bar', (tester) async {
+      roles = MemoryRoleStore(AppRole.instructor);
+      await launch(tester);
+
+      expect(find.text(RoleStrings.question), findsNothing);
+      expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+      expect(find.byType(InstructorShell, skipOffstage: false), findsNothing);
+    });
+
+    testWidgets('signing out takes the bar away with it', (tester) async {
+      await openAsInstructor(tester);
+      await tester.tap(find.byKey(const ValueKey('nav.tracker')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('nav.scanner')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip(ScannerStrings.account));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ScannerStrings.signOut).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ScannerStrings.signOut).last);
+      await tester.pumpAndSettle();
+
+      expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+      expect(find.byType(InstructorShell, skipOffstage: false), findsNothing);
+      expect(find.byType(TrackerIntro, skipOffstage: false), findsNothing);
+      // Still an instructor's phone: the next launch shows the form, not
+      // the question.
+      expect(roles.saved, AppRole.instructor);
     });
 
     testWidgets('Settings → Role asks again, from either half', (tester) async {
       roles = MemoryRoleStore(AppRole.student);
-      await tester.pumpWidget(app());
-      await tester.pumpAndSettle();
+      await launch(tester);
 
       await tester.tap(find.byKey(const ValueKey('home.settings')));
       await tester.pumpAndSettle();
@@ -176,6 +274,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('role.instructor')));
       await tester.pumpAndSettle();
+      await signIn(tester);
       await tester.tap(find.byKey(const ValueKey('nav.settings')));
       await tester.pumpAndSettle();
       expect(find.text(RoleStrings.currentInstructor), findsOneWidget);
@@ -189,34 +288,22 @@ void main() {
     testWidgets('back from another tab goes to the scanner first', (
       tester,
     ) async {
-      roles = MemoryRoleStore(AppRole.instructor);
-      await tester.pumpWidget(app());
-      await tester.pumpAndSettle();
+      await openAsInstructor(tester);
       await tester.tap(find.byKey(const ValueKey('nav.tracker')));
       await tester.pumpAndSettle();
-      expect(find.text(ScannerStrings.signInHeading), findsNothing);
+      expect(find.text(ScannerStrings.title), findsNothing);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+      expect(find.text(ScannerStrings.title), findsOneWidget);
       expect(find.byType(InstructorShell), findsOneWidget);
     });
 
     testWidgets('the camera stops on another tab and the subject is kept', (
       tester,
     ) async {
-      reduceMotion(tester);
-      roles = MemoryRoleStore(AppRole.instructor);
-      await tester.pumpWidget(app());
-      await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField).at(0), 'demo@bcc.test');
-      await tester.enterText(find.byType(TextField).at(1), 'secret');
-      await tester.tap(
-        find.widgetWithText(FilledButton, ScannerStrings.signIn),
-      );
-      await tester.pumpAndSettle();
+      await openAsInstructor(tester);
       await tester.tap(find.text(ScannerStrings.subjectPlaceholder));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Object Oriented Programming').last);

@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.16';
+const WHATS_NEW_VERSION = '2026-09-27.17';
 
 /**
  * The changelog, newest release first.
@@ -81,7 +81,7 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-phone',
                     'title' => 'The scanner, in the app',
-                    'text'  => 'Open the app and choose <strong>I&rsquo;m an instructor</strong> &mdash; the scanner opens first. Sign in once with your usual email and password &mdash; the phone keeps you signed in until you tap <strong>Sign out</strong>. From there it works like the web scanner: pick a subject and the camera starts, flip <strong>Late marking</strong> once class has begun, and each scan shows the student&rsquo;s photo, beeps, vibrates and reads the name aloud. Everything the web scanner refuses, the app refuses with the same message: <em>already marked</em>, <em>not enrolled</em>, <em>no photo on file</em>. The screen stays on while the camera is running, so it does not lock halfway through the line. Scans from the app and from the browser land in the same <strong>Attendance List</strong>. Anyone with the app already installed gets the scanner by downloading it again.',
+                    'text'  => 'Open the app, choose <strong>I&rsquo;m an instructor</strong>, and sign in once with your usual email and password &mdash; the phone keeps you signed in until you tap <strong>Sign out</strong>. From there it works like the web scanner: pick a subject and the camera starts, flip <strong>Late marking</strong> once class has begun, and each scan shows the student&rsquo;s photo, beeps, vibrates and reads the name aloud. Everything the web scanner refuses, the app refuses with the same message: <em>already marked</em>, <em>not enrolled</em>, <em>no photo on file</em>. The screen stays on while the camera is running, so it does not lock halfway through the line. Scans from the app and from the browser land in the same <strong>Attendance List</strong>. Anyone with the app already installed gets the scanner by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
                 [
@@ -109,7 +109,7 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-person-badge',
                     'title' => 'The app asks: student or instructor — and shows each only their side',
-                    'text'  => 'The first time the app opens, it asks <strong>Who is using this phone?</strong> A student who picks <strong>I&rsquo;m a student</strong> sees only <strong>My QR Code</strong> and <strong>My Attendance</strong> &mdash; nothing of the scanner. An instructor who picks <strong>I&rsquo;m an instructor</strong> gets a bar along the bottom: <strong>QR Code</strong>, <strong>Scanner</strong>, <strong>Attendance</strong> and <strong>Settings</strong>. It opens on the scanner; a subject you picked stays picked while you look a student up on another tab, and the camera switches off until you come back. Picked the wrong one? <strong>Settings &rarr; Role</strong> asks again, and the scanner stays signed in. The scanner still needs your web system sign-in whichever side is picked. The <strong>Lx</strong> credit at the bottom of the app also opens the same developer page as the web footer now. Anyone with the app already installed gets this by downloading it again.',
+                    'text'  => 'The first time the app opens, it asks <strong>Who is using this phone?</strong> A student who picks <strong>I&rsquo;m a student</strong> sees only <strong>My QR Code</strong> and <strong>My Attendance</strong> &mdash; nothing of the scanner. <strong>I&rsquo;m an instructor</strong> asks for your web system email and password first, and nothing of the instructor side shows before that &mdash; a student who taps it sees only the sign-in and a way back. Once signed in you get a bar along the bottom: <strong>QR Code</strong>, <strong>Scanner</strong>, <strong>Attendance</strong> and <strong>Settings</strong>. Signing out, or changing your password in <strong>My Profile</strong>, takes the bar away again, and the fingerprint lock covers all of it, not just the scanner. It opens on the scanner; a subject you picked stays picked while you look a student up on another tab, and the camera switches off until you come back. Picked the wrong one? <strong>Settings &rarr; Role</strong> asks again, and the scanner stays signed in. The <strong>Lx</strong> credit at the bottom of the app also opens the same developer page as the web footer now. Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/#inside', 'label' => 'Open the download page'],
                 ],
                 [

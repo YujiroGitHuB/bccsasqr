@@ -14,10 +14,15 @@ class ScannerSignInPage extends StatefulWidget {
     super.key,
     required this.controller,
     this.demo = false,
+    this.onBack,
   });
 
   final ScannerController controller;
   final bool demo;
+
+  /// The arrow above the form: back to the student-or-instructor question.
+  /// Without it, the arrow is there only when a page is under this one.
+  final VoidCallback? onBack;
 
   @override
   State<ScannerSignInPage> createState() => _ScannerSignInPageState();
@@ -43,6 +48,11 @@ class _ScannerSignInPageState extends State<ScannerSignInPage> {
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
+    final VoidCallback? back =
+        widget.onBack ??
+        (Navigator.of(context).canPop()
+            ? () => Navigator.of(context).maybePop()
+            : null);
 
     return Scaffold(
       body: SafeArea(
@@ -72,16 +82,21 @@ class _ScannerSignInPageState extends State<ScannerSignInPage> {
                   builder: (context, _) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (Navigator.of(context).canPop())
+                      if (back != null)
                         Align(
                           alignment: Alignment.centerLeft,
                           child: TextButton.icon(
-                            onPressed: () => Navigator.of(context).maybePop(),
+                            key: const ValueKey('signIn.back'),
+                            onPressed: back,
                             icon: const Icon(
                               Icons.arrow_back_rounded,
                               size: 18,
                             ),
-                            label: const Text(AppStrings.homeBack),
+                            label: Text(
+                              widget.onBack != null
+                                  ? RoleStrings.signInBack
+                                  : AppStrings.homeBack,
+                            ),
                             style: TextButton.styleFrom(
                               foregroundColor: context.colors.textSecondary,
                             ),
