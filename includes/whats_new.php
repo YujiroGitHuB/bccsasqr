@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27';
+const WHATS_NEW_VERSION = '2026-09-27.2';
 
 /**
  * The changelog, newest release first.
@@ -74,8 +74,8 @@ function whats_new_releases(): array
             'id'      => '2026-09-27',
             'date'    => '2026-09-27',
             'icon'    => 'bi-qr-code-scan',
-            'title'   => 'Scan attendance with the Android app',
-            'summary' => 'The BCC SASQR app now has the QR scanner in it. Sign in with the same email and password you use here, pick a subject, and scan — no browser needed. It follows the web scanner’s rules to the letter, and both fill the same Attendance List.',
+            'title'   => 'Scan attendance with the Android app, and accounts only from the admin',
+            'summary' => 'The BCC SASQR app now has the QR scanner in it. Sign in with the same email and password you use here, pick a subject, and scan — no browser needed. It follows the web scanner’s rules to the letter, and both fill the same Attendance List. Two gaps are closed as well: nobody can make their own account any more, and a class list only opens for the instructor whose subject it is.',
             'items'   => [
                 [
                     'type'  => 'new',
@@ -90,6 +90,19 @@ function whats_new_releases(): array
                     'title' => 'Lost your phone? Change your password',
                     'text'  => 'Changing your password in <strong>My Profile</strong> signs the app out on <strong>every phone</strong> at once, so a lost phone cannot keep scanning under your name. An admin resetting your password or disabling your account does the same. Taking the scanner permission away in <strong>Manage Access</strong>, or locking the QR pages in Settings, reaches the app on its very next scan.',
                     'link'  => ['href' => 'pages/profile.php', 'label' => 'Open My Profile'],
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-person-x',
+                    'title' => 'Accounts are made by an admin, not by whoever finds the page',
+                    'text'  => 'The <strong>Create Account</strong> page was open to anyone, and every account it made was an instructor who could sign in straight away &mdash; a student could have made one. It is closed now; opening it leads to the sign-in page with a note to ask the administrator. Admins create accounts in <strong>Manage Users</strong>, and instructors can still add face sign-in themselves in <strong>My Profile</strong>. Accounts that already exist are not affected.',
+                    'link'  => ['href' => 'pages/manage_users.php', 'label' => 'Open Manage Users', 'can' => 'admin'],
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-shield-lock',
+                    'title' => 'A class list opens only for its own instructor',
+                    'text'  => 'The <strong>Present</strong> and <strong>Absent</strong> lists on the dashboard could be opened for any subject and section by anyone signed in, which showed a whole section&rsquo;s names and student numbers. They now open only for a subject assigned to you (admins, any subject), and a refused attempt is recorded in the Security Monitor. Nothing changes for your own classes.',
                 ],
             ],
         ],

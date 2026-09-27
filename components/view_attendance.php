@@ -25,6 +25,43 @@ $subject      = $_GET['subject'] ?? '';
 $full_section = $_GET['section'] ?? ''; // e.g. "BSIT-1A"
 $date         = $_GET['date']    ?? date('Y-m-d');
 
+// ── Who may read this list ────────────────────────────────
+// The absent list is a class roster: every name and student number in
+// a section. Being signed in used to be enough, so any account — one
+// made on the old public registration page included — could read any
+// section by typing the URL. It now takes the attendance.view
+// permission and, for an instructor, a subject that is theirs: the
+// same subjects the dashboard that opens this list shows them.
+require_once __DIR__ . "/../includes/permissions.php";
+
+$mayView = can('attendance.view');
+
+if ($mayView && !isAdmin()) {
+    $own = $conn->prepare("
+        SELECT 1
+        FROM subjects_tbl s
+        INNER JOIN subject_instructors_tbl si ON si.subject_id = s.id
+        WHERE s.subject_name = ? AND si.instructor_id = ?
+        LIMIT 1
+    ");
+    $ownerId = (int) $_SESSION['user_id'];
+    $own->bind_param("si", $subject, $ownerId);
+    $own->execute();
+    $mayView = $own->get_result()->num_rows > 0;
+    $own->close();
+}
+
+if (!$mayView) {
+    require_once __DIR__ . '/../includes/security_log.php';
+    security_denied('attendance.view');
+    echo '<div class="app-state">'
+        . '<div class="app-state-icon is-bad"><i class="bi bi-shield-lock"></i></div>'
+        . '<h6>No access to this list</h6>'
+        . '<p>This subject is not assigned to your account.</p>'
+        . '</div>';
+    exit;
+}
+
 // Anything that is not an explicit "absent" is the present list. The
 // value used to be echoed back through `ucfirst($status)` unescaped,
 // so ?status= wrote straight into the page.
