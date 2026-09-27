@@ -183,6 +183,10 @@ body.dl-page {
     max-width: 1140px;
     margin: 0 auto;
     padding: 0 clamp(16px, 4vw, 32px) 2rem;
+    /* The phone turned away to the right reaches past the screen's edge.
+       The body's clip hides it, but a phone browser still widens the page
+       to fit it and zooms out; clipped here, it never counts. */
+    overflow-x: clip;
 }
 
 /* ─── Hero ────────────────────────────────────────────────── */
@@ -221,6 +225,9 @@ body.dl-page {
     font-weight: 800;
     letter-spacing: -.035em;
     color: var(--ink);
+    /* Three things in the line now; even lines rather than "Your QR,"
+       stranded alone on the first. */
+    text-wrap: balance;
 }
 
 .dl-grad {
@@ -369,19 +376,20 @@ body.dl-page {
 }
 
 /* ─── The 3D scene ────────────────────────────────────────── */
+/* The app's three screens — My QR Code, My Attendance, the Scanner —
+   one in front, the other two turned away behind it. download.js moves
+   the is-active / is-next / is-prev classes round on a swipe, a drag,
+   the arrows or the pills. */
 .dl-stage {
     position: relative;
-    display: grid;
-    place-items: center;
-    height: clamp(380px, 105vw, 600px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     perspective: 1300px;
     perspective-origin: 50% 40%;
-}
-
-@media (min-width: 900px) {
-    .dl-stage {
-        height: 600px;
-    }
+    /* Scrolling the page up and down stays the browser's; a sideways
+       swipe is for turning the screens. */
+    touch-action: pan-y;
 }
 
 /* Stacked under the copy, the coin's lift toward the viewer carries
@@ -402,10 +410,43 @@ body.dl-page {
 .dl-scene {
     position: relative;
     width: min(440px, 92vw);
-    height: 100%;
+    /* Tall enough for the front phone, which is about as tall as the
+       scene is wide, and a little taller again brought forward. */
+    height: clamp(380px, 116vw, 560px);
     transform-style: preserve-3d;
-    transform: rotateX(calc(10deg + var(--rx))) rotateY(calc(-22deg + var(--ry)));
+    /* --drag: the scene leaning with a finger mid-swipe (download.js). */
+    transform: rotateX(calc(10deg + var(--rx)))
+        rotateY(calc(-10deg + var(--ry) + var(--drag, 0deg)));
     transition: transform .5s cubic-bezier(.2, .8, .2, 1);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+@media (min-width: 900px) {
+    .dl-scene {
+        height: 560px;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .dl-js .dl-scene {
+        cursor: grab;
+    }
+
+    .dl-js .dl-scene.is-dragging {
+        cursor: grabbing;
+    }
+}
+
+.dl-scene.is-dragging {
+    transition: none;
+}
+
+/* A picture dragged would be picked up by the browser instead of
+   turning the scene. */
+.dl-scene img {
+    -webkit-user-drag: none;
+    pointer-events: none;
 }
 
 /* A soft pool of light under the phones — grounds them. Not a ring
@@ -423,30 +464,39 @@ body.dl-page {
     transform: translateZ(-60px);
 }
 
+/* All three stand in the middle; the transform alone moves them, so a
+   turn is one composited animation rather than a relayout. */
 .dl-phone {
     position: absolute;
+    left: 24%;
+    top: 3%;
     width: 52%;
     aspect-ratio: 390 / 844;
     transform-style: preserve-3d;
+    transition: transform .7s cubic-bezier(.2, .8, .2, 1);
 }
 
-.dl-phone.is-front {
-    left: 34%;
-    top: 3%;
+.dl-phone.is-active {
     transform: translateZ(70px);
 }
 
-/* The instructor's scanner. Far enough left that its viewfinder and
-   scan result clear the front phone — otherwise it reads as a blank
-   dark slab. */
-.dl-phone.is-back {
-    left: -26%;
-    top: 14%;
-    transform: translateZ(-110px) rotateZ(-5deg);
+/* Out to the sides and back, turned toward the middle: far enough that
+   what is on their screens still shows past the front phone. */
+.dl-phone.is-prev {
+    transform: translateX(-70%) translateZ(-150px) rotateY(26deg) rotateZ(-3deg);
 }
 
-.dl-phone.is-back .dl-phone-screen img {
-    filter: brightness(.85);
+.dl-phone.is-next {
+    transform: translateX(70%) translateZ(-150px) rotateY(-26deg) rotateZ(3deg);
+}
+
+.dl-phone .dl-phone-screen img {
+    transition: filter .7s ease;
+}
+
+.dl-phone.is-prev .dl-phone-screen img,
+.dl-phone.is-next .dl-phone-screen img {
+    filter: brightness(.6) saturate(.85);
 }
 
 /* The body is two slabs: the back plate sits 14px behind the glass,
@@ -488,7 +538,7 @@ body.dl-page {
 }
 
 /* Glass: a soft diagonal sheen across the front screen. */
-.dl-phone.is-front .dl-phone-screen::after {
+.dl-phone.is-active .dl-phone-screen::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -496,14 +546,21 @@ body.dl-page {
     pointer-events: none;
 }
 
-/* The saved card, lifted out of the phone toward the viewer. */
+/* The saved card, lifted out of the phone toward the viewer — only
+   while My QR Code is the one in front; it is that screen's card. */
 .dl-float-card {
     position: absolute;
-    left: 66%;
+    left: 62%;
     top: 40%;
     width: 36%;
     transform: translateZ(190px) rotateY(12deg);
     animation: dl-bob 6s ease-in-out infinite;
+    transition: opacity .45s ease, visibility .45s;
+}
+
+.dl-scene:not([data-active="0"]) .dl-float-card {
+    opacity: 0;
+    visibility: hidden;
 }
 
 .dl-float-card img {
@@ -560,6 +617,99 @@ body.dl-page {
 @keyframes dl-spin {
     from { transform: rotateY(0deg); }
     to   { transform: rotateY(360deg); }
+}
+
+/* ─── Screen switcher ─────────────────────────────────────── */
+/* Only with JavaScript: without it the three phones stand still and
+   there is nothing for these to switch. */
+.dl-switch {
+    display: none;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .4rem;
+    /* Above the scene: a transformed element paints over plain blocks
+       that follow it, and the phones would cover the pills. */
+    position: relative;
+    z-index: 1;
+}
+
+.dl-js .dl-switch {
+    display: flex;
+}
+
+.dl-pills {
+    display: flex;
+    gap: .25rem;
+    padding: .25rem;
+    border-radius: 999px;
+    border: 1px solid var(--dl-border);
+    background: rgba(var(--tint), .04);
+}
+
+/* The chosen one wears .dl-chip's look — the page keeps its one
+   gradient button for Download. */
+.dl-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem .8rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: transparent;
+    font: inherit;
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--ink-3);
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.dl-pill:hover {
+    color: var(--ink);
+    background: rgba(var(--tint), .07);
+}
+
+.dl-pill[aria-pressed="true"] {
+    color: var(--dl-ink);
+    background: var(--dl-soft);
+    border-color: var(--dl-line);
+}
+
+.dl-arrow {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(var(--tint), .12);
+    background: rgba(var(--tint), .04);
+    color: var(--ink-3);
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease;
+}
+
+.dl-arrow:hover {
+    color: var(--ink);
+    background: rgba(var(--tint), .09);
+}
+
+.dl-pill:focus-visible,
+.dl-arrow:focus-visible {
+    outline: 2px solid var(--dl-ink);
+    outline-offset: 2px;
+}
+
+/* On a phone the thumb swipes; the arrows would only crowd the pills. */
+@media (max-width: 440px) {
+    .dl-arrow {
+        display: none;
+    }
+
+    .dl-pill {
+        padding: .45rem .65rem;
+    }
 }
 
 /* ─── Sections ────────────────────────────────────────────── */
@@ -819,6 +969,9 @@ body.dl-page {
     }
 
     .dl-scene,
+    .dl-phone,
+    .dl-phone .dl-phone-screen img,
+    .dl-float-card,
     .dl-card,
     .dl-reveal {
         transition: none;

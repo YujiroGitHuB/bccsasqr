@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.13';
+const WHATS_NEW_VERSION = '2026-09-27.14';
 
 /**
  * The changelog, newest release first.
@@ -180,6 +180,13 @@ function whats_new_releases(): array
                     'title' => 'The app says “Already marked” again',
                     'text'  => 'In the app&rsquo;s scanner, showing a student&rsquo;s QR a second time &mdash; or leaving it in front of the camera &mdash; got no answer at all: no <strong>Already marked</strong> on the status line and nothing said aloud, so it looked as if the scanner had stopped. The app now checks the code again after two and a half seconds, like the web scanner does, and answers <strong>&ldquo;Already marked today.&rdquo;</strong> Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-phone-flip',
+                    'title' => 'The download page shows all three screens',
+                    'text'  => 'The phones at the top of the download page now show every part of the app &mdash; <strong>My QR Code</strong>, <strong>My Attendance</strong> and the <strong>Scanner</strong> &mdash; one in front and the other two behind it. Swipe on a phone, drag with the mouse, or tap <strong>My QR Code</strong>, <strong>Attendance</strong> or <strong>Scanner</strong> under them to bring one to the front. Handy when you show the page to your class.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
                 ],
             ],
         ],

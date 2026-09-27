@@ -65,16 +65,17 @@ class InMemoryTrackerRepository implements TrackerRepository {
       course: 'BS Computer Science',
       section: 'BSCS 2-B',
       total: 3,
-      lastAttended: DateTime(2026, 9, 27),
+      lastAttended: DateTime(2026, 9, 25),
       subjects: [
         SubjectAttendance(
           subject: 'Object Oriented Programming',
           instructor: 'Charles Nixon Cayading',
           count: 3,
+          // Fridays, the class's day.
           days: [
-            _day('2026-09-27', '08:04:12 AM'),
-            _day('2026-09-20', '08:17:55 AM', late: true),
-            _day('2026-09-13', '08:00:03 AM'),
+            _day('2026-09-25', '08:04:12 AM'),
+            _day('2026-09-18', '08:17:55 AM', late: true),
+            _day('2026-09-11', '08:00:03 AM'),
           ],
         ),
       ],

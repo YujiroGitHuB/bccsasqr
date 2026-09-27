@@ -87,7 +87,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
             <div class="dl-hero-copy">
                 <span class="dl-chip"><i class="bi bi-android2" aria-hidden="true"></i> Android app · Students &amp; Instructors</span>
 
-                <h1>Your QR and the scanner, <span class="dl-grad">in one app.</span></h1>
+                <h1>Your QR code, attendance and scanner, <span class="dl-grad">in one app.</span></h1>
 
                 <p class="dl-lead">
                     Students save the same QR code the classroom scanner reads
@@ -134,28 +134,40 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                 </div>
             </div>
 
-            <!-- The 3D scene. Decorative: everything it shows is also said
-                 in words on this page, so it is hidden from screen readers. -->
-            <div class="dl-stage" aria-hidden="true">
-                <div class="dl-scene" id="scene">
+            <!-- The 3D scene: the app's three screens, one in front and the
+                 other two behind it. Swipe, drag, the arrows or the pills
+                 bring another to the front (assets/download.js). The phones
+                 are decoration — everything they show is said in words on
+                 this page — so only the controls reach a screen reader.
+                 The positions are in the markup too, so without JavaScript
+                 the three still stand arranged. The same demo student on
+                 every screen, 000-1023: no year-000 number exists. -->
+            <div class="dl-stage">
+                <div class="dl-scene" id="scene" data-active="0" aria-hidden="true">
                     <div class="dl-ring"></div>
 
-                    <!-- Behind: the instructor's scanner, having just read the
-                         student's code in front. Same student on both. -->
-                    <div class="dl-phone is-back">
-                        <div class="dl-phone-body"></div>
-                        <div class="dl-phone-screen">
-                            <img src="<?= asset('assets/screen-scanner.webp') ?>" alt="" width="390" height="844" loading="lazy">
-                        </div>
-                    </div>
-
-                    <div class="dl-phone is-front">
+                    <div class="dl-phone is-active" data-screen="0">
                         <div class="dl-phone-body"></div>
                         <div class="dl-phone-screen">
                             <img src="<?= asset('assets/screen-qr.webp') ?>" alt="" width="390" height="844">
                         </div>
                     </div>
 
+                    <div class="dl-phone is-next" data-screen="1">
+                        <div class="dl-phone-body"></div>
+                        <div class="dl-phone-screen">
+                            <img src="<?= asset('assets/screen-tracker.webp') ?>" alt="" width="390" height="844" loading="lazy">
+                        </div>
+                    </div>
+
+                    <div class="dl-phone is-prev" data-screen="2">
+                        <div class="dl-phone-body"></div>
+                        <div class="dl-phone-screen">
+                            <img src="<?= asset('assets/screen-scanner.webp') ?>" alt="" width="390" height="844" loading="lazy">
+                        </div>
+                    </div>
+
+                    <!-- The saved card, out in front of My QR Code only. -->
                     <div class="dl-float-card">
                         <img src="<?= asset('assets/qr-card.webp') ?>" alt="" width="306" height="550">
                     </div>
@@ -163,6 +175,26 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                     <div class="dl-coin">
                         <div class="dl-coin-face"><img src="<?= htmlspecialchars($logo) ?>" alt=""></div>
                     </div>
+                </div>
+
+                <div class="dl-switch" role="group" aria-label="Screens in the app">
+                    <button type="button" class="dl-arrow" data-step="-1" aria-label="Previous screen">
+                        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                    </button>
+                    <div class="dl-pills">
+                        <button type="button" class="dl-pill" data-go="0" aria-pressed="true">
+                            <i class="bi bi-qr-code" aria-hidden="true"></i> My QR Code
+                        </button>
+                        <button type="button" class="dl-pill" data-go="1" aria-pressed="false">
+                            <i class="bi bi-calendar2-check" aria-hidden="true"></i> Attendance
+                        </button>
+                        <button type="button" class="dl-pill" data-go="2" aria-pressed="false">
+                            <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Scanner
+                        </button>
+                    </div>
+                    <button type="button" class="dl-arrow" data-step="1" aria-label="Next screen">
+                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>
         </section>

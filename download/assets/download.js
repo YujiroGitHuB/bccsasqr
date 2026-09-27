@@ -1,7 +1,7 @@
 /* ============================================================
    DOWNLOAD PAGE — the moving parts.
 
-   Four small jobs, each optional: the page reads fine if any of
+   Five small jobs, each optional: the page reads fine if any of
    them fails or never runs.
 
    1. The hand-off QR — this page's own address, for a visitor on a
@@ -10,6 +10,8 @@
       own tilt on Android.
    3. The cards' tilt — a small lean toward the pointer.
    4. The scroll reveal.
+   5. The three screens — swiped, dragged, or picked with the arrows
+      and pills; turning on their own until the visitor takes over.
 
    Every motion is skipped when the visitor has asked their system
    for reduced motion.
@@ -141,5 +143,121 @@
             el.style.transitionDelay = (siblings % 4) * 70 + 'ms';
             seen.observe(el);
         });
+    })();
+    // ─── 5. The three screens ─────────────────────────────────
+    (function screens() {
+        var scene = document.getElementById('scene');
+        var stage = scene && scene.closest('.dl-stage');
+        if (!stage) return;
+
+        var phones = Array.prototype.slice.call(scene.querySelectorAll('.dl-phone'));
+        var pills = Array.prototype.slice.call(stage.querySelectorAll('.dl-pill'));
+        var count = phones.length;
+        var active = 0;
+
+        // The one in front gets is-active, the next one round is-next,
+        // the one before is-prev — so every turn is a single step either
+        // way, whichever screen it starts from.
+        function show(index) {
+            active = (index % count + count) % count;
+            phones.forEach(function (phone) {
+                var step = (Number(phone.getAttribute('data-screen')) - active + count) % count;
+                phone.classList.toggle('is-active', step === 0);
+                phone.classList.toggle('is-next', step === 1);
+                phone.classList.toggle('is-prev', step === count - 1);
+            });
+            pills.forEach(function (pill) {
+                pill.setAttribute('aria-pressed', String(Number(pill.getAttribute('data-go')) === active));
+            });
+            scene.setAttribute('data-active', String(active));
+        }
+
+        // Turning on its own shows at a glance that there is more than
+        // one screen — until the visitor touches anything, after which
+        // it is theirs to turn. Never with reduced motion.
+        var auto = null;
+        var hovering = false;
+        function stopAuto() {
+            clearInterval(auto);
+            auto = null;
+        }
+        if (!reduceMotion) {
+            auto = setInterval(function () {
+                if (!hovering && !document.hidden) show(active + 1);
+            }, 4500);
+            stage.addEventListener('mouseenter', function () { hovering = true; });
+            stage.addEventListener('mouseleave', function () { hovering = false; });
+        }
+
+        stage.querySelectorAll('[data-step]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                stopAuto();
+                show(active + Number(button.getAttribute('data-step')));
+            });
+        });
+
+        pills.forEach(function (pill) {
+            pill.addEventListener('click', function () {
+                stopAuto();
+                show(Number(pill.getAttribute('data-go')));
+            });
+        });
+
+        // Left and right arrow keys from any of the controls.
+        var controls = stage.querySelector('.dl-switch');
+        if (controls) {
+            controls.addEventListener('keydown', function (e) {
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                e.preventDefault();
+                stopAuto();
+                show(active + (e.key === 'ArrowRight' ? 1 : -1));
+                if (pills[active]) pills[active].focus();
+            });
+        }
+
+        // A swipe on a phone, a drag with the mouse. The scene leans with
+        // the finger while it moves; far enough sideways and it turns.
+        // A tap on one of the phones behind brings that one to the front.
+        var start = null;
+        function reset() {
+            start = null;
+            scene.classList.remove('is-dragging');
+            scene.style.setProperty('--drag', '0deg');
+        }
+
+        scene.addEventListener('pointerdown', function (e) {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            start = { x: e.clientX, y: e.clientY, id: e.pointerId };
+            stopAuto();
+        });
+
+        window.addEventListener('pointermove', function (e) {
+            if (!start || e.pointerId !== start.id) return;
+            var dx = e.clientX - start.x;
+            if (Math.abs(dx) < 6) return;
+            scene.classList.add('is-dragging');
+            if (!reduceMotion) {
+                scene.style.setProperty('--drag', clamp(dx / 7, -16, 16).toFixed(1) + 'deg');
+            }
+        });
+
+        window.addEventListener('pointerup', function (e) {
+            if (!start || e.pointerId !== start.id) return;
+            var dx = e.clientX - start.x;
+            var dy = e.clientY - start.y;
+            var target = e.target instanceof Element ? e.target.closest('.dl-phone') : null;
+            reset();
+
+            if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                show(active + (dx < 0 ? 1 : -1));
+            } else if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && target && !target.classList.contains('is-active')) {
+                show(Number(target.getAttribute('data-screen')));
+            }
+        });
+
+        // The page scrolled instead: the browser took the gesture.
+        window.addEventListener('pointercancel', reset);
+
+        show(0);
     })();
 })();
