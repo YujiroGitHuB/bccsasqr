@@ -18,9 +18,60 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-27.6';
+  static const String version = '2026-09-30';
 
   static const List<WhatsNewRelease> releases = [
+    WhatsNewRelease(
+      id: '2026-09-30',
+      icon: Icons.cloud_off_rounded,
+      title: 'A QR code that works offline, and a camera you can switch off',
+      summary:
+          'Your QR code now opens even with no internet, and the app tells '
+          'you plainly when you are offline. Instructors can switch the '
+          'scanner\'s camera off between classes.',
+      items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.scanner,
+          icon: Icons.videocam_off_rounded,
+          title: 'Turn the camera off between classes',
+          text:
+              'A **Stop camera** button now sits under the scanner, beside '
+              '**Flashlight**. It switches the camera off without losing the '
+              'subject you picked, and lets the screen sleep again, which '
+              'saves the battery while nobody is being scanned. Tap **Turn on '
+              'camera** when the next student is ready; picking a subject '
+              'turns it back on too.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.qr,
+          icon: Icons.cloud_off_rounded,
+          title: 'Your QR code opens without internet',
+          text:
+              'Every QR code you make is now kept on your phone. With no '
+              'internet, type your student number as usual: the app shows the '
+              'QR code saved on this phone, with the day it was made, and you '
+              'can still tap **Generate QR Code** and **Download QR Code**. It '
+              'scans the same. A student number never looked up on this phone '
+              'still needs the internet once.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.qr,
+          icon: Icons.wifi_off_rounded,
+          title: 'Clear messages when you are offline',
+          text:
+              'When the phone loses its connection, a black bar drops from '
+              'the top: **You\'re offline**, and **Back online** when it '
+              'returns. A look-up, sign-in or scan that cannot get through '
+              'now says **No internet connection** and what to check, instead '
+              'of a technical error. A scan that could not be saved says '
+              '**Attendance not saved**, so nobody thinks it went in.',
+          link: false,
+        ),
+      ],
+    ),
     WhatsNewRelease(
       id: '2026-09-27',
       icon: Icons.qr_code_scanner_rounded,

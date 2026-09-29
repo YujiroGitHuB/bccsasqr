@@ -319,6 +319,8 @@ class _ScannerPageState extends State<ScannerPage> {
       const SizedBox(height: 16),
       CameraPanel(
         active: c.cameraActive,
+        paused: c.cameraPaused,
+        onCameraChanged: c.setCameraOn,
         recording: c.isRecording,
         status: c.status,
         frameFraction: QrCamera.cropFraction,

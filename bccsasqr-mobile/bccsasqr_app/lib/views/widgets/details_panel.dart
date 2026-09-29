@@ -92,7 +92,16 @@ class DetailsPanel extends StatelessWidget {
               ),
             ],
           ],
-          if (controller.isVerified) ...[
+          if (controller.offlineCopyNotice case final notice?) ...[
+            // Amber, not green: the record is the one checked when the code
+            // was made, not one checked just now.
+            const SizedBox(height: 8),
+            _InlineMessage(
+              icon: Icons.cloud_off_rounded,
+              color: context.colors.warning,
+              message: notice,
+            ),
+          ] else if (controller.isVerified) ...[
             const SizedBox(height: 8),
             _InlineMessage(
               icon: Icons.verified_rounded,

@@ -9,6 +9,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../models/terms_document.dart';
 import '../services/qr_export_service.dart';
+import '../services/saved_qr_store.dart';
 import '../services/speech_service.dart';
 import '../services/student_repository.dart';
 import 'widgets/app_footer.dart';
@@ -28,11 +29,16 @@ class QrGeneratorPage extends StatefulWidget {
     required this.repository,
     required this.exportService,
     this.speech = const SilentSpeechService(),
+    this.savedQrs,
   });
 
   final StudentRepository repository;
   final QrExportService exportService;
   final SpeechService speech;
+
+  /// Codes made on this phone, so they open offline. Kept only for the
+  /// page's life when left out.
+  final SavedQrStore? savedQrs;
 
   @override
   State<QrGeneratorPage> createState() => _QrGeneratorPageState();
@@ -46,6 +52,7 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
   late final QrGeneratorController _controller = QrGeneratorController(
     repository: widget.repository,
     speech: widget.speech,
+    savedQrs: widget.savedQrs,
   );
   final TextEditingController _studentNumberField = TextEditingController();
   final GlobalKey _qrBoundaryKey = GlobalKey();

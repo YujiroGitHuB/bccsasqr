@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../core/config/app_config.dart';
+import '../core/utils/network_error.dart';
 import '../core/utils/student_number.dart';
 import '../models/attendance_history.dart';
 import '../models/qr_payload.dart';
@@ -176,10 +177,7 @@ class HttpStudentRepository implements StudentRepository, TrackerRepository {
     try {
       response = await request().timeout(timeout);
     } catch (e) {
-      throw StudentLookupException(
-        'Could not reach the records service. ($e)',
-        code: 'network',
-      );
+      throw StudentLookupException(NetworkError.messageFor(e), code: 'network');
     }
 
     final Object? decoded;

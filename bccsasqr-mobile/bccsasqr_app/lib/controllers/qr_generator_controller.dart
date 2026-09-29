@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../core/constants/app_strings.dart';
+import '../core/utils/date_label.dart';
 import '../core/utils/student_number.dart';
 import '../models/qr_payload.dart';
 import '../models/record_warning.dart';
 import '../models/student_record.dart';
 import '../models/terms_document.dart';
+import '../services/saved_qr_store.dart';
 import '../services/speech_service.dart';
 import '../services/student_repository.dart';
 
@@ -21,12 +23,18 @@ class QrGeneratorController extends ChangeNotifier {
   QrGeneratorController({
     required StudentRepository repository,
     SpeechService speech = const SilentSpeechService(),
+    SavedQrStore? savedQrs,
     this.debounce = const Duration(milliseconds: 400),
+    DateTime Function()? clock,
   }) : _repository = repository,
-       _speech = speech;
+       _speech = speech,
+       _saved = savedQrs ?? MemorySavedQrStore(),
+       _clock = clock ?? DateTime.now;
 
   final StudentRepository _repository;
   final SpeechService _speech;
+  final SavedQrStore _saved;
+  final DateTime Function() _clock;
 
   /// How long typing must pause before a lookup fires.
   final Duration debounce;
@@ -43,6 +51,9 @@ class QrGeneratorController extends ChangeNotifier {
   QrPayload? _payload;
   bool _generating = false;
   bool _exporting = false;
+
+  /// Offline, the record and code on screen are this copy from the phone.
+  SavedQr? _offline;
 
   // ---------------------------------------------------------------- getters
 
@@ -61,6 +72,13 @@ class QrGeneratorController extends ChangeNotifier {
   bool get canRetry => _status == LookupStatus.failed;
   bool get isVerified => _status == LookupStatus.verified && _record != null;
   bool get hasQrCode => _payload != null;
+
+  /// The server could not be reached, and the record shown is the one saved
+  /// on this phone with its QR code — verified when that code was made.
+  bool get isOfflineCopy => _offline != null && isVerified;
+
+  /// When the offline copy was made, for "saved on this phone on …".
+  DateTime? get offlineCopySavedAt => isOfflineCopy ? _offline!.savedAt : null;
 
   /// What the server flagged about the verified record. Shown, never
   /// enforced: none of them stands between the student and a QR.
@@ -90,6 +108,7 @@ class QrGeneratorController extends ChangeNotifier {
     _payload = null;
     _errorMessage = null;
     _record = null;
+    _offline = null;
     _debounceTimer?.cancel();
 
     if (value.trim().isEmpty) {
@@ -138,6 +157,7 @@ class QrGeneratorController extends ChangeNotifier {
       final found = await _repository.findByStudentNumber(number);
       // Drop the reply if newer input has already superseded this lookup.
       if (_disposed || token != _lookupToken) return;
+      _offline = null;
 
       if (found == null) {
         _record = null;
@@ -150,9 +170,20 @@ class QrGeneratorController extends ChangeNotifier {
       }
     } on StudentLookupException catch (e) {
       if (_disposed || token != _lookupToken) return;
-      _record = null;
-      _status = LookupStatus.failed;
-      _errorMessage = e.message;
+      // No answer at all: a code made on this phone before still opens.
+      final saved = e.code == 'network' ? await _saved.find(number) : null;
+      if (_disposed || token != _lookupToken) return;
+
+      if (saved != null) {
+        _useOfflineCopy(saved);
+      } else {
+        _record = null;
+        _offline = null;
+        _status = LookupStatus.failed;
+        _errorMessage = e.code == 'network'
+            ? '${e.message} ${AppStrings.offlineNoCopy}'
+            : e.message;
+      }
     } catch (_) {
       if (_disposed || token != _lookupToken) return;
       _record = null;
@@ -178,13 +209,32 @@ class QrGeneratorController extends ChangeNotifier {
   /// verified badge and any warning card under it. The voice never says
   /// anything the student cannot also read.
   void _speakOutcome() {
-    final shown = isVerified
+    final shown = isOfflineCopy
+        ? offlineCopyNotice
+        : isVerified
         ? [
             AppStrings.verifiedBadge,
             for (final w in warnings) w.message,
           ].join('. ')
         : _errorMessage;
     if (shown != null) unawaited(_speech.speak(shown));
+  }
+
+  /// "Offline — using the QR code saved on this phone on …", or null.
+  String? get offlineCopyNotice {
+    final at = offlineCopySavedAt;
+    return at == null ? null : AppStrings.offlineCopy(DateLabel.date(at));
+  }
+
+  /// Shows [saved] in place of an answer from the server. The terms were
+  /// accepted when it was made — the server issues no code before that — so
+  /// the box is ticked and Generate opens at once.
+  void _useOfflineCopy(SavedQr saved) {
+    _offline = saved;
+    _record = saved.record;
+    _status = LookupStatus.verified;
+    _errorMessage = null;
+    _termsAccepted = true;
   }
 
   /// "How this works" was opened or closed: read its text aloud, or stop.
@@ -238,6 +288,14 @@ class QrGeneratorController extends ChangeNotifier {
     if (!canGenerate) return;
 
     final record = _record!;
+
+    // Offline: the code saved with this record, exactly as it was issued.
+    if (_offline case final saved?) {
+      _payload = saved.payload;
+      notifyListeners();
+      return;
+    }
+
     _generating = true;
     _errorMessage = null;
     notifyListeners();
@@ -246,10 +304,26 @@ class QrGeneratorController extends ChangeNotifier {
       final issued = await _issuePayload(record.studentNumber);
       if (_disposed) return;
       _payload = issued;
+      // Kept, so this code opens again with no internet.
+      unawaited(
+        _saved.save(
+          SavedQr(record: record, payload: issued, savedAt: _clock()),
+        ),
+      );
     } on StudentLookupException catch (e) {
       if (_disposed) return;
-      _payload = null;
-      _errorMessage = e.message;
+      // The connection went between the look-up and Generate.
+      final saved = e.code == 'network'
+          ? await _saved.find(record.studentNumber)
+          : null;
+      if (_disposed) return;
+      if (saved != null) {
+        _useOfflineCopy(saved);
+        _payload = saved.payload;
+      } else {
+        _payload = null;
+        _errorMessage = e.message;
+      }
     } catch (_) {
       if (_disposed) return;
       _payload = null;
@@ -291,6 +365,7 @@ class QrGeneratorController extends ChangeNotifier {
     _errorMessage = null;
     _termsAccepted = false;
     _payload = null;
+    _offline = null;
     _generating = false;
     _exporting = false;
     unawaited(_speech.stop());

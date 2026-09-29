@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:bccsasqr_app/controllers/qr_generator_controller.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/core/utils/student_number.dart';
@@ -5,6 +7,7 @@ import 'package:bccsasqr_app/models/qr_payload.dart';
 import 'package:bccsasqr_app/models/record_warning.dart';
 import 'package:bccsasqr_app/models/student_record.dart';
 import 'package:bccsasqr_app/models/terms_document.dart';
+import 'package:bccsasqr_app/services/saved_qr_store.dart';
 import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -98,13 +101,23 @@ class _PatchyRepository extends _FakeRepository {
 
   bool offline = false;
 
+  /// What "offline" answers — no connection, unless a test says otherwise.
+  StudentLookupException failure = const StudentLookupException(
+    'offline',
+    code: 'network',
+  );
+
   @override
   Future<StudentRecord?> findByStudentNumber(StudentNumber number) async {
     calls++;
-    if (offline) {
-      throw const StudentLookupException('offline', code: 'network');
-    }
+    if (offline) throw failure;
     return result;
+  }
+
+  @override
+  Future<QrPayload> issueQrPayload(StudentNumber number) async {
+    if (offline) throw failure;
+    return super.issueQrPayload(number);
   }
 }
 
@@ -358,8 +371,12 @@ void main() {
       expect(c.termsAccepted, isTrue);
     });
 
-    test('a re-check that fails drops the code with the record', () async {
-      final repo = _PatchyRepository(_known);
+    test('a re-check the server refuses drops the code with the record', () async {
+      final repo = _PatchyRepository(_known)
+        ..failure = const StudentLookupException(
+          'The QR generator is closed.',
+          code: 'generator_locked',
+        );
       final c = build(repo);
 
       c.onStudentNumberChanged('019-464');
@@ -376,6 +393,171 @@ void main() {
         reason: 'no code without a record behind it',
       );
       expect(c.record, isNull);
+      expect(c.isOfflineCopy, isFalse);
+    });
+
+    test('a re-check with no connection keeps the code saved on the phone', () async {
+      final repo = _PatchyRepository(_known);
+      final c = build(repo);
+
+      c.onStudentNumberChanged('019-464');
+      await c.verifyNow();
+      c.setTermsAccepted(true);
+      await c.generate();
+
+      repo.offline = true;
+      await c.refresh();
+
+      expect(c.hasQrCode, isTrue);
+      expect(c.isOfflineCopy, isTrue);
+      expect(c.record?.fullName, _known.fullName);
+    });
+  });
+
+  group('offline', () {
+    final student = StudentRecord(
+      studentNumber: StudentNumber.tryParse('000-1023')!,
+      fullName: 'Maria Isabel Santos',
+      course: 'BS Computer Science',
+      section: 'BSCS 2-B',
+    );
+    final madeOn = DateTime(2026, 9, 29, 8, 15);
+
+    QrGeneratorController offlineBuild(
+      _PatchyRepository repo,
+      SavedQrStore store, {
+      SpeechService speech = const SilentSpeechService(),
+    }) => QrGeneratorController(
+      repository: repo,
+      savedQrs: store,
+      speech: speech,
+      debounce: Duration.zero,
+      clock: () => madeOn,
+    );
+
+    test('a code made online is kept on the phone', () async {
+      final store = MemorySavedQrStore();
+      final c = offlineBuild(_PatchyRepository(student), store);
+
+      c.onStudentNumberChanged('000-1023');
+      await c.verifyNow();
+      c.setTermsAccepted(true);
+      await c.generate();
+      await Future<void>.delayed(Duration.zero);
+
+      final saved = store.saved['000-1023'];
+      expect(saved?.payload.data, '000-1023');
+      expect(saved?.record.fullName, 'Maria Isabel Santos');
+      expect(saved?.savedAt, madeOn);
+    });
+
+    test('offline, a number made before opens from the phone: terms '
+        'ticked, Generate open, the same code', () async {
+      final store = MemorySavedQrStore();
+      final online = offlineBuild(_PatchyRepository(student), store);
+      online.onStudentNumberChanged('000-1023');
+      await online.verifyNow();
+      online.setTermsAccepted(true);
+      await online.generate();
+      await Future<void>.delayed(Duration.zero);
+
+      final repo = _PatchyRepository(student)..offline = true;
+      final voice = _RecordingSpeech();
+      final c = offlineBuild(repo, store, speech: voice);
+
+      c.onStudentNumberChanged('000-1023');
+      await c.verifyNow();
+
+      expect(c.isVerified, isTrue);
+      expect(c.isOfflineCopy, isTrue);
+      expect(c.errorMessage, isNull);
+      expect(c.termsAccepted, isTrue);
+      expect(c.canGenerate, isTrue);
+      expect(c.offlineCopyNotice, AppStrings.offlineCopy('Sep 29, 2026'));
+      expect(voice.said.last, c.offlineCopyNotice);
+
+      await c.generate();
+      expect(c.payload?.data, '000-1023');
+      expect(c.primaryActionLabel, AppStrings.actionDownload);
+    });
+
+    test('offline, a number never made here says so and offers a retry', () async {
+      final c = offlineBuild(
+        _PatchyRepository(student)..offline = true,
+        MemorySavedQrStore(),
+      );
+
+      c.onStudentNumberChanged('000-1023');
+      await c.verifyNow();
+
+      expect(c.status, LookupStatus.failed);
+      expect(c.canRetry, isTrue);
+      expect(c.isOfflineCopy, isFalse);
+      expect(c.errorMessage, 'offline ${AppStrings.offlineNoCopy}');
+    });
+
+    test('back online, a refresh swaps the copy for a fresh check', () async {
+      final store = MemorySavedQrStore()
+        ..saved['000-1023'] = SavedQr(
+          record: student,
+          payload: QrPayload.forRecord(student),
+          savedAt: madeOn,
+        );
+      final repo = _PatchyRepository(student)..offline = true;
+      final c = offlineBuild(repo, store);
+
+      c.onStudentNumberChanged('000-1023');
+      await c.verifyNow();
+      expect(c.isOfflineCopy, isTrue);
+
+      repo.offline = false;
+      await c.refresh();
+
+      expect(c.isVerified, isTrue);
+      expect(c.isOfflineCopy, isFalse);
+      expect(c.offlineCopyNotice, isNull);
+    });
+
+    test('the connection dropping before Generate still gives the saved '
+        'code', () async {
+      final store = MemorySavedQrStore()
+        ..saved['000-1023'] = SavedQr(
+          record: student,
+          payload: QrPayload.forRecord(student),
+          savedAt: madeOn,
+        );
+      final repo = _PatchyRepository(student);
+      final c = offlineBuild(repo, store);
+
+      c.onStudentNumberChanged('000-1023');
+      await c.verifyNow();
+      c.setTermsAccepted(true);
+      repo.offline = true;
+      await c.generate();
+
+      expect(c.payload?.data, '000-1023');
+      expect(c.isOfflineCopy, isTrue);
+      expect(c.errorMessage, isNull);
+    });
+
+    test('the saved copy survives being written and read back', () {
+      final copy = SavedQr(
+        record: student,
+        payload: QrPayload.forRecord(student),
+        savedAt: madeOn,
+      );
+
+      final back = SavedQr.fromJson(
+        jsonDecode(jsonEncode(copy.toJson())) as Map<String, dynamic>,
+      );
+
+      expect(back.record, student);
+      expect(back.savedAt, madeOn);
+      expect(back.payload.data, '000-1023');
+      expect(back.payload.details, copy.payload.details);
+      expect(back.payload.fileName, '000-1023_qr.png');
+      expect(back.payload.spec.foreground, copy.payload.spec.foreground);
+      expect(back.payload.spec.background, copy.payload.spec.background);
     });
   });
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bccsasqr_app/core/utils/network_error.dart';
 import 'package:bccsasqr_app/services/http_scanner_repository.dart';
 import 'package:bccsasqr_app/services/scanner_repository.dart';
 import 'package:bccsasqr_app/services/token_store.dart';
@@ -66,6 +67,45 @@ void main() {
 
     await r.loadSubjects();
     expect(seen.last.headers['X-Auth-Token'], _token);
+  });
+
+  test('no signal says so in plain words, with no exception text', () async {
+    final r = repo(
+      MemoryTokenStore(),
+      (_) async => throw http.ClientException(
+        "Failed host lookup: 'lexondev.com'",
+      ),
+    );
+
+    await expectLater(
+      r.signIn(email: 'a@b.c', password: 'x'),
+      throwsA(
+        isA<ScannerException>()
+            .having((e) => e.code, 'code', 'network')
+            .having((e) => e.message, 'message', NetworkError.offline),
+      ),
+    );
+  });
+
+  test('a server too slow to answer is told apart from no signal', () async {
+    final r = HttpScannerRepository(
+      tokens: MemoryTokenStore(),
+      baseUrl: _base,
+      timeout: const Duration(milliseconds: 10),
+      client: MockClient((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        return json(ok({}));
+      }),
+    );
+
+    await expectLater(
+      r.signIn(email: 'a@b.c', password: 'x'),
+      throwsA(
+        isA<ScannerException>()
+            .having((e) => e.code, 'code', 'network')
+            .having((e) => e.message, 'message', NetworkError.slow),
+      ),
+    );
   });
 
   test('no saved token: signed out, without asking the server', () async {

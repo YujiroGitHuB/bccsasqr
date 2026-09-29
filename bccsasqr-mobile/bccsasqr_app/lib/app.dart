@@ -12,11 +12,13 @@ import 'core/theme/app_theme.dart';
 import 'models/app_role.dart';
 import 'models/whats_new.dart';
 import 'services/app_info.dart';
+import 'services/connectivity.dart';
 import 'services/device_lock.dart';
 import 'services/http_scanner_repository.dart';
 import 'services/http_student_repository.dart';
 import 'services/qr_export_service.dart';
 import 'services/role_store.dart';
+import 'services/saved_qr_store.dart';
 import 'services/scan_feedback.dart';
 import 'services/scanner_repository.dart';
 import 'services/settings_store.dart';
@@ -38,6 +40,7 @@ import 'views/student_splash.dart';
 import 'views/tracker_page.dart';
 import 'views/tracker_splash.dart';
 import 'views/whats_new_page.dart';
+import 'views/widgets/connectivity_notice.dart';
 import 'views/widgets/fade_scale_switcher.dart';
 import 'views/widgets/island.dart';
 
@@ -61,6 +64,8 @@ class BccSasqrApp extends StatefulWidget {
     this.appInfo = AppInfo.load,
     this.cameraBuilder = deviceQrCamera,
     this.keepAwake = deviceKeepAwake,
+    this.savedQrStore,
+    this.connectivity,
     this.showSplash = true,
   });
 
@@ -90,6 +95,17 @@ class BccSasqrApp extends StatefulWidget {
   final Future<AppInfo> Function() appInfo;
   final QrCameraBuilder cameraBuilder;
   final Future<void> Function(bool on) keepAwake;
+
+  /// QR codes made on this phone, kept so they open offline. main.dart
+  /// passes the phone's preferences; left out, they are kept only while the
+  /// app runs — the generator waits on this store when offline, and a
+  /// test's preferences never answer.
+  final SavedQrStore? savedQrStore;
+
+  /// Tells the island when the phone goes offline and comes back. Only
+  /// main.dart passes the phone's own: with none, nothing is announced — a
+  /// test has no network to watch.
+  final ConnectivityService? connectivity;
 
   /// Tests that are about the generator switch the opening animation off.
   final bool showSplash;
@@ -122,6 +138,9 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
 
   late final QrExportService _exportService =
       widget.exportService ?? const ImageQrExportService();
+
+  late final SavedQrStore _savedQrs =
+      widget.savedQrStore ?? MemorySavedQrStore();
 
   /// One voice for the whole app, silenced by the Voice switch in Settings.
   late final SpeechService _speech = ToggleableSpeechService(
@@ -213,6 +232,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       repository: _repository,
       exportService: _exportService,
       speech: _speech,
+      savedQrs: _savedQrs,
     ),
   );
 
@@ -356,7 +376,12 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         // page, dialog or sheet.
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: context.colors.overlayStyle,
-          child: IslandHost(child: child ?? const SizedBox.shrink()),
+          child: IslandHost(
+            child: ConnectivityNotice(
+              connectivity: widget.connectivity,
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
         ),
         // A cross-fade rather than a route push: there is nothing to go
         // "back" to, and the splash should not sit under the page on the

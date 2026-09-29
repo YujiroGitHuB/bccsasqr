@@ -110,6 +110,15 @@ abstract final class AppStrings {
   static const String errorGenerateFailed =
       'Could not generate your QR code. Try again in a moment.';
 
+  /// Offline, with this number's code saved on the phone from before.
+  static String offlineCopy(String date) =>
+      'Offline — using the QR code saved on this phone on $date. It scans '
+      'the same.';
+
+  /// Offline, with nothing saved for this number: said after the reason.
+  static const String offlineNoCopy =
+      'A QR code made on this phone before opens even without internet.';
+
   static const String downloadSuccess = 'QR code saved and ready to share.';
   static const String downloadFailure = 'Could not save the QR code.';
 
@@ -214,6 +223,15 @@ abstract final class ScannerStrings {
   static const String flashlightOn = 'Turn the flashlight on';
   static const String flashlightOff = 'Turn the flashlight off';
 
+  // The camera's own switch, for the time between queues.
+  static const String cameraStop = 'Stop camera';
+  static const String cameraStopHint = 'Turn the camera off until you need it';
+  static const String cameraOffTitle = 'Camera is off';
+  static const String cameraOffBody =
+      'Turn it back on when the next student is ready to scan.';
+  static const String cameraStart = 'Turn on camera';
+  static const String cameraOffStatus = 'Camera off — turn it on to scan';
+
   // Result
   static const String statusLabel = 'Status';
   static const String waiting = 'Waiting...';
@@ -240,6 +258,10 @@ abstract final class ScannerStrings {
   static const String photoRequiredTitle = 'Student Photo Required';
   static const String notEnrolledTitle = 'Not Enrolled';
   static const String errorTitle = 'Error';
+
+  /// No answer from the server — the scan never reached the records.
+  static const String notSavedTitle = 'Attendance not saved';
+  static const String notSavedStatus = '✗ Not saved — check the connection';
 
   // Spoken — word for word what the web scanner says.
   static const String sayInvalid = 'Invalid QR Format!';
@@ -282,6 +304,15 @@ abstract final class ScannerStrings {
   static const String lockOn = 'Scanner lock is on';
   static const String lockTile = 'Fingerprint lock';
   static const String lockTileBody = 'Open the scanner with this phone\'s lock';
+}
+
+/// What the app says when the phone loses — and gets back — its connection.
+abstract final class OfflineStrings {
+  static const String title = 'You\'re offline';
+  static const String body =
+      'Sign-in, scanning and look-ups need the internet. QR codes already '
+      'made on this phone still open.';
+  static const String back = 'Back online';
 }
 
 /// The Attendance Tracker's copy — the web tracker's (`Tracker/view.php`,

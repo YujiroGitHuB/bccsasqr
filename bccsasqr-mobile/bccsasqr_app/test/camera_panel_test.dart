@@ -64,7 +64,12 @@ void main() {
     view.resetDevicePixelRatio();
   });
 
-  Widget panel({required bool active, bool fails = false}) => MaterialApp(
+  Widget panel({
+    required bool active,
+    bool fails = false,
+    bool paused = false,
+    ValueChanged<bool>? onCameraChanged,
+  }) => MaterialApp(
     theme: AppTheme.build(AppPalette.dark),
     // The scan line sweeps forever; held still, pumpAndSettle can settle.
     builder: (context, child) => MediaQuery(
@@ -75,6 +80,8 @@ void main() {
       body: SingleChildScrollView(
         child: CameraPanel(
           active: active,
+          paused: paused,
+          onCameraChanged: onCameraChanged,
           recording: false,
           status: const ScanStatus('Ready'),
           cameraBuilder: (context) =>
@@ -85,6 +92,52 @@ void main() {
   );
 
   final torch = find.byKey(const ValueKey('scanner.torch'));
+  final stop = find.byKey(const ValueKey('scanner.cameraStop'));
+  final start = find.byKey(const ValueKey('scanner.cameraStart'));
+
+  testWidgets('Stop camera sits beside the flashlight, under the picture', (
+    tester,
+  ) async {
+    final changes = <bool>[];
+    await tester.pumpWidget(panel(active: true, onCameraChanged: changes.add));
+    await tester.pumpAndSettle();
+
+    expect(stop, findsOneWidget);
+    expect(find.text(ScannerStrings.cameraStop), findsOneWidget);
+    final camera = tester.getRect(find.byType(_TorchCamera));
+    expect(tester.getRect(stop).top, greaterThan(camera.bottom));
+    expect(tester.getRect(stop).top, tester.getRect(torch).top);
+
+    await tester.tap(stop);
+    expect(changes, [false]);
+  });
+
+  testWidgets('switched off: no camera, no flashlight, and the way back on '
+      'in the middle of the square', (tester) async {
+    final changes = <bool>[];
+    await tester.pumpWidget(
+      panel(active: false, paused: true, onCameraChanged: changes.add),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(_TorchCamera), findsNothing);
+    expect(torch, findsNothing);
+    expect(stop, findsNothing);
+    expect(find.text(ScannerStrings.cameraOffTitle), findsOneWidget);
+    expect(find.text(ScannerStrings.cameraIdle), findsNothing);
+
+    await tester.tap(start);
+    expect(changes, [true]);
+  });
+
+  testWidgets('no subject yet: nothing to switch', (tester) async {
+    await tester.pumpWidget(panel(active: false, onCameraChanged: (_) {}));
+    await tester.pumpAndSettle();
+
+    expect(stop, findsNothing);
+    expect(start, findsNothing);
+    expect(find.text(ScannerStrings.cameraIdle), findsOneWidget);
+  });
 
   testWidgets('no flashlight button before the camera is running', (
     tester,

@@ -19,8 +19,8 @@ Color scanToneColor(AppPalette colors, ScanTone? tone) => switch (tone) {
 };
 
 /// The camera square with its frame, and the status line under it — the web
-/// scanner's `#scannerContainer` and `#result`. The flashlight button sits at
-/// the end of the status line, off the picture.
+/// scanner's `#scannerContainer` and `#result`. The camera's own switch and
+/// the flashlight sit in a row under the status line, off the picture.
 class CameraPanel extends StatefulWidget {
   const CameraPanel({
     super.key,
@@ -28,11 +28,21 @@ class CameraPanel extends StatefulWidget {
     required this.recording,
     required this.status,
     required this.cameraBuilder,
+    this.paused = false,
+    this.onCameraChanged,
     this.frameFraction = 0.8,
   });
 
   /// False until a subject is picked: the camera is not even started.
   final bool active;
+
+  /// A subject is picked but the camera was switched off: the square says
+  /// so and offers to turn it back on.
+  final bool paused;
+
+  /// The camera's switch — off from under the picture, on from the square.
+  /// No switch when left out.
+  final ValueChanged<bool>? onCameraChanged;
 
   /// A scan is on its way to the server.
   final bool recording;
@@ -61,6 +71,7 @@ class _CameraPanelState extends State<CameraPanel> {
   @override
   Widget build(BuildContext context) {
     final active = widget.active;
+    final onCameraChanged = widget.onCameraChanged;
 
     return SurfacePanel(
       padding: const EdgeInsets.all(12),
@@ -90,6 +101,12 @@ class _CameraPanelState extends State<CameraPanel> {
                         ),
                       ),
                     )
+                  else if (widget.paused)
+                    _CameraOff(
+                      onTurnOn: onCameraChanged == null
+                          ? null
+                          : () => onCameraChanged(true),
+                    )
                   else
                     const _CameraIdle(),
                   if (active)
@@ -118,53 +135,158 @@ class _CameraPanelState extends State<CameraPanel> {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '${ScannerStrings.statusLabel}  ',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: context.colors.textPrimary,
-                          ),
-                        ),
-                        TextSpan(
-                          text: widget.status.text,
-                          style: TextStyle(
-                            color: scanToneColor(
-                              context.colors,
-                              widget.status.tone,
-                            ),
-                          ),
-                        ),
-                      ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '${ScannerStrings.statusLabel}  ',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: context.colors.textPrimary,
                     ),
-                    style: const TextStyle(fontSize: 13.5, height: 1.4),
                   ),
+                  TextSpan(
+                    text: widget.status.text,
+                    style: TextStyle(
+                      color: scanToneColor(context.colors, widget.status.tone),
+                    ),
+                  ),
+                ],
+              ),
+              style: const TextStyle(fontSize: 13.5, height: 1.4),
+            ),
+          ),
+          // Only while the camera runs: switched off, the way back on is the
+          // big button in the middle of the square.
+          if (active)
+            ListenableBuilder(
+              listenable: _torch,
+              // `active` too: a camera that has just gone is only detached
+              // after this build, so the control still says available.
+              builder: (context, _) {
+                final torch = _torch.available;
+                if (onCameraChanged == null && !torch) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      if (onCameraChanged != null)
+                        Expanded(
+                          child: _CameraStopButton(
+                            onPressed: () => onCameraChanged(false),
+                          ),
+                        ),
+                      if (onCameraChanged != null && torch)
+                        const SizedBox(width: 8),
+                      if (torch)
+                        Expanded(
+                          child: _TorchButton(
+                            on: _torch.on,
+                            onPressed: _torch.toggle,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Under the picture, beside the flashlight: lets the camera go until the
+/// next queue. Outlined, like the flashlight at rest — a switch, not the
+/// screen's main action.
+class _CameraStopButton extends StatelessWidget {
+  const _CameraStopButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: ScannerStrings.cameraStopHint,
+      child: OutlinedButton.icon(
+        key: const ValueKey('scanner.cameraStop'),
+        onPressed: onPressed,
+        icon: const Icon(Icons.videocam_off_rounded, size: 18),
+        label: const Text(ScannerStrings.cameraStop),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 40),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+}
+
+/// The square while the camera is switched off: what happened, and the way
+/// back on, where the picture was.
+class _CameraOff extends StatelessWidget {
+  const _CameraOff({required this.onTurnOn});
+
+  final VoidCallback? onTurnOn;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: context.colors.surfaceSunken,
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.videocam_off_rounded,
+                size: 44,
+                color: context.colors.textMuted,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                ScannerStrings.cameraOffTitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: context.colors.textPrimary,
                 ),
               ),
-              ListenableBuilder(
-                listenable: _torch,
-                // `active` too: a camera that has just gone is only detached
-                // after this build, so the control still says available.
-                builder: (context, _) => active && _torch.available
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: _TorchButton(
-                          on: _torch.on,
-                          onPressed: _torch.toggle,
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+              const SizedBox(height: 6),
+              Text(
+                ScannerStrings.cameraOffBody,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.45,
+                  color: context.colors.textSecondary,
+                ),
               ),
+              if (onTurnOn != null) ...[
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  key: const ValueKey('scanner.cameraStart'),
+                  onPressed: onTurnOn,
+                  icon: const Icon(Icons.videocam_rounded, size: 18),
+                  label: const Text(ScannerStrings.cameraStart),
+                  // The theme's buttons are full width; this one sits in
+                  // the middle of the square.
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                  ),
+                ),
+              ],
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -180,9 +302,9 @@ class _TorchButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The theme's buttons are full width; this one sits beside the status.
+    // Half the row, beside the camera's switch.
     const size = Size(0, 40);
-    const padding = EdgeInsets.symmetric(horizontal: 14);
+    const padding = EdgeInsets.symmetric(horizontal: 12);
     const label = Text(ScannerStrings.flashlight);
 
     return Tooltip(

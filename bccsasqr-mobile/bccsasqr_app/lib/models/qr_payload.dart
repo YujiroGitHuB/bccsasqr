@@ -59,6 +59,37 @@ class QrPayload {
   /// What `QrImageView` renders.
   String encode() => data;
 
+  /// Kept on the phone so the card opens offline — see SavedQrStore. The
+  /// string the server issued is stored as it was, never rebuilt.
+  Map<String, dynamic> toJson() => {
+    'data': data,
+    'details': [
+      for (final row in details) {'label': row.label, 'value': row.value},
+    ],
+    'file_name': fileName,
+    'spec': spec.toJson(),
+  };
+
+  /// Throws a [FormatException] for anything [toJson] did not write.
+  factory QrPayload.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    final details = json['details'];
+    final fileName = json['file_name'];
+    if (data is! String || data.isEmpty || details is! List) {
+      throw const FormatException('Malformed saved QR code');
+    }
+    return QrPayload(
+      data: data,
+      details: [
+        for (final row in details)
+          if (row is Map && row['label'] is String && row['value'] is String)
+            (label: row['label'] as String, value: row['value'] as String),
+      ],
+      fileName: safeFileName(fileName is String ? fileName : '${data}_qr.png'),
+      spec: QrSpec.fromJson(json['spec']),
+    );
+  }
+
   /// The server's file name made safe to write to disk: no folders, no
   /// surprises, always a `.png`.
   static String safeFileName(String raw) {
@@ -109,6 +140,17 @@ class QrSpec {
   }
 
   static const _levels = {'L', 'M', 'Q', 'H'};
+
+  /// The server's own shape, so [QrSpec.fromJson] reads it back.
+  Map<String, dynamic> toJson() => {
+    'size': size,
+    'error_correction': errorCorrection,
+    'foreground': _toHex(foreground),
+    'background': _toHex(background),
+  };
+
+  static String _toHex(Color color) =>
+      '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
 
   /// Side of the code in logical pixels — the web's canvas pixels.
   final double size;

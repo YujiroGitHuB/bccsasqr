@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-27.20';
+const WHATS_NEW_VERSION = '2026-09-30';
 
 /**
  * The changelog, newest release first.
@@ -69,6 +69,36 @@ const WHATS_NEW_VERSION = '2026-09-27.20';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-09-30',
+            'date'    => '2026-09-30',
+            'icon'    => 'bi-cloud-slash',
+            'title'   => 'The app: QR codes open offline, and the scanner camera switches off',
+            'summary' => 'Students’ QR codes open in the app with no internet, the app says plainly when the phone is offline, and the scanner’s camera can be switched off between classes.',
+            'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-camera-video-off',
+                    'title' => 'Switch the app’s scanner camera off',
+                    'text'  => 'The app&rsquo;s scanner has a <strong>Stop camera</strong> button under the picture, beside <strong>Flashlight</strong>. It turns the camera off without losing the subject you picked, and lets the phone&rsquo;s screen sleep again &mdash; no more camera running and battery draining while nobody is being scanned. <strong>Turn on camera</strong> brings it back, and picking a subject turns it on too. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-cloud-slash',
+                    'title' => 'Students’ QR codes open in the app with no internet',
+                    'text'  => 'Every QR code a student makes in the app is now kept on their phone. With no signal, they type their student number as usual and the app shows the QR code saved on that phone, with the day it was made &mdash; and it can still be downloaded. It is the same code the server issued, so it scans the same. A student number never looked up on that phone still needs the internet once. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-wifi-off',
+                    'title' => 'The app says plainly when it is offline',
+                    'text'  => 'When the phone loses its connection, the app now shows <strong>You&rsquo;re offline</strong> at the top of the screen, and <strong>Back online</strong> when it returns. A look-up, sign-in or scan that cannot get through says <strong>No internet connection</strong> and what to check, instead of a technical error, and a scan that did not reach the server says <strong>Attendance not saved</strong> &mdash; so nobody assumes the student is in the list. Anyone with the app already installed gets this by downloading it again.',
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-27',

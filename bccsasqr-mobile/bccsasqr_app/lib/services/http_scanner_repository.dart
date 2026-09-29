@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../core/config/app_config.dart';
+import '../core/utils/network_error.dart';
 import '../models/scanner_models.dart';
 import 'scanner_repository.dart';
 import 'token_store.dart';
@@ -179,10 +180,7 @@ class HttpScannerRepository implements ScannerRepository {
     try {
       response = await request().timeout(timeout);
     } catch (e) {
-      throw ScannerException(
-        'Network error. Please check your connection. ($e)',
-        code: 'network',
-      );
+      throw ScannerException(NetworkError.messageFor(e), code: 'network');
     }
 
     final Object? decoded;

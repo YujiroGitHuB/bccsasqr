@@ -124,6 +124,31 @@ void main() {
     expect(awake, [true]);
   });
 
+  testWidgets('Stop camera lets the camera and the screen go, and Turn on '
+      'camera brings them back', (tester) async {
+    await openScanner(tester);
+    await pickSubject(tester);
+    expect(find.byKey(const ValueKey('scan:019-464')), findsOneWidget);
+    expect(awake, [true]);
+
+    await tester.tap(find.byKey(const ValueKey('scanner.cameraStop')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('scan:019-464')), findsNothing);
+    expect(find.text(ScannerStrings.cameraOffTitle), findsOneWidget);
+    // On the status line, after "Status".
+    expect(find.textContaining(ScannerStrings.cameraOffStatus), findsOneWidget);
+    // The subject stays picked.
+    expect(find.text(ScannerStrings.readyToScan), findsOneWidget);
+    expect(awake, [true, false]);
+
+    await tester.tap(find.byKey(const ValueKey('scanner.cameraStart')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('scan:019-464')), findsOneWidget);
+    expect(awake, [true, false, true]);
+  });
+
   testWidgets('a scan shows the student and lands in the list', (tester) async {
     await openScanner(tester);
     await pickSubject(tester);

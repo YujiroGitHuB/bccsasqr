@@ -240,6 +240,46 @@ void main() {
       );
     });
 
+    test('the camera can be switched off and on without losing the '
+        'subject', () async {
+      await ready();
+      expect(controller.cameraActive, isTrue);
+      expect(controller.cameraPaused, isFalse);
+
+      controller.setCameraOn(false);
+      expect(controller.cameraActive, isFalse);
+      expect(controller.cameraPaused, isTrue);
+      expect(controller.selectedSubject, _elec2);
+      expect(controller.status.text, ScannerStrings.cameraOffStatus);
+
+      controller.setCameraOn(true);
+      expect(controller.cameraActive, isTrue);
+      expect(
+        controller.status.text,
+        'Scanning for Multimedia Technologies - 2026-09-27',
+      );
+    });
+
+    test('picking a subject turns a switched-off camera back on', () async {
+      await ready();
+      controller.setCameraOn(false);
+
+      controller.selectSubject(null);
+      expect(controller.cameraPaused, isFalse);
+      controller.selectSubject(_elec2);
+      expect(controller.cameraActive, isTrue);
+    });
+
+    test('no subject: nothing to switch off', () async {
+      repo.saved = _user;
+      await controller.start();
+      controller.setCameraOn(false);
+
+      expect(controller.cameraActive, isFalse);
+      expect(controller.cameraPaused, isFalse);
+      expect(controller.status.text, 'Select subject first - 2026-09-27');
+    });
+
     test('a locked scanner says why and keeps the camera off', () async {
       repo.saved = _user;
       repo.subjectsThrow = const ScannerException(
@@ -427,14 +467,20 @@ void main() {
       expect(controller.sessionMessage, ScannerStrings.sessionExpired);
     });
 
-    test('no signal: says so without a dialog', () async {
+    test('no signal: says the scan was not saved, and why', () async {
       await ready();
-      repo.scanAnswer = const ScannerException('offline', code: 'network');
+      repo.scanAnswer = const ScannerException(
+        'No internet connection.',
+        code: 'network',
+      );
       await controller.onCodeScanned('000-802');
       await _delivered();
 
-      expect(controller.status.text, '✗ Network error');
-      expect(alerts, isEmpty);
+      expect(controller.status.text, ScannerStrings.notSavedStatus);
+      expect(controller.status.tone, ScanTone.error);
+      expect(alerts.single.title, ScannerStrings.notSavedTitle);
+      expect(alerts.single.body, 'No internet connection.');
+      expect(controller.attendance, isEmpty);
     });
 
     test('the result goes back to the idle line after a while', () async {

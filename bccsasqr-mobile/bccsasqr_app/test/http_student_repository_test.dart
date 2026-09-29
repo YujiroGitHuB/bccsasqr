@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bccsasqr_app/core/utils/network_error.dart';
 import 'package:bccsasqr_app/core/utils/student_number.dart';
 import 'package:bccsasqr_app/services/http_student_repository.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
@@ -212,11 +213,10 @@ void main() {
       expect(
         () => repo.findByStudentNumber(_number),
         throwsA(
-          isA<StudentLookupException>().having(
-            (e) => e.code,
-            'code',
-            'network',
-          ),
+          isA<StudentLookupException>()
+              .having((e) => e.code, 'code', 'network')
+              // The student reads this: what to do, not what was thrown.
+              .having((e) => e.message, 'message', NetworkError.offline),
         ),
       );
     });

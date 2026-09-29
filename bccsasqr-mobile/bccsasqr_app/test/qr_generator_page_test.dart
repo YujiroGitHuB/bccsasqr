@@ -6,9 +6,11 @@ import 'package:bccsasqr_app/models/record_warning.dart';
 import 'package:bccsasqr_app/models/student_record.dart';
 import 'package:bccsasqr_app/models/terms_document.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
+import 'package:bccsasqr_app/services/saved_qr_store.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/views/generator_splash.dart';
 import 'package:bccsasqr_app/views/splash_page.dart';
+import 'package:bccsasqr_app/views/widgets/qr_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -272,7 +274,14 @@ void main() {
     await tester.enterText(find.byType(TextField), '019464');
     await tester.pumpAndSettle();
 
-    expect(find.text('Could not reach the records service.'), findsOneWidget);
+    // With nothing saved on this phone, the reason and where offline still
+    // works.
+    expect(
+      find.text(
+        'Could not reach the records service. ${AppStrings.offlineNoCopy}',
+      ),
+      findsOneWidget,
+    );
     final retry = find.widgetWithText(OutlinedButton, AppStrings.actionRetry);
     expect(retry, findsOneWidget);
 
@@ -281,6 +290,52 @@ void main() {
 
     expect(find.text(AppStrings.verifiedBadge), findsOneWidget);
     expect(retry, findsNothing);
+  });
+
+  testWidgets('offline, a code made on this phone before opens, said to be '
+      'the saved copy', (tester) async {
+    final number = StudentNumber.tryParse('000-1023')!;
+    final record = StudentRecord(
+      studentNumber: number,
+      fullName: 'Maria Isabel Santos',
+      course: 'BS Computer Science',
+      section: 'BSCS 2-B',
+    );
+    final saved = MemorySavedQrStore()
+      ..saved['000-1023'] = SavedQr(
+        record: record,
+        payload: QrPayload.forRecord(record),
+        savedAt: DateTime(2026, 9, 29),
+      );
+
+    await openGenerator(
+      tester,
+      BccSasqrApp(
+        roleStore: MemoryRoleStore(AppRole.student),
+        repository: _DroppedSignalRepository(),
+        exportService: _StubExportService(),
+        savedQrStore: saved,
+        showSplash: false,
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField), '0001023');
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.offlineCopy('Sep 29, 2026')), findsOneWidget);
+    expect(find.text(AppStrings.verifiedBadge), findsNothing);
+    expect(find.text('Maria Isabel Santos'), findsOneWidget);
+
+    await tester.tap(
+      find.widgetWithText(FilledButton, AppStrings.actionGenerate),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(QrCard), findsOneWidget);
+    expect(
+      find.widgetWithText(FilledButton, AppStrings.actionDownload),
+      findsOneWidget,
+    );
   });
 
   testWidgets('pulling the page down looks the number up again', (

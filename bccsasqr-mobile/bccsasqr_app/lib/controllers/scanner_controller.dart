@@ -98,6 +98,7 @@ class ScannerController extends ChangeNotifier {
   ScanSubject? _selected;
   bool _lateBusy = false;
 
+  bool _cameraOn = true;
   bool _recording = false;
   String? _lastCode;
   DateTime? _lastCodeAt;
@@ -132,8 +133,16 @@ class ScannerController extends ChangeNotifier {
   bool get isRecording => _recording;
 
   /// The camera runs only once a subject is picked — the web scanner's
-  /// "Please select a subject first" gate.
-  bool get cameraActive =>
+  /// "Please select a subject first" gate — and only while the instructor
+  /// has not switched it off.
+  bool get cameraActive => _canScan && _cameraOn;
+
+  /// A subject is picked, but the instructor switched the camera off —
+  /// between classes, or with nobody left in the queue. The camera, the
+  /// light beside it and the screen's stay-awake are all let go.
+  bool get cameraPaused => _canScan && !_cameraOn;
+
+  bool get _canScan =>
       _session == ScannerSession.signedIn &&
       _selected != null &&
       _blocked == null;
@@ -155,6 +164,8 @@ class ScannerController extends ChangeNotifier {
 
   String get _idleLabel => _selected == null
       ? 'Select subject first - $today'
+      : !_cameraOn
+      ? ScannerStrings.cameraOffStatus
       : 'Scanning for ${_selected!.name} - $today';
 
   List<AttendanceEntry> get attendance => _attendance;
@@ -274,6 +285,7 @@ class ScannerController extends ChangeNotifier {
     _lastRecord = null;
     _lastCode = null;
     _recording = false;
+    _cameraOn = true;
     _signInError = null;
   }
 
@@ -352,6 +364,17 @@ class ScannerController extends ChangeNotifier {
     _result = null;
     _lastRecord = null;
     _holdTimer?.cancel();
+    // Picking a subject is getting ready to scan: a camera switched off for
+    // the last class comes back on for this one.
+    if (subject != null) _cameraOn = true;
+    _notify();
+  }
+
+  /// The camera's own switch, under the picture. Off lets the camera go —
+  /// and with it the screen's stay-awake — without losing the subject.
+  void setCameraOn(bool on) {
+    if (_cameraOn == on) return;
+    _cameraOn = on;
     _notify();
   }
 
@@ -539,9 +562,12 @@ class ScannerController extends ChangeNotifier {
           'Student $number is not enrolled in ${subject.name}',
         );
 
+      // No answer at all: the student is not in the list. Said on the island
+      // too, with why — offline or too slow — so nobody assumes it went in.
       case 'network':
-        _show(const ScanStatus('✗ Network error', ScanTone.error));
+        _show(const ScanStatus(ScannerStrings.notSavedStatus, ScanTone.error));
         _say(ScanTone.error, ScannerStrings.sayNetwork);
+        _alert(ScannerStrings.notSavedTitle, e.message);
 
       default:
         if (_handleBlocking(e)) {
