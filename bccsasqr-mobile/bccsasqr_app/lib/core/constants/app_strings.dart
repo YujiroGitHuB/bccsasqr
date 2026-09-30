@@ -409,6 +409,105 @@ abstract final class TrackerStrings {
       'Could not load the attendance records. Try again in a moment.';
 }
 
+/// My Profile — the web's photo page (`student/StudentPhotoProfile.php`) on a
+/// phone, and the face on the student's home screen.
+abstract final class ProfileStrings {
+  static const String title = 'My Profile';
+
+  // The opening splash: a portrait framed and snapped, and the three steps.
+  static const String splashTagline = 'MY PROFILE';
+  static const String splashSemantics = 'Opening My Profile';
+  static const String stepVerify = 'Verify';
+  static const String stepPhoto = 'Take photo';
+  static const String stepScanner = 'On scanner';
+
+  // Step 1 — the same check as the web page.
+  static const String verifyTitle = 'Let\'s find your record';
+  static const String verifyBody =
+      'Enter your student number and last name exactly as they are on your '
+      'school record.';
+
+  /// A made-up number: year 000 never occurs, so it cannot be anyone's.
+  static const String numberHint = '000-1023';
+  static const String lastNameLabel = 'Last Name';
+  static const String lastNameHint = 'DELA CRUZ';
+  static const String verifyAction = 'Verify it\'s me';
+  static const String verifyingAction = 'Checking…';
+  static const String verifyNote =
+      'Your photo is linked to this student number. Set up only your own.';
+  static const String errorLastName = 'Enter your last name.';
+  static const String tooManyTries =
+      'Too many tries for this number. Wait 15 minutes, then try again.';
+
+  /// Said aloud while the button's spinner turns.
+  static const String verifying = 'Checking your record…';
+  static String welcome(String name) => 'Welcome, $name.';
+
+  // Step 2 — the photo.
+  static const String statusOnFile = 'On the scanner';
+  static const String statusOnFileBody =
+      'Your instructor sees this photo each time your QR code is scanned.';
+  static const String statusRequired = 'Required for attendance';
+  static const String statusRequiredBody =
+      'The scanner will not record your attendance until you add a photo.';
+  static const String statusNone = 'No photo yet';
+  static const String statusNoneBody =
+      'Add one so your instructor can see it is really you.';
+  static const String takePhoto = 'Take a photo';
+  static const String choosePhoto = 'Choose from gallery';
+  static const String changePhoto = 'Change photo';
+  static const String saving = 'Saving your photo…';
+  static const String savingBody = 'Keep this page open for a few seconds.';
+  static const String savedTitle = 'Photo saved';
+  static const String savedBody =
+      'Your instructor will see it from your next scan.';
+  static const String saveFailed = 'Photo not saved';
+  static const String pickFailed =
+      'The camera or gallery could not be opened. Check the app\'s '
+      'permissions in your phone\'s settings.';
+
+  static const String tipsHeading = 'FOR A GOOD PHOTO';
+  static const List<String> tips = [
+    'Face the camera, eyes open',
+    'Good light on your face',
+    'Plain background, only you',
+    'No cap, mask or sunglasses',
+  ];
+
+  // "Not you?"
+  static const String forget = 'Not you? Remove from this phone';
+  static const String forgetTitle = 'Remove this profile?';
+  static String forgetBody(String name) =>
+      'This phone forgets $name. The photo stays on the school record.';
+  static const String forgetConfirm = 'Remove';
+  static const String forgetCancel = 'Cancel';
+  static const String forgotten = 'Profile removed from this phone';
+
+  // The crop, full screen after a photo is taken or chosen.
+  static const String cropTitle = 'Move and scale';
+  static const String cropHint =
+      'Pinch to zoom, drag to move. Keep your face inside the circle.';
+  static const String cropUse = 'Use photo';
+  static const String cropAnother = 'Choose another';
+  static const String cropClose = 'Cancel';
+  static const String cropFailed = 'That picture could not be opened.';
+
+  // The student's home screen.
+  static String greeting(String greeting, String name) => '$greeting, $name';
+  static const String open = 'Open My Profile';
+  static const String setUp = 'Set up My Profile';
+  static const String nudgeTitle = 'Add your photo';
+  static const String nudgeBody =
+      'Your instructor sees your face on the scanner each time your QR code '
+      'is scanned.';
+  static const String nudgeRequiredTitle = 'Your photo is missing';
+  static const String nudgeRequiredBody =
+      'It is required before your attendance can be recorded.';
+
+  /// My QR Code's photo warning, when the server sent no button of its own.
+  static const String uploadAction = 'Upload your photo';
+}
+
 /// The Settings screen — the whole app's, reached from the home screen and
 /// from the scanner's account sheet.
 abstract final class SettingsStrings {
@@ -506,7 +605,7 @@ abstract final class WhatsNewStrings {
       'What changed in My QR Code, My Attendance, the Attendance Scanner and '
       'the attendance links.';
   static const String introStudent =
-      'What changed in My QR Code and My Attendance.';
+      'What changed in My QR Code, My Attendance and My Profile.';
 
   static const String latest = 'LATEST';
 
@@ -514,6 +613,7 @@ abstract final class WhatsNewStrings {
   static const String filterAll = 'All';
   static const String filterQr = 'QR Code';
   static const String filterTracker = 'Tracker';
+  static const String filterProfile = 'Profile';
   static const String filterScanner = 'Scanner';
   static const String filterLinks = 'Links';
 
@@ -525,10 +625,12 @@ abstract final class WhatsNewStrings {
   // The chip naming the part of the app, and the button that opens it.
   static const String areaQr = 'MY QR CODE';
   static const String areaTracker = 'MY ATTENDANCE';
+  static const String areaProfile = 'MY PROFILE';
   static const String areaScanner = 'SCANNER';
   static const String areaLinks = 'LINKS';
   static const String openQr = 'Open My QR Code';
   static const String openTracker = 'Open My Attendance';
+  static const String openProfile = 'Open My Profile';
   static const String openScanner = 'Open the Scanner';
   static const String openLinks = 'Open Links';
 
@@ -536,7 +638,7 @@ abstract final class WhatsNewStrings {
   // instructor's bar puts a dot on Settings instead.
   static const String cardTitle = 'New in this update';
   static const String cardBody =
-      'See what changed in My QR Code and My Attendance.';
+      'See what changed in My QR Code, My Attendance and My Profile.';
   static const String cardClose = 'Dismiss';
 
   // The row in Settings → About.

@@ -5,6 +5,7 @@ import 'app.dart';
 import 'core/theme/app_theme.dart';
 import 'services/connectivity.dart';
 import 'services/onboarding_store.dart';
+import 'services/profile_store.dart';
 import 'services/saved_qr_store.dart';
 
 void main() {
@@ -17,6 +18,7 @@ void main() {
       connectivity: DeviceConnectivityService(),
       savedQrStore: SharedPrefsSavedQrStore(),
       onboardingStore: SharedPrefsOnboardingStore(),
+      profileStore: SharedPrefsProfileStore(),
     ),
   );
 }

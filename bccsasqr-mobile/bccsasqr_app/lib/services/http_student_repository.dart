@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -7,8 +8,10 @@ import '../core/utils/network_error.dart';
 import '../core/utils/student_number.dart';
 import '../models/attendance_history.dart';
 import '../models/qr_payload.dart';
+import '../models/student_profile.dart';
 import '../models/student_record.dart';
 import '../models/terms_document.dart';
+import 'photo_repository.dart';
 import 'student_repository.dart';
 import 'tracker_repository.dart';
 
@@ -28,9 +31,11 @@ import 'tracker_repository.dart';
 /// carrying the server's `code`, so the controller can act on
 /// `terms_not_accepted` instead of merely showing it.
 ///
-/// It serves the Attendance Tracker too ([TrackerRepository]): the same
-/// public, student-number-keyed half of the API, over the same connection.
-class HttpStudentRepository implements StudentRepository, TrackerRepository {
+/// It serves the Attendance Tracker too ([TrackerRepository]), and My
+/// Profile's photo ([StudentPhotoRepository]): the same student-number-keyed
+/// half of the API, over the same connection.
+class HttpStudentRepository
+    implements StudentRepository, TrackerRepository, StudentPhotoRepository {
   HttpStudentRepository({
     http.Client? client,
     String? baseUrl,
@@ -154,6 +159,78 @@ class HttpStudentRepository implements StudentRepository, TrackerRepository {
     }
   }
 
+  // ----------------------------------------------------------------- photo
+
+  @override
+  Future<PhotoOwner> verifyOwner(StudentNumber number, String lastName) async =>
+      _ownerFrom(
+        await _post(Uri.parse('${_studentUri(number)}/verify'), {
+          'last_name': lastName,
+        }),
+      );
+
+  @override
+  Future<PhotoOwner> fetchOwner(StudentNumber number) async =>
+      _ownerFrom(await _get(_studentUri(number)));
+
+  /// A file part, not base64 in JSON: the web page moved to form data after a
+  /// host's firewall kept refusing long base64 bodies.
+  @override
+  Future<PhotoOwner> uploadPhoto(
+    StudentNumber number,
+    String lastName,
+    Uint8List jpeg,
+  ) async {
+    final request =
+        http.MultipartRequest('POST', Uri.parse('${_studentUri(number)}/photo'))
+          ..headers.addAll(_headers)
+          ..fields['last_name'] = lastName
+          ..files.add(
+            http.MultipartFile.fromBytes('photo', jpeg, filename: 'photo.jpg'),
+          );
+    return _ownerFrom(
+      await _send(
+        () async => http.Response.fromStream(await _client.send(request)),
+        // A photo goes up over whatever signal the student has; the lookups'
+        // limit is for a few hundred bytes.
+        timeout: timeout * 2,
+      ),
+    );
+  }
+
+  @override
+  Future<Uint8List> downloadPhoto(String url) async {
+    final http.Response response;
+    try {
+      response = await _client.get(Uri.parse(url)).timeout(timeout);
+    } catch (e) {
+      throw StudentLookupException(NetworkError.messageFor(e), code: 'network');
+    }
+    if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+      throw StudentLookupException(
+        'Could not load the photo (HTTP ${response.statusCode}).',
+        code: 'photo_unavailable',
+      );
+    }
+    return response.bodyBytes;
+  }
+
+  /// The record, and the photo beside it — the resource `/students/{no}`,
+  /// `/verify` and `/photo` all answer with.
+  PhotoOwner _ownerFrom(Map<String, dynamic> data) {
+    final student = data['student'];
+    if (student is! Map<String, dynamic>) {
+      throw const StudentLookupException('Response was missing the record.');
+    }
+    final photo = data['photo'];
+    final url = photo is Map<String, dynamic> ? photo['url'] : null;
+    return (
+      record: _recordFrom(student, warnings: data['warnings']),
+      photoUrl: url is String && url.isNotEmpty ? url : null,
+      required: photo is Map<String, dynamic> && photo['required'] == true,
+    );
+  }
+
   // ------------------------------------------------------------- transport
 
   Future<Map<String, dynamic>> _get(Uri uri) =>
@@ -171,11 +248,12 @@ class HttpStudentRepository implements StudentRepository, TrackerRepository {
   /// Sends, unwraps the envelope, and turns every failure — wire or API — into
   /// a [StudentLookupException]. No caller has to think about status codes.
   Future<Map<String, dynamic>> _send(
-    Future<http.Response> Function() request,
-  ) async {
+    Future<http.Response> Function() request, {
+    Duration? timeout,
+  }) async {
     final http.Response response;
     try {
-      response = await request().timeout(timeout);
+      response = await request().timeout(timeout ?? this.timeout);
     } catch (e) {
       throw StudentLookupException(NetworkError.messageFor(e), code: 'network');
     }

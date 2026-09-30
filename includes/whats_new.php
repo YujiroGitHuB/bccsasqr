@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-30.4';
+const WHATS_NEW_VERSION = '2026-09-30.5';
 
 /**
  * The changelog, newest release first.
@@ -74,9 +74,16 @@ function whats_new_releases(): array
             'id'      => '2026-09-30',
             'date'    => '2026-09-30',
             'icon'    => 'bi-cloud-slash',
-            'title'   => 'The app gets attendance links, and works offline',
-            'summary' => 'Instructors can now hand out attendance links from the app too — the same links as the web page, with their QR codes, expiry and late marking. The app’s scanner no longer stops when the signal does — scans are kept on the phone and sent by themselves when the internet is back, and the admin sees them marked Offline. Students’ QR codes open with no internet, the scanner’s Attendance List is shorter and searchable, its camera can be switched off between classes, and new users get a short tour when the app first opens.',
+            'title'   => 'Student photos from the app, attendance links, and offline scanning',
+            'summary' => 'Students can now upload their own photo from the app, and it goes straight to the scanner. Instructors can now hand out attendance links from the app too — the same links as the web page, with their QR codes, expiry and late marking. The app’s scanner no longer stops when the signal does — scans are kept on the phone and sent by themselves when the internet is back, and the admin sees them marked Offline. Students’ QR codes open with no internet, the scanner’s Attendance List is shorter and searchable, its camera can be switched off between classes, and new users get a short tour when the app first opens.',
             'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-person-bounding-box',
+                    'title' => 'Students can upload their photo from the app',
+                    'text'  => 'The app has a new <strong>My Profile</strong> for students. They enter their student number and last name &mdash; the same check as the web&rsquo;s Student Photo page &mdash; then take a photo or choose one from the gallery and fit their face inside a circle. It is saved as their one student photo, exactly as if they had used the web page, so you see it on the scanner from their next scan and in <strong>Student Photos</strong> here. A student with no photo is reminded on the app&rsquo;s home screen, and more firmly when <strong>Student Photo Requirement</strong> is on. Worth telling a class that still has missing photos. Students get this by downloading the app again.',
+                    'link'  => ['href' => 'pages/student_photo_profile.php', 'label' => 'Open Student Photos', 'can' => 'students.photos'],
+                ],
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-link-45deg',

@@ -236,6 +236,47 @@ Errors: `tracker_locked` (503), `invalid_student_no` (400),
 `student_not_found` (404), `tracker_failed` (500 — offer a retry). Rate
 limited like the lookup: 20 a minute per IP.
 
+### `POST /students/{student_no}/verify`
+
+Step 1 of the web's photo page (`student/StudentPhotoProfile.php`): the
+student proves the record is theirs with the last name on it — the part of
+`fullname` before the comma, any case.
+
+```json
+POST /api/v1/students/000-1023/verify
+Content-Type: application/json
+
+{ "last_name": "Santos" }
+```
+
+Answers with the same resource as `GET /students/{student_no}`, so one parser
+reads both. `photo.url` carries `?v=<file time>`: a new photo keeps the old
+file name, and the stamp is what makes a phone load the new face.
+
+Errors: `missing_last_name` (400), `identity_mismatch` (403 — the same message
+for a wrong number and a wrong name, as on the web), `invalid_student_no` (400).
+
+### `POST /students/{student_no}/photo`
+
+Step 2: saves the student's photo. `multipart/form-data`, not JSON:
+
+| Field | Value |
+|---|---|
+| `last_name` | Checked again — the API keeps no session between the two steps. |
+| `photo` | The picture as a file: JPG, PNG or WEBP, at most 1 MB, sides 96–4096 px. The app sends a 400 × 400 JPEG. |
+
+It lands exactly where the web page puts it — `uploads/photos/student_{id}.jpg`
+and the `student_photos` row — so the scanner shows it from the next scan.
+With GD on the server the picture is redrawn as a plain JPEG, which drops the
+phone's EXIF (location included). `201` with the updated resource.
+
+Errors: as `/verify`, plus `missing_photo` (400), `photo_too_large` (413),
+`invalid_photo` (415/422), `photo_save_failed` (500).
+
+`/verify` and `/photo` share one limit: **10 per 15 minutes per student number
+per IP** — per number, so a whole class uploading on the school Wi-Fi does not
+lock itself out.
+
 ---
 
 ## Scanner endpoints (signed in)
@@ -401,6 +442,11 @@ message safe to show as-is.
 | 400 | `missing_student_no` | Ask for the number. |
 | 400 | `invalid_student_no` | Show the hint from `details.example`. |
 | 400 | `invalid_body` | Bug in the client — the body was not JSON. |
+| 400 | `missing_last_name` / `missing_photo` | Ask for the last name / pick the photo again. |
+| 403 | `identity_mismatch` | Wrong number or last name — show `message`. |
+| 413 | `photo_too_large` | Send a smaller picture. |
+| 415 / 422 | `invalid_photo` | Not a usable picture — show `message`. |
+| 500 | `photo_save_failed` | The server could not write the file — offer a retry. |
 | 401 | `unauthorized` | The `X-API-Key` is missing or wrong. |
 | 404 | `student_not_found` | "Check your Student Number." |
 | 404 | `not_found` | Wrong URL — check the base URL form. |
@@ -494,6 +540,7 @@ Which file does what in the app:
 | `handlers/terms.php` | `POST /terms/accept` |
 | `handlers/scanner.php` | `/auth/*`, `/scanner/*` |
 | `handlers/tracker.php` | `/students/{no}/attendance` |
+| `handlers/photos.php` | `POST /students/{no}/verify`, `POST /students/{no}/photo` |
 | `handlers/links.php` | `/links`, `/links/*` |
 | `lib/auth.php` | The scanner's token check and permissions |
 
@@ -507,6 +554,7 @@ The API deliberately reads the same sources rather than copying them:
 | Student lookup | `students_tbl` | `gen_find_student()` |
 | Terms text and version | `includes/terms.php` | `handle_terms()`, `gen_terms_state()` |
 | Photo requirement | `includes/photo_requirement.php` | `gen_photo_state()` |
+| Photo upload (last-name check, file, row) | `student/student_photo_api.php` | `handlers/photos.php` |
 | QR colors and size | `QRgenerator/js/scriptv2.js` | `gen_qr_spec()` — **the one copy**; keep them in step |
 | Attendance history | `includes/attendance_history.php` | `handle_student_attendance()` and `Tracker/crud/att_display.php` |
 | Attendance links | `includes/links.php`, `includes/late.php` | `handlers/links.php` and the web page's endpoints |

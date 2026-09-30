@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:bccsasqr_app/core/utils/network_error.dart';
 import 'package:bccsasqr_app/core/utils/student_number.dart';
@@ -473,6 +474,116 @@ void main() {
                 'The attendance tracker is closed.',
               ),
         ),
+      );
+    });
+  });
+
+  group('photo', () {
+    // A made-up student: year 000 never occurs in the school's numbers.
+    final number = StudentNumber.tryParse('000-1023')!;
+    const student = {
+      'student_no': '000-1023',
+      'fullname': 'SANTOS, MARIA ISABEL B.',
+      'course': 'BSCS',
+      'section': '2B',
+    };
+    const url =
+        'https://example.test/bccsasqr/uploads/photos/student_1.jpg?v=7';
+
+    test('verify posts the last name and reads the record and photo', () async {
+      late http.Request sent;
+      final repo = repoReturning(
+        ok({
+          'student': student,
+          'photo': {'required': true, 'has_photo': true, 'url': url},
+          'warnings': [],
+        }),
+        onRequest: (r) => sent = r,
+      );
+
+      final owner = await repo.verifyOwner(number, 'Santos');
+
+      expect(sent.method, 'POST');
+      expect(sent.url.path, '/bccsasqr/api/v1/students/000-1023/verify');
+      expect(jsonDecode(sent.body), {'last_name': 'Santos'});
+      expect(owner.record.fullName, 'SANTOS, MARIA ISABEL B.');
+      expect(owner.photoUrl, url);
+      expect(owner.required, isTrue);
+    });
+
+    test('a wrong last name raises identity_mismatch', () async {
+      final repo = repoReturning(
+        fail('identity_mismatch', 'Incorrect student number or last name.'),
+        status: 403,
+      );
+
+      expect(
+        () => repo.verifyOwner(number, 'Reyes'),
+        throwsA(
+          isA<StudentLookupException>().having(
+            (e) => e.code,
+            'code',
+            'identity_mismatch',
+          ),
+        ),
+      );
+    });
+
+    test('the photo goes up as a file part, with the last name', () async {
+      late http.Request sent;
+      final repo = repoReturning(
+        ok({
+          'student': student,
+          'photo': {'required': false, 'has_photo': true, 'url': url},
+        }),
+        status: 201,
+        onRequest: (r) => sent = r,
+      );
+      final jpeg = Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3]);
+
+      final owner = await repo.uploadPhoto(number, 'Santos', jpeg);
+
+      expect(sent.method, 'POST');
+      expect(sent.url.path, '/bccsasqr/api/v1/students/000-1023/photo');
+      expect(sent.headers['content-type'], startsWith('multipart/form-data'));
+      final body = latin1.decode(sent.bodyBytes);
+      expect(body, contains('name="last_name"'));
+      expect(body, contains('Santos'));
+      expect(body, contains('name="photo"; filename="photo.jpg"'));
+      expect(owner.photoUrl, url);
+    });
+
+    test('no photo on file reads as none', () async {
+      final repo = repoReturning(
+        ok({
+          'student': student,
+          'photo': {'required': false, 'has_photo': false, 'url': null},
+        }),
+      );
+
+      final owner = await repo.fetchOwner(number);
+      expect(owner.photoUrl, isNull);
+      expect(owner.required, isFalse);
+    });
+
+    test('downloads the picture as bytes', () async {
+      final repo = HttpStudentRepository(
+        baseUrl: _base,
+        client: MockClient(
+          (request) async => http.Response.bytes([0xFF, 0xD8, 9], 200),
+        ),
+      );
+      expect(await repo.downloadPhoto(url), [0xFF, 0xD8, 9]);
+    });
+
+    test('a missing picture raises rather than keeping nothing', () async {
+      final repo = HttpStudentRepository(
+        baseUrl: _base,
+        client: MockClient((request) async => http.Response('', 404)),
+      );
+      expect(
+        () => repo.downloadPhoto(url),
+        throwsA(isA<StudentLookupException>()),
       );
     });
   });

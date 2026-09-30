@@ -9,6 +9,7 @@ import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/saved_qr_store.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/views/generator_splash.dart';
+import 'package:bccsasqr_app/views/profile/profile_page.dart';
 import 'package:bccsasqr_app/views/splash_page.dart';
 import 'package:bccsasqr_app/views/widgets/qr_card.dart';
 import 'package:flutter/material.dart';
@@ -247,6 +248,21 @@ void main() {
       find.widgetWithText(OutlinedButton, 'Upload your photo'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('on the student side, the photo warning opens My Profile', (
+    tester,
+  ) async {
+    await openGenerator(tester, harness(_StubExportService()));
+
+    await tester.enterText(find.byType(TextField), '0251102');
+    await tester.pumpAndSettle();
+    final upload = find.widgetWithText(OutlinedButton, 'Upload your photo');
+    await tester.ensureVisible(upload);
+    await tester.tap(upload);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProfilePage), findsOneWidget);
   });
 
   testWidgets('a student with a photo sees no warning', (tester) async {

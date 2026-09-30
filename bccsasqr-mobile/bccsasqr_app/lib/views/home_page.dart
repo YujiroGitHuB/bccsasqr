@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../controllers/profile_controller.dart';
 import '../controllers/whats_new_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import '../models/student_profile.dart';
 import 'student_splash.dart';
 import 'widgets/app_footer.dart';
 import 'widgets/app_header_card.dart';
 import 'widgets/destination_card.dart';
 import 'widgets/press_scale.dart';
+import 'widgets/profile_avatar.dart';
 import 'widgets/splash_parts.dart';
 import 'widgets/surface_panel.dart';
 
@@ -20,8 +23,10 @@ import 'widgets/surface_panel.dart';
 ///
 /// My QR Code is the one big cyan card — it is what a student comes for —
 /// with My Attendance under it and the three steps of the day below. The
-/// pieces rise in one after another the first time the screen shows, not
-/// again on the way back from a page.
+/// student's face sits beside the greeting and opens My Profile; until there
+/// is a photo on file, a card under the greeting asks for one. The pieces
+/// rise in one after another the first time the screen shows, not again on
+/// the way back from a page.
 ///
 /// The destinations are built by the caller, so this screen knows nothing
 /// about repositories or services.
@@ -33,6 +38,8 @@ class HomePage extends StatefulWidget {
     this.settingsBuilder,
     this.whatsNewBuilder,
     this.whatsNew,
+    this.profileBuilder,
+    this.profile,
     this.now = DateTime.now,
   });
 
@@ -49,6 +56,11 @@ class HomePage extends StatefulWidget {
   /// closed.
   final WidgetBuilder? whatsNewBuilder;
   final WhatsNewController? whatsNew;
+
+  /// My Profile, opened from the face beside the greeting. With a [profile]
+  /// on the phone, the greeting uses the student's name.
+  final WidgetBuilder? profileBuilder;
+  final ProfileController? profile;
 
   /// The clock the greeting is picked by. Overridable for tests.
   final DateTime Function() now;
@@ -68,6 +80,7 @@ class _HomePageState extends State<HomePage>
 
   late final Animation<double> _top = _slice(0.00, 0.40, Curves.easeOut);
   late final Animation<double> _greet = _slice(0.10, 0.50, Curves.easeOut);
+  late final Animation<double> _nudge = _slice(0.16, 0.56, Curves.easeOut);
   late final Animation<double> _hero = _slice(0.20, 0.62, Curves.easeOutCubic);
   late final Animation<double> _tracker = _slice(0.30, 0.72, Curves.easeOut);
   late final Animation<double> _howTo = _slice(0.42, 0.78, Curves.easeOut);
@@ -96,11 +109,25 @@ class _HomePageState extends State<HomePage>
 
   bool get _unread => widget.whatsNew?.unread ?? false;
 
+  /// The student this phone belongs to, once the store has answered.
+  StudentProfile? get _profile => widget.profile?.profile;
+
+  /// Only once the store has answered: a card that shows and then vanishes
+  /// on launch would read as a glitch.
+  bool get _askForPhoto =>
+      widget.profileBuilder != null &&
+      (widget.profile?.loaded ?? false) &&
+      !(_profile?.hasPhoto ?? false);
+
   String get _greeting {
     final hour = widget.now().hour;
-    if (hour < 12) return AppStrings.homeMorning;
-    if (hour < 18) return AppStrings.homeAfternoon;
-    return AppStrings.homeEvening;
+    final greeting = hour < 12
+        ? AppStrings.homeMorning
+        : hour < 18
+        ? AppStrings.homeAfternoon
+        : AppStrings.homeEvening;
+    final name = _profile?.givenName ?? '';
+    return name.isEmpty ? greeting : ProfileStrings.greeting(greeting, name);
   }
 
   /// Fades [child] in and lifts it into place as [shown] runs 0 → 1.
@@ -114,10 +141,15 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     final news = widget.whatsNewBuilder;
 
+    final profilePage = widget.profileBuilder;
+
     // Only the home screen listens: the mark changing must not rebuild the
     // whole app the way a theme change does.
     return ListenableBuilder(
-      listenable: widget.whatsNew ?? const _Silent(),
+      listenable: Listenable.merge([
+        widget.whatsNew ?? const _Silent(),
+        widget.profile ?? const _Silent(),
+      ]),
       builder: (context, _) => Scaffold(
         body: SafeArea(
           child: SingleChildScrollView(
@@ -135,8 +167,36 @@ class _HomePageState extends State<HomePage>
                   children: [
                     _rise(_top, _topBar(context)),
                     const SizedBox(height: 24),
-                    _rise(_greet, _Greeting(greeting: _greeting)),
+                    _rise(
+                      _greet,
+                      _Greeting(
+                        greeting: _greeting,
+                        avatar: profilePage == null
+                            ? null
+                            : _ProfileButton(
+                                profile: widget.profile,
+                                onPressed: () => _open(profilePage),
+                              ),
+                      ),
+                    ),
                     const SizedBox(height: 20),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOut,
+                      alignment: Alignment.topCenter,
+                      child: _askForPhoto && profilePage != null
+                          ? Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _rise(
+                                _nudge,
+                                _PhotoNudge(
+                                  required: _profile?.photoRequired ?? false,
+                                  onTap: () => _open(profilePage),
+                                ),
+                              ),
+                            )
+                          : const SizedBox(width: double.infinity),
+                    ),
                     // Folds away rather than vanishing, so the cards below
                     // slide up instead of jumping.
                     AnimatedSize(
@@ -271,17 +331,20 @@ class _HomePageState extends State<HomePage>
   }
 }
 
-/// "Good morning" — by the hour — and the question the cards answer.
+/// "Good morning, Juan" — by the hour, and by name once the phone knows it —
+/// and the question the cards answer, with the student's face beside them.
 class _Greeting extends StatelessWidget {
-  const _Greeting({required this.greeting});
+  const _Greeting({required this.greeting, this.avatar});
 
   final String greeting;
+  final Widget? avatar;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final avatar = this.avatar;
 
-    return Column(
+    final words = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -303,6 +366,142 @@ class _Greeting extends StatelessWidget {
           ),
         ),
       ],
+    );
+    if (avatar == null) return words;
+
+    return Row(
+      children: [
+        Expanded(child: words),
+        const SizedBox(width: 12),
+        avatar,
+      ],
+    );
+  }
+}
+
+/// The student's face beside the greeting — or, before My Profile is set up,
+/// a dashed ring with a camera. Opens My Profile.
+class _ProfileButton extends StatelessWidget {
+  const _ProfileButton({required this.profile, required this.onPressed});
+
+  final ProfileController? profile;
+  final VoidCallback onPressed;
+
+  static const double _size = 60;
+
+  @override
+  Widget build(BuildContext context) {
+    final kept = profile?.profile;
+
+    return Tooltip(
+      message: kept == null ? ProfileStrings.setUp : ProfileStrings.open,
+      child: PressScale(
+        scale: 0.92,
+        child: Material(
+          type: MaterialType.transparency,
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            key: const ValueKey('home.profile'),
+            onTap: onPressed,
+            child: ProfileAvatar(
+              size: _size,
+              name: kept?.record.fullName,
+              photo: profile?.pendingPhoto ?? kept?.photo,
+              photoUrl: kept?.photoUrl,
+              busy: profile?.isSaving ?? false,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Add your photo" — under the greeting until one is on file. Amber only
+/// when the school requires it, because then it is a warning.
+class _PhotoNudge extends StatelessWidget {
+  const _PhotoNudge({required this.required, required this.onTap});
+
+  final bool required;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final tint = required ? colors.warning : colors.accent;
+
+    return PressScale(
+      child: MergeSemantics(
+        child: Stack(
+          key: const ValueKey('home.photoNudge'),
+          children: [
+            SurfacePanel(
+              borderColor: tint.withValues(alpha: 0.35),
+              padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+              child: Row(
+                children: [
+                  Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: tint.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      required
+                          ? Icons.warning_amber_rounded
+                          : Icons.add_a_photo_outlined,
+                      size: 20,
+                      color: tint,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          required
+                              ? ProfileStrings.nudgeRequiredTitle
+                              : ProfileStrings.nudgeTitle,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          required
+                              ? ProfileStrings.nudgeRequiredBody
+                              : ProfileStrings.nudgeBody,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            height: 1.4,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(Icons.chevron_right_rounded, color: colors.textMuted),
+                ],
+              ),
+            ),
+            Positioned.fill(
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

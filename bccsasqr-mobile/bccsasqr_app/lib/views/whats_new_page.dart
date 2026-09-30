@@ -43,6 +43,7 @@ enum _Filter {
   all(WhatsNewStrings.filterAll, null),
   qr(WhatsNewStrings.filterQr, WhatsNewArea.qr),
   tracker(WhatsNewStrings.filterTracker, WhatsNewArea.tracker),
+  profile(WhatsNewStrings.filterProfile, WhatsNewArea.profile),
   scanner(WhatsNewStrings.filterScanner, WhatsNewArea.scanner),
   links(WhatsNewStrings.filterLinks, WhatsNewArea.links);
 
@@ -300,6 +301,10 @@ class _Item extends StatelessWidget {
       WhatsNewArea.tracker => (
         WhatsNewStrings.areaTracker,
         WhatsNewStrings.openTracker,
+      ),
+      WhatsNewArea.profile => (
+        WhatsNewStrings.areaProfile,
+        WhatsNewStrings.openProfile,
       ),
       WhatsNewArea.scanner => (
         WhatsNewStrings.areaScanner,

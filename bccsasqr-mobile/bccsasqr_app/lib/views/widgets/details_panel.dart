@@ -21,6 +21,7 @@ class DetailsPanel extends StatelessWidget {
     required this.onOpenTerms,
     required this.onPrimaryAction,
     required this.onOpenUrl,
+    this.onUploadPhoto,
   });
 
   final QrGeneratorController controller;
@@ -30,6 +31,10 @@ class DetailsPanel extends StatelessWidget {
 
   /// Opens a link a warning offers — the photo upload page, today.
   final ValueChanged<String> onOpenUrl;
+
+  /// My Profile, where the app itself takes the photo. Given, the missing-
+  /// photo warning opens it instead of the web page in the browser.
+  final VoidCallback? onUploadPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +116,13 @@ class DetailsPanel extends StatelessWidget {
           ],
           for (final warning in controller.warnings) ...[
             const SizedBox(height: 10),
-            _WarningCard(warning: warning, onOpenUrl: onOpenUrl),
+            _WarningCard(
+              warning: warning,
+              onOpenUrl: onOpenUrl,
+              onUploadPhoto: warning.code == 'photo_missing'
+                  ? onUploadPhoto
+                  : null,
+            ),
           ],
           const SizedBox(height: 14),
           _RecordBox(controller: controller, record: record),
@@ -301,10 +312,17 @@ class _InlineMessage extends StatelessWidget {
 /// Styled like the demo-mode notice: amber, because nothing is broken yet —
 /// the student can still generate — but something will be at the scanner.
 class _WarningCard extends StatelessWidget {
-  const _WarningCard({required this.warning, required this.onOpenUrl});
+  const _WarningCard({
+    required this.warning,
+    required this.onOpenUrl,
+    this.onUploadPhoto,
+  });
 
   final RecordWarning warning;
   final ValueChanged<String> onOpenUrl;
+
+  /// Set only for the missing-photo warning, when the app can take it.
+  final VoidCallback? onUploadPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -338,12 +356,20 @@ class _WarningCard extends StatelessWidget {
                     color: context.colors.textPrimary,
                   ),
                 ),
-                if (warning.hasAction) ...[
+                if (onUploadPhoto != null || warning.hasAction) ...[
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
-                    onPressed: () => onOpenUrl(warning.actionUrl!),
-                    icon: const Icon(Icons.open_in_new_rounded, size: 15),
-                    label: Text(warning.actionLabel!),
+                    onPressed:
+                        onUploadPhoto ?? () => onOpenUrl(warning.actionUrl!),
+                    icon: Icon(
+                      onUploadPhoto != null
+                          ? Icons.add_a_photo_outlined
+                          : Icons.open_in_new_rounded,
+                      size: 15,
+                    ),
+                    label: Text(
+                      warning.actionLabel ?? ProfileStrings.uploadAction,
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: context.colors.warning,
                       side: BorderSide(

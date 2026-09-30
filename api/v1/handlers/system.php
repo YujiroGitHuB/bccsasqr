@@ -23,6 +23,8 @@ function handle_index(): void
             'GET  ' . $base . '/students/{student_no}',
             'GET  ' . $base . '/students/{student_no}/qr',
             'GET  ' . $base . '/students/{student_no}/attendance',
+            'POST ' . $base . '/students/{student_no}/verify',
+            'POST ' . $base . '/students/{student_no}/photo',
             'POST ' . $base . '/auth/login',
             'POST ' . $base . '/auth/logout',
             'GET  ' . $base . '/auth/me',

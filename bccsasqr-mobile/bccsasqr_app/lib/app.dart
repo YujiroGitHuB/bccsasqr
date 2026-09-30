@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'controllers/profile_controller.dart';
 import 'controllers/role_controller.dart';
 import 'controllers/scanner_controller.dart';
 import 'controllers/settings_controller.dart';
@@ -19,6 +20,9 @@ import 'services/http_student_repository.dart';
 import 'services/link_repository.dart';
 import 'services/offline_scan_store.dart';
 import 'services/onboarding_store.dart';
+import 'services/photo_picker.dart';
+import 'services/photo_repository.dart';
+import 'services/profile_store.dart';
 import 'services/qr_export_service.dart';
 import 'services/role_store.dart';
 import 'services/saved_qr_store.dart';
@@ -36,6 +40,8 @@ import 'views/instructor_shell.dart';
 import 'views/links/links_page.dart';
 import 'views/links/links_splash.dart';
 import 'views/onboarding_page.dart';
+import 'views/profile/profile_page.dart';
+import 'views/profile/profile_splash.dart';
 import 'views/qr_generator_page.dart';
 import 'views/role_picker_page.dart';
 import 'views/scanner/scanner_flow.dart';
@@ -75,6 +81,9 @@ class BccSasqrApp extends StatefulWidget {
     this.connectivity,
     this.offlineScanStore,
     this.onboardingStore,
+    this.profileStore,
+    this.photoRepository,
+    this.photoPicker = const DevicePhotoPicker(),
     this.showSplash = true,
   });
 
@@ -128,6 +137,18 @@ class BccSasqrApp extends StatefulWidget {
   /// phone's own: with none it is not shown — a test is not a first launch.
   final OnboardingStore? onboardingStore;
 
+  /// The student this phone belongs to (My Profile). Only main.dart passes
+  /// the phone's own: with none it is kept while the app runs — a test's
+  /// preferences never answer.
+  final ProfileStore? profileStore;
+
+  /// My Profile's server. The student repository's when it serves photos too
+  /// (the real one does); the sample records' otherwise.
+  final StudentPhotoRepository? photoRepository;
+
+  /// The camera and the gallery, for My Profile.
+  final PhotoPicker photoPicker;
+
   /// Tests that are about the generator switch the opening animation off.
   final bool showSplash;
 
@@ -155,6 +176,15 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       switch (_repository) {
         final TrackerRepository both => both,
         _ => InMemoryTrackerRepository(),
+      };
+
+  /// My Profile's half of the API: the HTTP repository serves it too; demo
+  /// mode checks last names against the sample records.
+  late final StudentPhotoRepository _photoRepository =
+      widget.photoRepository ??
+      switch (_repository) {
+        final StudentPhotoRepository both => both,
+        _ => InMemoryPhotoRepository(records: _repository),
       };
 
   late final QrExportService _exportService =
@@ -198,6 +228,14 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
           ? SqfliteOfflineScanStore()
           : MemoryOfflineScanStore());
 
+  /// Made here, not on the home screen: the home screen and My Profile show
+  /// the same student, and a photo saved on one is on the other at once.
+  late final ProfileController _profile = ProfileController(
+    store: widget.profileStore ?? MemoryProfileStore(),
+    repository: _photoRepository,
+    speech: _speech,
+  );
+
   late final WhatsNewController _whatsNew = WhatsNewController(
     store: widget.whatsNewStore ?? SharedPrefsWhatsNewStore(),
   );
@@ -232,6 +270,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     _settings.load();
     _whatsNew.load();
     _role.load();
+    _profile.load();
 
     final onboarding = widget.onboardingStore;
     if (onboarding == null) {
@@ -268,6 +307,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     _settings.dispose();
     _whatsNew.dispose();
     _role.dispose();
+    _profile.dispose();
     _tab.dispose();
     super.dispose();
   }
@@ -295,6 +335,27 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     ),
   );
 
+  /// The student's My QR Code: the same page, with the missing-photo warning
+  /// opening My Profile rather than the web page.
+  Widget _studentGenerator(BuildContext context) => GeneratorIntro(
+    page: (context) => QrGeneratorPage(
+      repository: _repository,
+      exportService: _exportService,
+      speech: _speech,
+      savedQrs: _savedQrs,
+      photoPage: _profilePage,
+    ),
+  );
+
+  /// My Profile, behind its splash. The student's side only.
+  Widget _profilePage(BuildContext context) => ProfileIntro(
+    page: (context) => ProfilePage(
+      controller: _profile,
+      picker: widget.photoPicker,
+      demo: _photoRepository is InMemoryPhotoRepository,
+    ),
+  );
+
   Widget _trackerPage(BuildContext context) => TrackerIntro(
     page: (context) => TrackerPage(repository: _tracker, speech: _speech),
   );
@@ -306,6 +367,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   static const Set<WhatsNewArea> _studentAreas = {
     WhatsNewArea.qr,
     WhatsNewArea.tracker,
+    WhatsNewArea.profile,
   };
 
   Widget _studentSettings(BuildContext context) => SettingsPage(
@@ -326,8 +388,9 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     onShown: _whatsNew.markSeen,
     onOpen: (area) {
       final builder = switch (area) {
-        WhatsNewArea.qr => _generator,
+        WhatsNewArea.qr => _studentGenerator,
         WhatsNewArea.tracker => _trackerPage,
+        WhatsNewArea.profile => _profilePage,
         // Left out of [_studentAreas], so never asked for.
         WhatsNewArea.scanner || WhatsNewArea.links => null,
       };
@@ -445,11 +508,13 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       ),
       AppRole.student => HomePage(
         key: const ValueKey('home'),
-        generatorBuilder: _generator,
+        generatorBuilder: _studentGenerator,
         trackerBuilder: _trackerPage,
         settingsBuilder: _studentSettings,
         whatsNewBuilder: _studentWhatsNew,
         whatsNew: _whatsNew,
+        profileBuilder: _profilePage,
+        profile: _profile,
       ),
       AppRole.instructor => _instructor(),
     };

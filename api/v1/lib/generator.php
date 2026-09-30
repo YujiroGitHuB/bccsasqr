@@ -130,9 +130,28 @@ function gen_photo_state(mysqli $conn, array $student): array
     return [
         'required'  => $required,
         'has_photo' => $has,
-        'url'       => $has ? api_asset_url($student['photo_path']) : null,
+        'url'       => $has ? gen_photo_url($student['photo_path']) : null,
         'blocks_attendance' => $required && !$has,
     ];
+}
+
+/**
+ * The photo's URL, stamped with the file's time.
+ *
+ * A new photo is saved under the old one's name (student_{id}.jpg),
+ * so without the stamp a phone that already showed the old face would
+ * keep showing it from its cache.
+ */
+function gen_photo_url(?string $path): ?string
+{
+    $url = api_asset_url($path);
+    if ($url === null || preg_match('#^https?://#i', (string) $path)) {
+        return $url;
+    }
+
+    $time = @filemtime(__DIR__ . '/../../../' . ltrim((string) $path, '/'));
+
+    return $time ? $url . '?v=' . $time : $url;
 }
 
 /**

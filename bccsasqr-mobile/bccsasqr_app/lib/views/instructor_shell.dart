@@ -19,6 +19,9 @@ enum InstructorTab {
     WhatsNewArea.scanner => scanner,
     WhatsNewArea.links => links,
     WhatsNewArea.tracker => tracker,
+    // My Profile is the student's, and left out of the instructor's What's
+    // New; were it asked for, the nearest tab is the QR code it is about.
+    WhatsNewArea.profile => qr,
   };
 }
 

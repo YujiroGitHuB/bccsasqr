@@ -18,20 +18,37 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-30.4';
+  static const String version = '2026-09-30.5';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
       id: '2026-09-30',
       icon: Icons.cloud_off_rounded,
-      title: 'Attendance links, and working with no internet',
+      title: 'Your photo, attendance links, and working offline',
       summary:
-          'Instructors get their attendance links in the app, QR codes '
+          'Students can add their own photo in the app, and are greeted by '
+          'name and face on the home screen. Instructors get their '
+          'attendance links in the app, QR codes '
           'included. The scanner keeps scanning when the signal drops and '
           'sends the scans once you are back online. Your QR code opens with '
           'no internet too. The scanner\'s list is shorter, and its camera '
           'can be switched off between classes.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.profile,
+          icon: Icons.account_circle_outlined,
+          title: 'Add your photo from the app',
+          text:
+              'Tap the circle beside the greeting to open **My Profile**. '
+              'Enter your student number and last name, then **Take a photo** '
+              'or **Choose from gallery**, fit your face inside the circle and '
+              'tap **Use photo**. It is the same photo as on the school\'s web '
+              'page: your instructor sees it on the scanner from your next '
+              'scan. Your face and name now greet you on the home screen too. '
+              'If My QR Code says your photo is missing, **Upload your photo** '
+              'opens it right here.',
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.added,
           area: WhatsNewArea.links,

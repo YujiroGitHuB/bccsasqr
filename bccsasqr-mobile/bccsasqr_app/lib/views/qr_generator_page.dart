@@ -30,6 +30,7 @@ class QrGeneratorPage extends StatefulWidget {
     required this.exportService,
     this.speech = const SilentSpeechService(),
     this.savedQrs,
+    this.photoPage,
   });
 
   final StudentRepository repository;
@@ -39,6 +40,11 @@ class QrGeneratorPage extends StatefulWidget {
   /// Codes made on this phone, so they open offline. Kept only for the
   /// page's life when left out.
   final SavedQrStore? savedQrs;
+
+  /// My Profile, for the missing-photo warning. The student's side passes
+  /// it; an instructor making codes for whoever asks does not — the page
+  /// would be about the instructor's phone, not the student in front of it.
+  final WidgetBuilder? photoPage;
 
   @override
   State<QrGeneratorPage> createState() => _QrGeneratorPageState();
@@ -274,7 +280,17 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
     onOpenTerms: _showTerms,
     onPrimaryAction: _handlePrimaryAction,
     onOpenUrl: _openUrl,
+    onUploadPhoto: widget.photoPage == null ? null : _uploadPhoto,
   );
+
+  /// Off to My Profile, and a fresh look at the record on the way back — the
+  /// warning goes once the photo is on file.
+  Future<void> _uploadPhoto() async {
+    final page = widget.photoPage;
+    if (page == null) return;
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: page));
+    if (mounted) await _controller.refresh();
+  }
 
   Widget _preview({bool fill = false}) => QrPreviewPanel(
     controller: _controller,

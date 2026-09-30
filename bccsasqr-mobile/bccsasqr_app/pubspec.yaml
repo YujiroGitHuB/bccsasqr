@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.10.0+14
+version: 1.11.0+15
 
 environment:
   sdk: ^3.10.8
@@ -59,6 +59,12 @@ dependencies:
   # and the class lists they are checked against
   # (lib/services/offline_scan_store.dart).
   sqflite: ^2.4.2+1
+  # My Profile: the student's photo, from the camera or the gallery
+  # (lib/services/photo_picker.dart), and the cropped square encoded as
+  # the JPEG the server keeps (lib/views/profile/photo_crop_page.dart).
+  # Both already came in with flutter_zxing — no new native plugin.
+  image_picker: ^1.2.3
+  image: ^4.10.1
 
 dev_dependencies:
   flutter_test:
