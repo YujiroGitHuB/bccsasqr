@@ -271,7 +271,10 @@ when the account is disabled, and when the password is changed — by the owner
 in My Profile or by an admin. A dead token answers `401 unauthenticated`; the
 app goes back to its sign-in screen.
 
-`GET /auth/me` — who the token belongs to, plus `can_scan`.
+`GET /auth/me` — who the token belongs to, plus `can_scan`. The `user` object,
+here and wherever it comes back (`/auth/login`, `/scanner/subjects`), carries
+`can_manage_links`: whether the account has **Manage attendance links**, which
+decides whether the app shows its Links tab.
 
 ### Scanning
 
@@ -341,6 +344,56 @@ above 50.
 
 ---
 
+## Attendance links (signed in)
+
+The web's Attendance Links page (`pages/generate_attendance_link.php`) for the
+app's Links tab. Same token as the scanner; every call needs the **Manage
+attendance links** permission (`403 forbidden` without it). Every rule —
+which links exist, who may change one, what a time means — is in
+`includes/links.php` and `includes/late.php`, which the page's own endpoints
+(`pages/get_links_ajax.php`, `crud/set_link_*.php`, `crud/new_link_code.php`)
+call too, so a change made on either side shows on the other at once.
+
+| Endpoint | Body | Answers |
+|---|---|---|
+| `GET /links` | — | `{admin, links: [link…], rotated: [{old, new}]}` |
+| `POST /links/expiry` | `{short_code}` + one of `minutes`, `preset: "eod"`, `at: "2026-09-30T17:00"`, `clear: true` | `{link}` |
+| `POST /links/late` | `{short_code}` + one of `minutes`, `at: "08:15"`, `clear: true` | `{link}` |
+| `POST /links/renew` | `{short_code}` (optionally an expiry, as above) | `{old_code, link}` |
+
+A link:
+
+```json
+{ "short_code": "K7M2QP",
+  "url": "https://…/pages/daily_attendance.php?c=K7M2QP",
+  "expiry": { "at": "2026-09-30 17:00:00", "label": "Sep 30, 2026 5:00 PM",
+              "short": "5:00 PM", "in": 3600, "expired": false },
+  "late":   { "on": true, "in": 600, "label": "8:15 AM" },
+  "subject_code": "IT101", "subject_name": "Sample Subject", "section": "BSIT-2A",
+  "instructor": "…", "mine": true }
+```
+
+`in` is seconds from the server's now, measured by the database clock — the app
+counts down from it and never decides from the phone's clock whether a link is
+open. `expiry.at` is `null` for a link that never closes; `late.on` is only true
+for a cutoff set today (see `includes/late.php`). The change endpoints answer
+the same object without the subject fields.
+
+Opening the list does the upkeep, as opening the web page does (there is no
+cron): a class with enrolled students gets a link, one whose class is empty is
+deactivated, and one that expired on an earlier day is given a new code —
+listed in `rotated`, so the app can say that the old addresses stopped
+working. `renew` does the same on request; the new link has no expiry and no
+late cutoff until they are set.
+
+An admin sees every instructor's links (`admin: true`, `mine` marks their own)
+and may change any of them; an instructor sees and changes only their own —
+anyone else's answers `404 link_not_found`. A time the server will not take
+(already past, out of range, malformed) answers `422 not_changed` with a
+message safe to show as-is.
+
+---
+
 ## Error codes
 
 | HTTP | `code` | What the app should do |
@@ -364,6 +417,9 @@ above 50.
 | 403 | `account_disabled` | The account is disabled. |
 | 403 | `no_scanner_access` / `forbidden` | The account lacks the scanner (or record) permission. |
 | 503 | `scanner_locked` | The QR pages are locked in Settings. |
+| 404 | `link_not_found` | No such link, or not this account's to change. |
+| 422 | `not_changed` | The time was refused; show `message`. |
+| 500 | `links_failed` / `link_failed` | Database error — offer a retry. |
 
 ---
 
@@ -438,6 +494,7 @@ Which file does what in the app:
 | `handlers/terms.php` | `POST /terms/accept` |
 | `handlers/scanner.php` | `/auth/*`, `/scanner/*` |
 | `handlers/tracker.php` | `/students/{no}/attendance` |
+| `handlers/links.php` | `/links`, `/links/*` |
 | `lib/auth.php` | The scanner's token check and permissions |
 
 ## If you change the web page, change these
@@ -452,6 +509,7 @@ The API deliberately reads the same sources rather than copying them:
 | Photo requirement | `includes/photo_requirement.php` | `gen_photo_state()` |
 | QR colors and size | `QRgenerator/js/scriptv2.js` | `gen_qr_spec()` — **the one copy**; keep them in step |
 | Attendance history | `includes/attendance_history.php` | `handle_student_attendance()` and `Tracker/crud/att_display.php` |
+| Attendance links | `includes/links.php`, `includes/late.php` | `handlers/links.php` and the web page's endpoints |
 
 One known inconsistency, inherited from the web app: `fetch_students.js`
 validates `\d{3}-\d{3,4}` while `scriptv2.js` validates `\d{3}-\d{1,5}`. The API

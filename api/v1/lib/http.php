@@ -14,7 +14,7 @@
 //  endpoint ang tawagin nito, iisa ang paraan ng pagbasa.
 // ============================================================
 
-const API_VERSION = '1.1.0';
+const API_VERSION = '1.2.0';
 
 /**
  * Called once at the top of index.php.

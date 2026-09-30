@@ -171,6 +171,7 @@ class InMemoryScannerRepository implements ScannerRepository {
       name: 'Demo Instructor',
       email: email.trim(),
       role: 'instructor',
+      canManageLinks: true,
     );
   }
 

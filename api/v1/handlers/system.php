@@ -30,6 +30,12 @@ function handle_index(): void
             'POST ' . $base . '/scanner/scan',
             'GET  ' . $base . '/scanner/attendance',
             'POST ' . $base . '/scanner/late',
+            'GET  ' . $base . '/scanner/roster',
+            'POST ' . $base . '/scanner/sync',
+            'GET  ' . $base . '/links',
+            'POST ' . $base . '/links/expiry',
+            'POST ' . $base . '/links/late',
+            'POST ' . $base . '/links/renew',
         ],
         'docs' => $base . '/README.md',
     ]);

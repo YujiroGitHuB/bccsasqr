@@ -45,43 +45,19 @@ if ($short_code === '') {
 // Ang admin ay nakakagalaw ng kahit anong link; ang instructor ay
 // sa kanya lamang. (Ang deactivate_link.php ay wala pang ganitong
 // tseke.)
-if ($user_role === 'admin') {
-    $own = $conn->prepare("SELECT id FROM attendance_links_tbl WHERE short_code = ?");
-    $own->bind_param("s", $short_code);
-} else {
-    $own = $conn->prepare("SELECT id FROM attendance_links_tbl WHERE short_code = ? AND instructor_id = ?");
-    $own->bind_param("si", $short_code, $user_id);
-}
-$own->execute();
-
-if ($own->get_result()->num_rows === 0) {
+if (!link_owned($conn, $short_code, $user_id, $user_role === 'admin')) {
     echo json_encode(['success' => false, 'message' => 'Link not found, or it is not yours to change.']);
     exit();
 }
 
 // ── Ang bagong expiry ────────────────────────────────────────
-$clause = link_expiry_clause($_POST, $conn);
+$done = link_set_expiry($conn, $short_code, $_POST);
 
-if ($clause['error'] !== null) {
-    echo json_encode(['success' => false, 'message' => $clause['error']]);
+if ($done['error'] !== null) {
+    echo json_encode(['success' => false, 'message' => $done['error']]);
     exit();
 }
 
-if ($clause['sql'] === null) {
-    echo json_encode(['success' => false, 'message' => 'Nothing to set.']);
-    exit();
-}
-
-$stmt   = $conn->prepare("UPDATE attendance_links_tbl SET {$clause['sql']} WHERE short_code = ?");
-$types  = $clause['types'] . 's';
-$params = array_merge($clause['params'], [$short_code]);
-$stmt->bind_param($types, ...$params);
-
-if (!$stmt->execute()) {
-    echo json_encode(['success' => false, 'message' => 'Database error']);
-    exit();
-}
-
-echo json_encode(array_merge(['success' => true], link_state($conn, $short_code)));
+echo json_encode(array_merge(['success' => true], $done['state']));
 
 $conn->close();

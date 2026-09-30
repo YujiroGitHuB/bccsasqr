@@ -95,5 +95,8 @@ function api_user_resource(array $user): array
         'email'      => (string) $user['email'],
         'role'       => (string) $user['role'],
         'avatar_url' => api_asset_url($user['avatar'] ?? null),
+        // Whether the app shows the Links tab. Read fresh on every call
+        // that returns the user, like every other permission here.
+        'can_manage_links' => api_user_can($user, 'links.manage'),
     ];
 }

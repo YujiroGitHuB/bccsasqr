@@ -12,6 +12,7 @@ class ScannerUser {
     required this.email,
     required this.role,
     this.avatarUrl,
+    this.canManageLinks = false,
   });
 
   factory ScannerUser.fromJson(Map<String, dynamic> json) => ScannerUser(
@@ -20,6 +21,7 @@ class ScannerUser {
     email: json['email'] as String? ?? '',
     role: json['role'] as String? ?? 'instructor',
     avatarUrl: json['avatar_url'] as String?,
+    canManageLinks: json['can_manage_links'] == true,
   );
 
   final int id;
@@ -27,6 +29,11 @@ class ScannerUser {
   final String email;
   final String role;
   final String? avatarUrl;
+
+  /// "Manage attendance links" in the web's Manage Access — whether the
+  /// Links tab is shown. Missing from a server older than the tab, and from
+  /// a sign-in kept by an older app: no tab until the next answer says so.
+  final bool canManageLinks;
 
   /// An admin may scan for every subject, as on the web.
   bool get isAdmin => role == 'admin';
@@ -39,6 +46,7 @@ class ScannerUser {
     'email': email,
     'role': role,
     'avatar_url': avatarUrl,
+    'can_manage_links': canManageLinks,
   };
 }
 

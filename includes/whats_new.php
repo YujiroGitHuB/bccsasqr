@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-30.3';
+const WHATS_NEW_VERSION = '2026-09-30.4';
 
 /**
  * The changelog, newest release first.
@@ -74,9 +74,16 @@ function whats_new_releases(): array
             'id'      => '2026-09-30',
             'date'    => '2026-09-30',
             'icon'    => 'bi-cloud-slash',
-            'title'   => 'The app works offline: the scanner keeps scanning, and QR codes still open',
-            'summary' => 'The app’s scanner no longer stops when the signal does — scans are kept on the phone and sent by themselves when the internet is back, and the admin sees them marked Offline. Students’ QR codes open with no internet, the scanner’s Attendance List is shorter and searchable, its camera can be switched off between classes, and new users get a short tour when the app first opens.',
+            'title'   => 'The app gets attendance links, and works offline',
+            'summary' => 'Instructors can now hand out attendance links from the app too — the same links as the web page, with their QR codes, expiry and late marking. The app’s scanner no longer stops when the signal does — scans are kept on the phone and sent by themselves when the internet is back, and the admin sees them marked Offline. Students’ QR codes open with no internet, the scanner’s Attendance List is shorter and searchable, its camera can be switched off between classes, and new users get a short tour when the app first opens.',
             'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-link-45deg',
+                    'title' => 'Attendance links in the app',
+                    'text'  => 'The app has a new <strong>Links</strong> tab with the same links as <strong>Attendance Links</strong> here, one for each of your classes. Tap <strong>QR code</strong> to show it full screen for the class &mdash; the phone&rsquo;s screen stays on while it is up &mdash; or <strong>Copy</strong> and <strong>Share</strong> to send the link to the group chat. Set when it closes and when students start counting as late, or tap <strong>New link</strong> for the next class. It is one link, not two: a change made in the app shows on this page at once, and the other way round. The tab appears only for accounts allowed to manage attendance links. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'links.manage'],
+                ],
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-cloud-arrow-up',

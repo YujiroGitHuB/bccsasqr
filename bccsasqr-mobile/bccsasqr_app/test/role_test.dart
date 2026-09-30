@@ -3,8 +3,10 @@ import 'package:bccsasqr_app/controllers/role_controller.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/core/constants/whats_new_log.dart';
 import 'package:bccsasqr_app/models/app_role.dart';
+import 'package:bccsasqr_app/models/scanner_models.dart';
 import 'package:bccsasqr_app/services/app_info.dart';
 import 'package:bccsasqr_app/services/device_lock.dart';
+import 'package:bccsasqr_app/services/link_repository.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/role_store.dart';
 import 'package:bccsasqr_app/services/scan_feedback.dart';
@@ -32,6 +34,34 @@ class _NoExport implements QrExportService {
 }
 
 final _camera = find.byKey(const ValueKey('camera'), skipOffstage: false);
+
+/// The demo scanner, for an account whose "Manage attendance links" can be
+/// ticked and unticked between answers.
+class _Scanner extends InMemoryScannerRepository {
+  _Scanner() : super(latency: Duration.zero);
+
+  bool links = true;
+
+  ScannerUser _as(ScannerUser u) => ScannerUser(
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    canManageLinks: links,
+  );
+
+  @override
+  Future<ScannerUser> signIn({
+    required String email,
+    required String password,
+  }) async => _as(await super.signIn(email: email, password: password));
+
+  @override
+  Future<SubjectList> loadSubjects() async {
+    final list = await super.loadSubjects();
+    return (user: _as(list.user), subjects: list.subjects, date: list.date);
+  }
+}
 
 void main() {
   group('RoleController', () {
@@ -70,12 +100,12 @@ void main() {
   group('the app', () {
     late MemoryRoleStore roles;
     late List<bool> awake;
-    late InMemoryScannerRepository scanner;
+    late _Scanner scanner;
 
     setUp(() {
       roles = MemoryRoleStore();
       awake = [];
-      scanner = InMemoryScannerRepository(latency: Duration.zero);
+      scanner = _Scanner();
       final view =
           TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
       view.devicePixelRatio = 1.0;
@@ -96,6 +126,7 @@ void main() {
       exportService: _NoExport(),
       speech: const SilentSpeechService(),
       scannerRepository: scanner,
+      linkRepository: InMemoryLinkRepository(latency: Duration.zero),
       scanFeedback: const SilentScanFeedback(),
       settingsStore: MemorySettingsStore(),
       whatsNewStore: MemoryWhatsNewStore(WhatsNewLog.version),
@@ -411,6 +442,48 @@ void main() {
       expect(_camera, findsOneWidget);
       expect(awake, [true, false, true]);
       expect(find.text(ScannerStrings.readyToScan), findsOneWidget);
+    });
+
+    testWidgets('Links sits beside the scanner, with the class links', (
+      tester,
+    ) async {
+      await openAsInstructor(tester);
+
+      await tester.tap(find.byKey(const ValueKey('nav.links')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(LinksStrings.title), findsOneWidget);
+      expect(find.text('Introduction to Computing'), findsOneWidget);
+      // The camera is let go here too.
+      expect(_camera, findsNothing);
+    });
+
+    testWidgets('no Links tab without the permission, until it is given', (
+      tester,
+    ) async {
+      scanner.links = false;
+      await openAsInstructor(tester);
+
+      expect(find.byKey(const ValueKey('nav.links')), findsNothing);
+      expect(find.byKey(const ValueKey('nav.tracker')), findsOneWidget);
+
+      // Ticked on the web: the next answer about the account brings it.
+      scanner.links = true;
+      await tester.drag(find.text(ScannerStrings.title), const Offset(0, 400));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('nav.links')), findsOneWidget);
+
+      // And unticked again: gone with the next answer, and the bar does not
+      // jump back to it if it returns.
+      await tester.tap(find.byKey(const ValueKey('nav.links')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('nav.scanner')));
+      await tester.pumpAndSettle();
+      scanner.links = false;
+      await tester.drag(find.text(ScannerStrings.title), const Offset(0, 400));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('nav.links')), findsNothing);
+      expect(find.text(ScannerStrings.title), findsOneWidget);
     });
   });
 }

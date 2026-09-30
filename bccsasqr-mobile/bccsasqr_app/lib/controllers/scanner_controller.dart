@@ -368,6 +368,14 @@ class ScannerController extends ChangeNotifier {
     _notify();
   }
 
+  /// Another tab on this sign-in — Links — was refused for a dead token:
+  /// back to the sign-in form, as a refused scan would send it.
+  void sessionExpired() {
+    if (_disposed) return;
+    _signedOutByServer();
+    _notify();
+  }
+
   /// The server no longer accepts this phone's token.
   void _signedOutByServer() {
     // Already signed out on this phone — a request still in flight when it

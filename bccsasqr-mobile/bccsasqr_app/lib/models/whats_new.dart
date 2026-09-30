@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// The three parts of the app the changelog talks about. Nothing else is
-/// announced in the app: the web system's own changes are in its What's New.
-enum WhatsNewArea { qr, tracker, scanner }
+/// The parts of the app the changelog talks about. Nothing else is announced
+/// in the app: the web system's own changes are in its What's New.
+enum WhatsNewArea { qr, tracker, scanner, links }
 
 /// The web changelog's three item types (`includes/whats_new.php`).
 enum WhatsNewKind {

@@ -16,6 +16,7 @@ import 'services/connectivity.dart';
 import 'services/device_lock.dart';
 import 'services/http_scanner_repository.dart';
 import 'services/http_student_repository.dart';
+import 'services/link_repository.dart';
 import 'services/offline_scan_store.dart';
 import 'services/onboarding_store.dart';
 import 'services/qr_export_service.dart';
@@ -32,6 +33,7 @@ import 'services/whats_new_store.dart';
 import 'views/generator_splash.dart';
 import 'views/home_page.dart';
 import 'views/instructor_shell.dart';
+import 'views/links/links_page.dart';
 import 'views/onboarding_page.dart';
 import 'views/qr_generator_page.dart';
 import 'views/role_picker_page.dart';
@@ -57,6 +59,7 @@ class BccSasqrApp extends StatefulWidget {
     this.exportService,
     this.speech,
     this.scannerRepository,
+    this.linkRepository,
     this.scanFeedback,
     this.settingsStore,
     this.whatsNewStore,
@@ -80,6 +83,10 @@ class BccSasqrApp extends StatefulWidget {
   final QrExportService? exportService;
   final SpeechService? speech;
   final ScannerRepository? scannerRepository;
+
+  /// The Links tab's server. The scanner's when it serves links too (the
+  /// real one does); demo links otherwise.
+  final LinkRepository? linkRepository;
   final ScanFeedback? scanFeedback;
   final SettingsStore? settingsStore;
 
@@ -169,6 +176,15 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       (AppConfig.hasRemoteApi
           ? HttpScannerRepository(tokens: SecureTokenStore())
           : InMemoryScannerRepository());
+
+  /// The links ride on the scanner's sign-in, so the HTTP scanner serves
+  /// both — one token. Demo mode has its own two links.
+  late final LinkRepository _linkRepository =
+      widget.linkRepository ??
+      switch (_scannerRepository) {
+        final LinkRepository both => both,
+        _ => InMemoryLinkRepository(),
+      };
   late final ScanFeedback _scanFeedback =
       widget.scanFeedback ??
       DeviceScanFeedback(
@@ -312,7 +328,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         WhatsNewArea.qr => _generator,
         WhatsNewArea.tracker => _trackerPage,
         // Left out of [_studentAreas], so never asked for.
-        WhatsNewArea.scanner => null,
+        WhatsNewArea.scanner || WhatsNewArea.links => null,
       };
       if (builder == null) return;
       Navigator.of(context).push(MaterialPageRoute<void>(builder: builder));
@@ -333,6 +349,12 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         pendingScans: () => session.pendingCount,
         onSwitchRole: () => _switchRole(context),
         whatsNewBuilder: (context) => WhatsNewPage(
+          areas: {
+            WhatsNewArea.qr,
+            WhatsNewArea.scanner,
+            WhatsNewArea.tracker,
+            if (session.user?.canManageLinks ?? false) WhatsNewArea.links,
+          },
           onShown: _whatsNew.markSeen,
           // Back down to the bar, on the item's tab.
           onOpen: (area) {
@@ -341,6 +363,16 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
           },
         ),
         tourBuilder: _tour,
+      );
+
+  /// The Links tab. A token refused there signs the whole side out, as a
+  /// refused scan does.
+  Widget _linksPage(BuildContext context, ScannerController session) =>
+      LinksPage(
+        repository: _linkRepository,
+        exportService: _exportService,
+        onSignedOut: session.sessionExpired,
+        keepAwake: widget.keepAwake,
       );
 
   /// The whole instructor side sits behind the scanner's sign-in: until an
@@ -375,6 +407,9 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         scannerBuilder: scanner,
         trackerBuilder: _trackerPage,
         settingsBuilder: (context) => _instructorSettings(context, session),
+        linksBuilder: (context) => _linksPage(context, session),
+        account: session,
+        canManageLinks: () => session.user?.canManageLinks ?? false,
         whatsNew: _whatsNew,
       ),
     );

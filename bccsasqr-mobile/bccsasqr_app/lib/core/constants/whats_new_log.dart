@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/whats_new.dart';
 
-/// The app's What's New — only what changed in My QR Code, My Attendance and
-/// the Attendance Scanner. The web system keeps its own, fuller changelog in
+/// The app's What's New — only what changed in My QR Code, My Attendance, the
+/// Attendance Scanner and the attendance links. The web system keeps its own, fuller changelog in
 /// `includes/whats_new.php`; this one is written for the person holding the
 /// phone, so it leaves out the admin pages and the download page.
 ///
@@ -18,19 +18,34 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-30.3';
+  static const String version = '2026-09-30.4';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
       id: '2026-09-30',
       icon: Icons.cloud_off_rounded,
-      title: 'Scanning and your QR code, even with no internet',
+      title: 'Attendance links, and working with no internet',
       summary:
-          'The scanner keeps scanning when the signal drops and sends the '
-          'scans once you are back online. Your QR code opens with no '
-          'internet too. The scanner\'s list is shorter, and its camera can '
-          'be switched off between classes.',
+          'Instructors get their attendance links in the app, QR codes '
+          'included. The scanner keeps scanning when the signal drops and '
+          'sends the scans once you are back online. Your QR code opens with '
+          'no internet too. The scanner\'s list is shorter, and its camera '
+          'can be switched off between classes.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.links,
+          icon: Icons.link_rounded,
+          title: 'Your attendance links, in the app',
+          text:
+              'The new **Links** tab has the same attendance links as the web '
+              'page, one for each of your classes. Tap **QR code** to show it '
+              'full screen for the class — the screen stays on while it is '
+              'up — or **Copy** and **Share** to send the link to the group '
+              'chat. Set when it closes and when students start counting as '
+              'late, or tap **New link** for the next class. A change made '
+              'here shows on the web at once, and the other way round.',
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.added,
           area: WhatsNewArea.scanner,

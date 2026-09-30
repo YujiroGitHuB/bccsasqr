@@ -8,8 +8,8 @@ import '../core/utils/date_label.dart';
 import '../models/whats_new.dart';
 import 'widgets/surface_panel.dart';
 
-/// What changed in My QR Code, My Attendance and the scanner, newest first —
-/// the app's copy of the web's What's New timeline.
+/// What changed in My QR Code, My Attendance, the scanner and the links,
+/// newest first — the app's copy of the web's What's New timeline.
 class WhatsNewPage extends StatefulWidget {
   const WhatsNewPage({
     super.key,
@@ -21,8 +21,8 @@ class WhatsNewPage extends StatefulWidget {
 
   final List<WhatsNewRelease> releases;
 
-  /// The parts of the app this phone has. A student's has no scanner, so
-  /// its items and its filter are left out.
+  /// The parts of the app this phone has. A student's has no scanner and no
+  /// links, so their items and their filters are left out.
   final Set<WhatsNewArea> areas;
 
   /// Told once the page is on screen: opening it is reading it, so this is
@@ -43,7 +43,8 @@ enum _Filter {
   all(WhatsNewStrings.filterAll, null),
   qr(WhatsNewStrings.filterQr, WhatsNewArea.qr),
   tracker(WhatsNewStrings.filterTracker, WhatsNewArea.tracker),
-  scanner(WhatsNewStrings.filterScanner, WhatsNewArea.scanner);
+  scanner(WhatsNewStrings.filterScanner, WhatsNewArea.scanner),
+  links(WhatsNewStrings.filterLinks, WhatsNewArea.links);
 
   const _Filter(this.label, this.area);
 
@@ -303,6 +304,10 @@ class _Item extends StatelessWidget {
       WhatsNewArea.scanner => (
         WhatsNewStrings.areaScanner,
         WhatsNewStrings.openScanner,
+      ),
+      WhatsNewArea.links => (
+        WhatsNewStrings.areaLinks,
+        WhatsNewStrings.openLinks,
       ),
     };
 

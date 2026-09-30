@@ -48,62 +48,22 @@ if ($old_code === '') {
 }
 
 // ── Ang link ay dapat sa 'yo ─────────────────────────────────
-if ($user_role === 'admin') {
-    $own = $conn->prepare("SELECT id FROM attendance_links_tbl WHERE short_code = ?");
-    $own->bind_param("s", $old_code);
-} else {
-    $own = $conn->prepare("SELECT id FROM attendance_links_tbl WHERE short_code = ? AND instructor_id = ?");
-    $own->bind_param("si", $old_code, $user_id);
-}
-$own->execute();
-
-if ($own->get_result()->num_rows === 0) {
+if (!link_owned($conn, $old_code, $user_id, $user_role === 'admin')) {
     echo json_encode(['success' => false, 'message' => 'Link not found, or it is not yours to change.']);
     exit();
 }
 
-// ── Ang expiry ng BAGONG link ────────────────────────────────
-// Walang hiniling na oras → NULL. Hindi minana ang luma: lumipas na
-// iyon, kaya ipapanganak na patay ang bagong code.
-$clause = link_expiry_clause($_POST, $conn);
-
-if ($clause['error'] !== null) {
-    echo json_encode(['success' => false, 'message' => $clause['error']]);
-    exit();
-}
-
-$set    = $clause['sql'] ?? 'expires_at = NULL';
-$types  = $clause['types'];
-$params = $clause['params'];
-
-// A new session starts with no late cutoff, for the same reason it
-// does not inherit the expiry: the old one belongs to the old class.
-require_once __DIR__ . "/../includes/late.php";
-if (late_ready($conn)) {
-    $set .= ', late_after = NULL';
-}
-
 // ── Palitan ──────────────────────────────────────────────────
-// Kasama ang is_active = 1: maaaring pinatay ang link (manu-mano o
-// dahil nawalan ng enrolled na estudyante), at ang paghingi ng
-// bagong code ay malinaw na kahilingang buksang muli ito.
-$new_code = link_generate_code($conn);
+// Ang expiry ng BAGONG link (kung may hiniling), ang pag-alis ng
+// late cutoff at ang pagbubukas muli ay nasa link_renew() sa
+// includes/links.php — ang app ay tumatawag din doon.
+$done = link_renew($conn, $old_code, $_POST);
 
-$stmt = $conn->prepare("
-    UPDATE attendance_links_tbl
-    SET short_code = ?, is_active = 1, $set
-    WHERE short_code = ?
-");
-$stmt->bind_param('s' . $types . 's', ...array_merge([$new_code], $params, [$old_code]));
-
-if (!$stmt->execute()) {
-    echo json_encode(['success' => false, 'message' => 'Database error']);
+if ($done['error'] !== null) {
+    echo json_encode(['success' => false, 'message' => $done['error']]);
     exit();
 }
 
-echo json_encode(array_merge(
-    ['success' => true, 'old_code' => $old_code],
-    link_state($conn, $new_code)
-));
+echo json_encode(array_merge(['success' => true], $done['state']));
 
 $conn->close();

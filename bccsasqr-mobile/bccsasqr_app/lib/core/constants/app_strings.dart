@@ -503,7 +503,8 @@ abstract final class WhatsNewStrings {
   static const String open = 'What\'s New';
   static const String openUnread = 'What\'s New — new in this update';
   static const String intro =
-      'What changed in My QR Code, My Attendance and the Attendance Scanner.';
+      'What changed in My QR Code, My Attendance, the Attendance Scanner and '
+      'the attendance links.';
   static const String introStudent =
       'What changed in My QR Code and My Attendance.';
 
@@ -514,6 +515,7 @@ abstract final class WhatsNewStrings {
   static const String filterQr = 'QR Code';
   static const String filterTracker = 'Tracker';
   static const String filterScanner = 'Scanner';
+  static const String filterLinks = 'Links';
 
   // The chip on each item — the web's New / Improved / Fixed.
   static const String kindAdded = 'NEW';
@@ -524,9 +526,11 @@ abstract final class WhatsNewStrings {
   static const String areaQr = 'MY QR CODE';
   static const String areaTracker = 'MY ATTENDANCE';
   static const String areaScanner = 'SCANNER';
+  static const String areaLinks = 'LINKS';
   static const String openQr = 'Open My QR Code';
   static const String openTracker = 'Open My Attendance';
   static const String openScanner = 'Open the Scanner';
+  static const String openLinks = 'Open Links';
 
   // The student's home screen card, until the page is opened once. The
   // instructor's bar puts a dot on Settings instead.
@@ -566,10 +570,145 @@ abstract final class RoleStrings {
   static const String switchBody = 'Tap to choose again';
 }
 
+/// The Links tab — the web's Attendance Links page
+/// (`pages/generate_attendance_link.php`, `assets/js/generate_link.js`), in
+/// its words.
+abstract final class LinksStrings {
+  static const String title = 'Attendance Links';
+  static const String tagline =
+      'Short links and QR codes students open to record their own '
+      'attendance.';
+  static const String chipSameAsWeb = 'Same as the web';
+  static const String chipQr = 'QR for the class';
+
+  static const String listHeading = 'YOUR LINKS';
+  static const String listHeadingAdmin = 'ALL LINKS';
+  static const String searchHint = 'Search subject, section or instructor';
+  static const String allSections = 'All sections';
+  static const String ownerAll = 'All subjects';
+  static const String ownerMine = 'My subjects';
+  static const String ownerOthers = 'Others\'';
+  static const String mine = 'Mine';
+  static String count(int visible, int total) =>
+      visible == total ? '$total' : '$visible of $total';
+
+  static const String loadFailed = 'Could not load your attendance links.';
+  static const String retry = 'Try again';
+  static const String emptyTitle = 'No Subjects Available';
+  static const String emptyBody =
+      'No attendance links can be generated yet. An administrator needs to '
+      'assign your subjects and enroll students in them.';
+  static const String noMatchTitle = 'No matches found';
+  static const String noMatchBody =
+      'Try a different keyword or clear your filters.';
+
+  // The card.
+  static const String copy = 'Copy';
+  static const String copyLink = 'Copy link';
+  static const String share = 'Share';
+  static const String qr = 'QR code';
+  static const String more = 'More';
+  static const String openInBrowser = 'Open in browser';
+  static const String newLink = 'New link';
+  static const String extend = 'Extend';
+  static const String edit = 'Edit';
+  static const String set = 'Set';
+  static const String copied = 'Link copied';
+  static String copiedBody(String code) =>
+      'Paste it in your class group chat. Code $code.';
+  static String shareText(String subject, String section, String url) =>
+      'Attendance for $subject ($section): $url';
+
+  // The two time rows.
+  static const String closesLabel = 'Link closes';
+  static const String closedLabel = 'Link closed';
+  static const String noExpiry = 'No expiry';
+  static const String expired = 'Expired';
+  static const String closesInPrefix = 'in ';
+  static String closesIn(String left) => '$closesInPrefix$left';
+  static const String lateLabel = 'Late marking';
+  static const String lateOff = 'Off';
+  static const String lateOffMeta = 'all on time';
+  static const String onTimeUntilPrefix = 'On time until ';
+  static const String lateAfterPrefix = 'Late after ';
+  static String onTimeUntil(String time) => '$onTimeUntilPrefix$time';
+  static String lateAfter(String time) => '$lateAfterPrefix$time';
+
+  // The sheets that set them.
+  static const String expirySheetTitle = 'When the link closes';
+  static const String expiryIn = 'Close the link in…';
+  static const String expiryAt = '…or at a set time';
+  static const String endOfDay = 'End of day';
+  static const String pickDateTime = 'Pick date and time';
+  static const String removeExpiry = 'Remove expiry';
+  static const String lateSheetTitle = 'Late marking';
+  static const String lateIn = 'Students are on time for the next…';
+  static const String lateAt = '…or on time until';
+  static const String pickTime = 'Pick a time';
+  static const String removeLate = 'Remove late time';
+  static String minutes(int n) => '$n min';
+  static String hours(int n) => '${n}h';
+
+  // What the island says after each change.
+  static const String expirySet = 'Expiry updated';
+  static String expirySetBody(String label) => 'Closes $label';
+  static const String expiryRemoved = 'Expiry removed';
+  static const String expiryRemovedBody =
+      'This link stays open until you set a time or issue a new link.';
+  static const String expiryFailed = 'Could not set expiry';
+  static const String lateSet = 'Late time set';
+  static String lateSetBody(String label) =>
+      'On time until $label. Submissions after that are marked late.';
+  static String latePassed(String label) => '$label has already passed';
+  static const String latePassedBody =
+      'Everyone who submits from now on will be marked late. If you meant a '
+      'later time — PM instead of AM — tap Edit and set it again.';
+  static const String lateRemoved = 'Late time removed';
+  static const String lateRemovedBody =
+      'Late marking is off. Every submission counts as on time.';
+  static const String lateFailed = 'Could not set late time';
+  static const String renewed = 'New link issued';
+  static String renewedBody(String code) =>
+      'The old link and QR code no longer work. New code: $code. Set when '
+      'it closes before you send it.';
+  static const String renewFailed = 'Could not issue a new link';
+  static String rotatedTitle(int n) =>
+      n == 1 ? 'One link was renewed' : '$n links were renewed';
+  static const String rotatedBody =
+      'They expired on an earlier day, so they were given fresh codes. The '
+      'old links no longer work — copy the new ones before sending.';
+
+  // Questions before a change that cannot be taken back.
+  static const String renewConfirmTitle = 'Issue a new link?';
+  static const String renewConfirmBody =
+      'The current link and its QR code stop working at once, for anyone '
+      'who has them — group chat, screenshot, printout. Use this for a new '
+      'class.';
+  static const String extendConfirmTitle = 'Extend this same link?';
+  static String extendConfirmBody(int hours) =>
+      'Closed about $hours hour${hours == 1 ? '' : 's'} ago. Anyone who '
+      'already has this link — group chat, screenshot — can use it again. '
+      'For a new class, choose New link instead.';
+  static const String extendConfirmYes = 'Yes, extend';
+  static const String cancel = 'Cancel';
+
+  // The QR code, full screen, for the class.
+  static const String qrHint =
+      'Students scan this to open the attendance form.';
+  static const String qrShare = 'Share QR';
+  static const String qrShareFailed = 'Could not share the QR code.';
+  static String qrCloses(String time) => 'Closes $time';
+  static const String qrClosed =
+      'This link is closed — students cannot use it. Extend it or issue a '
+      'new link first.';
+  static const String close = 'Close';
+}
+
 /// The instructor's bottom bar.
 abstract final class NavStrings {
   static const String qr = 'QR Code';
   static const String scanner = 'Scanner';
+  static const String links = 'Links';
   static const String tracker = 'Attendance';
   static const String settings = 'Settings';
   static const String settingsUnread = 'Settings — new in this update';

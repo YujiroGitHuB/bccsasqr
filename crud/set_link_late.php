@@ -18,7 +18,6 @@ session_start();
 include __DIR__ . "/../includes/db_connect.php";
 include __DIR__ . "/../includes/permissions.php";
 require_once __DIR__ . "/../includes/links.php";
-require_once __DIR__ . "/../includes/late.php";
 
 header('Content-Type: application/json');
 
@@ -43,48 +42,19 @@ if ($short_code === '') {
 // ── The link must be yours ───────────────────────────────────
 // Same rule as crud/set_link_expiry.php: an admin can change any
 // link, an instructor only their own.
-if ($user_role === 'admin') {
-    $own = $conn->prepare("SELECT id FROM attendance_links_tbl WHERE short_code = ?");
-    $own->bind_param("s", $short_code);
-} else {
-    $own = $conn->prepare("SELECT id FROM attendance_links_tbl WHERE short_code = ? AND instructor_id = ?");
-    $own->bind_param("si", $short_code, $user_id);
-}
-$own->execute();
-
-if ($own->get_result()->num_rows === 0) {
+if (!link_owned($conn, $short_code, $user_id, $user_role === 'admin')) {
     echo json_encode(['success' => false, 'message' => 'Link not found, or it is not yours to change.']);
     exit();
 }
 
-if (!late_ready($conn)) {
-    echo json_encode(['success' => false, 'message' => 'Late marking is not available yet — the database could not be updated.']);
-    exit();
-}
-
 // ── The new cutoff ───────────────────────────────────────────
-$clause = late_clause($_POST);
+$done = link_set_late($conn, $short_code, $_POST);
 
-if ($clause['error'] !== null) {
-    echo json_encode(['success' => false, 'message' => $clause['error']]);
+if ($done['error'] !== null) {
+    echo json_encode(['success' => false, 'message' => $done['error']]);
     exit();
 }
 
-if ($clause['sql'] === null) {
-    echo json_encode(['success' => false, 'message' => 'Nothing to set.']);
-    exit();
-}
-
-$stmt   = $conn->prepare("UPDATE attendance_links_tbl SET {$clause['sql']} WHERE short_code = ?");
-$types  = $clause['types'] . 's';
-$params = array_merge($clause['params'], [$short_code]);
-$stmt->bind_param($types, ...$params);
-
-if (!$stmt->execute()) {
-    echo json_encode(['success' => false, 'message' => 'Database error']);
-    exit();
-}
-
-echo json_encode(array_merge(['success' => true], link_state($conn, $short_code)));
+echo json_encode(array_merge(['success' => true], $done['state']));
 
 $conn->close();

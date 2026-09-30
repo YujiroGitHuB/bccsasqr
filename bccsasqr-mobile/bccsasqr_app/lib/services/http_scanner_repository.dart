@@ -4,8 +4,10 @@ import 'package:http/http.dart' as http;
 
 import '../core/config/app_config.dart';
 import '../core/utils/network_error.dart';
+import '../models/attendance_link.dart';
 import '../models/offline_scan.dart';
 import '../models/scanner_models.dart';
+import 'link_repository.dart';
 import 'scanner_repository.dart';
 import 'token_store.dart';
 
@@ -17,7 +19,10 @@ import 'token_store.dart';
 /// `X-Auth-Token` on every call after. A 401 means that token is dead —
 /// signed out, idle too long, or the password changed — so it is dropped here
 /// and the controller goes back to the sign-in screen.
-class HttpScannerRepository implements ScannerRepository {
+///
+/// The Links tab rides on the same sign-in (`api/v1/handlers/links.php`), so
+/// this is its client too — one token, one place that drops it.
+class HttpScannerRepository implements ScannerRepository, LinkRepository {
   HttpScannerRepository({
     required TokenStore tokens,
     http.Client? client,
@@ -183,6 +188,62 @@ class HttpScannerRepository implements ScannerRepository {
           if (r is Map<String, dynamic> && r['id'] is String)
             SyncOutcome.fromJson(r),
     ];
+  }
+
+  // ----------------------------------------------------------------- links
+
+  @override
+  Future<LinkList> loadLinks() async {
+    final data = await _get('links');
+    final links = data['links'];
+    final rotated = data['rotated'];
+    return (
+      links: [
+        if (links is List)
+          for (final l in links)
+            if (l is Map<String, dynamic> && l['short_code'] is String)
+              AttendanceLink.fromJson(l),
+      ],
+      rotated: [
+        if (rotated is List)
+          for (final r in rotated)
+            if (r case {'old': final String old, 'new': final String now})
+              (oldCode: old, newCode: now),
+      ],
+      admin: data['admin'] == true,
+    );
+  }
+
+  @override
+  Future<LinkState> setExpiry(String shortCode, LinkTime time) async =>
+      _linkState(
+        await _post('links/expiry', {'short_code': shortCode, ...time.json}),
+      );
+
+  @override
+  Future<LinkState> setLate(String shortCode, LinkTime time) async =>
+      _linkState(
+        await _post('links/late', {'short_code': shortCode, ...time.json}),
+      );
+
+  @override
+  Future<RenewedLink> renewLink(String shortCode) async {
+    final data = await _post('links/renew', {'short_code': shortCode});
+    return (
+      oldCode: data['old_code'] as String? ?? shortCode,
+      link: _linkState(data),
+    );
+  }
+
+  LinkState _linkState(Map<String, dynamic> data) {
+    final link = data['link'];
+    if (link is! Map<String, dynamic> || link['short_code'] is! String) {
+      throw const ScannerException(
+        'Unexpected response from the server.',
+        code: 'bad_response',
+      );
+    }
+    return LinkState.fromJson(link);
   }
 
   // ------------------------------------------------------------- transport
