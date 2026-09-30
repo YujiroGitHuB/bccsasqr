@@ -32,4 +32,10 @@ abstract final class DateLabel {
 
   /// `Monday`.
   static String weekday(DateTime d) => _weekdays[d.weekday - 1];
+
+  /// `Wed, Sep 30` — the instructor's Home, where the year goes without
+  /// saying.
+  static String short(DateTime d) =>
+      '${_weekdays[d.weekday - 1].substring(0, 3)}, '
+      '${_months[d.month - 1]} ${d.day}';
 }

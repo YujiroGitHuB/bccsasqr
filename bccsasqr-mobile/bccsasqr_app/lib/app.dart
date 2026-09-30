@@ -37,6 +37,8 @@ import 'services/tracker_repository.dart';
 import 'services/whats_new_store.dart';
 import 'views/generator_splash.dart';
 import 'views/home_page.dart';
+import 'views/instructor_home.dart';
+import 'views/instructor_menu.dart';
 import 'views/instructor_shell.dart';
 import 'views/links/links_page.dart';
 import 'views/links/links_splash.dart';
@@ -246,10 +248,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   );
 
   /// The instructor's bottom bar. Held here rather than in the bar, so What's
-  /// New — pushed over it from the Settings tab — can open a tab.
-  final ValueNotifier<InstructorTab> _tab = ValueNotifier(
-    InstructorTab.scanner,
-  );
+  /// New — pushed over it from Home, the Menu or Settings — can open a tab.
+  final ValueNotifier<InstructorTab> _tab = ValueNotifier(InstructorTab.home);
 
   late bool _splashing = widget.showSplash;
 
@@ -401,8 +401,27 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   );
 
   // ── Instructor ──────────────────────────────────────────────────────
-  // The sign-in, then the bottom bar. Settings is one of its tabs, so
-  // nothing is pushed over the scanner but What's New.
+  // The sign-in, then the bottom bar, opening on Home. Every part of the
+  // side is a tab of it; only What's New, the tour, today's list and the
+  // questions are opened over it.
+
+  /// What's New on an instructor's phone — the same page from Home, the Menu
+  /// and Settings, each item opening its tab of the bar.
+  Widget _instructorWhatsNew(BuildContext context, ScannerController session) =>
+      WhatsNewPage(
+        areas: {
+          WhatsNewArea.qr,
+          WhatsNewArea.scanner,
+          WhatsNewArea.tracker,
+          if (session.user?.canManageLinks ?? false) WhatsNewArea.links,
+        },
+        onShown: _whatsNew.markSeen,
+        // Back down to the bar, on the item's tab.
+        onOpen: (area) {
+          Navigator.of(context).pop();
+          _tab.value = InstructorTab.of(area);
+        },
+      );
 
   Widget _instructorSettings(
     BuildContext context,
@@ -418,20 +437,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     onSignOut: session.signOut,
     pendingScans: () => session.pendingCount,
     onSwitchRole: () => _switchRole(context),
-    whatsNewBuilder: (context) => WhatsNewPage(
-      areas: {
-        WhatsNewArea.qr,
-        WhatsNewArea.scanner,
-        WhatsNewArea.tracker,
-        if (session.user?.canManageLinks ?? false) WhatsNewArea.links,
-      },
-      onShown: _whatsNew.markSeen,
-      // Back down to the bar, on the item's tab.
-      onOpen: (area) {
-        Navigator.of(context).pop();
-        _tab.value = InstructorTab.of(area);
-      },
-    ),
+    whatsNewBuilder: (context) => _instructorWhatsNew(context, session),
     tourBuilder: _tour,
   );
 
@@ -467,24 +473,36 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       deviceLock: widget.deviceLock ?? LocalAuthDeviceLock(),
       lockStore: widget.scannerLockStore ?? SharedPrefsScannerLockStore(),
       lockClock: widget.scannerLockClock,
-      // A fresh bar opens on the scanner, and the phone is now known to be
-      // an instructor's.
+      // A fresh bar opens on Home, and the phone is now known to be an
+      // instructor's.
       onSignedIn: () {
-        _tab.value = InstructorTab.scanner;
+        _tab.value = InstructorTab.home;
         _role.choose(AppRole.instructor);
       },
       onLeave: _role.clear,
       home: (context, scanner, session, lock) => InstructorShell(
         tab: _tab,
+        homeBuilder: (context) => InstructorHome(
+          session: session,
+          onOpen: (tab) => _tab.value = tab,
+          whatsNewBuilder: (context) => _instructorWhatsNew(context, session),
+          whatsNew: _whatsNew,
+        ),
         generatorBuilder: _generator,
         scannerBuilder: scanner,
         trackerBuilder: _trackerPage,
         settingsBuilder: (context) =>
             _instructorSettings(context, session, lock),
         linksBuilder: (context) => _linksPage(context, session),
+        menuBuilder: (context, menu) => InstructorMenu(
+          menu: menu,
+          session: session,
+          whatsNewBuilder: (context) => _instructorWhatsNew(context, session),
+          whatsNew: _whatsNew,
+          tourBuilder: _tour,
+        ),
         account: session,
         canManageLinks: () => session.user?.canManageLinks ?? false,
-        whatsNew: _whatsNew,
       ),
     );
   }

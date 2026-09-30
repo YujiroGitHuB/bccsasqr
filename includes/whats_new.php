@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-30.8';
+const WHATS_NEW_VERSION = '2026-09-30.9';
 
 /**
  * The changelog, newest release first.
@@ -75,7 +75,7 @@ function whats_new_releases(): array
             'date'    => '2026-09-30',
             'icon'    => 'bi-cloud-slash',
             'title'   => 'Student photos from the app, attendance links, and offline scanning',
-            'summary' => 'Students can now upload their own photo from the app, and it goes straight to the scanner. Instructors can now hand out attendance links from the app too — the same links as the web page, with their QR codes, expiry and late marking. The app’s scanner no longer stops when the signal does — scans are kept on the phone and sent by themselves when the internet is back, and the admin sees them marked Offline. Students’ QR codes open with no internet, the scanner’s Attendance List is shorter and searchable, its camera can be switched off between classes, and new users get a short tour when the app first opens.',
+            'summary' => 'Students can now upload their own photo from the app, and it goes straight to the scanner. The app’s instructor side now opens on a Home screen with the day’s scans at a glance, and a Menu in the middle of the bar. Instructors can now hand out attendance links from the app too — the same links as the web page, with their QR codes, expiry and late marking. The app’s scanner no longer stops when the signal does — scans are kept on the phone and sent by themselves when the internet is back, and the admin sees them marked Offline. Students’ QR codes open with no internet, the scanner’s Attendance List is shorter and searchable, its camera can be switched off between classes, and new users get a short tour when the app first opens.',
             'items'   => [
                 [
                     'type'  => 'new',
@@ -92,10 +92,10 @@ function whats_new_releases(): array
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
                 [
-                    'type'  => 'improved',
-                    'icon'  => 'bi-qr-code-scan',
-                    'title' => 'The app’s instructor bar has the scanner in the middle',
-                    'text'  => 'On the instructor side of the app, the bar at the bottom is now a rounded dock with <strong>Scanner</strong> as a big round button in the middle, so scanning is one tap away from any tab. <strong>QR Code</strong> and <strong>Links</strong> sit on its left, <strong>Attendance</strong> and <strong>Settings</strong> on its right. Anyone with the app already installed gets this by downloading it again.',
+                    'type'  => 'new',
+                    'icon'  => 'bi-grid-1x2',
+                    'title' => 'The app’s instructor side opens on a Home screen',
+                    'text'  => 'Signing in to the app now opens <strong>Home</strong>: how many you scanned today, on time and late, each subject with its last scan, and the newest scans &mdash; read from the same list as the scanner, so a scan counts there the moment it is made. <strong>Scan now</strong> goes straight to the scanner. The round <strong>Menu</strong> button in the middle of the bar opens everything else: <strong>QR Code</strong>, <strong>Links</strong>, <strong>Attendance</strong>, <strong>Today&rsquo;s scans</strong>, What&rsquo;s New, Settings and <strong>Sign out</strong>. <strong>Home</strong>, <strong>Scanner</strong>, <strong>Attendance</strong> and <strong>Settings</strong> stay on the bar. Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
                 [
@@ -109,7 +109,7 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-link-45deg',
                     'title' => 'Attendance links in the app',
-                    'text'  => 'The app has a new <strong>Links</strong> tab with the same links as <strong>Attendance Links</strong> here, one for each of your classes. Tap <strong>QR code</strong> to show it full screen for the class &mdash; the phone&rsquo;s screen stays on while it is up &mdash; or <strong>Copy</strong> and <strong>Share</strong> to send the link to the group chat. Set when it closes and when students start counting as late, or tap <strong>New link</strong> for the next class. It is one link, not two: a change made in the app shows on this page at once, and the other way round. The tab appears only for accounts allowed to manage attendance links. Anyone with the app already installed gets this by downloading it again.',
+                    'text'  => 'The app has a new <strong>Links</strong>, in its <strong>Menu</strong>, with the same links as <strong>Attendance Links</strong> here, one for each of your classes. Tap <strong>QR code</strong> to show it full screen for the class &mdash; the phone&rsquo;s screen stays on while it is up &mdash; or <strong>Copy</strong> and <strong>Share</strong> to send the link to the group chat. Set when it closes and when students start counting as late, or tap <strong>New link</strong> for the next class. It is one link, not two: a change made in the app shows on this page at once, and the other way round. It appears only for accounts allowed to manage attendance links. Anyone with the app already installed gets this by downloading it again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'links.manage'],
                 ],
                 [

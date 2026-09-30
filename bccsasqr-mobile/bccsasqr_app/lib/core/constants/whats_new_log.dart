@@ -18,7 +18,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-30.7';
+  static const String version = '2026-09-30.8';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -27,14 +27,29 @@ abstract final class WhatsNewLog {
       title: 'Your photo, attendance links, and working offline',
       summary:
           'Students can add their own photo in the app, and are greeted by '
-          'name and face on the home screen. Instructors get a new bar with '
-          'Scan in the middle, and their '
-          'attendance links in the app, QR codes '
+          'name and face on the home screen. Instructors now open on a Home '
+          'screen with today\'s scans at a glance and a Menu in the middle '
+          'of the bar, and have their attendance links in the app, QR codes '
           'included. The scanner keeps scanning when the signal drops and '
           'sends the scans once you are back online. Your QR code opens with '
           'no internet too. The scanner\'s list is shorter, and its camera '
           'can be switched off between classes.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.scanner,
+          icon: Icons.space_dashboard_outlined,
+          title: 'Home, with a Menu in the middle',
+          text:
+              'The app now opens on **Home**: how many you scanned today, on '
+              'time and late, each subject with its last scan, and the newest '
+              'scans. **Scan now** takes you straight to the scanner. The '
+              'round **Menu** button in the middle of the bar opens everything '
+              'else — **QR Code**, **Links**, **Attendance**, **Today\'s '
+              'scans**, What\'s New, Settings and **Sign out**. **Home**, '
+              '**Scanner**, **Attendance** and **Settings** stay on the bar.',
+          link: false,
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.improved,
           area: WhatsNewArea.scanner,
@@ -46,17 +61,6 @@ abstract final class WhatsNewLog {
               'subjects and ID — the **Fingerprint lock** switch and '
               '**Sign out** are all in **Settings → Account**.',
           link: false,
-        ),
-        WhatsNewItem(
-          kind: WhatsNewKind.improved,
-          area: WhatsNewArea.scanner,
-          icon: Icons.qr_code_scanner_rounded,
-          title: 'Scan, in the middle of the bar',
-          text:
-              'The tabs now sit on a rounded bar at the bottom, with **Scanner** '
-              'as the big round button in the middle: one tap back to scanning '
-              'from any tab. **QR Code** and **Links** are on its left, '
-              '**Attendance** and **Settings** on its right.',
         ),
         WhatsNewItem(
           kind: WhatsNewKind.added,
@@ -79,8 +83,8 @@ abstract final class WhatsNewLog {
           icon: Icons.link_rounded,
           title: 'Your attendance links, in the app',
           text:
-              'The new **Links** tab has the same attendance links as the web '
-              'page, one for each of your classes. Tap **QR code** to show it '
+              'The new **Links**, in the **Menu**, has the same attendance '
+              'links as the web page, one for each of your classes. Tap **QR code** to show it '
               'full screen for the class — the screen stays on while it is '
               'up — or **Copy** and **Share** to send the link to the group '
               'chat. Set when it closes and when students start counting as '

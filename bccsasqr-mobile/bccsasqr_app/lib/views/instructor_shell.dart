@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../controllers/whats_new_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../models/whats_new.dart';
 import 'widgets/press_scale.dart';
 
-/// The instructor's tabs. On the bar the scanner sits in the middle, with the
-/// others either side of it — see [InstructorDock].
+/// The instructor's tabs. Home, Scanner, Attendance and Settings sit on the
+/// bar, two either side of the Menu button — see [InstructorDock]. QR Code
+/// and Links are opened from the Menu and from Home's shortcuts, with the bar
+/// still under them.
 enum InstructorTab {
-  qr,
+  home,
   scanner,
+  qr,
   links,
   tracker,
   settings;
+
+  /// On the bar itself, rather than behind the Menu.
+  bool get onBar => this != qr && this != links;
 
   /// Where a What's New item about [area] opens.
   static InstructorTab of(WhatsNewArea area) => switch (area) {
@@ -27,9 +32,40 @@ enum InstructorTab {
   };
 }
 
-/// An instructor's phone: My QR Code, the scanner, the attendance links, My
-/// Attendance and Settings on a bottom bar, opening on the scanner. Links is
-/// there only for an account allowed to manage them, as on the web.
+/// What the bar hands the Menu's panel: how far open it is, the tabs this
+/// account has, and the ways out of it.
+@immutable
+class MenuHandle {
+  const MenuHandle({
+    required this.shown,
+    required this.tabs,
+    required this.open,
+    required this.close,
+  });
+
+  /// 0 closed → 1 open. The panel's pieces arrive along it, so they are still
+  /// the moment the panel is.
+  final Animation<double> shown;
+
+  /// The tabs this account has — Links only with the permission.
+  final List<InstructorTab> tabs;
+
+  /// Closes the Menu and shows [tab].
+  final ValueChanged<InstructorTab> open;
+
+  /// Closes the Menu, for an item that opens a page, a sheet or a question
+  /// over the bar.
+  final VoidCallback close;
+}
+
+/// Builds the Menu's panel.
+typedef InstructorMenuBuilder =
+    Widget Function(BuildContext context, MenuHandle menu);
+
+/// An instructor's phone: Home, the scanner, Attendance and Settings on a
+/// bottom bar, opening on Home, with the Menu in the middle of it — the way
+/// GoTyme puts its menu between the tabs. QR Code and Links open from the
+/// Menu; Links only for an account allowed to manage them, as on the web.
 ///
 /// Each tab is built the first time it is opened — its opening splash plays
 /// then, once — and kept after that, so a subject picked in the scanner is
@@ -43,60 +79,74 @@ class InstructorShell extends StatefulWidget {
   const InstructorShell({
     super.key,
     required this.tab,
+    required this.homeBuilder,
     required this.generatorBuilder,
     required this.scannerBuilder,
     required this.trackerBuilder,
     required this.settingsBuilder,
     this.linksBuilder,
+    this.menuBuilder,
     this.account,
     this.canManageLinks,
-    this.whatsNew,
   });
 
   final ValueNotifier<InstructorTab> tab;
+  final WidgetBuilder homeBuilder;
   final WidgetBuilder generatorBuilder;
   final WidgetBuilder scannerBuilder;
   final WidgetBuilder trackerBuilder;
   final WidgetBuilder settingsBuilder;
 
-  /// The Links tab — shown while [canManageLinks] says so, asked again each
+  /// The Links tab — there while [canManageLinks] says so, asked again each
   /// time [account] changes: the permission comes back with every refresh of
   /// the scanner's subjects, so unticking it on the web takes the tab away.
   final WidgetBuilder? linksBuilder;
   final Listenable? account;
   final bool Function()? canManageLinks;
 
-  /// Puts a dot on Settings while this phone has not opened the newest
-  /// What's New — the student's home screen card, in the bar.
-  final WhatsNewController? whatsNew;
+  /// What the Menu button opens. No button without it.
+  final InstructorMenuBuilder? menuBuilder;
 
   @override
   State<InstructorShell> createState() => _InstructorShellState();
 }
 
-class _InstructorShellState extends State<InstructorShell> {
+class _InstructorShellState extends State<InstructorShell>
+    with SingleTickerProviderStateMixin {
   final Set<InstructorTab> _built = {};
   late bool _linksShown = _canLinks;
+
+  /// The Menu's panel, opening and closing. Made in initState, not lazily: a
+  /// session that never opens the Menu would first make it in dispose.
+  late final AnimationController _menu;
+
+  /// Asked for open — ahead of [_menu], which is still on its way.
+  bool _menuOpen = false;
 
   bool get _canLinks =>
       widget.linksBuilder != null && (widget.canManageLinks?.call() ?? false);
 
-  /// The tabs on the bar, left to right.
+  /// The tabs this account has, in order.
   List<InstructorTab> get _tabs => [
     for (final tab in InstructorTab.values)
       if (tab != InstructorTab.links || _linksShown) tab,
   ];
 
-  /// The selected tab — the scanner, when the one asked for is not on the
-  /// bar (What's New opening Links for an account without it).
+  /// The selected tab — Home, when the one asked for is not there (What's
+  /// New opening Links for an account without it).
   InstructorTab get _current {
     final tab = widget.tab.value;
-    return _tabs.contains(tab) ? tab : InstructorTab.scanner;
+    return _tabs.contains(tab) ? tab : InstructorTab.home;
   }
 
   @override
   void initState() {
     super.initState();
+    _menu = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+      reverseDuration: const Duration(milliseconds: 260),
+    )..addStatusListener(_onMenuStatus);
     widget.tab.addListener(_onTab);
     widget.account?.addListener(_onAccount);
   }
@@ -119,6 +169,7 @@ class _InstructorShellState extends State<InstructorShell> {
   void dispose() {
     widget.tab.removeListener(_onTab);
     widget.account?.removeListener(_onAccount);
+    _menu.dispose();
     super.dispose();
   }
 
@@ -128,10 +179,10 @@ class _InstructorShellState extends State<InstructorShell> {
     final show = _canLinks;
     if (show == _linksShown) return;
     setState(() => _linksShown = show);
-    // Taken away while picked (only What's New can pick it unseen): the
-    // scanner, rather than Links reappearing on its own later.
+    // Taken away while open: back Home, rather than Links reappearing on its
+    // own later.
     if (!show && widget.tab.value == InstructorTab.links) {
-      widget.tab.value = InstructorTab.scanner;
+      widget.tab.value = InstructorTab.home;
     }
   }
 
@@ -142,7 +193,27 @@ class _InstructorShellState extends State<InstructorShell> {
     setState(() {});
   }
 
+  /// Closed all the way: the panel leaves the tree, so nothing on it can be
+  /// focused or read out while it is not there.
+  void _onMenuStatus(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed && mounted) setState(() {});
+  }
+
+  void _setMenu(bool open) {
+    if (open == _menuOpen) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _menuOpen = open);
+    open ? _menu.forward() : _menu.reverse();
+  }
+
+  /// A tab picked on the bar or in the Menu: the Menu goes with it.
+  void _select(InstructorTab tab) {
+    _setMenu(false);
+    widget.tab.value = tab;
+  }
+
   WidgetBuilder _builder(InstructorTab tab) => switch (tab) {
+    InstructorTab.home => widget.homeBuilder,
     InstructorTab.qr => widget.generatorBuilder,
     InstructorTab.scanner => widget.scannerBuilder,
     InstructorTab.links => widget.linksBuilder!,
@@ -155,36 +226,138 @@ class _InstructorShellState extends State<InstructorShell> {
     final tabs = _tabs;
     final current = _current;
     _built.add(current);
+    final menu = widget.menuBuilder;
+    final menuUp = menu != null && (_menuOpen || !_menu.isDismissed);
 
-    // Back from any other tab goes to the scanner first, then out.
+    // Back closes the Menu first, then goes Home from any other tab, then out.
     return PopScope(
-      canPop: current == InstructorTab.scanner,
+      canPop: !_menuOpen && current == InstructorTab.home,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) widget.tab.value = InstructorTab.scanner;
+        if (didPop) return;
+        if (_menuOpen) {
+          _setMenu(false);
+        } else {
+          widget.tab.value = InstructorTab.home;
+        }
       },
       child: Scaffold(
-        body: IndexedStack(
-          index: tabs.indexOf(current),
+        body: Stack(
           children: [
-            // Keyed, so a tab keeps its state when Links comes or goes
-            // beside it.
-            for (final tab in tabs)
-              TickerMode(
-                key: ValueKey(tab),
-                enabled: tab == current,
-                child: _built.contains(tab)
-                    ? Builder(builder: _builder(tab))
-                    : const SizedBox.shrink(),
+            IndexedStack(
+              index: tabs.indexOf(current),
+              children: [
+                // Keyed, so a tab keeps its state when Links comes or goes
+                // beside it.
+                for (final tab in tabs)
+                  TickerMode(
+                    key: ValueKey(tab),
+                    enabled: tab == current,
+                    child: _built.contains(tab)
+                        ? Builder(builder: _builder(tab))
+                        : const SizedBox.shrink(),
+                  ),
+              ],
+            ),
+            if (menuUp) ...[
+              Positioned.fill(
+                child: IgnorePointer(
+                  ignoring: !_menuOpen,
+                  child: KeyedSubtree(
+                    key: const ValueKey('menu.scrim'),
+                    child: AnimatedModalBarrier(
+                      color: ColorTween(
+                        begin: menuScrim(context).withValues(alpha: 0),
+                        end: menuScrim(context),
+                      ).animate(_menu),
+                      dismissible: true,
+                      semanticsLabel: NavStrings.menuClose,
+                      onDismiss: () => _setMenu(false),
+                    ),
+                  ),
+                ),
               ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  ignoring: !_menuOpen,
+                  child: _MenuPanel(
+                    shown: _menu,
+                    child: Builder(
+                      builder: (context) => menu(
+                        context,
+                        MenuHandle(
+                          shown: _menu,
+                          tabs: tabs,
+                          open: _select,
+                          close: () => _setMenu(false),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
-        bottomNavigationBar: ListenableBuilder(
-          listenable: widget.whatsNew ?? const _Silent(),
-          builder: (context, _) => InstructorDock(
-            tabs: tabs,
-            current: current,
-            onSelected: (tab) => widget.tab.value = tab,
-            unread: widget.whatsNew?.unread ?? false,
+        bottomNavigationBar: InstructorDock(
+          current: current,
+          onSelected: _select,
+          onMenu: menu == null ? null : () => _setMenu(!_menuOpen),
+          menuOpen: _menuOpen,
+          menu: _menu,
+        ),
+      ),
+    );
+  }
+}
+
+/// The dim over the page while the Menu is open. Black, in both themes: a
+/// shade reads on a light ground and a dark one only as black.
+Color menuScrim(BuildContext context) => const Color(
+  0xFF000000,
+).withValues(alpha: context.colors.isDark ? 0.62 : 0.40);
+
+/// Where the Menu's panel sits — at the foot of the page, just over the
+/// bar, as wide as the bar — and how it arrives: rising a little out of the
+/// bar as it fades in, and sinking back into it on the way out.
+class _MenuPanel extends StatelessWidget {
+  const _MenuPanel({required this.shown, required this.child});
+
+  final Animation<double> shown;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, box) => Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 560,
+              // The panel scrolls inside itself on a short phone rather than
+              // running off the top.
+              maxHeight: (box.maxHeight - 22).clamp(0.0, double.infinity),
+            ),
+            child: AnimatedBuilder(
+              animation: shown,
+              child: child,
+              builder: (context, child) {
+                final t = shown.value;
+                final lift = Curves.easeOutCubic.transform(t);
+                return Opacity(
+                  opacity: const Interval(0, 0.6).transform(t),
+                  child: Transform.translate(
+                    offset: Offset(0, 28 * (1 - lift)),
+                    child: Transform.scale(
+                      scale: 0.96 + 0.04 * lift,
+                      alignment: Alignment.bottomCenter,
+                      child: child,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -192,42 +365,40 @@ class _InstructorShellState extends State<InstructorShell> {
   }
 }
 
-/// A [Listenable] that never fires — for a bar with no What's New.
-class _Silent implements Listenable {
-  const _Silent();
-
-  @override
-  void addListener(VoidCallback listener) {}
-
-  @override
-  void removeListener(VoidCallback listener) {}
-}
-
-/// The instructor's bar: the tabs on a rounded dock lifted off the page, and
-/// the scanner — what the app is opened for — as the round brand button in
-/// the middle, standing above the dock, the way GCash puts Scan QR. A pill
-/// slides to the tab picked, and slides out of the button when the scanner
-/// is left.
+/// The instructor's bar: Home and Scanner on the left of a rounded dock
+/// lifted off the page, Attendance and Settings on its right, and the Menu —
+/// everything else — as the round brand button in the middle, standing above
+/// the dock. A pill slides to the tab picked; on a tab the Menu opened (QR
+/// Code, Links) the Menu's own label lights up instead.
 ///
-/// Picked on 2026-09-30 over the stock Material bar. Every movement on it
-/// plays once per tap and settles: the pill's spring, the icon's pop, the
-/// button's glow, and the give under the finger.
+/// Picked on 2026-09-30, after the GCash-style bar with Scan in the middle:
+/// the phone now opens on Home, and the scanner is a tab beside it. Every
+/// movement on it plays once per tap and settles: the pill's spring, the
+/// icon's pop, the button's turn, and the give under the finger.
+///
+/// While the Menu is open the rest of the bar dims with the page, so the
+/// dock and its button seem to sit on top of the dim.
 class InstructorDock extends StatelessWidget {
   const InstructorDock({
     super.key,
-    required this.tabs,
     required this.current,
     required this.onSelected,
-    this.unread = false,
+    this.onMenu,
+    this.menuOpen = false,
+    this.menu = kAlwaysDismissedAnimation,
   });
 
-  /// The tabs this account has. Links, when present, sits beside QR Code.
-  final List<InstructorTab> tabs;
+  /// The tab showing. May be one the Menu opened, which has no place on
+  /// the bar.
   final InstructorTab current;
   final ValueChanged<InstructorTab> onSelected;
 
-  /// What's New not opened yet: a dot on Settings.
-  final bool unread;
+  /// Opens the Menu, or closes it when it is open. No button without it.
+  final VoidCallback? onMenu;
+  final bool menuOpen;
+
+  /// How far open the Menu is, for the dim.
+  final Animation<double> menu;
 
   static const double _height = 66;
   static const double _orb = 62;
@@ -244,8 +415,8 @@ class InstructorDock extends StatelessWidget {
   static const double _pillHeight = 30;
 
   static const List<InstructorTab> _left = [
-    InstructorTab.qr,
-    InstructorTab.links,
+    InstructorTab.home,
+    InstructorTab.scanner,
   ];
   static const List<InstructorTab> _right = [
     InstructorTab.tracker,
@@ -258,129 +429,149 @@ class InstructorDock extends StatelessWidget {
     final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     Duration ms(int n) => still ? Duration.zero : Duration(milliseconds: n);
 
-    final left = [
-      for (final t in _left)
-        if (tabs.contains(t)) t,
-    ];
-    final right = [
-      for (final t in _right)
-        if (tabs.contains(t)) t,
-    ];
-    final onScanner = current == InstructorTab.scanner;
+    // Where the Menu took the phone, rather than a tab of the bar.
+    final behindMenu = !current.onBar;
+    final scrim = menuScrim(context);
 
-    return SafeArea(
-      top: false,
-      child: SizedBox(
-        height: _rise + _height + 10,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 10,
-              height: _height,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      // A shadow reads on both grounds only as black.
-                      color: const Color(
-                        0xFF000000,
-                      ).withValues(alpha: colors.isDark ? 0.45 : 0.10),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: colors.surface,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    side: BorderSide(color: colors.border),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: LayoutBuilder(
-                    builder: (context, box) {
-                      final half = (box.maxWidth - _gap) / 2;
-                      double centreOf(InstructorTab tab) {
-                        final l = left.indexOf(tab);
-                        if (l >= 0) return half / left.length * (l + 0.5);
-                        final r = right.indexOf(tab);
-                        return half + _gap + half / right.length * (r + 0.5);
-                      }
-
-                      final x = onScanner
-                          ? box.maxWidth / 2
-                          : centreOf(current);
-                      return Stack(
-                        children: [
-                          AnimatedPositioned(
-                            duration: ms(420),
-                            curve: Curves.easeOutBack,
-                            left: x - 28,
-                            top: _pillTop,
-                            width: 56,
-                            height: _pillHeight,
-                            child: AnimatedOpacity(
-                              duration: ms(200),
-                              opacity: onScanner ? 0 : 1,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: colors.accentWash(0.16),
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              _side(context, left, half, ms),
-                              SizedBox(
-                                width: _gap,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: _pillTop + _pillHeight + 3,
-                                  ),
-                                  child: _Label(
-                                    NavStrings.scanner,
-                                    on: onScanner,
-                                  ),
-                                ),
-                              ),
-                              _side(context, right, half, ms),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+    return Stack(
+      children: [
+        // The dim, under the dock: the strip the button stands in and the
+        // edges round the dock darken with the page. A tap there closes the
+        // Menu, as a tap on the page does.
+        Positioned.fill(
+          child: IgnorePointer(
+            ignoring: !menuOpen,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onMenu,
+              child: AnimatedBuilder(
+                animation: menu,
+                builder: (context, _) => ColoredBox(
+                  color: scrim.withValues(alpha: scrim.a * menu.value),
                 ),
               ),
             ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: _ScanButton(
-                  on: onScanner,
-                  onPressed: () => onSelected(InstructorTab.scanner),
-                  ms: ms,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        SafeArea(
+          top: false,
+          child: SizedBox(
+            height: _rise + _height + 10,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 10,
+                  height: _height,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          // A shadow reads on both grounds only as black.
+                          color: const Color(
+                            0xFF000000,
+                          ).withValues(alpha: colors.isDark ? 0.45 : 0.10),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: colors.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        side: BorderSide(color: colors.border),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: LayoutBuilder(
+                        builder: (context, box) {
+                          final half = (box.maxWidth - _gap) / 2;
+                          double centreOf(InstructorTab tab) {
+                            final l = _left.indexOf(tab);
+                            if (l >= 0) return half / _left.length * (l + 0.5);
+                            final r = _right.indexOf(tab);
+                            return half +
+                                _gap +
+                                half / _right.length * (r + 0.5);
+                          }
+
+                          final x = behindMenu
+                              ? box.maxWidth / 2
+                              : centreOf(current);
+                          return Stack(
+                            children: [
+                              AnimatedPositioned(
+                                duration: ms(420),
+                                curve: Curves.easeOutBack,
+                                left: x - 28,
+                                top: _pillTop,
+                                width: 56,
+                                height: _pillHeight,
+                                child: AnimatedOpacity(
+                                  duration: ms(200),
+                                  opacity: behindMenu ? 0 : 1,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: colors.accentWash(0.16),
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  _side(half, _left, ms),
+                                  SizedBox(
+                                    width: _gap,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: _pillTop + _pillHeight + 3,
+                                      ),
+                                      child: _Label(
+                                        NavStrings.menu,
+                                        on: behindMenu || menuOpen,
+                                      ),
+                                    ),
+                                  ),
+                                  _side(half, _right, ms),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                if (onMenu case final onMenu?)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: _MenuButton(
+                        open: menuOpen,
+                        lit: behindMenu,
+                        onPressed: onMenu,
+                        menu: menu,
+                        ms: ms,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _side(
-    BuildContext context,
-    List<InstructorTab> side,
     double width,
+    List<InstructorTab> side,
     Duration Function(int) ms,
   ) => SizedBox(
     width: width,
@@ -391,7 +582,6 @@ class InstructorDock extends StatelessWidget {
             child: _DockTab(
               tab: tab,
               on: tab == current,
-              dot: tab == InstructorTab.settings && unread,
               onPressed: () => onSelected(tab),
               ms: ms,
             ),
@@ -407,14 +597,12 @@ class _DockTab extends StatelessWidget {
   const _DockTab({
     required this.tab,
     required this.on,
-    required this.dot,
     required this.onPressed,
     required this.ms,
   });
 
   final InstructorTab tab;
   final bool on;
-  final bool dot;
   final VoidCallback onPressed;
   final Duration Function(int) ms;
 
@@ -422,15 +610,15 @@ class _DockTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final (IconData icon, IconData picked, String label) = switch (tab) {
-      InstructorTab.qr => (
-        Icons.qr_code_2_outlined,
-        Icons.qr_code_2_rounded,
-        NavStrings.qr,
+      InstructorTab.home => (
+        Icons.home_outlined,
+        Icons.home_rounded,
+        NavStrings.home,
       ),
-      InstructorTab.links => (
-        Icons.link_outlined,
-        Icons.link_rounded,
-        NavStrings.links,
+      InstructorTab.scanner => (
+        Icons.qr_code_scanner_outlined,
+        Icons.qr_code_scanner_rounded,
+        NavStrings.scanner,
       ),
       InstructorTab.tracker => (
         Icons.event_available_outlined,
@@ -442,18 +630,23 @@ class _DockTab extends StatelessWidget {
         Icons.settings_rounded,
         NavStrings.settings,
       ),
-      // The button in the middle, never a tab beside it.
-      InstructorTab.scanner => (
-        Icons.qr_code_scanner_outlined,
-        Icons.qr_code_scanner_rounded,
-        NavStrings.scanner,
+      // Behind the Menu, never on the bar.
+      InstructorTab.qr => (
+        Icons.qr_code_2_outlined,
+        Icons.qr_code_2_rounded,
+        NavStrings.qr,
+      ),
+      InstructorTab.links => (
+        Icons.link_outlined,
+        Icons.link_rounded,
+        NavStrings.links,
       ),
     };
 
     return Semantics(
       selected: on,
       child: Tooltip(
-        message: dot ? NavStrings.settingsUnread : label,
+        message: label,
         child: PressScale(
           scale: 0.92,
           child: InkWell(
@@ -472,15 +665,10 @@ class _DockTab extends StatelessWidget {
                         duration: ms(300),
                         curve: Curves.easeOutBack,
                         scale: on ? 1.08 : 1,
-                        child: Badge(
-                          isLabelVisible: dot,
-                          smallSize: 8,
-                          backgroundColor: colors.accent,
-                          child: Icon(
-                            on ? picked : icon,
-                            size: 23,
-                            color: on ? colors.accent : colors.textSecondary,
-                          ),
+                        child: Icon(
+                          on ? picked : icon,
+                          size: 23,
+                          color: on ? colors.accent : colors.textSecondary,
                         ),
                       ),
                     ),
@@ -522,66 +710,109 @@ class _Label extends StatelessWidget {
   }
 }
 
-/// The scanner: a round brand button standing above the dock, ringed in the
-/// page's own colour so it seems cut into the dock. Full size and glowing
-/// while the scanner is open, a little smaller from any other tab.
-class _ScanButton extends StatelessWidget {
-  const _ScanButton({
-    required this.on,
+/// The Menu: a round brand button standing above the dock, ringed in the
+/// page's own colour so it seems cut into the dock — dimmed with the page
+/// while the Menu is open, so it still does. Its four squares turn into a
+/// cross while the Menu is open, and back.
+class _MenuButton extends StatelessWidget {
+  const _MenuButton({
+    required this.open,
+    required this.lit,
     required this.onPressed,
+    required this.menu,
     required this.ms,
   });
 
-  final bool on;
+  final bool open;
+
+  /// On a tab the Menu opened: the button glows as a picked tab would.
+  final bool lit;
   final VoidCallback onPressed;
+  final Animation<double> menu;
   final Duration Function(int) ms;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final scrim = menuScrim(context);
     const size = InstructorDock._orb;
+    // The brand fill is the same cyan in both themes, so the ink on it is the
+    // dark set's in both.
+    final ink = AppPalette.dark.onAccent;
 
     return Semantics(
-      selected: on,
+      button: true,
+      selected: lit,
       child: Tooltip(
-        message: NavStrings.scanner,
+        message: open ? NavStrings.menuClose : NavStrings.menu,
         child: PressScale(
           scale: 0.92,
-          child: AnimatedScale(
-            duration: ms(320),
-            curve: Curves.easeOutBack,
-            scale: on ? 1 : 0.9,
-            child: AnimatedContainer(
-              duration: ms(320),
-              width: size,
-              height: size,
+          child: AnimatedBuilder(
+            animation: menu,
+            builder: (context, child) => DecoratedBox(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: AppPalette.brandMark,
-                border: Border.all(color: colors.canvas, width: 4),
+                border: Border.all(
+                  color: Color.alphaBlend(
+                    scrim.withValues(alpha: scrim.a * menu.value),
+                    colors.canvas,
+                  ),
+                  width: 4,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: colors.accentWash(on ? 0.45 : 0.22),
-                    blurRadius: on ? 20 : 12,
+                    color: colors.accentWash(
+                      0.28 + 0.2 * menu.value + (lit ? 0.12 : 0),
+                    ),
+                    blurRadius: 14 + 8 * menu.value,
                     offset: const Offset(0, 6),
                   ),
                 ],
               ),
+              child: child,
+            ),
+            child: SizedBox.square(
+              dimension: size,
               child: Material(
                 type: MaterialType.transparency,
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
-                  key: const ValueKey('nav.scanner'),
+                  key: const ValueKey('nav.menu'),
                   onTap: onPressed,
-                  child: Center(
-                    // The brand fill is the same cyan in both themes, so the
-                    // ink on it is the dark set's in both.
-                    child: Icon(
-                      Icons.qr_code_scanner_rounded,
-                      size: 27,
-                      color: AppPalette.dark.onAccent,
-                    ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      AnimatedRotation(
+                        duration: ms(380),
+                        curve: Curves.easeOutBack,
+                        turns: open ? 0.25 : 0,
+                        child: AnimatedOpacity(
+                          duration: ms(200),
+                          opacity: open ? 0 : 1,
+                          child: Icon(
+                            Icons.grid_view_rounded,
+                            size: 26,
+                            color: ink,
+                          ),
+                        ),
+                      ),
+                      AnimatedRotation(
+                        duration: ms(380),
+                        curve: Curves.easeOutBack,
+                        turns: open ? 0 : -0.25,
+                        child: AnimatedOpacity(
+                          duration: ms(200),
+                          opacity: open ? 1 : 0,
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 28,
+                            color: ink,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

@@ -8,9 +8,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/scanner_models.dart';
-import '../../services/scan_feedback.dart';
 import '../../services/scanner_repository.dart';
-import '../widgets/island.dart';
 import '../widgets/surface_panel.dart';
 import 'camera/qr_camera.dart';
 import 'widgets/attendance_panel.dart';
@@ -69,7 +67,8 @@ class _ScannerPageState extends State<ScannerPage> {
 
   ScannerController get _controller => widget.controller;
 
-  late final StreamSubscription<ScanAlert> _alerts;
+  // The scanner's messages go on the island from ScannerFlow, which hears
+  // them whichever tab is showing.
   bool _awake = false;
 
   /// On screen: not on another tab of the instructor's bar, nor under a
@@ -80,7 +79,6 @@ class _ScannerPageState extends State<ScannerPage> {
   @override
   void initState() {
     super.initState();
-    _alerts = _controller.alerts.listen(_showAlert);
     _controller.addListener(_syncKeepAwake);
   }
 
@@ -93,7 +91,6 @@ class _ScannerPageState extends State<ScannerPage> {
 
   @override
   void dispose() {
-    _alerts.cancel();
     _controller.removeListener(_syncKeepAwake);
     if (_awake) unawaited(widget.keepAwake(false));
     super.dispose();
@@ -104,29 +101,6 @@ class _ScannerPageState extends State<ScannerPage> {
     if (want == _awake) return;
     _awake = want;
     unawaited(widget.keepAwake(want));
-  }
-
-  /// On the island, the newest winning — SweetAlert's one-at-a-time, without
-  /// its OK button: the queue at the door keeps moving while the reason
-  /// shows, and a message about the previous student is stale the moment the
-  /// next one is scanned. The web's self-closing ones keep their length; the
-  /// rest stay long enough to read.
-  void _showAlert(ScanAlert alert) {
-    if (!mounted) return;
-    Island.show(
-      context,
-      IslandMessage(
-        title: alert.title,
-        body: alert.body,
-        tone: switch (alert.tone) {
-          ScanTone.success => IslandTone.success,
-          ScanTone.warning => IslandTone.warning,
-          ScanTone.error => IslandTone.error,
-        },
-        icon: alert.tone == ScanTone.success ? Icons.cloud_done_outlined : null,
-        hold: alert.autoDismiss ?? const Duration(seconds: 4),
-      ),
-    );
   }
 
   Future<void> _pickSubject() async {

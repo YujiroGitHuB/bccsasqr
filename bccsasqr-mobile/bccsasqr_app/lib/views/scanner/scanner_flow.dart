@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../controllers/scanner_controller.dart';
@@ -109,6 +111,12 @@ class _ScannerFlowState extends State<ScannerFlow> {
   /// result over whatever was opened.
   late final AppLifecycleListener _lifecycle;
 
+  /// The scanner's messages, on the island. Heard here rather than on the
+  /// Scanner tab: the bar opens on Home, and scans kept offline are sent —
+  /// and answered for — whichever tab is showing, the Scanner's never opened
+  /// included.
+  late final StreamSubscription<ScanAlert> _alerts;
+
   /// The splash has played its intro. Until then it stays up even when the
   /// sign-in check has already answered.
   bool _introDone = false;
@@ -150,10 +158,34 @@ class _ScannerFlowState extends State<ScannerFlow> {
         _controller.onResumed();
       },
     );
+    _alerts = _controller.alerts.listen(_showAlert);
     _controller.addListener(_onSessionChange);
     _lock.addListener(_onLockChange);
     _controller.start();
     _lock.load();
+  }
+
+  /// On the island, the newest winning — SweetAlert's one-at-a-time, without
+  /// its OK button: the queue at the door keeps moving while the reason
+  /// shows, and a message about the previous student is stale the moment the
+  /// next one is scanned. The web's self-closing ones keep their length; the
+  /// rest stay long enough to read.
+  void _showAlert(ScanAlert alert) {
+    if (!mounted) return;
+    Island.show(
+      context,
+      IslandMessage(
+        title: alert.title,
+        body: alert.body,
+        tone: switch (alert.tone) {
+          ScanTone.success => IslandTone.success,
+          ScanTone.warning => IslandTone.warning,
+          ScanTone.error => IslandTone.error,
+        },
+        icon: alert.tone == ScanTone.success ? Icons.cloud_done_outlined : null,
+        hold: alert.autoDismiss ?? const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _onSessionChange() {
@@ -228,6 +260,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
 
   @override
   void dispose() {
+    _alerts.cancel();
     _controller.removeListener(_onSessionChange);
     _lock.removeListener(_onLockChange);
     _lifecycle.dispose();

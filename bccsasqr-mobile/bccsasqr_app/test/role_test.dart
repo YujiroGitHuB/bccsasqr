@@ -35,6 +35,7 @@ class _NoExport implements QrExportService {
 }
 
 final _camera = find.byKey(const ValueKey('camera'), skipOffstage: false);
+final _home = find.byKey(const ValueKey('instructorHome'));
 
 /// The demo scanner, for an account whose "Manage attendance links" can be
 /// ticked and unticked between answers.
@@ -265,18 +266,27 @@ void main() {
       expect(roles.saved, AppRole.instructor);
       expect(find.byType(InstructorDock), findsOneWidget);
       for (final label in [
-        NavStrings.qr,
+        NavStrings.home,
         NavStrings.scanner,
+        NavStrings.menu,
         NavStrings.tracker,
         NavStrings.settings,
       ]) {
-        expect(find.text(label), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(InstructorDock),
+            matching: find.text(label),
+          ),
+          findsOneWidget,
+          reason: label,
+        );
       }
-      // Opening on the scanner; the other tabs built when first opened.
-      expect(find.text(ScannerStrings.title), findsOneWidget);
+      // Opening on Home; the other tabs built when first opened.
+      expect(_home, findsOneWidget);
+      expect(find.text(ScannerStrings.title), findsNothing);
       expect(find.byType(GeneratorIntro, skipOffstage: false), findsNothing);
 
-      await tester.tap(find.byKey(const ValueKey('nav.qr')));
+      await tester.tap(find.byKey(const ValueKey('instructorHome.qr')));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.studentNumberLabel), findsOneWidget);
     });
@@ -414,18 +424,16 @@ void main() {
       expect(find.byType(InstructorDock), findsNothing);
     });
 
-    testWidgets('back from another tab goes to the scanner first', (
-      tester,
-    ) async {
+    testWidgets('back from another tab goes Home first', (tester) async {
       await openAsInstructor(tester);
       await tester.tap(find.byKey(const ValueKey('nav.tracker')));
       await tester.pumpAndSettle();
-      expect(find.text(ScannerStrings.title), findsNothing);
+      expect(_home, findsNothing);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      expect(find.text(ScannerStrings.title), findsOneWidget);
+      expect(_home, findsOneWidget);
       expect(find.byType(InstructorShell), findsOneWidget);
     });
 
@@ -433,6 +441,8 @@ void main() {
       tester,
     ) async {
       await openAsInstructor(tester);
+      await tester.tap(find.byKey(const ValueKey('nav.scanner')));
+      await tester.pumpAndSettle();
       await tester.tap(find.text(ScannerStrings.subjectPlaceholder));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Object Oriented Programming').last);
@@ -455,12 +465,14 @@ void main() {
       expect(find.text(ScannerStrings.readyToScan), findsOneWidget);
     });
 
-    testWidgets('Links sits beside the scanner, with the class links', (
+    testWidgets('Links opens from the Menu, with the class links', (
       tester,
     ) async {
       await openAsInstructor(tester);
 
-      await tester.tap(find.byKey(const ValueKey('nav.links')));
+      await tester.tap(find.byKey(const ValueKey('nav.menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('menu.links')));
       await tester.pump();
       // Its splash first, once, like the other tabs.
       expect(find.byType(LinksSplash), findsOneWidget);
@@ -469,36 +481,48 @@ void main() {
       expect(find.byType(LinksSplash), findsNothing);
       expect(find.text(LinksStrings.title), findsOneWidget);
       expect(find.text('Introduction to Computing'), findsOneWidget);
-      // The camera is let go here too.
+      // The camera is let go here too, and the bar stays under it.
       expect(_camera, findsNothing);
+      expect(find.byType(InstructorDock), findsOneWidget);
     });
 
-    testWidgets('no Links tab without the permission, until it is given', (
+    testWidgets('no Links without the permission, until it is given', (
       tester,
     ) async {
+      final links = find.byKey(const ValueKey('instructorHome.links'));
+      Future<void> refresh() async {
+        await tester.drag(
+          find.text(InstructorHomeStrings.scannedToday),
+          const Offset(0, 400),
+        );
+        await tester.pumpAndSettle();
+      }
+
       scanner.links = false;
       await openAsInstructor(tester);
 
-      expect(find.byKey(const ValueKey('nav.links')), findsNothing);
-      expect(find.byKey(const ValueKey('nav.tracker')), findsOneWidget);
+      expect(links, findsNothing);
+      expect(
+        find.byKey(const ValueKey('instructorHome.tracker')),
+        findsOneWidget,
+      );
 
       // Ticked on the web: the next answer about the account brings it.
       scanner.links = true;
-      await tester.drag(find.text(ScannerStrings.title), const Offset(0, 400));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('nav.links')), findsOneWidget);
+      await refresh();
+      expect(links, findsOneWidget);
 
       // And unticked again: gone with the next answer, and the bar does not
       // jump back to it if it returns.
-      await tester.tap(find.byKey(const ValueKey('nav.links')));
+      await tester.tap(links);
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('nav.scanner')));
+      await tester.tap(find.byKey(const ValueKey('nav.home')));
       await tester.pumpAndSettle();
       scanner.links = false;
-      await tester.drag(find.text(ScannerStrings.title), const Offset(0, 400));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('nav.links')), findsNothing);
-      expect(find.text(ScannerStrings.title), findsOneWidget);
+      await refresh();
+      expect(links, findsNothing);
+      expect(_home, findsOneWidget);
+      expect(find.text(LinksStrings.title), findsNothing);
     });
   });
 }

@@ -16,8 +16,8 @@ abstract final class AppStrings {
   static const String appTagline =
       'Look up your record and generate the QR code used for attendance.';
 
-  // The student's opening screen. The instructor's is the bottom bar
-  // (NavStrings).
+  // The student's opening screen. The instructor's is Home, on the bottom
+  // bar (InstructorHomeStrings).
   static const String homeStudentSection = 'FOR STUDENTS';
   static const String homeStudentTitle = 'My QR Code';
   static const String homeStudentBody =
@@ -172,7 +172,7 @@ abstract final class ScannerStrings {
   static String welcomeBack(String name) => 'Welcome back, $name';
   static const String welcomeLabel = 'SIGNED IN';
   static String welcomeTitle(String name) => 'Welcome, $name';
-  static const String welcomeBody = 'Opening the scanner…';
+  static const String welcomeBody = 'Opening Home…';
   static const String unreachableTitle = 'Could not reach the server';
   static const String retry = 'Try again';
   static const String demoSignInHint =
@@ -631,7 +631,8 @@ abstract final class WhatsNewStrings {
   static const String openLinks = 'Open Links';
 
   // The student's home screen card, until the page is opened once. The
-  // instructor's bar puts a dot on Settings instead.
+  // instructor's Home puts a dot on its What's New button instead, and on
+  // the Menu's tile.
   static const String cardTitle = 'New in this update';
   static const String cardBody =
       'See what changed in My QR Code, My Attendance and My Profile.';
@@ -809,14 +810,58 @@ abstract final class LinksStrings {
   static const String close = 'Close';
 }
 
-/// The instructor's bottom bar.
+/// The instructor's bottom bar, with the Menu button in the middle. QR Code
+/// and Links are not on the bar: the Menu and Home open them.
 abstract final class NavStrings {
-  static const String qr = 'QR Code';
+  static const String home = 'Home';
   static const String scanner = 'Scanner';
+  static const String menu = 'Menu';
+  static const String menuClose = 'Close menu';
+  static const String qr = 'QR Code';
   static const String links = 'Links';
   static const String tracker = 'Attendance';
   static const String settings = 'Settings';
-  static const String settingsUnread = 'Settings — new in this update';
+}
+
+/// The instructor's Home — what the bar opens on: today's scans at a glance,
+/// the way into the scanner, and the rest of the side a tap away.
+abstract final class InstructorHomeStrings {
+  static const String scannedToday = 'SCANNED TODAY';
+  static String scannedIn(int subjects) =>
+      subjects == 1 ? 'scanned in 1 subject' : 'scanned in $subjects subjects';
+  static const String noneYet = 'No scans yet today';
+  static String onTime(int n) => '$n on time';
+  static String late(int n) => '$n late';
+
+  // The foot of the card: the way into the scanner.
+  static const String scanningFor = 'Scanning for';
+  static const String scanner = 'Scanner';
+  static const String pickSubject = 'Pick a subject to start';
+  static const String scanNow = 'Scan now';
+  static const String openScanner = 'Open scanner';
+
+  /// The shortcut and the Menu tile that open today's whole list — not the
+  /// Attendance tab, which looks up one student's history.
+  static const String todayList = 'Today\'s scans';
+
+  static const String bySubject = 'Today by subject';
+  static const String seeAll = 'See all';
+  static String scanned(int n, int late) =>
+      late == 0 ? '$n scanned' : '$n scanned · $late late';
+  static const String noScansYet = 'No scans yet';
+  static const String lateOn = 'Late on';
+
+  static const String recent = 'Recent scans';
+  static String viewAll(int n) => 'View all $n';
+}
+
+/// The Menu in the middle of the instructor's bar — everything on the
+/// instructor's side, in one place.
+abstract final class MenuStrings {
+  static const String title = 'Menu';
+  static const String subtitle = 'Everything in one place';
+  static const String scan = 'Scan attendance';
+  static const String signedIn = 'Signed in on this phone';
 }
 
 /// The card that opens from Settings → Version.

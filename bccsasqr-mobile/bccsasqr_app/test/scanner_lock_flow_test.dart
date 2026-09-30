@@ -74,7 +74,10 @@ void main() {
     showSplash: false,
   );
 
-  /// The instructor's bar opens on the scanner → signed in with the
+  /// The signed-in side: the bar, open on Home.
+  final home = find.byKey(const ValueKey('instructorHome'));
+
+  /// An instructor's phone opens on the sign-in → signed in with the
   /// password.
   Future<void> signIn(WidgetTester tester) async {
     // The scan lines sweep forever; held still, pumpAndSettle can settle.
@@ -102,8 +105,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// The app closed and opened again, on the scanner tab — the saved
-  /// sign-in, the lock's switch and the phone all kept.
+  /// The app closed and opened again — the saved sign-in, the lock's switch
+  /// and the phone all kept.
   Future<void> relaunch(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(app());
@@ -135,11 +138,11 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(find.text(ScannerStrings.lockOn), findsNothing);
-    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(home, findsOneWidget);
   });
 
-  testWidgets('"Not now" leaves it off, and the scanner opens next time '
-      'without asking', (tester) async {
+  testWidgets('"Not now" leaves it off, and Home opens next time without '
+      'asking', (tester) async {
     await signIn(tester);
     await tester.tap(find.byKey(const ValueKey('lock.offer.later')));
     await tester.pumpAndSettle();
@@ -149,7 +152,7 @@ void main() {
 
     await reopen(tester);
     expect(find.byType(ScannerLockScreen), findsNothing);
-    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(home, findsOneWidget);
   });
 
   testWidgets('a phone without a screen lock is not offered one', (
@@ -159,7 +162,7 @@ void main() {
     await signIn(tester);
 
     expect(find.text(ScannerStrings.lockOfferTitle), findsNothing);
-    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(home, findsOneWidget);
   });
 
   testWidgets('with the lock on, a saved sign-in waits behind it', (
@@ -167,13 +170,13 @@ void main() {
   ) async {
     await signInWithLock(tester);
 
-    // The first prompt is closed: still locked, and the camera never shown.
+    // The first prompt is closed: still locked, and Home never shown.
     device.script.add(DeviceUnlock.cancelled);
     await reopen(tester);
 
     expect(find.byType(ScannerLockScreen), findsOneWidget);
     expect(find.text(ScannerStrings.lockNotUnlocked), findsOneWidget);
-    expect(find.text(ScannerStrings.title), findsNothing);
+    expect(home, findsNothing);
     expect(device.asked.last, ScannerStrings.lockReason);
     // Not just the scanner: nothing of the instructor's side is there.
     expect(find.byType(InstructorDock), findsNothing);
@@ -183,7 +186,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ScannerLockScreen), findsNothing);
-    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(home, findsOneWidget);
     expect(find.byType(InstructorDock), findsOneWidget);
   });
 
@@ -245,7 +248,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    // Opened: the welcome plays before the scanner.
+    // Opened: the welcome plays before Home.
     expect(find.text(ScannerStrings.lockUnlockedLabel), findsOneWidget);
     expect(
       find.text(ScannerStrings.welcomeBack('Demo Instructor')),
@@ -257,7 +260,7 @@ void main() {
       ScannerStrings.lockEnableReason,
       ScannerStrings.lockReason,
     ]);
-    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(home, findsOneWidget);
   });
 
   testWidgets('"Sign in with password instead" signs out and drops the lock', (

@@ -81,8 +81,8 @@ void main() {
     showSplash: false,
   );
 
-  /// An instructor's phone opens on the sign-in → signed in → subject
-  /// picked.
+  /// An instructor's phone opens on the sign-in → signed in, on Home → the
+  /// Scanner tab.
   Future<void> openScanner(WidgetTester tester) async {
     // The scan line sweeps forever; with reduced motion it holds still, so
     // pumpAndSettle can settle.
@@ -98,7 +98,11 @@ void main() {
     await tester.enterText(find.byType(TextField).at(1), 'secret');
     await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('nav.scanner')));
+    await tester.pumpAndSettle();
   }
+
+  final home = find.byKey(const ValueKey('instructorHome'));
 
   Future<void> pickSubject(WidgetTester tester) async {
     await tester.tap(find.text(ScannerStrings.subjectPlaceholder));
@@ -271,7 +275,7 @@ void main() {
     expect(find.text('1.1.0 (build 2)'), findsOneWidget);
     // The bar's tab, not a page pushed over the scanner.
     expect(find.byType(InstructorDock), findsOneWidget);
-    expect(find.byTooltip(AppStrings.homeBack), findsNothing);
+    expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
   });
 
   testWidgets('a refused sign-in shakes the form and says why', (tester) async {
@@ -329,7 +333,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
   }
 
-  testWidgets('a sign-in typed in is welcomed by name, then the scanner '
+  testWidgets('a sign-in typed in is welcomed by name, then Home '
       'opens', (tester) async {
     await signInAtFullSpeed(tester);
     await tester.pump();
@@ -349,10 +353,12 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(ScannerStrings.welcomeLabel), findsOneWidget);
+    expect(find.text(ScannerStrings.welcomeBody), findsOneWidget);
 
     await tester.pumpAndSettle();
     expect(find.byType(ScannerWelcome), findsNothing);
-    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(home, findsOneWidget);
+    expect(find.text(ScannerStrings.title), findsNothing);
   });
 
   testWidgets('a saved sign-in says welcome back on the splash and skips '
@@ -377,7 +383,7 @@ void main() {
       expect(find.byType(ScannerWelcome), findsNothing);
     }
     await tester.pumpAndSettle();
-    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(home, findsOneWidget);
   });
 
   testWidgets('lays out on a small phone without overflowing', (tester) async {

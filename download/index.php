@@ -278,7 +278,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                     <span class="dl-step-no">3</span>
                     <i class="bi bi-box-arrow-in-right dl-card-icon" aria-hidden="true"></i>
                     <h3>Open your side</h3>
-                    <p>Open <strong><?= htmlspecialchars($acronym) ?></strong> and pick <strong>I&rsquo;m a student</strong> or <strong>I&rsquo;m an instructor</strong>. Students: tap <strong>My QR Code</strong>, type your student number, accept the terms, and save your QR &mdash; or tap <strong>My Attendance</strong> to see your days present. Instructors: sign in once with your web system account, and the scanner opens.</p>
+                    <p>Open <strong><?= htmlspecialchars($acronym) ?></strong> and pick <strong>I&rsquo;m a student</strong> or <strong>I&rsquo;m an instructor</strong>. Students: tap <strong>My QR Code</strong>, type your student number, accept the terms, and save your QR &mdash; or tap <strong>My Attendance</strong> to see your days present. Instructors: sign in once with your web system account &mdash; <strong>Home</strong> opens with today&rsquo;s scans, and <strong>Scan now</strong> starts the scanner.</p>
                 </li>
             </ol>
         </section>

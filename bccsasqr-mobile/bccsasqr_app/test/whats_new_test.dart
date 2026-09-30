@@ -290,15 +290,15 @@ void main() {
       expect(find.text(WhatsNewStrings.openScanner), findsNothing);
     });
 
-    testWidgets('an instructor gets a dot on Settings, and the scanner too', (
-      tester,
-    ) async {
+    testWidgets('an instructor gets a dot on Home, and the scanner\'s news '
+        'too', (tester) async {
       await tester.pumpWidget(app(role: AppRole.instructor));
       await tester.pumpAndSettle();
       await signInAsInstructor(tester);
       expect(card, findsNothing);
-      expect(find.byTooltip(NavStrings.settingsUnread), findsOneWidget);
+      expect(find.byTooltip(WhatsNewStrings.openUnread), findsOneWidget);
 
+      // Settings has it as well.
       await tester.tap(find.byKey(const ValueKey('nav.settings')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('settings.whatsNew')));
@@ -318,8 +318,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(WhatsNewPage), findsNothing);
       expect(find.byType(TrackerIntro), findsOneWidget);
-      expect(find.byTooltip(NavStrings.settingsUnread), findsNothing);
-      expect(find.byTooltip(NavStrings.settings), findsOneWidget);
+
+      // Read now: Home's button has no dot.
+      await tester.tap(find.byKey(const ValueKey('nav.home')));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip(WhatsNewStrings.openUnread), findsNothing);
+      expect(find.byTooltip(WhatsNewStrings.open), findsOneWidget);
     });
 
     testWidgets('lays out on a small phone without overflowing', (

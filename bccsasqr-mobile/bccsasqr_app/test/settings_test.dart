@@ -148,7 +148,7 @@ void main() {
       // No API_BASE_URL in a test build.
       expect(find.text(SettingsStrings.serverDemo), findsOneWidget);
       // A tab, not a page: nothing to go back to.
-      expect(find.byTooltip(AppStrings.homeBack), findsNothing);
+      expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
     });
 
     testWidgets('the version opens the About card, which copies it', (
