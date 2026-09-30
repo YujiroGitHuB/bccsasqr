@@ -11,6 +11,7 @@ import 'package:bccsasqr_app/services/token_store.dart';
 import 'package:bccsasqr_app/views/links/link_card.dart';
 import 'package:bccsasqr_app/views/links/link_qr_page.dart';
 import 'package:bccsasqr_app/views/links/links_page.dart';
+import 'package:bccsasqr_app/views/links/links_splash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -429,6 +430,22 @@ void main() {
     });
 
     test(
+      'a notice from before anyone listened is kept until they do',
+      () async {
+        final repo = _Links([link('AAAAAA')])
+          ..rotated = [(oldCode: 'OLDOLD', newCode: 'AAAAAA')];
+        final c = LinksController(repository: repo, clock: clock);
+
+        await c.load();
+        final notices = <LinkNotice>[];
+        c.notices.listen(notices.add);
+        await pumpEventQueue();
+
+        expect(notices.single.title, LinksStrings.rotatedTitle(1));
+      },
+    );
+
+    test(
       'a first load that fails shows why; a later one keeps the list',
       () async {
         final repo = _Links([link('AAAAAA')])
@@ -621,6 +638,38 @@ void main() {
       expect(repo.calls.single.$1, 'renew');
       expect(find.text('ZZZZZZ'), findsOneWidget);
       expect(find.text(LinksStrings.expiryIn), findsOneWidget);
+    });
+
+    testWidgets('the splash plays while the list loads, then the cards rise', (
+      tester,
+    ) async {
+      final repo = _Links([link('AAAAAA')])
+        ..rotated = [(oldCode: 'OLDOLD', newCode: 'AAAAAA')];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LinksIntro(
+            repository: repo,
+            page: (context, controller) => LinksPage(
+              repository: repo,
+              controller: controller,
+              exportService: _NoExport(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Asked for under the splash, not after it.
+      expect(find.byType(LinksSplash), findsOneWidget);
+      expect(find.text(LinksStrings.splashTagline), findsOneWidget);
+      expect(repo.loads, 1);
+
+      await tester.pumpAndSettle();
+      expect(find.byType(LinksSplash), findsNothing);
+      expect(find.text('AAAAAA'), findsOneWidget);
+      // No second trip for the page, and the news from the first is told.
+      expect(repo.loads, 1);
+      expect(find.textContaining(LinksStrings.rotatedTitle(1)), findsOneWidget);
     });
 
     testWidgets('no access says so instead of an empty list', (tester) async {

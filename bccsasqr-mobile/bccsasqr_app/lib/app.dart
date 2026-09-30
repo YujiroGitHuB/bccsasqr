@@ -34,6 +34,7 @@ import 'views/generator_splash.dart';
 import 'views/home_page.dart';
 import 'views/instructor_shell.dart';
 import 'views/links/links_page.dart';
+import 'views/links/links_splash.dart';
 import 'views/onboarding_page.dart';
 import 'views/qr_generator_page.dart';
 import 'views/role_picker_page.dart';
@@ -365,14 +366,18 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         tourBuilder: _tour,
       );
 
-  /// The Links tab. A token refused there signs the whole side out, as a
-  /// refused scan does.
+  /// The Links tab, behind its splash — which covers the list loading. A
+  /// token refused there signs the whole side out, as a refused scan does.
   Widget _linksPage(BuildContext context, ScannerController session) =>
-      LinksPage(
+      LinksIntro(
         repository: _linkRepository,
-        exportService: _exportService,
         onSignedOut: session.sessionExpired,
-        keepAwake: widget.keepAwake,
+        page: (context, controller) => LinksPage(
+          repository: _linkRepository,
+          controller: controller,
+          exportService: _exportService,
+          keepAwake: widget.keepAwake,
+        ),
       );
 
   /// The whole instructor side sits behind the scanner's sign-in: until an

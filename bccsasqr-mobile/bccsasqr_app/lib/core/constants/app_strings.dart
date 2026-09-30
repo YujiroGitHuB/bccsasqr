@@ -581,6 +581,13 @@ abstract final class LinksStrings {
   static const String chipSameAsWeb = 'Same as the web';
   static const String chipQr = 'QR for the class';
 
+  // The opening splash: a link going live, and the three steps.
+  static const String splashTagline = 'ATTENDANCE LINKS';
+  static const String splashSemantics = 'Opening the attendance links';
+  static const String stepTime = 'Set time';
+  static const String stepQr = 'Show QR';
+  static const String stepIn = 'Checked in';
+
   static const String listHeading = 'YOUR LINKS';
   static const String listHeadingAdmin = 'ALL LINKS';
   static const String searchHint = 'Search subject, section or instructor';

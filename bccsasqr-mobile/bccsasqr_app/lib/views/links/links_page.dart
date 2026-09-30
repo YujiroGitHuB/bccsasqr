@@ -39,6 +39,7 @@ class LinksPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.exportService,
+    this.controller,
     this.onSignedOut,
     this.keepAwake,
     this.shareText = deviceShareText,
@@ -50,6 +51,11 @@ class LinksPage extends StatefulWidget {
 
   /// Saves the QR plate as a picture and shares it.
   final QrExportService exportService;
+
+  /// The list, when it was made — and asked for — before the page: see
+  /// LinksIntro, whose splash covers the wait. Kept by whoever made it. The
+  /// page makes and loads its own when left out.
+  final LinksController? controller;
 
   /// The sign-in was refused: see [LinksController.onSignedOut].
   final VoidCallback? onSignedOut;
@@ -76,11 +82,13 @@ class _LinksPageState extends State<LinksPage>
     (icon: Icons.qr_code_2_rounded, label: LinksStrings.chipQr),
   ];
 
-  late final LinksController _controller = LinksController(
-    repository: widget.repository,
-    onSignedOut: widget.onSignedOut,
-    clock: widget.clock,
-  );
+  late final LinksController _controller =
+      widget.controller ??
+      LinksController(
+        repository: widget.repository,
+        onSignedOut: widget.onSignedOut,
+        clock: widget.clock,
+      );
   final TextEditingController _search = TextEditingController();
   late final StreamSubscription<LinkNotice> _notices;
   late final AppLifecycleListener _lifecycle;
@@ -112,7 +120,7 @@ class _LinksPageState extends State<LinksPage>
         if (_shown) unawaited(_controller.load());
       },
     );
-    unawaited(_controller.load());
+    if (widget.controller == null) unawaited(_controller.load());
   }
 
   @override
@@ -125,7 +133,8 @@ class _LinksPageState extends State<LinksPage>
       unawaited(_controller.load());
     }
     _shown = shown;
-    _syncTicker();
+    // Also where a list that arrived under the splash starts the entrance.
+    _onChange();
   }
 
   @override
@@ -134,7 +143,7 @@ class _LinksPageState extends State<LinksPage>
     _notices.cancel();
     _lifecycle.dispose();
     _controller.removeListener(_onChange);
-    _controller.dispose();
+    if (widget.controller == null) _controller.dispose();
     _entrance.dispose();
     _search.dispose();
     super.dispose();

@@ -18,6 +18,7 @@ import 'package:bccsasqr_app/services/tracker_repository.dart';
 import 'package:bccsasqr_app/services/whats_new_store.dart';
 import 'package:bccsasqr_app/views/generator_splash.dart';
 import 'package:bccsasqr_app/views/instructor_shell.dart';
+import 'package:bccsasqr_app/views/links/links_splash.dart';
 import 'package:bccsasqr_app/views/scanner/scanner_flow.dart';
 import 'package:bccsasqr_app/views/student_splash.dart';
 import 'package:bccsasqr_app/views/tracker_splash.dart';
@@ -450,8 +451,12 @@ void main() {
       await openAsInstructor(tester);
 
       await tester.tap(find.byKey(const ValueKey('nav.links')));
+      await tester.pump();
+      // Its splash first, once, like the other tabs.
+      expect(find.byType(LinksSplash), findsOneWidget);
       await tester.pumpAndSettle();
 
+      expect(find.byType(LinksSplash), findsNothing);
       expect(find.text(LinksStrings.title), findsOneWidget);
       expect(find.text('Introduction to Computing'), findsOneWidget);
       // The camera is let go here too.

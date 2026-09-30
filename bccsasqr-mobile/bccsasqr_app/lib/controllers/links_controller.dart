@@ -51,8 +51,12 @@ class LinksController extends ChangeNotifier {
   /// the sign-in form, not just this tab.
   final VoidCallback? onSignedOut;
 
-  final StreamController<LinkNotice> _notices =
-      StreamController<LinkNotice>.broadcast();
+  late final StreamController<LinkNotice> _notices =
+      StreamController<LinkNotice>.broadcast(onListen: _flushUnheard);
+
+  /// Notices from before anyone listened — a list loaded under the splash
+  /// can already carry "2 links were renewed". Said once the page is up.
+  final List<LinkNotice> _unheard = [];
   bool _disposed = false;
 
   Future<void>? _loading;
@@ -382,7 +386,19 @@ class LinksController extends ChangeNotifier {
   }
 
   void _emit(LinkNotice notice) {
-    if (!_disposed) _notices.add(notice);
+    if (_disposed) return;
+    if (_notices.hasListener) {
+      _notices.add(notice);
+    } else {
+      _unheard.add(notice);
+    }
+  }
+
+  void _flushUnheard() {
+    for (final notice in _unheard) {
+      _notices.add(notice);
+    }
+    _unheard.clear();
   }
 
   void _notify() {
