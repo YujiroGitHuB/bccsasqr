@@ -27,6 +27,13 @@ if ($locked) {
 
 <head>
   <?php include __DIR__ . "/../includes/systemConfig.php"; ?>
+  <?php
+  require_once __DIR__ . '/../includes/share_meta.php';
+  share_meta([
+      'title'       => 'Get your attendance QR code',
+      'description' => 'Enter your student number, accept the terms, and save the QR code your instructor scans for attendance.',
+  ]);
+  ?>
   <?php include __DIR__ . "/../includes/headerQrGenerator.php"; ?>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- In-app browser notice (assets/js/detection.js): ang anyo nito ay

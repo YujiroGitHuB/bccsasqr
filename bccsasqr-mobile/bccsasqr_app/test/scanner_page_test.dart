@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bccsasqr_app/models/app_role.dart';
 import 'package:bccsasqr_app/services/role_store.dart';
+import 'package:bccsasqr_app/views/instructor_shell.dart';
 
 class _NoExport implements QrExportService {
   @override
@@ -216,18 +217,19 @@ void main() {
     await tester.pump(const Duration(seconds: 6));
   });
 
-  testWidgets('signing out: avatar, then the sheet, then a confirmation', (
-    tester,
-  ) async {
+  /// Settings → Account → Sign out: where signing out lives.
+  Future<void> tapSignOut(WidgetTester tester) async {
+    await tester.tap(find.byKey(const ValueKey('nav.settings')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('settings.signOut')));
+    await tester.tap(find.byKey(const ValueKey('settings.signOut')));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('signing out: Settings, then a confirmation', (tester) async {
     await openScanner(tester);
 
-    await tester.tap(find.byTooltip(ScannerStrings.account));
-    await tester.pumpAndSettle();
-    // The sheet says who is signed in before offering to sign out.
-    expect(find.text('demo@bcc.test'), findsOneWidget);
-
-    await tester.tap(find.text(ScannerStrings.signOut).last);
-    await tester.pumpAndSettle();
+    await tapSignOut(tester);
     expect(find.text(ScannerStrings.signOutConfirmTitle), findsOneWidget);
 
     await tester.tap(find.text(ScannerStrings.signOut).last);
@@ -240,30 +242,35 @@ void main() {
   ) async {
     await openScanner(tester);
 
-    await tester.tap(find.byTooltip(ScannerStrings.account));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(ScannerStrings.signOut).last);
-    await tester.pumpAndSettle();
+    await tapSignOut(tester);
     await tester.tap(find.text(ScannerStrings.cancel));
     await tester.pumpAndSettle();
 
-    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(find.text(SettingsStrings.appearance), findsOneWidget);
     expect(find.text(ScannerStrings.signInHeading), findsNothing);
   });
 
-  testWidgets('the account sheet opens the Settings tab', (tester) async {
+  testWidgets('the account is in Settings, not on the scanner', (tester) async {
     await openScanner(tester);
 
-    await tester.tap(find.byTooltip(ScannerStrings.account));
-    await tester.pumpAndSettle();
-    // The sheet's row, over the bar's own Settings.
-    await tester.tap(find.text(SettingsStrings.title).last);
+    // Only the title at the top of the scanner: no name, no email.
+    expect(find.text(ScannerStrings.title), findsOneWidget);
+    expect(find.text('Demo Instructor'), findsNothing);
+    expect(find.text('demo@bcc.test'), findsNothing);
+    expect(find.text('ID 0'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('nav.settings')));
     await tester.pumpAndSettle();
 
+    // Who is signed in, their role, subjects and ID — first in Settings.
+    expect(find.text(SettingsStrings.account), findsOneWidget);
+    expect(find.text('Demo Instructor'), findsOneWidget);
+    expect(find.text('demo@bcc.test'), findsOneWidget);
+    expect(find.text('ID 0'), findsOneWidget);
     expect(find.text(SettingsStrings.appearance), findsOneWidget);
     expect(find.text('1.1.0 (build 2)'), findsOneWidget);
     // The bar's tab, not a page pushed over the scanner.
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(InstructorDock), findsOneWidget);
     expect(find.byTooltip(AppStrings.homeBack), findsNothing);
   });
 

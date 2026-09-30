@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../controllers/scanner_controller.dart';
-import '../../controllers/scanner_lock_controller.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -14,7 +13,6 @@ import '../../services/scanner_repository.dart';
 import '../widgets/island.dart';
 import '../widgets/surface_panel.dart';
 import 'camera/qr_camera.dart';
-import 'widgets/account_sheet.dart';
 import 'widgets/attendance_panel.dart';
 import 'widgets/camera_panel.dart';
 import 'widgets/scan_result_card.dart';
@@ -49,22 +47,13 @@ class ScannerPage extends StatefulWidget {
     this.demo = false,
     this.cameraBuilder = deviceQrCamera,
     this.keepAwake = deviceKeepAwake,
-    this.onOpenSettings,
-    this.lock,
   });
 
   final ScannerController controller;
 
-  /// The phone's lock in front of the sign-in; its switch is in the
-  /// account sheet.
-  final ScannerLockController? lock;
-
   /// Running on [InMemoryScannerRepository] — say so.
   final bool demo;
   final QrCameraBuilder cameraBuilder;
-
-  /// Opens the app's Settings, from the account sheet.
-  final VoidCallback? onOpenSettings;
 
   /// Holds the screen on while the camera runs. Nobody touches the phone
   /// while a class files past it, and a screen that locks mid-queue stops
@@ -207,27 +196,6 @@ class _ScannerPageState extends State<ScannerPage> {
     if (picked != null) _controller.selectSubject(picked);
   }
 
-  Future<void> _openAccount(ScannerUser user) async {
-    final action = await showAccountSheet(
-      context,
-      user: user,
-      subjectCount: _controller.subjects.length,
-      lock: widget.lock,
-    );
-    if (!mounted) return;
-
-    switch (action) {
-      case AccountAction.settings:
-        widget.onOpenSettings?.call();
-      case AccountAction.signOut:
-        if (await confirmSignOut(context, pending: _controller.pendingCount)) {
-          await _controller.signOut();
-        }
-      case null:
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -250,15 +218,11 @@ class _ScannerPageState extends State<ScannerPage> {
                   builder: (context, _) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (_controller.user case final user?)
-                        ScannerHeader(
-                          user: user,
-                          subjectCount: _controller.subjects.length,
-                          onAccount: () => _openAccount(user),
-                          onBack: Navigator.of(context).canPop()
-                              ? () => Navigator.of(context).maybePop()
-                              : null,
-                        ),
+                      ScannerHeader(
+                        onBack: Navigator.of(context).canPop()
+                            ? () => Navigator.of(context).maybePop()
+                            : null,
+                      ),
                       if (widget.demo) const _DemoNotice(),
                       const SizedBox(height: 16),
                       ..._scanner(),

@@ -74,7 +74,6 @@ abstract final class AppTheme {
         backgroundColor: p.surface,
         surfaceTintColor: Colors.transparent,
       ),
-      navigationBarTheme: _navigationBarTheme(p),
       splashFactory: InkSparkle.splashFactory,
     );
   }
@@ -136,27 +135,6 @@ abstract final class AppTheme {
 
   /// The instructor's bottom bar: the panels' surface, the selected tab in
   /// the accent on a wash of it — the Settings theme picker's colours.
-  static NavigationBarThemeData _navigationBarTheme(AppPalette p) {
-    Color tint(Set<WidgetState> states) =>
-        states.contains(WidgetState.selected) ? p.accent : p.textSecondary;
-
-    return NavigationBarThemeData(
-      backgroundColor: p.surface,
-      surfaceTintColor: Colors.transparent,
-      indicatorColor: p.accentWash(0.14),
-      labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: tint(states),
-        ),
-      ),
-      iconTheme: WidgetStateProperty.resolveWith(
-        (states) => IconThemeData(color: tint(states)),
-      ),
-    );
-  }
-
   static CheckboxThemeData _checkboxTheme(AppPalette p) => CheckboxThemeData(
     side: BorderSide(color: p.borderStrong, width: 1.5),
     fillColor: WidgetStateProperty.resolveWith((states) {

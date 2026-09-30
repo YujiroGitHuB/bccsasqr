@@ -312,10 +312,6 @@ abstract final class ScannerStrings {
   static const String sayError = 'Error saving attendance.';
   static const String saySelectSubject = 'Please select a subject first!';
 
-  // The account sheet behind the avatar.
-  static const String account = 'Account';
-  static const String settingsTileBody = 'Theme, sound, vibration and voice';
-
   // The lock: the phone's fingerprint, face or screen lock in front of a
   // saved sign-in.
   static const String lockTitle = 'Scanner locked';
@@ -336,7 +332,7 @@ abstract final class ScannerStrings {
   static const String lockOfferBody =
       'Next time, the scanner opens with this phone\'s fingerprint, face or '
       'screen lock — so nobody else who picks up the phone can scan under '
-      'your name. You can turn it off from your picture at the top.';
+      'your name. You can turn it off in Settings.';
   static const String lockOfferLater = 'Not now';
   static const String lockOfferOn = 'Turn on';
   static const String lockOn = 'Scanner lock is on';
@@ -508,8 +504,8 @@ abstract final class ProfileStrings {
   static const String uploadAction = 'Upload your photo';
 }
 
-/// The Settings screen — the whole app's, reached from the home screen and
-/// from the scanner's account sheet.
+/// The Settings screen — the whole app's: a page over a student's home
+/// screen, and a tab of the instructor's bar.
 abstract final class SettingsStrings {
   static const String title = 'Settings';
   static const String open = 'Settings';

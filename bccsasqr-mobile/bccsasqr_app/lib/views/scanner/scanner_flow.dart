@@ -33,7 +33,6 @@ class ScannerFlow extends StatefulWidget {
     this.feedback = const SilentScanFeedback(),
     this.cameraBuilder = deviceQrCamera,
     this.keepAwake = deviceKeepAwake,
-    this.onOpenSettings,
     this.deviceLock = const NoDeviceLock(),
     this.lockStore,
     this.lockClock,
@@ -44,13 +43,15 @@ class ScannerFlow extends StatefulWidget {
     this.online,
   });
 
-  /// What a signed-in instructor sees, handed the scanner to place in it and
-  /// the scanner's controller — who is signed in, and the sign-out — for the
-  /// rest of it. The scanner alone when left out.
+  /// What a signed-in instructor sees, handed the scanner to place in it,
+  /// the scanner's controller — who is signed in, and the sign-out — and the
+  /// phone's lock, whose switch is in Settings. The scanner alone when left
+  /// out.
   final Widget Function(
     BuildContext context,
     WidgetBuilder scanner,
     ScannerController session,
+    ScannerLockController lock,
   )?
   home;
 
@@ -80,9 +81,6 @@ class ScannerFlow extends StatefulWidget {
   final DateTime Function()? lockClock;
   final SpeechService speech;
   final ScanFeedback feedback;
-
-  /// Opens the app's Settings; see [ScannerPage.onOpenSettings].
-  final VoidCallback? onOpenSettings;
 
   /// Overridable for tests; see [ScannerPage].
   final QrCameraBuilder cameraBuilder;
@@ -198,7 +196,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
   }
 
   /// The lock covers the whole of the instructor's side, so nothing opened
-  /// over it — What's New, the account sheet — may stay in front of it.
+  /// over it — What's New, a sheet — may stay in front of it.
   void _closePagesAbove() {
     if (!mounted) return;
     final route = ModalRoute.of(context);
@@ -207,8 +205,8 @@ class _ScannerFlowState extends State<ScannerFlow> {
   }
 
   /// Right after a sign-in with the password: offer to put the phone's lock
-  /// in front of it next time. Asked once; the switch is in the account
-  /// sheet after that.
+  /// in front of it next time. Asked once; the switch is in Settings →
+  /// Account after that.
   Future<void> _maybeOfferLock() async {
     if (!_offerLock) return;
     _offerLock = false;
@@ -244,8 +242,6 @@ class _ScannerFlowState extends State<ScannerFlow> {
     demo: _demo,
     cameraBuilder: widget.cameraBuilder,
     keepAwake: widget.keepAwake,
-    onOpenSettings: widget.onOpenSettings,
-    lock: _lock,
   );
 
   /// Whatever the sign-in has to show in front of the signed-in side — the
@@ -348,7 +344,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
             child: Builder(
               builder: (context) => home == null
                   ? _scanner(context)
-                  : home(context, _scanner, _controller),
+                  : home(context, _scanner, _controller, _lock),
             ),
           );
         }

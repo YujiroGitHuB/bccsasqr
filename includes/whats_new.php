@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-30.5';
+const WHATS_NEW_VERSION = '2026-09-30.8';
 
 /**
  * The changelog, newest release first.
@@ -83,6 +83,27 @@ function whats_new_releases(): array
                     'title' => 'Students can upload their photo from the app',
                     'text'  => 'The app has a new <strong>My Profile</strong> for students. They enter their student number and last name &mdash; the same check as the web&rsquo;s Student Photo page &mdash; then take a photo or choose one from the gallery and fit their face inside a circle. It is saved as their one student photo, exactly as if they had used the web page, so you see it on the scanner from their next scan and in <strong>Student Photos</strong> here. A student with no photo is reminded on the app&rsquo;s home screen, and more firmly when <strong>Student Photo Requirement</strong> is on. Worth telling a class that still has missing photos. Students get this by downloading the app again.',
                     'link'  => ['href' => 'pages/student_photo_profile.php', 'label' => 'Open Student Photos', 'can' => 'students.photos'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-person-gear',
+                    'title' => 'In the app, your account moved to Settings',
+                    'text'  => 'The top of the app&rsquo;s scanner now shows only its title, so the camera sits higher on the screen. Who is signed in &mdash; name, role, subjects and ID &mdash; the <strong>Fingerprint lock</strong> switch and <strong>Sign out</strong> are all in <strong>Settings &rarr; Account</strong> in the app. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-qr-code-scan',
+                    'title' => 'The app’s instructor bar has the scanner in the middle',
+                    'text'  => 'On the instructor side of the app, the bar at the bottom is now a rounded dock with <strong>Scanner</strong> as a big round button in the middle, so scanning is one tap away from any tab. <strong>QR Code</strong> and <strong>Links</strong> sit on its left, <strong>Attendance</strong> and <strong>Settings</strong> on its right. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-chat-square-text',
+                    'title' => 'Attendance links look right when shared in a chat',
+                    'text'  => 'Sending an attendance link in Messenger or a group chat used to show <strong>Online Attendance Forms</strong> and a line of code under it. The preview now names the class &mdash; <strong>Attendance: Object Oriented Programming (BSIT-2A)</strong> &mdash; with the subject code, the instructor and what to do, under the school seal. The QR generator, tracker, photo page and app download page read properly when shared too. A link shared before today may keep its old preview for a while; new links show the new one.',
+                    'link'  => ['href' => 'pages/generate_attendance_link.php', 'label' => 'Open Attendance Links', 'can' => 'links.manage'],
                 ],
                 [
                     'type'  => 'new',

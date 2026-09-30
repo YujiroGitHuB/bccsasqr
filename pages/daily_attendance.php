@@ -103,7 +103,18 @@ if ($result && $result->num_rows > 0) {
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online Attendance Forms</title>
+    <title>Attendance · <?= htmlspecialchars($attendance_data['subject_name'] . ' (' . $attendance_data['section'] . ')') ?></title>
+    <?php
+    // What the link shows when an instructor sends it to the class.
+    require_once __DIR__ . '/../includes/share_meta.php';
+    $shareWho = trim((string) $attendance_data['instructor_name']);
+    share_meta([
+        'title'       => 'Attendance: ' . $attendance_data['subject_name'] . ' (' . $attendance_data['section'] . ')',
+        'description' => 'Today\'s attendance for ' . $attendance_data['subject_code']
+            . ($shareWho !== '' ? ' with ' . $shareWho : '')
+            . '. Open the form and enter your student number to be marked present.',
+    ]);
+    ?>
     <?php include __DIR__ . "/../includes/header.php" ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="<?= asset('../assets/css/daily_attendance.css') ?>">

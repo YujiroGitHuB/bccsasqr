@@ -6,24 +6,15 @@ import '../../../models/scanner_models.dart';
 import '../../widgets/app_header_card.dart';
 import '../../widgets/surface_panel.dart';
 
-/// The scanner's header: the app mark and title with the account button,
-/// then who is standing behind the camera — the web scanner's `.scan-head`
-/// and `.instructor-info`.
+/// The scanner's header: the app mark and the title — the web scanner's
+/// `.scan-head`.
 ///
-/// Signing out lives behind the avatar, in the account sheet, rather than
-/// on a bare icon one slip of the thumb away from the Back arrow.
+/// Who is signed in, the lock and the sign-out are in Settings → Account
+/// (since 2026-09-30): the scanner keeps the room for the camera and the
+/// class.
 class ScannerHeader extends StatelessWidget {
-  const ScannerHeader({
-    super.key,
-    required this.user,
-    required this.subjectCount,
-    required this.onAccount,
-    this.onBack,
-  });
+  const ScannerHeader({super.key, this.onBack});
 
-  final ScannerUser user;
-  final int subjectCount;
-  final VoidCallback onAccount;
   final VoidCallback? onBack;
 
   @override
@@ -32,136 +23,42 @@ class ScannerHeader extends StatelessWidget {
 
     return SurfacePanel(
       topAccent: true,
-      padding: const EdgeInsets.fromLTRB(10, 12, 12, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.fromLTRB(10, 12, 12, 12),
+      child: Row(
         children: [
-          Row(
-            children: [
-              if (onBack != null)
-                IconButton(
-                  onPressed: onBack,
-                  tooltip: AppStrings.homeBack,
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  color: colors.textSecondary,
-                )
-              else
-                const SizedBox(width: 6),
-              const BrandMark(size: 40),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ScannerStrings.title,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      ScannerStrings.subtitle,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ],
+          if (onBack != null)
+            IconButton(
+              onPressed: onBack,
+              tooltip: AppStrings.homeBack,
+              icon: const Icon(Icons.arrow_back_rounded),
+              color: colors.textSecondary,
+            )
+          else
+            const SizedBox(width: 6),
+          const BrandMark(size: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ScannerStrings.title,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _AccountButton(user: user, onTap: onAccount),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: _WhoIsScanning(user: user, subjectCount: subjectCount),
+                const SizedBox(height: 2),
+                Text(
+                  ScannerStrings.subtitle,
+                  style: TextStyle(fontSize: 12.5, color: colors.textSecondary),
+                ),
+              ],
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-/// The avatar in the corner, ringed in the accent — the app's way into the
-/// account sheet, as in most apps a phone already has.
-class _AccountButton extends StatelessWidget {
-  const _AccountButton({required this.user, required this.onTap});
-
-  final ScannerUser user;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    // The tooltip is for the eye; the label below already says "Account" to
-    // a screen reader, which would otherwise hear it twice.
-    return Tooltip(
-      message: ScannerStrings.account,
-      excludeFromSemantics: true,
-      child: Semantics(
-        button: true,
-        label: '${ScannerStrings.account}: ${user.name}',
-        // Excluding the InkWell's own node drops its tap action with it, so
-        // the action is given back here.
-        onTap: onTap,
-        excludeSemantics: true,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: Container(
-            padding: const EdgeInsets.all(2.5),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: colors.headerRule,
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.surface,
-              ),
-              child: UserAvatar(user: user, size: 36),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Name and role chips — who the records are being filed under.
-class _WhoIsScanning extends StatelessWidget {
-  const _WhoIsScanning({required this.user, required this.subjectCount});
-
-  final ScannerUser user;
-  final int subjectCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          user.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 14.5,
-            fontWeight: FontWeight.w700,
-            color: context.colors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        UserChips(user: user, subjectCount: subjectCount),
-      ],
     );
   }
 }

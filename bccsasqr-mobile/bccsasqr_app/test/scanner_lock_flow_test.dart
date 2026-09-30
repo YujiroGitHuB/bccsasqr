@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bccsasqr_app/models/app_role.dart';
 import 'package:bccsasqr_app/services/role_store.dart';
+import 'package:bccsasqr_app/views/instructor_shell.dart';
 
 /// A phone whose lock answers from a script: the next results in order,
 /// "unlocked" once the script runs out.
@@ -175,7 +176,7 @@ void main() {
     expect(find.text(ScannerStrings.title), findsNothing);
     expect(device.asked.last, ScannerStrings.lockReason);
     // Not just the scanner: nothing of the instructor's side is there.
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(InstructorDock), findsNothing);
     expect(find.text(NavStrings.qr), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('lock.unlock')));
@@ -183,7 +184,7 @@ void main() {
 
     expect(find.byType(ScannerLockScreen), findsNothing);
     expect(find.text(ScannerStrings.title), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(InstructorDock), findsOneWidget);
   });
 
   testWidgets('a minute away locks the whole bar, and unlocking finds it '
@@ -215,13 +216,13 @@ void main() {
     expect(find.byType(WhatsNewPage), findsNothing);
     expect(find.byType(ScannerLockScreen), findsOneWidget);
     // Kept under the lock, but out of reach.
-    expect(find.byType(NavigationBar).hitTestable(), findsNothing);
+    expect(find.byType(InstructorDock).hitTestable(), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('lock.unlock')));
     await tester.pumpAndSettle();
 
     expect(find.byType(ScannerLockScreen), findsNothing);
-    expect(find.byType(NavigationBar).hitTestable(), findsOneWidget);
+    expect(find.byType(InstructorDock).hitTestable(), findsOneWidget);
     // The same bar: still on Settings, and the tracker was not built again.
     expect(find.text(SettingsStrings.appearance), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('nav.tracker')));
@@ -284,14 +285,14 @@ void main() {
     expect(store.enabled, isFalse);
   });
 
-  testWidgets('the switch in the account sheet turns it off', (tester) async {
+  testWidgets('the switch in Settings turns it off', (tester) async {
     await signInWithLock(tester);
 
-    await tester.tap(find.byTooltip(ScannerStrings.account));
+    await tester.tap(find.byKey(const ValueKey('nav.settings')));
     await tester.pumpAndSettle();
     expect(find.text(ScannerStrings.lockTile), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('account.lock')));
+    await tester.tap(find.byKey(const ValueKey('settings.lock')));
     await tester.pumpAndSettle();
 
     expect(store.enabled, isFalse);

@@ -185,7 +185,7 @@ void main() {
       expect(find.byKey(const ValueKey('home.generator')), findsOneWidget);
       expect(find.byKey(const ValueKey('home.tracker')), findsOneWidget);
       // Nothing of the instructor's, anywhere.
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(InstructorDock), findsNothing);
       expect(find.byType(ScannerFlow, skipOffstage: false), findsNothing);
       expect(find.text(NavStrings.scanner), findsNothing);
     });
@@ -253,7 +253,7 @@ void main() {
 
       // A student who taps it gets the form, and nothing behind it.
       expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
-      expect(find.byType(NavigationBar, skipOffstage: false), findsNothing);
+      expect(find.byType(InstructorDock, skipOffstage: false), findsNothing);
       expect(find.byType(InstructorShell, skipOffstage: false), findsNothing);
       expect(find.byType(GeneratorIntro, skipOffstage: false), findsNothing);
       expect(find.text(NavStrings.qr), findsNothing);
@@ -263,7 +263,7 @@ void main() {
       await signIn(tester);
 
       expect(roles.saved, AppRole.instructor);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(InstructorDock), findsOneWidget);
       for (final label in [
         NavStrings.qr,
         NavStrings.scanner,
@@ -311,7 +311,7 @@ void main() {
 
       expect(find.text(RoleStrings.question), findsNothing);
       expect(find.text(ScannerStrings.signInHeading), findsNothing);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(InstructorDock), findsOneWidget);
     });
 
     testWidgets('an instructor\'s phone, signed out, asks for the sign-in '
@@ -331,9 +331,12 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('nav.scanner')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip(ScannerStrings.account));
+      await tester.tap(find.byKey(const ValueKey('nav.settings')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(ScannerStrings.signOut).last);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('settings.signOut')),
+      );
+      await tester.tap(find.byKey(const ValueKey('settings.signOut')));
       await tester.pumpAndSettle();
       await tester.tap(find.text(ScannerStrings.signOut).last);
       await tester.pumpAndSettle();
@@ -396,12 +399,19 @@ void main() {
       await signIn(tester);
       await tester.tap(find.byKey(const ValueKey('nav.settings')));
       await tester.pumpAndSettle();
-      expect(find.text(RoleStrings.currentInstructor), findsOneWidget);
+      // The Role row's — the Account panel's chip says it too.
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('settings.switchRole')),
+          matching: find.text(RoleStrings.currentInstructor),
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const ValueKey('settings.switchRole')));
       await tester.pumpAndSettle();
 
       expect(find.text(RoleStrings.question), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(InstructorDock), findsNothing);
     });
 
     testWidgets('back from another tab goes to the scanner first', (

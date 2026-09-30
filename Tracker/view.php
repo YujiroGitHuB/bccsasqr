@@ -26,6 +26,13 @@ if ($locked) {
 <html lang="en">
 
 <head>
+    <?php
+    require_once __DIR__ . '/../includes/share_meta.php';
+    share_meta([
+        'title'       => 'Attendance Tracker',
+        'description' => 'Enter your student number to see how many times you were marked present in each subject, and on which days.',
+    ]);
+    ?>
     <?php include __DIR__ . "/../includes/headerTracker.php"; ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- In-app browser notice (assets/js/detection.js): ang anyo nito ay

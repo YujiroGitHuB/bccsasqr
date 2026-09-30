@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/role_controller.dart';
 import 'controllers/scanner_controller.dart';
+import 'controllers/scanner_lock_controller.dart';
 import 'controllers/settings_controller.dart';
 import 'controllers/whats_new_controller.dart';
 import 'core/config/app_config.dart';
@@ -403,31 +404,36 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   // The sign-in, then the bottom bar. Settings is one of its tabs, so
   // nothing is pushed over the scanner but What's New.
 
-  Widget _instructorSettings(BuildContext context, ScannerController session) =>
-      SettingsPage(
-        controller: _settings,
-        appInfo: widget.appInfo,
-        role: AppRole.instructor,
-        account: session.user,
-        onSignOut: session.signOut,
-        pendingScans: () => session.pendingCount,
-        onSwitchRole: () => _switchRole(context),
-        whatsNewBuilder: (context) => WhatsNewPage(
-          areas: {
-            WhatsNewArea.qr,
-            WhatsNewArea.scanner,
-            WhatsNewArea.tracker,
-            if (session.user?.canManageLinks ?? false) WhatsNewArea.links,
-          },
-          onShown: _whatsNew.markSeen,
-          // Back down to the bar, on the item's tab.
-          onOpen: (area) {
-            Navigator.of(context).pop();
-            _tab.value = InstructorTab.of(area);
-          },
-        ),
-        tourBuilder: _tour,
-      );
+  Widget _instructorSettings(
+    BuildContext context,
+    ScannerController session,
+    ScannerLockController lock,
+  ) => SettingsPage(
+    controller: _settings,
+    appInfo: widget.appInfo,
+    role: AppRole.instructor,
+    account: session.user,
+    subjectCount: () => session.subjects.length,
+    lock: lock,
+    onSignOut: session.signOut,
+    pendingScans: () => session.pendingCount,
+    onSwitchRole: () => _switchRole(context),
+    whatsNewBuilder: (context) => WhatsNewPage(
+      areas: {
+        WhatsNewArea.qr,
+        WhatsNewArea.scanner,
+        WhatsNewArea.tracker,
+        if (session.user?.canManageLinks ?? false) WhatsNewArea.links,
+      },
+      onShown: _whatsNew.markSeen,
+      // Back down to the bar, on the item's tab.
+      onOpen: (area) {
+        Navigator.of(context).pop();
+        _tab.value = InstructorTab.of(area);
+      },
+    ),
+    tourBuilder: _tour,
+  );
 
   /// The Links tab, behind its splash — which covers the list loading. A
   /// token refused there signs the whole side out, as a refused scan does.
@@ -461,7 +467,6 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       deviceLock: widget.deviceLock ?? LocalAuthDeviceLock(),
       lockStore: widget.scannerLockStore ?? SharedPrefsScannerLockStore(),
       lockClock: widget.scannerLockClock,
-      onOpenSettings: () => _tab.value = InstructorTab.settings,
       // A fresh bar opens on the scanner, and the phone is now known to be
       // an instructor's.
       onSignedIn: () {
@@ -469,12 +474,13 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         _role.choose(AppRole.instructor);
       },
       onLeave: _role.clear,
-      home: (context, scanner, session) => InstructorShell(
+      home: (context, scanner, session, lock) => InstructorShell(
         tab: _tab,
         generatorBuilder: _generator,
         scannerBuilder: scanner,
         trackerBuilder: _trackerPage,
-        settingsBuilder: (context) => _instructorSettings(context, session),
+        settingsBuilder: (context) =>
+            _instructorSettings(context, session, lock),
         linksBuilder: (context) => _linksPage(context, session),
         account: session,
         canManageLinks: () => session.user?.canManageLinks ?? false,

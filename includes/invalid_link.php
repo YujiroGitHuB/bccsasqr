@@ -6,6 +6,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><?= (($invalid_reason ?? '') === 'expired') ? 'Attendance Link Closed' : 'Invalid Attendance Link' ?></title>
+    <?php
+    require_once __DIR__ . '/share_meta.php';
+    share_meta(($invalid_reason ?? '') === 'expired'
+        ? [
+            'title'       => 'Attendance link closed',
+            'description' => 'This attendance link has closed. Ask your instructor for the new one.',
+        ]
+        : [
+            'title'       => 'Invalid attendance link',
+            'description' => 'This attendance link does not exist or was switched off. Check it with your instructor.',
+        ]);
+    ?>
     <link rel="shortcut icon" href="../assets/images/bcc logo.png" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />

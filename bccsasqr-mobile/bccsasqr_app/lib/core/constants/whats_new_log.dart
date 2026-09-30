@@ -18,7 +18,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-30.5';
+  static const String version = '2026-09-30.7';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -27,13 +27,37 @@ abstract final class WhatsNewLog {
       title: 'Your photo, attendance links, and working offline',
       summary:
           'Students can add their own photo in the app, and are greeted by '
-          'name and face on the home screen. Instructors get their '
+          'name and face on the home screen. Instructors get a new bar with '
+          'Scan in the middle, and their '
           'attendance links in the app, QR codes '
           'included. The scanner keeps scanning when the signal drops and '
           'sends the scans once you are back online. Your QR code opens with '
           'no internet too. The scanner\'s list is shorter, and its camera '
           'can be switched off between classes.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.manage_accounts_outlined,
+          title: 'Your account is in Settings',
+          text:
+              'The top of the scanner now shows only its title, so the camera '
+              'sits higher on the screen. Who is signed in — your name, role, '
+              'subjects and ID — the **Fingerprint lock** switch and '
+              '**Sign out** are all in **Settings → Account**.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.qr_code_scanner_rounded,
+          title: 'Scan, in the middle of the bar',
+          text:
+              'The tabs now sit on a rounded bar at the bottom, with **Scanner** '
+              'as the big round button in the middle: one tap back to scanning '
+              'from any tab. **QR Code** and **Links** are on its left, '
+              '**Attendance** and **Settings** on its right.',
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.added,
           area: WhatsNewArea.profile,

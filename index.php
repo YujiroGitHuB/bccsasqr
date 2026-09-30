@@ -43,6 +43,13 @@ $themeBase = '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0f172a">
     <title>BCC SASQR | Login</title>
+    <?php
+    require_once __DIR__ . '/includes/share_meta.php';
+    share_meta([
+        'title'       => 'BCC SASQR',
+        'description' => 'QR code attendance for Binalatongan Community College. Instructors and staff sign in here.',
+    ]);
+    ?>
     <link rel="icon" type="image/png" href="assets/images/bcc-logo.png">
 
     <!-- Tokens first: everything below reads from them. -->

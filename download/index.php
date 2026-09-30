@@ -47,7 +47,13 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Get the app · <?= htmlspecialchars($acronym) ?></title>
-    <meta name="description" content="Download the <?= htmlspecialchars($acronym) ?> Android app: students keep their attendance QR on their phone and check their attendance, instructors scan it.">
+    <?php
+    require_once __DIR__ . '/../includes/share_meta.php';
+    share_meta([
+        'title'       => 'Get the ' . $acronym . ' app',
+        'description' => 'Download the ' . $acronym . ' Android app: students keep their attendance QR on their phone and check their attendance, instructors scan it.',
+    ]);
+    ?>
     <link rel="icon" href="<?= htmlspecialchars($logo) ?>">
 
     <script>document.documentElement.classList.add('dl-js');</script>

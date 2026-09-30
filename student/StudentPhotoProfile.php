@@ -6,6 +6,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Photo Upload</title>
+  <?php
+  require_once __DIR__ . '/../includes/share_meta.php';
+  share_meta([
+      'title'       => 'Upload your student photo',
+      'description' => 'Your instructor sees this photo on the scanner each time your QR code is scanned. Verify with your student number and last name, then upload.',
+  ]);
+  ?>
   <link rel="shortcut icon" href="../assets/images/bcc logo.png" type="image/x-icon">
   <?php include __DIR__ . "/../includes/theme_head.php"; ?>
   <link rel="stylesheet" href="<?= asset('assets/css/style.css') ?>">
