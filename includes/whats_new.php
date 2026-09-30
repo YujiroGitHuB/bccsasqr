@@ -88,7 +88,7 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-cloud-slash',
                     'title' => 'Scans sent from the app’s offline queue are marked',
-                    'text'  => 'In <strong>Attendance Records</strong>, a scan the app kept offline and sent later carries an <strong>Offline</strong> tag beside its time. Its time comes from the phone&rsquo;s clock, not the server&rsquo;s &mdash; hover the tag to see when it reached the server. Every other scan is unchanged.',
+                    'text'  => 'In <strong>Attendance Records</strong>, a scan the app kept offline and sent later carries an <strong>Offline</strong> tag beside its time. Its time comes from the phone&rsquo;s clock, not the server&rsquo;s &mdash; hover the tag to see when it reached the server. The PDF export marks it too, as <strong>(Offline)</strong> beside the time, with a note under the table saying what it means. The student counts as present everywhere, exactly like any other scan.',
                     'link'  => ['href' => 'pages/attendance.php', 'label' => 'Open Attendance Records', 'can' => 'attendance.view'],
                 ],
                 [

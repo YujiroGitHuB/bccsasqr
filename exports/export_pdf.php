@@ -14,6 +14,7 @@ requirePermission('attendance.export', '../pages/dashboard.php');
 include __DIR__ . "/../includes/systemConfig.php";
 require __DIR__ . '/../includes/pdf_report.php';
 require_once __DIR__ . '/../includes/late.php';
+require_once __DIR__ . '/../includes/offline_scan.php';
 
 date_default_timezone_set('Asia/Manila');
 
@@ -101,9 +102,10 @@ if ($status === 'absent') {
     $rowParams = array_merge([$course, $section, $course, $section, $subject], $scopeParams, [$date]);
     $stmt->bind_param("sssss" . $scopeTypes . "s", ...$rowParams);
 } else {
-    $lateCol = late_ready($conn) ? 'is_late' : '0 AS is_late';
+    $lateCol    = late_ready($conn) ? 'is_late' : '0 AS is_late';
+    $offlineCol = offline_scan_ready($conn) ? 'scanned_offline' : '0 AS scanned_offline';
     $sql = "
-        SELECT date, student_no, name, course, section, subject, time_in, $lateCol
+        SELECT date, student_no, name, course, section, subject, time_in, $lateCol, $offlineCol
         FROM attendance_tbl
         WHERE course = ? AND section = ? AND subject = ? $scopeSql AND DATE(`date`) = ?
         ORDER BY name ASC
@@ -169,6 +171,10 @@ $pdf->SetFont('Arial', '', 9);
 $fill = false;
 $i    = 1;
 
+// Any row scanned in the app with no internet: the note under the
+// table explains the mark.
+$anyOffline = false;
+
 if ($total_count === 0) {
     $pdf->EmptyRow($status === 'absent'
         ? 'No absences recorded for this subject on this date.'
@@ -190,9 +196,16 @@ if ($total_count === 0) {
             $pdf->Cell(24, 7.5, ReportPDF::txt($row['course']),      1, 0, 'C', $fill);
             // Late goes in the time cell, in words: the report is
             // printed and signed, often in black and white, so a
-            // colour would not survive it.
+            // colour would not survive it. Offline the same way — a
+            // scan the app kept with no internet, timed by the phone.
+            $marks = [];
+            if ((int) $row['is_late'] === 1) $marks[] = 'Late';
+            if ((int) $row['scanned_offline'] === 1) {
+                $marks[]    = 'Offline';
+                $anyOffline = true;
+            }
             $timeText = date('h:i A', strtotime($row['time_in']));
-            if ((int) $row['is_late'] === 1) $timeText .= ' (Late)';
+            if ($marks) $timeText .= ' (' . implode(', ', $marks) . ')';
             $pdf->Cell(46, 7.5, $timeText, 1, 1, 'C', $fill);
         }
         $fill = !$fill;
@@ -209,6 +222,18 @@ $label = $status === 'absent' ? 'Total absent' : 'Total listed';
 $pdf->Cell(164, 8, ReportPDF::txt($label), 1, 0, 'R', true);
 $pdf->Cell(26,  8, (string) $total_count,   1, 1, 'C', true);
 $pdf->SetTextColor(0, 0, 0);
+
+if ($anyOffline) {
+    $pdf->Ln(2);
+    $pdf->SetFont('Arial', 'I', 8);
+    $pdf->SetTextColor(90, 100, 115);
+    $pdf->MultiCell(0, 4.5, ReportPDF::txt(
+        'Offline: scanned in the BCC SASQR app with no internet and sent to the '
+        . 'records later. The student was present; the time is the one on the '
+        . "instructor's phone when the scan was made."
+    ));
+    $pdf->SetTextColor(0, 0, 0);
+}
 
 $pdf->AddSignature();
 $pdf->Output('D', $filename);
