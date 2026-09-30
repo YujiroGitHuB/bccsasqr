@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bccsasqr_app/core/utils/network_error.dart';
+import 'package:bccsasqr_app/models/offline_scan.dart';
 import 'package:bccsasqr_app/services/http_scanner_repository.dart';
 import 'package:bccsasqr_app/services/scanner_repository.dart';
 import 'package:bccsasqr_app/services/token_store.dart';
@@ -72,9 +73,8 @@ void main() {
   test('no signal says so in plain words, with no exception text', () async {
     final r = repo(
       MemoryTokenStore(),
-      (_) async => throw http.ClientException(
-        "Failed host lookup: 'lexondev.com'",
-      ),
+      (_) async =>
+          throw http.ClientException("Failed host lookup: 'lexondev.com'"),
     );
 
     await expectLater(
@@ -177,19 +177,19 @@ void main() {
     final r = repo(
       MemoryTokenStore(_token),
       (_) async => json(
-        fail('photo_required', 'ABALOS has no photo on file.', {
-          'name': 'ABALOS, JAYVEE V.',
+        fail('photo_required', 'NAVARRO has no photo on file.', {
+          'name': 'NAVARRO, TRISHA MAE V.',
         }),
         422,
       ),
     );
 
     await expectLater(
-      r.recordScan(studentNumber: '025-1211', subjectCode: 'ELEC2'),
+      r.recordScan(studentNumber: '000-1211', subjectCode: 'ELEC2'),
       throwsA(
         isA<ScannerException>()
             .having((e) => e.code, 'code', 'photo_required')
-            .having((e) => e.name, 'name', 'ABALOS, JAYVEE V.'),
+            .having((e) => e.name, 'name', 'NAVARRO, TRISHA MAE V.'),
       ),
     );
   });
@@ -234,8 +234,8 @@ void main() {
           'records': [
             {
               'date': '2026-09-27',
-              'student_no': '025-294',
-              'name': 'CENTENO, EDRIAN GABRIEL D.',
+              'student_no': '000-294',
+              'name': 'BAUTISTA, LORENZO MIGUEL D.',
               'course': 'BSIT',
               'section': '2E',
               'subject': 'Multimedia Technologies',
@@ -251,4 +251,95 @@ void main() {
     expect(today.single.late, isTrue);
     expect(await r.setLateMarking(subjectCode: 'ELEC2', on: true), isTrue);
   });
+
+  test('a class list comes by subject, in the query string', () async {
+    late Uri seen;
+    final r = repo(MemoryTokenStore(_token), (req) async {
+      seen = req.url;
+      return json(
+        ok({
+          'date': '2026-09-30',
+          'subject_code': 'IT 101',
+          'photo_required': true,
+          'students': [
+            {
+              'student_no': '000-1023',
+              'name': 'SANTOS, MARIA ISABEL',
+              'course': 'BSCS',
+              'section': '2B',
+              'photo': false,
+            },
+          ],
+        }),
+      );
+    });
+
+    final roster = await r.loadRoster('IT 101');
+    expect(seen.path, endsWith('/scanner/roster'));
+    expect(seen.queryParameters['subject'], 'IT 101');
+    expect(roster.photoRequired, isTrue);
+    expect(roster.date, '2026-09-30');
+    expect(roster.students['000-1023']?.hasPhoto, isFalse);
+  });
+
+  test(
+    'kept scans go as UTC instants, and each answer is read by id',
+    () async {
+      late Map<String, dynamic> sent;
+      final r = repo(MemoryTokenStore(_token), (req) async {
+        sent = jsonDecode(req.body) as Map<String, dynamic>;
+        return json(
+          ok({
+            'results': [
+              {
+                'id': 'a',
+                'status': 'saved',
+                'record': {
+                  'student_no': '000-1023',
+                  'name': 'SANTOS, MARIA ISABEL',
+                  'subject': 'Multimedia Technologies',
+                  'date': '2026-09-30',
+                  'time_in': '07:25:54 AM',
+                  'late': false,
+                },
+              },
+              {'id': 'b', 'status': 'already_marked'},
+              {
+                'id': 'c',
+                'status': 'rejected',
+                'code': 'too_old',
+                'message': 'This scan is more than 3 days old.',
+              },
+              {'id': 'd', 'status': 'error', 'code': 'scan_failed'},
+            ],
+          }),
+        );
+      });
+
+      PendingScan scan(String id) => PendingScan(
+        id: id,
+        userId: 4,
+        studentNumber: '000-1023',
+        subjectCode: 'ELEC2',
+        subjectName: 'Multimedia Technologies',
+        scannedAt: DateTime.utc(2026, 9, 29, 23, 25, 54),
+        late: true,
+      );
+
+      final answers = await r.syncScans([scan('a'), scan('b'), scan('c')]);
+      final first = (sent['scans'] as List).first as Map<String, dynamic>;
+      expect(first['scanned_at'], '2026-09-29T23:25:54.000Z');
+      expect(first['late'], isTrue);
+      expect(first['subject_code'], 'ELEC2');
+
+      expect(answers.map((a) => a.status), [
+        SyncStatus.saved,
+        SyncStatus.alreadyMarked,
+        SyncStatus.rejected,
+        SyncStatus.error,
+      ]);
+      expect(answers.first.record?.timeIn, '07:25:54 AM');
+      expect(answers[2].rejection?.code, 'too_old');
+    },
+  );
 }

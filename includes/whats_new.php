@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-30';
+const WHATS_NEW_VERSION = '2026-09-30.3';
 
 /**
  * The changelog, newest release first.
@@ -74,9 +74,37 @@ function whats_new_releases(): array
             'id'      => '2026-09-30',
             'date'    => '2026-09-30',
             'icon'    => 'bi-cloud-slash',
-            'title'   => 'The app: QR codes open offline, and the scanner camera switches off',
-            'summary' => 'Students’ QR codes open in the app with no internet, the app says plainly when the phone is offline, and the scanner’s camera can be switched off between classes.',
+            'title'   => 'The app works offline: the scanner keeps scanning, and QR codes still open',
+            'summary' => 'The app’s scanner no longer stops when the signal does — scans are kept on the phone and sent by themselves when the internet is back, and the admin sees them marked Offline. Students’ QR codes open with no internet, the scanner’s Attendance List is shorter and searchable, its camera can be switched off between classes, and new users get a short tour when the app first opens.',
             'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-cloud-arrow-up',
+                    'title' => 'The app’s scanner keeps scanning with no internet',
+                    'text'  => 'In a room with no signal, keep scanning. Each scan is saved on the phone at once &mdash; it still beeps and reads the name aloud, because the app downloads each of your classes&rsquo; lists while it has internet &mdash; and shows <strong>Pending</strong> in the Attendance List. When the phone is back online the scans are sent by themselves (or tap <strong>Send now</strong>), and the server runs the same checks as a live scan. Any it refuses are listed under <strong>Not saved</strong>, each with the reason, so you can scan that student again. The time recorded is the moment you scanned, not the moment it was sent; scans must be sent within 3 days. Signing out with scans still on the phone tells you so first &mdash; they stay, and go out the next time you sign in. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-cloud-slash',
+                    'title' => 'Scans sent from the app’s offline queue are marked',
+                    'text'  => 'In <strong>Attendance Records</strong>, a scan the app kept offline and sent later carries an <strong>Offline</strong> tag beside its time. Its time comes from the phone&rsquo;s clock, not the server&rsquo;s &mdash; hover the tag to see when it reached the server. Every other scan is unchanged.',
+                    'link'  => ['href' => 'pages/attendance.php', 'label' => 'Open Attendance Records', 'can' => 'attendance.view'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-easel',
+                    'title' => 'The app opens with a short tour',
+                    'text'  => 'The first time someone opens the app, four quick slides show what it does &mdash; the QR code, being scanned in class, and the attendance tracker &mdash; before it asks whether they are a student or an instructor. They can swipe through or tap <strong>Skip</strong>, and see it again any time from <strong>Settings &rarr; App tour</strong>. Worth pointing new students to on their first day. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-list-ul',
+                    'title' => 'A shorter Attendance List in the app’s scanner',
+                    'text'  => 'Under the camera the app now shows only the five newest scans, so the page no longer grows a row per student and the camera stays in view. <strong>View all</strong> opens the whole list over the scanner, starting on the subject you are scanning, with a chip for each subject and the search box. It is in true newest-first order too &mdash; a scan after noon no longer showed below the morning ones. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-camera-video-off',
@@ -95,7 +123,7 @@ function whats_new_releases(): array
                     'type'  => 'improved',
                     'icon'  => 'bi-wifi-off',
                     'title' => 'The app says plainly when it is offline',
-                    'text'  => 'When the phone loses its connection, the app now shows <strong>You&rsquo;re offline</strong> at the top of the screen, and <strong>Back online</strong> when it returns. A look-up, sign-in or scan that cannot get through says <strong>No internet connection</strong> and what to check, instead of a technical error, and a scan that did not reach the server says <strong>Attendance not saved</strong> &mdash; so nobody assumes the student is in the list. Anyone with the app already installed gets this by downloading it again.',
+                    'text'  => 'When the phone loses its connection, the app now shows <strong>You&rsquo;re offline</strong> at the top of the screen, and <strong>Back online</strong> when it returns. A look-up or sign-in that cannot get through says <strong>No internet connection</strong> and what to check, instead of a technical error. Anyone with the app already installed gets this by downloading it again.',
                 ],
             ],
         ],

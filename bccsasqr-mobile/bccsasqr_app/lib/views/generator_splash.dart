@@ -116,7 +116,7 @@ class _GeneratorSplashState extends State<GeneratorSplash>
                       SplashTile(
                         shown: _tile.value,
                         child: CustomPaint(
-                          painter: _BuildingQrPainter(
+                          painter: BuildingQrPainter(
                             code: _code,
                             eyes: _eyes.value,
                             wave: _wave.value,
@@ -153,9 +153,10 @@ class _GeneratorSplashState extends State<GeneratorSplash>
 }
 
 /// Draws [code] part-built: eyes scaled by [eyes], each dot popping in as the
-/// diagonal [wave] reaches it, and a [shine] sweeping corner to corner.
-class _BuildingQrPainter extends CustomPainter {
-  const _BuildingQrPainter({
+/// diagonal [wave] reaches it, and a [shine] sweeping corner to corner. The
+/// introduction's QR slide draws it too.
+class BuildingQrPainter extends CustomPainter {
+  const BuildingQrPainter({
     required this.code,
     required this.eyes,
     required this.wave,
@@ -246,7 +247,7 @@ class _BuildingQrPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_BuildingQrPainter old) =>
+  bool shouldRepaint(BuildingQrPainter old) =>
       old.eyes != eyes ||
       old.wave != wave ||
       old.shine != shine ||

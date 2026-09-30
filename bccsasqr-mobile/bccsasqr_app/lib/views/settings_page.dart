@@ -29,6 +29,8 @@ class SettingsPage extends StatefulWidget {
     this.onSwitchRole,
     this.account,
     this.onSignOut,
+    this.pendingScans,
+    this.tourBuilder,
   });
 
   /// The instructor signed in on this phone. The Account panel shows only
@@ -38,6 +40,10 @@ class SettingsPage extends StatefulWidget {
   /// Signs the scanner out, after asking — the same as the account sheet's.
   /// The instructor's side goes with it, back to the sign-in.
   final Future<void> Function()? onSignOut;
+
+  /// How many scans are still kept on the phone, unsent — the sign-out
+  /// question says so.
+  final int Function()? pendingScans;
 
   final SettingsController controller;
 
@@ -50,6 +56,9 @@ class SettingsPage extends StatefulWidget {
 
   /// The What's New page, under About — the same one as on the home screen.
   final WidgetBuilder? whatsNewBuilder;
+
+  /// The first launch's introduction, under About. No row without it.
+  final WidgetBuilder? tourBuilder;
 
   /// Overridable for tests: the real one asks the installed package.
   final Future<AppInfo> Function() appInfo;
@@ -66,7 +75,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _signOut() async {
     final signOut = widget.onSignOut;
     if (signOut == null) return;
-    if (await confirmSignOut(context)) await signOut();
+    final pending = widget.pendingScans?.call() ?? 0;
+    if (await confirmSignOut(context, pending: pending)) await signOut();
   }
 
   Future<void> _open(String url) async {
@@ -88,6 +98,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final colors = context.colors;
     final download = AppInfo.downloadPageUrl;
     final whatsNew = widget.whatsNewBuilder;
+    final tour = widget.tourBuilder;
     final role = widget.role;
     final switchRole = widget.onSwitchRole;
     final scanner = role != AppRole.student;
@@ -313,6 +324,17 @@ class _SettingsPageState extends State<SettingsPage> {
                               onTap: () => Navigator.of(context).push(
                                 MaterialPageRoute<void>(builder: whatsNew),
                               ),
+                            ),
+                          if (tour != null)
+                            _LinkRow(
+                              key: const ValueKey('settings.tour'),
+                              icon: Icons.slideshow_outlined,
+                              title: SettingsStrings.tour,
+                              body: SettingsStrings.tourBody,
+                              external: false,
+                              onTap: () => Navigator.of(
+                                context,
+                              ).push(MaterialPageRoute<void>(builder: tour)),
                             ),
                           _InfoRow(
                             icon: Icons.dns_outlined,

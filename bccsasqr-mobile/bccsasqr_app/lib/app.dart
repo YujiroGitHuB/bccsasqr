@@ -16,6 +16,8 @@ import 'services/connectivity.dart';
 import 'services/device_lock.dart';
 import 'services/http_scanner_repository.dart';
 import 'services/http_student_repository.dart';
+import 'services/offline_scan_store.dart';
+import 'services/onboarding_store.dart';
 import 'services/qr_export_service.dart';
 import 'services/role_store.dart';
 import 'services/saved_qr_store.dart';
@@ -30,6 +32,7 @@ import 'services/whats_new_store.dart';
 import 'views/generator_splash.dart';
 import 'views/home_page.dart';
 import 'views/instructor_shell.dart';
+import 'views/onboarding_page.dart';
 import 'views/qr_generator_page.dart';
 import 'views/role_picker_page.dart';
 import 'views/scanner/scanner_flow.dart';
@@ -66,6 +69,8 @@ class BccSasqrApp extends StatefulWidget {
     this.keepAwake = deviceKeepAwake,
     this.savedQrStore,
     this.connectivity,
+    this.offlineScanStore,
+    this.onboardingStore,
     this.showSplash = true,
   });
 
@@ -106,6 +111,14 @@ class BccSasqrApp extends StatefulWidget {
   /// main.dart passes the phone's own: with none, nothing is announced — a
   /// test has no network to watch.
   final ConnectivityService? connectivity;
+
+  /// Scans made with no internet, kept until sent. A SQLite file with a real
+  /// server; in memory in demo mode, whose scans never leave the phone.
+  final OfflineScanStore? offlineScanStore;
+
+  /// Whether this phone has had the introduction. Only main.dart passes the
+  /// phone's own: with none it is not shown — a test is not a first launch.
+  final OnboardingStore? onboardingStore;
 
   /// Tests that are about the generator switch the opening animation off.
   final bool showSplash;
@@ -162,6 +175,11 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         sound: () => _settings.sound,
         vibration: () => _settings.vibration,
       );
+  late final OfflineScanStore _offlineScans =
+      widget.offlineScanStore ??
+      (AppConfig.hasRemoteApi
+          ? SqfliteOfflineScanStore()
+          : MemoryOfflineScanStore());
 
   late final WhatsNewController _whatsNew = WhatsNewController(
     store: widget.whatsNewStore ?? SharedPrefsWhatsNewStore(),
@@ -179,6 +197,9 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
 
   late bool _splashing = widget.showSplash;
 
+  /// Whether the introduction has been seen; null while the store answers.
+  bool? _onboarded;
+
   bool _scannerOpened = false;
 
   /// "I'm a student" was just picked: the student's splash plays before the
@@ -194,7 +215,28 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     _settings.load();
     _whatsNew.load();
     _role.load();
+
+    final onboarding = widget.onboardingStore;
+    if (onboarding == null) {
+      _onboarded = true;
+    } else {
+      onboarding.hasSeen().then((seen) {
+        if (mounted) setState(() => _onboarded = seen);
+      });
+    }
   }
+
+  /// **Skip**, or **Get started** on the last slide: on to the question.
+  void _finishOnboarding() {
+    setState(() => _onboarded = true);
+    widget.onboardingStore?.markSeen();
+  }
+
+  /// Settings → App tour: the introduction again, closed by its last button.
+  Widget _tour(BuildContext context) => OnboardingPage(
+    finishLabel: OnboardingStrings.done,
+    onDone: () => Navigator.of(context).pop(),
+  );
 
   @override
   void dispose() {
@@ -258,6 +300,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     // and What's New would stack a third.
     whatsNewBuilder: (context) =>
         WhatsNewPage(areas: _studentAreas, onShown: _whatsNew.markSeen),
+    tourBuilder: _tour,
   );
 
   /// From the home screen, where each item can open the part it is about.
@@ -287,6 +330,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         role: AppRole.instructor,
         account: session.user,
         onSignOut: session.signOut,
+        pendingScans: () => session.pendingCount,
         onSwitchRole: () => _switchRole(context),
         whatsNewBuilder: (context) => WhatsNewPage(
           onShown: _whatsNew.markSeen,
@@ -296,6 +340,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
             _tab.value = InstructorTab.of(area);
           },
         ),
+        tourBuilder: _tour,
       );
 
   /// The whole instructor side sits behind the scanner's sign-in: until an
@@ -311,6 +356,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       feedback: _scanFeedback,
       cameraBuilder: widget.cameraBuilder,
       keepAwake: widget.keepAwake,
+      offlineStore: _offlineScans,
+      online: widget.connectivity?.online,
       deviceLock: widget.deviceLock ?? LocalAuthDeviceLock(),
       lockStore: widget.scannerLockStore ?? SharedPrefsScannerLockStore(),
       lockClock: widget.scannerLockClock,
@@ -333,13 +380,21 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     );
   }
 
-  /// After the splash: the question on the first launch, then the half of
-  /// the app it picked.
+  /// After the splash: on the first launch the introduction and then the
+  /// question, then the half of the app it picked.
   Widget _home() {
-    // Only without the splash (tests), for the moment the store takes.
-    if (!_role.loaded) return const SizedBox.shrink(key: ValueKey('loading'));
+    // Only without the splash (tests), for the moment the stores take.
+    if (!_role.loaded || _onboarded == null) {
+      return const SizedBox.shrink(key: ValueKey('loading'));
+    }
 
     return switch (_role.role) {
+      // Only before the first answer: a phone that already has a role —
+      // updated from a version without the introduction — goes on as it was.
+      null when _onboarded == false => OnboardingPage(
+        key: const ValueKey('onboarding'),
+        onDone: _finishOnboarding,
+      ),
       null => RolePickerPage(
         key: const ValueKey('role'),
         onChosen: _chooseRole,

@@ -41,6 +41,7 @@ include __DIR__ . "/../includes/check_user_status.php";
 include __DIR__ . "/../includes/auth.php";
 include __DIR__ . "/../includes/db_connect.php";
 require_once __DIR__ . "/../includes/late.php";
+require_once __DIR__ . "/../includes/offline_scan.php";
 
 ob_clean();
 header('Content-Type: application/json');
@@ -210,8 +211,14 @@ $rowParams = array_merge($params, [$start, $limitLen]);
 // before that every row was on time, because there was no cutoff.
 $lateCol = late_ready($conn) ? 'is_late' : '0 AS is_late';
 
+// Likewise the mark on a scan the app kept offline and sent later
+// (includes/offline_scan.php).
+$offlineCols = offline_scan_ready($conn)
+    ? 'scanned_offline, synced_at'
+    : '0 AS scanned_offline, NULL AS synced_at';
+
 $stmt = $conn->prepare("
-    SELECT id, date, student_no, name, course, section, time_in, subject, $lateCol
+    SELECT id, date, student_no, name, course, section, time_in, subject, $lateCol, $offlineCols
     FROM attendance_tbl
     $sqlWhere
     $orderSql
@@ -234,6 +241,8 @@ while ($row = $result->fetch_assoc()) {
         'section'    => preg_replace('/^[A-Z]+-/', '', (string) $row['section']),
         'time_in'    => $row['time_in'],
         'is_late'    => (int) $row['is_late'] === 1,
+        'offline'    => (int) $row['scanned_offline'] === 1,
+        'synced_at'  => $row['synced_at'],
         'subject'    => $row['subject'],
     ];
 }

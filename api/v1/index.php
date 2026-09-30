@@ -60,6 +60,8 @@ $routes = [
     ['POST', '#^scanner/scan$#',           fn() => handle_scanner_scan($GLOBALS['conn'])],
     ['GET',  '#^scanner/attendance$#',     fn() => handle_scanner_attendance($GLOBALS['conn'])],
     ['POST', '#^scanner/late$#',           fn() => handle_scanner_late($GLOBALS['conn'])],
+    ['GET',  '#^scanner/roster$#',         fn() => handle_scanner_roster($GLOBALS['conn'])],
+    ['POST', '#^scanner/sync$#',           fn() => handle_scanner_sync($GLOBALS['conn'])],
 ];
 
 // Collected while matching so a wrong verb on a real route answers

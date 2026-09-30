@@ -17,6 +17,7 @@
 
 require_once __DIR__ . '/photo_requirement.php';
 require_once __DIR__ . '/late.php';
+require_once __DIR__ . '/offline_scan.php';
 
 /**
  * "Today" and "now" for attendance — always Philippine time, whatever
@@ -108,6 +109,13 @@ function scan_subjects(mysqli $conn, int $userId, bool $isAdmin): array
  * each one was a way to file a record under someone else, on another
  * day, or against another class.
  *
+ * The one exception is $offline: a scan the app kept while it had no
+ * internet, sent later. It carries when it happened ('at', already
+ * checked by offline_scan_time()) and whether the late switch was on
+ * on the phone at that moment ('late') — the switch's state on the
+ * server has moved on by the time the scan arrives. The row is marked
+ * as sent from the queue; see includes/offline_scan.php.
+ *
  * Returns what crud/save_attendance.php has always answered, with one
  * difference: photo_path is the stored path, and each caller turns it
  * into a URL relative to itself.
@@ -119,15 +127,17 @@ function scan_subjects(mysqli $conn, int $userId, bool $isAdmin): array
  *
  * Throws on a database failure; the caller decides what the scanner
  * is told.
+ *
+ * @param array{at: DateTimeImmutable, late: bool}|null $offline
  */
-function scan_record(mysqli $conn, int $userId, string $studentNo, string $subjectCode): array
+function scan_record(mysqli $conn, int $userId, string $studentNo, string $subjectCode, ?array $offline = null): array
 {
     $studentNo   = trim($studentNo);
     $subjectCode = trim($subjectCode);
 
     // One instant for all three, so the date, the time_in and the stored
     // datetime can never straddle a second — or midnight.
-    $now      = scan_now();
+    $now      = $offline['at'] ?? scan_now();
     $date     = $now->format('Y-m-d');
     $time     = $now->format('h:i:s A');
     $datetime = $now->format('Y-m-d H:i:s');
@@ -227,9 +237,7 @@ function scan_record(mysqli $conn, int $userId, string $studentNo, string $subje
     }
 
     // The section comes from the enrollment table — correct per subject.
-    // A course prefix is stripped ("BSIT-2A" → "2A").
-    $raw_section = $enroll_data['section'];
-    $section     = preg_match('/^[A-Z]+-(.+)$/', $raw_section, $matches) ? $matches[1] : $raw_section;
+    $section = scan_clean_section((string) $enroll_data['section']);
 
     // ── 5. Check for duplicate entry (same subject + same date) ───────────────
     $dup_check = $conn->prepare("
@@ -261,22 +269,17 @@ function scan_record(mysqli $conn, int $userId, string $studentNo, string $subje
 
     // ── 6b. Late? ─────────────────────────────────────────────────────────────
     // Yes while this instructor has late marking switched on for this
-    // subject today (includes/late.php).
-    $is_late   = late_scan_now($conn, $userId, $subjectCode) ? 1 : 0;
+    // subject today (includes/late.php). A kept scan says for itself
+    // whether it was: by now the switch may have been turned off, or
+    // it may be a new day.
+    $is_late   = ($offline !== null ? $offline['late'] : late_scan_now($conn, $userId, $subjectCode)) ? 1 : 0;
     $lateReady = late_ready($conn);
 
     // ── 7. Insert attendance record ───────────────────────────────────────────
-    // is_late only once the column exists — without it this INSERT
-    // would fail for every scan.
-    $lateInsCol = $lateReady ? ', is_late' : '';
-    $lateInsVal = $lateReady ? ', ?' : '';
-
-    $insert = $conn->prepare("
-        INSERT INTO attendance_tbl
-            (user_id, date, student_no, name, course, section, subject, instructor, time_in$lateInsCol)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?$lateInsVal)
-    ");
-
+    // is_late and the offline mark only once their columns exist —
+    // without them this INSERT would fail for every scan.
+    $insCols  = ['user_id', 'date', 'student_no', 'name', 'course', 'section', 'subject', 'instructor', 'time_in'];
+    $insTypes = 'issssssss';
     $insParams = [
         $userId,
         $datetime,
@@ -288,9 +291,22 @@ function scan_record(mysqli $conn, int $userId, string $studentNo, string $subje
         $instructor,
         $time,
     ];
-    if ($lateReady) $insParams[] = $is_late;
+    if ($lateReady) {
+        $insCols[]   = 'is_late';
+        $insTypes   .= 'i';
+        $insParams[] = $is_late;
+    }
+    if ($offline !== null && offline_scan_ready($conn)) {
+        array_push($insCols, 'scanned_offline', 'synced_at');
+        $insTypes .= 'is';
+        array_push($insParams, 1, scan_now()->format('Y-m-d H:i:s'));
+    }
 
-    $insert->bind_param("issssssss" . ($lateReady ? 'i' : ''), ...$insParams);
+    $insert = $conn->prepare("
+        INSERT INTO attendance_tbl (" . implode(', ', $insCols) . ")
+        VALUES (" . implode(', ', array_fill(0, count($insCols), '?')) . ")
+    ");
+    $insert->bind_param($insTypes, ...$insParams);
     $insert->execute();
     $insert->close();
 
@@ -299,7 +315,7 @@ function scan_record(mysqli $conn, int $userId, string $studentNo, string $subje
         'message'       => 'saved',
         'late'          => (bool) $is_late,
         // What was stored, so the scanner shows the server's date and
-        // time — not the phone's, which is never sent.
+        // time — not the phone's, which is sent only for a kept scan.
         'date'          => $date,
         'time_in'       => $time,
         'subject'       => $subject,
@@ -314,8 +330,66 @@ function scan_record(mysqli $conn, int $userId, string $studentNo, string $subje
 }
 
 /**
+ * "BSIT-2A" → "2A": the course prefix some enrolment rows carry.
+ */
+function scan_clean_section(string $section): string
+{
+    return preg_match('/^[A-Z]+-(.+)$/', $section, $m) ? $m[1] : $section;
+}
+
+/**
+ * The students enrolled in one subject, sorted by name — what the app
+ * checks a scan against while it has no internet, so an offline scan
+ * still says who it was and still refuses a student from another
+ * class. Only what the scanner shows after a scan anyway: number,
+ * name, course, section, and whether there is a photo (never the
+ * photo itself).
+ *
+ * @return array<int, array{student_no: string, name: string, course: string, section: string, photo: bool}>
+ */
+function scan_roster(mysqli $conn, string $subjectCode): array
+{
+    $stmt = $conn->prepare("
+        SELECT ss.student_no, s.fullname, s.course, ss.section,
+               EXISTS (
+                   SELECT 1 FROM student_photos p
+                   WHERE p.s_id = s.id AND p.photo_path IS NOT NULL AND p.photo_path <> ''
+               ) AS has_photo
+        FROM student_subjects_tbl ss
+        INNER JOIN students_tbl s ON s.student_no = ss.student_no
+        WHERE ss.subject_code = ?
+        ORDER BY s.fullname
+    ");
+    $stmt->bind_param("s", $subjectCode);
+    $stmt->execute();
+    $res = $stmt->get_result();
+
+    // Keyed by number: a student enrolled twice in one subject is one
+    // student on the list.
+    $students = [];
+    while ($row = $res->fetch_assoc()) {
+        $no = (string) $row['student_no'];
+        $students[$no] ??= [
+            'student_no' => $no,
+            'name'       => (string) $row['fullname'],
+            'course'     => (string) $row['course'],
+            'section'    => scan_clean_section((string) $row['section']),
+            'photo'      => (int) $row['has_photo'] === 1,
+        ];
+    }
+    $stmt->close();
+
+    return array_values($students);
+}
+
+/**
  * Today's scans by this user, newest first — the scanner's Attendance
  * List. is_late is 0 on servers where the column has not been added.
+ *
+ * time_in is "01:15:00 PM" text, and sorting it as text put 11 AM above
+ * 1 PM; it is read as a time instead. `date` is a DATE column, no help
+ * within a day — and neither is the id alone: a scan the app kept
+ * offline gets its id when it is sent, not when it was made.
  */
 function scan_today(mysqli $conn, int $userId): array
 {
@@ -327,7 +401,7 @@ function scan_today(mysqli $conn, int $userId): array
         FROM attendance_tbl
         WHERE user_id = ?
           AND DATE(date) = ?
-        ORDER BY time_in DESC
+        ORDER BY STR_TO_DATE(time_in, '%h:%i:%s %p') DESC, id DESC
     ");
     $stmt->bind_param("is", $userId, $today);
     $stmt->execute();

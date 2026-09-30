@@ -5,6 +5,7 @@ import '../../controllers/scanner_lock_controller.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/device_lock.dart';
+import '../../services/offline_scan_store.dart';
 import '../../services/scan_feedback.dart';
 import '../../services/scanner_repository.dart';
 import '../../services/speech_service.dart';
@@ -39,6 +40,8 @@ class ScannerFlow extends StatefulWidget {
     this.home,
     this.onSignedIn,
     this.onLeave,
+    this.offlineStore,
+    this.online,
   });
 
   /// What a signed-in instructor sees, handed the scanner to place in it and
@@ -59,6 +62,14 @@ class ScannerFlow extends StatefulWidget {
   final VoidCallback? onLeave;
 
   final ScannerRepository repository;
+
+  /// Where scans made with no internet are kept until sent, with the class
+  /// lists they are checked against. In memory when left out.
+  final OfflineScanStore? offlineStore;
+
+  /// The phone's network, on and off — see [ScannerController]. Nothing is
+  /// watched without it.
+  final Stream<bool>? online;
 
   /// The phone's fingerprint, face or screen lock, and where the switch
   /// for it is kept. See [ScannerLockController].
@@ -86,6 +97,8 @@ class _ScannerFlowState extends State<ScannerFlow> {
     repository: widget.repository,
     speech: widget.speech,
     feedback: widget.feedback,
+    store: widget.offlineStore,
+    online: widget.online,
   );
 
   late final ScannerLockController _lock = ScannerLockController(
@@ -133,7 +146,11 @@ class _ScannerFlowState extends State<ScannerFlow> {
         _controller.stopSpeaking();
         _lock.onHidden();
       },
-      onShow: _lock.onShown,
+      onShow: () {
+        _lock.onShown();
+        // Back in front: scans kept while it was away are tried at once.
+        _controller.onResumed();
+      },
     );
     _controller.addListener(_onSessionChange);
     _lock.addListener(_onLockChange);

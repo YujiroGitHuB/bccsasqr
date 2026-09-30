@@ -427,6 +427,26 @@
     border: 1px solid rgba(245, 158, 11, .3);
 }
 
+/* ─── Offline tag ─────────────────────────────────────────────
+   A scan the app kept with no internet and sent later: its time is
+   the phone's clock, not the server's. Neutral, not a state colour —
+   the student was present; this only says where the time came from. */
+.att-offline-tag {
+    display: inline-block;
+    margin-left: .3rem;
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    vertical-align: 1px;
+    white-space: nowrap;
+    color: var(--ink-3);
+    background: rgba(var(--tint), .06);
+    border: 1px solid var(--line-strong);
+    cursor: help;
+}
+
 /* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
     .att-page .att-hero {

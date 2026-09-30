@@ -241,11 +241,54 @@ abstract final class ScannerStrings {
       'The QR scanner has been closed by the administrator. Please try '
       'again later.';
 
-  // Attendance list
+  // Attendance list: the newest few under the camera, the rest in a sheet.
   static const String attendanceHeading = 'ATTENDANCE LIST';
   static const String attendanceEmpty = 'No scans yet today.';
   static const String attendanceSearch = 'Search name, number or subject';
   static const String attendanceNoMatch = 'No scans match your search.';
+  static const String attendanceSheetTitle = 'Attendance list';
+  static const String attendanceAll = 'All subjects';
+  static const String attendanceNoneForSubject =
+      'No scans for this subject yet today.';
+  static String attendanceViewAll(int n) => 'View all $n';
+
+  // Offline: scans kept on the phone, and sent later.
+  static const String savedOffline = 'saved offline';
+  static const String pendingTag = 'Pending';
+  static const String resultPending = 'Saved on this phone — sends when online';
+  static const String offlineTitle = 'Offline — keep scanning';
+  static const String offlineBody =
+      'Scans are kept on this phone and sent by themselves when the internet '
+      'is back.';
+  static String pendingTitle(int n) =>
+      n == 1 ? '1 scan waiting to be sent' : '$n scans waiting to be sent';
+  static const String pendingBody =
+      'Kept on this phone. They go out by themselves; tap Send now to try at '
+      'once.';
+  static String sendingTitle(int n) =>
+      n == 1 ? 'Sending 1 scan…' : 'Sending $n scans…';
+  static const String sendNow = 'Send now';
+  static String syncedTitle(int n) =>
+      n == 1 ? '1 offline scan sent' : '$n offline scans sent';
+  static const String syncedBody =
+      'The scans kept on this phone are now in the records.';
+  static String notSavedCountTitle(int n) =>
+      n == 1 ? '1 offline scan not saved' : '$n offline scans not saved';
+  static const String notSavedCountBody =
+      'The server refused them. See why under the Attendance List.';
+  static const String seeWhy = 'See why';
+  static const String notSavedSheetTitle = 'Offline scans not saved';
+  static const String notSavedSheetBody =
+      'These were scanned with no internet and refused when they were sent — '
+      'the same checks as a live scan. If the student is here, scan them '
+      'again.';
+  static const String notSavedClear = 'Clear list';
+  static String signOutPendingBody(int n) =>
+      '${n == 1 ? '1 scan' : '$n scans'} on this phone '
+      '${n == 1 ? 'has' : 'have'} not been sent yet. '
+      '${n == 1 ? 'It stays' : 'They stay'} here and '
+      '${n == 1 ? 'is' : 'are'} sent the next time you sign in with this '
+      'account.';
 
   // Alerts — the web scanner's SweetAlert titles.
   static const String invalidQrTitle = 'Invalid QR Code';
@@ -259,10 +302,6 @@ abstract final class ScannerStrings {
   static const String notEnrolledTitle = 'Not Enrolled';
   static const String errorTitle = 'Error';
 
-  /// No answer from the server — the scan never reached the records.
-  static const String notSavedTitle = 'Attendance not saved';
-  static const String notSavedStatus = '✗ Not saved — check the connection';
-
   // Spoken — word for word what the web scanner says.
   static const String sayInvalid = 'Invalid QR Format!';
   static const String sayAlreadyMarked = 'Already marked today.';
@@ -271,7 +310,6 @@ abstract final class ScannerStrings {
   static const String sayNotFound = 'Student not found in database.';
   static const String sayPhotoRequired = 'Student photo required.';
   static const String sayError = 'Error saving attendance.';
-  static const String sayNetwork = 'Network error. Please check connection.';
   static const String saySelectSubject = 'Please select a subject first!';
 
   // The account sheet behind the avatar.
@@ -310,8 +348,9 @@ abstract final class ScannerStrings {
 abstract final class OfflineStrings {
   static const String title = 'You\'re offline';
   static const String body =
-      'Sign-in, scanning and look-ups need the internet. QR codes already '
-      'made on this phone still open.';
+      'Sign-in and look-ups need the internet. QR codes already made on this '
+      'phone still open, and the scanner keeps scans until you are back '
+      'online.';
   static const String back = 'Back online';
 }
 
@@ -413,6 +452,48 @@ abstract final class SettingsStrings {
   static const String update = 'Get the latest version';
   static const String updateBody = 'Opens the download page';
   static const String developer = 'Developer';
+  static const String tour = 'App tour';
+  static const String tourBody = 'The introduction from the first launch';
+}
+
+/// The introduction on the first launch, before the student-or-instructor
+/// question — and again from Settings → App tour.
+abstract final class OnboardingStrings {
+  static const String skip = 'Skip';
+  static const String next = 'Next';
+  static const String start = 'Get started';
+
+  /// Seen again from Settings, the last button closes it.
+  static const String done = 'Done';
+
+  static String semantics(int page, int of) => 'Introduction, $page of $of';
+
+  static const String welcomeTitle = 'Welcome to BCC SASQR';
+  static const String welcomeBody =
+      'Attendance by QR code at Binalatongan Community College — for students '
+      'and instructors, in one app.';
+  static const String welcomeQr = 'QR code';
+  static const String welcomeScan = 'Scan';
+  static const String welcomeDays = 'Attendance';
+
+  static const String qrTitle = 'Your QR code, on your phone';
+  static const String qrBody =
+      'Type your student number once. The app checks it against the '
+      'enrolment list and makes your QR code — kept on this phone, so it '
+      'opens even without internet.';
+  static const String qrChip = 'Opens offline';
+
+  static const String scanTitle = 'Show it, get marked present';
+  static const String scanBody =
+      'In class, your instructor scans your code. The app beeps, shows your '
+      'photo and says your name — and keeps scanning even with no signal.';
+  static const String scanChip = 'Marked present';
+
+  static const String daysTitle = 'See every day you were there';
+  static const String daysBody =
+      'Open My Attendance to see the days you were marked present in each '
+      'subject, late marks included.';
+  static String daysChip(int n) => n == 1 ? '1 day present' : '$n days present';
 }
 
 /// The What's New page and the home screen's card for it. The entries

@@ -9,6 +9,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/scanner_models.dart';
+import '../../services/scan_feedback.dart';
 import '../../services/scanner_repository.dart';
 import '../widgets/island.dart';
 import '../widgets/surface_panel.dart';
@@ -19,6 +20,7 @@ import 'widgets/camera_panel.dart';
 import 'widgets/scan_result_card.dart';
 import 'widgets/scanner_header.dart';
 import 'widgets/subject_panel.dart';
+import 'widgets/sync_banner.dart';
 
 /// Builds the camera, handed the callback for every code it reads. Tests
 /// swap in one without a camera.
@@ -127,7 +129,12 @@ class _ScannerPageState extends State<ScannerPage> {
       IslandMessage(
         title: alert.title,
         body: alert.body,
-        tone: IslandTone.error,
+        tone: switch (alert.tone) {
+          ScanTone.success => IslandTone.success,
+          ScanTone.warning => IslandTone.warning,
+          ScanTone.error => IslandTone.error,
+        },
+        icon: alert.tone == ScanTone.success ? Icons.cloud_done_outlined : null,
         hold: alert.autoDismiss ?? const Duration(seconds: 4),
       ),
     );
@@ -213,7 +220,9 @@ class _ScannerPageState extends State<ScannerPage> {
       case AccountAction.settings:
         widget.onOpenSettings?.call();
       case AccountAction.signOut:
-        if (await confirmSignOut(context)) await _controller.signOut();
+        if (await confirmSignOut(context, pending: _controller.pendingCount)) {
+          await _controller.signOut();
+        }
       case null:
         break;
     }
@@ -253,6 +262,7 @@ class _ScannerPageState extends State<ScannerPage> {
                       if (widget.demo) const _DemoNotice(),
                       const SizedBox(height: 16),
                       ..._scanner(),
+                      SyncBanner(controller: _controller),
                       const SizedBox(height: 16),
                       AttendancePanel(controller: _controller),
                       const SizedBox(height: 12),

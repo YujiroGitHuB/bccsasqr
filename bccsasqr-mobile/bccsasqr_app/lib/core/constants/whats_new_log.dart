@@ -18,18 +18,56 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-30';
+  static const String version = '2026-09-30.3';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
       id: '2026-09-30',
       icon: Icons.cloud_off_rounded,
-      title: 'A QR code that works offline, and a camera you can switch off',
+      title: 'Scanning and your QR code, even with no internet',
       summary:
-          'Your QR code now opens even with no internet, and the app tells '
-          'you plainly when you are offline. Instructors can switch the '
-          'scanner\'s camera off between classes.',
+          'The scanner keeps scanning when the signal drops and sends the '
+          'scans once you are back online. Your QR code opens with no '
+          'internet too. The scanner\'s list is shorter, and its camera can '
+          'be switched off between classes.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.scanner,
+          icon: Icons.cloud_upload_outlined,
+          title: 'Keep scanning with no internet',
+          text:
+              'No signal in the room? Keep scanning. Each scan is saved on '
+              'this phone at once, still beeps and says the name, and shows '
+              '**Pending** in the list. When the internet is back the scans '
+              'are sent by themselves, or tap **Send now**. The server checks '
+              'them the same as a live scan; any it refuses are listed under '
+              '**See why**, so you can scan that student again. Scans must be '
+              'sent within 3 days.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.qr,
+          icon: Icons.slideshow_outlined,
+          title: 'A short tour of the app',
+          text:
+              'The first time the app opens, four quick slides now show what '
+              'it does: your QR code, being scanned in class, and your '
+              'attendance. Swipe through, or tap **Skip**. Already using the '
+              'app? See it any time from **Settings → App tour**.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.format_list_bulleted_rounded,
+          title: 'A shorter Attendance List',
+          text:
+              'Only the five newest scans sit under the camera now, so the '
+              'camera stays in view however many you scan. **View all** opens '
+              'the whole list, starting on the subject you are scanning, with '
+              'a chip for each subject and the search box.',
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.added,
           area: WhatsNewArea.scanner,
@@ -64,10 +102,9 @@ abstract final class WhatsNewLog {
           text:
               'When the phone loses its connection, a black bar drops from '
               'the top: **You\'re offline**, and **Back online** when it '
-              'returns. A look-up, sign-in or scan that cannot get through '
-              'now says **No internet connection** and what to check, instead '
-              'of a technical error. A scan that could not be saved says '
-              '**Attendance not saved**, so nobody thinks it went in.',
+              'returns. A look-up or sign-in that cannot get through now says '
+              '**No internet connection** and what to check, instead of a '
+              'technical error.',
           link: false,
         ),
       ],

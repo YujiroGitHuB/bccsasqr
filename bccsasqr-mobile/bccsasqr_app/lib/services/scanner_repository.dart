@@ -1,4 +1,5 @@
 import '../core/utils/student_number.dart';
+import '../models/offline_scan.dart';
 import '../models/scanner_models.dart';
 
 /// A scanner request that did not go through.
@@ -49,7 +50,20 @@ abstract interface class ScannerRepository {
   /// Switches late marking for one subject and returns the state the server
   /// settled on.
   Future<bool> setLateMarking({required String subjectCode, required bool on});
+
+  /// Who is enrolled in one subject — downloaded while there is internet, so
+  /// the subject can be scanned without.
+  Future<SubjectRoster> loadRoster(String subjectCode);
+
+  /// Sends scans kept on the phone while offline, at most [syncBatch] at a
+  /// time, and returns the server's answer for each. Throws a
+  /// [ScannerException] only when none could be sent.
+  Future<List<SyncOutcome>> syncScans(List<PendingScan> scans);
 }
+
+/// The most scans one [ScannerRepository.syncScans] takes — the server's
+/// SCANNER_SYNC_MAX.
+const int syncBatch = 50;
 
 /// What runs when no `API_BASE_URL` was supplied at build time: any email and
 /// password sign in, and scans are kept on this phone only. It answers the
@@ -124,19 +138,7 @@ class InMemoryScannerRepository implements ScannerRepository {
     for (final s in _students) s.number,
   ];
 
-  String get _today {
-    final now = _clock();
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${now.year}-${two(now.month)}-${two(now.day)}';
-  }
-
-  String get _timeNow {
-    final now = _clock();
-    String two(int n) => n.toString().padLeft(2, '0');
-    final hour = now.hour % 12 == 0 ? 12 : now.hour % 12;
-    return '${two(hour)}:${two(now.minute)}:${two(now.second)} '
-        '${now.hour < 12 ? 'AM' : 'PM'}';
-  }
+  String get _today => scanDate(_clock());
 
   ScannerUser _requireUser() {
     final user = _user;
@@ -195,7 +197,17 @@ class InMemoryScannerRepository implements ScannerRepository {
   }) async {
     await Future<void>.delayed(latency);
     _requireUser();
+    return _record(studentNumber, subjectCode, at: _clock());
+  }
 
+  /// The server's scan_record(): on [at]'s day, and late as [late] says
+  /// for a kept scan, or as the switch is now for a live one.
+  ScanRecord _record(
+    String studentNumber,
+    String subjectCode, {
+    required DateTime at,
+    bool? late,
+  }) {
     final subject = _subjects.firstWhere(
       (s) => s.code == subjectCode,
       orElse: () => throw const ScannerException(
@@ -221,12 +233,12 @@ class InMemoryScannerRepository implements ScannerRepository {
       );
     }
 
-    final today = _today;
+    final day = scanDate(at);
     if (_records.any(
       (r) =>
           r.studentNumber == student.number &&
           r.subject == subject.name &&
-          r.date == today,
+          r.date == day,
     )) {
       throw const ScannerException(
         'Already marked today.',
@@ -240,9 +252,9 @@ class InMemoryScannerRepository implements ScannerRepository {
       course: student.course,
       section: student.section,
       subject: subject.name,
-      date: today,
-      timeIn: _timeNow,
-      late: _lateOn.contains(subject.code),
+      date: day,
+      timeIn: scanTime(at),
+      late: late ?? _lateOn.contains(subject.code),
       photoMissing: !student.photo,
     );
     _records.insert(0, record);
@@ -269,5 +281,60 @@ class InMemoryScannerRepository implements ScannerRepository {
     _requireUser();
     on ? _lateOn.add(subjectCode) : _lateOn.remove(subjectCode);
     return on;
+  }
+
+  @override
+  Future<SubjectRoster> loadRoster(String subjectCode) async {
+    await Future<void>.delayed(latency);
+    _requireUser();
+    return SubjectRoster(
+      subjectCode: subjectCode,
+      date: _today,
+      students: {
+        for (final s in _students)
+          if (s.subjects.contains(subjectCode))
+            s.number: RosterStudent(
+              studentNumber: s.number,
+              name: s.name,
+              course: s.course,
+              section: s.section,
+              hasPhoto: s.photo,
+            ),
+      },
+    );
+  }
+
+  @override
+  Future<List<SyncOutcome>> syncScans(List<PendingScan> scans) async {
+    await Future<void>.delayed(latency);
+    _requireUser();
+    return [
+      for (final scan in scans)
+        () {
+          try {
+            return SyncOutcome(
+              id: scan.id,
+              status: SyncStatus.saved,
+              record: _record(
+                scan.studentNumber,
+                scan.subjectCode,
+                at: scan.scannedAt,
+                late: scan.late,
+              ),
+            );
+          } on ScannerException catch (e) {
+            return e.code == 'already_marked'
+                ? SyncOutcome(id: scan.id, status: SyncStatus.alreadyMarked)
+                : SyncOutcome(
+                    id: scan.id,
+                    status: SyncStatus.rejected,
+                    rejection: ScanRejection(
+                      code: e.code ?? 'unknown',
+                      message: e.message,
+                    ),
+                  );
+          }
+        }(),
+    ];
   }
 }

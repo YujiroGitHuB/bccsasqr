@@ -114,13 +114,22 @@ $(document).ready(function () {
                 // Late rides in the time column rather than a column of
                 // its own: columnDefs and the server's sort whitelist
                 // address columns by index, and a new one would shift
-                // every target after it.
+                // every target after it. So does Offline — a scan the
+                // app kept with no internet and sent later, timed by
+                // the phone's clock (includes/offline_scan.php).
                 {
                     data: 'time_in',
                     render: function (time, type, row) {
                         var text = attrAtt(time);
-                        if (type !== 'display' || !row.is_late) return text;
-                        return text + ' <span class="att-late-tag">Late</span>';
+                        if (type !== 'display') return text;
+                        if (row.is_late) text += ' <span class="att-late-tag">Late</span>';
+                        if (row.offline) {
+                            text += ' <span class="att-offline-tag" title="' +
+                                attrAtt('Scanned in the app with no internet; sent ' +
+                                        (row.synced_at || 'later')) +
+                                '"><i class="bi bi-cloud-slash"></i> Offline</span>';
+                        }
+                        return text;
                     }
                 },
                 { data: 'subject',    render: escAtt },

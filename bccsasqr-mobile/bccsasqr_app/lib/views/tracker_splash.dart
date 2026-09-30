@@ -106,7 +106,7 @@ class _TrackerSplashState extends State<TrackerSplash>
                       SplashTile(
                         shown: _tile.value,
                         child: CustomPaint(
-                          painter: _CalendarPainter(
+                          painter: CalendarPainter(
                             bar: _bar.value,
                             days: _days.value,
                             ticks: _ticks.value,
@@ -147,9 +147,10 @@ class _TrackerSplashState extends State<TrackerSplash>
 
 /// Draws the calendar part-built: the top bar scaled by [bar], each day
 /// popping in as the diagonal [days] wave reaches it, the present days
-/// checked in turn as [ticks] runs, and a [shine] corner to corner.
-class _CalendarPainter extends CustomPainter {
-  const _CalendarPainter({
+/// checked in turn as [ticks] runs, and a [shine] corner to corner. The
+/// introduction's last slide draws it too.
+class CalendarPainter extends CustomPainter {
+  const CalendarPainter({
     required this.bar,
     required this.days,
     required this.ticks,
@@ -182,6 +183,21 @@ class _CalendarPainter extends CustomPainter {
   /// The days checked off, in the order they are ticked, and the late one.
   static const List<int> _present = [0, 1, 3, 5, 6, 8, 10, 11, 13, 15, 16, 18];
   static const int _lateDay = 8;
+
+  /// How many days end up checked — the introduction counts them aloud.
+  static int get presentDays => _present.length;
+
+  /// How many of the days are checked once [ticks] has run this far: the
+  /// same timing [paint] pops them in with.
+  static int checkedAt(double ticks) {
+    final n = _present.length;
+    var shown = 0;
+    for (var k = 0; k < n; k++) {
+      final delay = k / (n - 1) * (1 - _pop);
+      if (ticks - delay > 0) shown++;
+    }
+    return shown;
+  }
 
   /// How much of its wave each piece takes to pop in; the rest is its delay.
   static const double _pop = 0.3;
@@ -310,7 +326,7 @@ class _CalendarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_CalendarPainter old) =>
+  bool shouldRepaint(CalendarPainter old) =>
       old.bar != bar ||
       old.days != days ||
       old.ticks != ticks ||

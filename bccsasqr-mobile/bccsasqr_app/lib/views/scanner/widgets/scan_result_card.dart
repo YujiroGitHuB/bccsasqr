@@ -7,7 +7,9 @@ import '../../widgets/surface_panel.dart';
 import 'attendance_panel.dart';
 
 /// Who was just recorded: face, name, course and section, the subject, and
-/// the time the server stored — the web scanner's `#studentCard`.
+/// the time the server stored — the web scanner's `#studentCard`. A scan kept
+/// on the phone while offline shows the phone's time, and no face: there is
+/// no internet to fetch one.
 ///
 /// The face is the point. It is the instructor's only way to see that the
 /// person holding the QR is the person it belongs to, so a record with no
@@ -61,8 +63,14 @@ class ScanResultCard extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 8),
+                // Kept on the phone with no internet: said here as well as
+                // on the status line, since the card is what stays in view.
                 _SubjectBadge(
-                  text: warn ? ScannerStrings.noPhoto : '✓ ${record.subject}',
+                  text: warn
+                      ? ScannerStrings.noPhoto
+                      : record.pending
+                      ? ScannerStrings.resultPending
+                      : '✓ ${record.subject}',
                   warn: warn,
                 ),
               ],

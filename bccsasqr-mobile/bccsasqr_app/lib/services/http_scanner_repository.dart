@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../core/config/app_config.dart';
 import '../core/utils/network_error.dart';
+import '../models/offline_scan.dart';
 import '../models/scanner_models.dart';
 import 'scanner_repository.dart';
 import 'token_store.dart';
@@ -155,6 +156,33 @@ class HttpScannerRepository implements ScannerRepository {
       'on': on,
     });
     return data['on'] == true;
+  }
+
+  @override
+  Future<SubjectRoster> loadRoster(String subjectCode) async {
+    final data = await _send(
+      () => _client.get(
+        _endpoint(
+          'scanner/roster',
+        ).replace(queryParameters: {'subject': subjectCode}),
+        headers: _headers,
+      ),
+    );
+    return SubjectRoster.fromJson({'subject_code': subjectCode, ...data});
+  }
+
+  @override
+  Future<List<SyncOutcome>> syncScans(List<PendingScan> scans) async {
+    final data = await _post('scanner/sync', {
+      'scans': [for (final s in scans.take(syncBatch)) s.toSyncJson()],
+    });
+    final results = data['results'];
+    return [
+      if (results is List)
+        for (final r in results)
+          if (r is Map<String, dynamic> && r['id'] is String)
+            SyncOutcome.fromJson(r),
+    ];
   }
 
   // ------------------------------------------------------------- transport

@@ -34,7 +34,8 @@ lib/
 │   ├── terms_document.dart      the terms text as the server authored them
 │   ├── qr_payload.dart          holds the string the SERVER issued for the QR
 │   ├── attendance_history.dart  the tracker: subjects, days, late marks
-│   └── scanner_models.dart      signed-in user, subjects, scans
+│   ├── scanner_models.dart      signed-in user, subjects, scans
+│   └── offline_scan.dart        scans kept offline, class lists, sync answers
 │
 ├── services/                    I/O boundaries, behind interfaces
 │   ├── student_repository.dart  the contract + InMemoryStudentRepository
@@ -43,6 +44,8 @@ lib/
 │   ├── qr_export_service.dart   QrExportService  + ImageQrExportService
 │   ├── scanner_repository.dart  the scanner's contract + its demo version
 │   ├── http_scanner_repository.dart   /api/v1/auth and /scanner
+│   ├── offline_scan_store.dart  the offline queue + class lists, in SQLite
+│   ├── onboarding_store.dart    whether the first-launch tour was seen
 │   ├── token_store.dart         the sign-in token, in the keystore
 │   ├── scan_feedback.dart       beep + vibration after a scan
 │   └── speech_service.dart      the voice, for both halves
@@ -53,6 +56,7 @@ lib/
 │   └── scanner_controller.dart  port of Qrscanner/js/scriptV3.js
 │
 ├── views/                       layout only — no business rules
+│   ├── onboarding_page.dart     the first launch's tour (Settings → App tour)
 │   ├── home_page.dart           the opening screen: generator, tracker or scanner
 │   ├── qr_generator_page.dart   the generator; owns its controller
 │   ├── tracker_page.dart        the attendance tracker; owns its controller

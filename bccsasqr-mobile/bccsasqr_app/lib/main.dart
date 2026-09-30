@@ -4,17 +4,19 @@ import 'package:flutter/services.dart';
 import 'app.dart';
 import 'core/theme/app_theme.dart';
 import 'services/connectivity.dart';
+import 'services/onboarding_store.dart';
 import 'services/saved_qr_store.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(AppTheme.overlayStyle);
   runApp(
-    // The two collaborators that only a real phone can back; see their
-    // notes on BccSasqrApp.
+    // The collaborators that only a real phone can back; see their notes
+    // on BccSasqrApp.
     BccSasqrApp(
       connectivity: DeviceConnectivityService(),
       savedQrStore: SharedPrefsSavedQrStore(),
+      onboardingStore: SharedPrefsOnboardingStore(),
     ),
   );
 }

@@ -5,35 +5,28 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../models/scanner_models.dart';
 import '../../widgets/surface_panel.dart';
+import 'attendance_sheet.dart';
 
 /// Today's scans by this account, newest first — the web scanner's Attendance
-/// List, with its search box. Scans made in the browser are here too: both
-/// read the same table.
-class AttendancePanel extends StatefulWidget {
+/// List. Scans made in the browser are here too: both read the same table,
+/// and so are the ones kept on this phone while offline, marked Pending.
+///
+/// Only the newest [preview] sit under the camera. A class of forty used to
+/// push the page forty rows long, and scrolling down to check one name took
+/// the camera off the screen. The whole list, with its search, is a sheet
+/// away ([showAttendanceSheet]).
+class AttendancePanel extends StatelessWidget {
   const AttendancePanel({super.key, required this.controller});
 
   final ScannerController controller;
 
-  @override
-  State<AttendancePanel> createState() => _AttendancePanelState();
-}
-
-class _AttendancePanelState extends State<AttendancePanel> {
-  late final TextEditingController _search = TextEditingController(
-    text: widget.controller.search,
-  );
-
-  @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
-  }
+  /// How many of the newest scans show under the camera.
+  static const int preview = 5;
 
   @override
   Widget build(BuildContext context) {
-    final controller = widget.controller;
     final all = controller.attendance;
-    final visible = controller.visibleAttendance;
+    final newest = all.take(preview).toList();
 
     return SurfacePanel(
       child: Column(
@@ -54,45 +47,67 @@ class _AttendancePanelState extends State<AttendancePanel> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               else
-                _CountChip(count: all.length),
+                CountChip(count: all.length),
             ],
           ),
-          const SizedBox(height: 12),
-          if (all.isNotEmpty) ...[
-            TextField(
-              controller: _search,
-              onChanged: controller.setSearch,
-              textInputAction: TextInputAction.search,
-              style: const TextStyle(fontSize: 14),
-              decoration: const InputDecoration(
-                isDense: true,
-                hintText: ScannerStrings.attendanceSearch,
-                prefixIcon: Icon(Icons.search_rounded, size: 20),
-              ),
+          const SizedBox(height: 4),
+          // A new scan lands at the top; the panel grows into it rather than
+          // jumping.
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (all.isEmpty && !controller.isLoadingAttendance)
+                  const AttendanceEmpty(text: ScannerStrings.attendanceEmpty)
+                else
+                  for (final (i, entry) in newest.indexed)
+                    AttendanceRow(entry: entry, divider: i > 0),
+              ],
             ),
-            const SizedBox(height: 8),
+          ),
+          if (all.length > preview) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => showAttendanceSheet(context, controller),
+              icon: const Icon(Icons.format_list_bulleted_rounded, size: 18),
+              label: Text(ScannerStrings.attendanceViewAll(all.length)),
+            ),
           ],
-          if (all.isEmpty && !controller.isLoadingAttendance)
-            const _Empty(text: ScannerStrings.attendanceEmpty)
-          else if (visible.isEmpty && all.isNotEmpty)
-            const _Empty(text: ScannerStrings.attendanceNoMatch)
-          else
-            for (final (i, entry) in visible.indexed)
-              _AttendanceRow(entry: entry, divider: i > 0),
         ],
       ),
     );
   }
 }
 
-class _AttendanceRow extends StatelessWidget {
-  const _AttendanceRow({required this.entry, required this.divider});
+/// One scan: who, their course and section, the subject, and the time — with
+/// Late and Pending beside the time when they apply.
+class AttendanceRow extends StatelessWidget {
+  const AttendanceRow({
+    super.key,
+    required this.entry,
+    required this.divider,
+    this.showSubject = true,
+  });
 
   final AttendanceEntry entry;
   final bool divider;
 
+  /// Left out where the list is already one subject's.
+  final bool showSubject;
+
   @override
   Widget build(BuildContext context) {
+    // A scan kept offline with no class list has only its number, standing
+    // in for the name — not said twice.
+    final named = entry.name.isNotEmpty && entry.name != entry.studentNumber;
+    final details = [
+      if (named) entry.studentNumber,
+      if (entry.courseAndSection.isNotEmpty) entry.courseAndSection,
+    ].join(' · ');
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 11),
       decoration: BoxDecoration(
@@ -108,26 +123,24 @@ class _AttendanceRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  entry.name,
+                  named ? entry.name : entry.studentNumber,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: context.colors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  [
-                    entry.studentNumber,
-                    if (entry.courseAndSection.isNotEmpty)
-                      entry.courseAndSection,
-                  ].join(' · '),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.colors.textSecondary,
+                if (details.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    details,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.colors.textSecondary,
+                    ),
                   ),
-                ),
-                if (entry.subject.isNotEmpty) ...[
+                ],
+                if (showSubject && entry.subject.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     entry.subject,
@@ -153,6 +166,10 @@ class _AttendanceRow extends StatelessWidget {
                 ),
               ),
               if (entry.late) ...[const SizedBox(height: 4), const LateTag()],
+              if (entry.pending) ...[
+                const SizedBox(height: 4),
+                const PendingTag(),
+              ],
             ],
           ),
         ],
@@ -188,8 +205,47 @@ class LateTag extends StatelessWidget {
   }
 }
 
-class _CountChip extends StatelessWidget {
-  const _CountChip({required this.count});
+/// "Pending" beside a time: kept on this phone, not yet on the server.
+/// Neutral rather than a state colour — the student is marked; only the
+/// sending is left.
+class PendingTag extends StatelessWidget {
+  const PendingTag({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: colors.borderStrong),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.cloud_upload_outlined,
+            size: 12,
+            color: colors.textSecondary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            ScannerStrings.pendingTag,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: colors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class CountChip extends StatelessWidget {
+  const CountChip({super.key, required this.count});
 
   final int count;
 
@@ -214,8 +270,8 @@ class _CountChip extends StatelessWidget {
   }
 }
 
-class _Empty extends StatelessWidget {
-  const _Empty({required this.text});
+class AttendanceEmpty extends StatelessWidget {
+  const AttendanceEmpty({super.key, required this.text});
 
   final String text;
 

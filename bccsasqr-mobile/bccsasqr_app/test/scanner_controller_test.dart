@@ -1,6 +1,10 @@
 import 'package:bccsasqr_app/controllers/scanner_controller.dart';
+import 'dart:async';
+
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
+import 'package:bccsasqr_app/models/offline_scan.dart';
 import 'package:bccsasqr_app/models/scanner_models.dart';
+import 'package:bccsasqr_app/services/offline_scan_store.dart';
 import 'package:bccsasqr_app/services/scan_feedback.dart';
 import 'package:bccsasqr_app/services/scanner_repository.dart';
 import 'package:bccsasqr_app/services/speech_service.dart';
@@ -97,7 +101,58 @@ class _FakeRepository implements ScannerRepository {
     if (lateThrows != null) throw lateThrows!;
     return on;
   }
+
+  /// The class lists the server has, by subject code. A subject left out
+  /// answers with an error, so a test has none unless it sets one.
+  Map<String, SubjectRoster> rosters = {};
+  int rosterLoads = 0;
+
+  @override
+  Future<SubjectRoster> loadRoster(String subjectCode) async {
+    rosterLoads++;
+    final roster = rosters[subjectCode];
+    if (roster == null) {
+      throw const ScannerException('No such subject.', code: 'not_found');
+    }
+    return roster;
+  }
+
+  /// Every batch sent, and what each scan in the next one answers.
+  final List<List<PendingScan>> synced = [];
+  Object? syncThrows;
+  SyncOutcome Function(PendingScan scan) syncAnswer = (scan) =>
+      SyncOutcome(id: scan.id, status: SyncStatus.saved);
+
+  @override
+  Future<List<SyncOutcome>> syncScans(List<PendingScan> scans) async {
+    synced.add(scans);
+    if (syncThrows != null) throw syncThrows!;
+    return [for (final s in scans) syncAnswer(s)];
+  }
 }
+
+const _network = ScannerException('No internet connection.', code: 'network');
+
+/// ELEC2's class list, as downloaded: one student with a photo, one without.
+final _roster = SubjectRoster(
+  subjectCode: 'ELEC2',
+  date: '2026-09-27',
+  students: {
+    '000-802': const RosterStudent(
+      studentNumber: '000-802',
+      name: 'VILLAR, CARMINA JOY P.',
+      course: 'BSIT',
+      section: '2G',
+    ),
+    '000-803': const RosterStudent(
+      studentNumber: '000-803',
+      name: 'SORIANO, DANTE L.',
+      course: 'BSIT',
+      section: '2G',
+      hasPhoto: false,
+    ),
+  },
+);
 
 class _RecordingSpeech implements SpeechService {
   final List<String> said = [];
@@ -127,12 +182,18 @@ void main() {
   late DateTime now;
   late ScannerController controller;
   late List<ScanAlert> alerts;
+  late MemoryOfflineScanStore store;
 
-  ScannerController build({Duration resultHold = const Duration(seconds: 5)}) {
+  ScannerController build({
+    Duration resultHold = const Duration(seconds: 5),
+    Stream<bool>? online,
+  }) {
     final c = ScannerController(
       repository: repo,
       speech: speech,
       feedback: feedback,
+      store: store,
+      online: online,
       resultHold: resultHold,
       clock: () => now,
     );
@@ -153,6 +214,7 @@ void main() {
     feedback = _RecordingFeedback();
     now = DateTime(2026, 9, 27, 7, 30);
     alerts = [];
+    store = MemoryOfflineScanStore();
     controller = build();
   });
 
@@ -423,10 +485,10 @@ void main() {
     test('not enrolled: says so and names the subject', () async {
       await ready();
       repo.scanAnswer = const ScannerException(
-        'Carlos is not enrolled in Multimedia Technologies',
+        'Lorenzo is not enrolled in Multimedia Technologies',
         code: 'not_enrolled',
       );
-      await controller.onCodeScanned('024-1962');
+      await controller.onCodeScanned('000-1962');
       await _delivered();
 
       expect(
@@ -444,15 +506,18 @@ void main() {
     test('photo required: the dialog names the student', () async {
       await ready();
       repo.scanAnswer = const ScannerException(
-        'ABALOS has no photo on file.',
+        'NAVARRO has no photo on file.',
         code: 'photo_required',
-        name: 'ABALOS, JAYVEE V.',
+        name: 'NAVARRO, TRISHA MAE V.',
       );
-      await controller.onCodeScanned('025-1211');
+      await controller.onCodeScanned('000-1211');
       await _delivered();
 
       expect(alerts.single.title, ScannerStrings.photoRequiredTitle);
-      expect(alerts.single.body, startsWith('ABALOS, JAYVEE V. has no photo'));
+      expect(
+        alerts.single.body,
+        startsWith('NAVARRO, TRISHA MAE V. has no photo'),
+      );
     });
 
     test('a dead sign-in goes back to the sign-in screen', () async {
@@ -465,22 +530,6 @@ void main() {
 
       expect(controller.session, ScannerSession.signedOut);
       expect(controller.sessionMessage, ScannerStrings.sessionExpired);
-    });
-
-    test('no signal: says the scan was not saved, and why', () async {
-      await ready();
-      repo.scanAnswer = const ScannerException(
-        'No internet connection.',
-        code: 'network',
-      );
-      await controller.onCodeScanned('000-802');
-      await _delivered();
-
-      expect(controller.status.text, ScannerStrings.notSavedStatus);
-      expect(controller.status.tone, ScanTone.error);
-      expect(alerts.single.title, ScannerStrings.notSavedTitle);
-      expect(alerts.single.body, 'No internet connection.');
-      expect(controller.attendance, isEmpty);
     });
 
     test('the result goes back to the idle line after a while', () async {
@@ -500,15 +549,358 @@ void main() {
     repo.saved = _user;
     repo.today = [
       _record(),
-      _record(number: '025-294', name: 'CENTENO, EDRIAN GABRIEL D.'),
+      _record(number: '000-294', name: 'BAUTISTA, LORENZO MIGUEL D.'),
     ];
     await controller.start();
 
-    controller.setSearch('centeno');
-    expect(controller.visibleAttendance.single.studentNumber, '025-294');
+    controller.setSearch('bautista');
+    expect(controller.visibleAttendance.single.studentNumber, '000-294');
 
     controller.setSearch('');
     expect(controller.visibleAttendance, hasLength(2));
+  });
+
+  test('the full list follows the subject being scanned', () async {
+    const other = ScanSubject(code: 'IT101', name: 'Intro to Computing');
+    repo.saved = _user;
+    repo.subjects = const [_elec2, other];
+    repo.today = [
+      _record(),
+      _record(number: '000-294', name: 'BAUTISTA, LORENZO MIGUEL D.'),
+      AttendanceEntry(
+        studentNumber: '000-900',
+        name: 'DIZON, RAFA',
+        course: 'BSIT',
+        section: '1A',
+        subject: other.name,
+        date: '2026-09-27',
+        timeIn: '07:10:00 AM',
+      ),
+    ];
+    await controller.start();
+
+    controller.selectSubject(other);
+    expect(controller.attendanceSubject, other.name);
+    expect(controller.visibleAttendance.single.studentNumber, '000-900');
+
+    controller.setAttendanceSubject(null);
+    expect(controller.visibleAttendance, hasLength(3));
+  });
+
+  group('offline', () {
+    /// Signed in with ELEC2 picked — and, unless [roster] is false, its class
+    /// list downloaded — then the internet goes.
+    Future<void> offline({bool roster = true}) async {
+      if (roster) repo.rosters = {'ELEC2': _roster};
+      await ready();
+      await _delivered();
+      repo.scanAnswer = _network;
+      repo.syncThrows = _network;
+    }
+
+    test('picking a subject downloads its class list', () async {
+      repo.rosters = {'ELEC2': _roster};
+      await ready();
+      await _delivered();
+      expect(repo.rosterLoads, 1);
+
+      // Once a day is enough.
+      controller.selectSubject(null);
+      controller.selectSubject(_elec2);
+      await _delivered();
+      expect(repo.rosterLoads, 1);
+    });
+
+    test('no signal: the scan is kept on the phone, named from the class '
+        'list, and listed as pending', () async {
+      await offline();
+      await controller.onCodeScanned('000-802');
+
+      expect(controller.isOffline, isTrue);
+      expect(controller.pendingCount, 1);
+      expect(controller.status.tone, ScanTone.success);
+      expect(
+        controller.status.text,
+        '✓ VILLAR, CARMINA JOY P. — ${ScannerStrings.savedOffline}',
+      );
+      expect(speech.said.last, 'Carmina Joy Villar, saved offline.');
+      expect(controller.lastRecord?.pending, isTrue);
+
+      final row = controller.attendance.first;
+      expect(row.studentNumber, '000-802');
+      expect(row.pending, isTrue);
+      expect(row.timeIn, '07:30:00 AM');
+      expect(store.kept, hasLength(1));
+    });
+
+    test('once offline, scans go straight to the phone — no waiting on the '
+        'server for each', () async {
+      await offline();
+      await controller.onCodeScanned('000-802');
+      now = now.add(const Duration(seconds: 5));
+      await controller.onCodeScanned('000-803');
+
+      expect(repo.scanned, ['000-802']);
+      expect(controller.pendingCount, 2);
+    });
+
+    test('a student not on the class list is refused, as online', () async {
+      await offline();
+      await controller.onCodeScanned('000-999');
+      await _delivered();
+
+      expect(controller.pendingCount, 0);
+      expect(
+        controller.status.text,
+        '✗ Student not enrolled in Multimedia Technologies',
+      );
+      expect(alerts.single.title, ScannerStrings.notEnrolledTitle);
+    });
+
+    test('with no class list, the scan is kept unchecked', () async {
+      await offline(roster: false);
+      await controller.onCodeScanned('000-999');
+
+      expect(controller.pendingCount, 1);
+      expect(controller.status.text, contains('000-999'));
+      expect(speech.said.last, '000-999, saved offline.');
+    });
+
+    test('a student already kept is "already marked"', () async {
+      await offline();
+      await controller.onCodeScanned('000-802');
+      now = now.add(const Duration(seconds: 4));
+      await controller.onCodeScanned('000-802');
+
+      expect(controller.pendingCount, 1);
+      expect(controller.status.text, '⚠ Already marked: 000-802');
+    });
+
+    test('a student already on today\'s list is "already marked"', () async {
+      repo.today = [_record()];
+      await offline();
+      await controller.onCodeScanned('000-802');
+
+      expect(controller.pendingCount, 0);
+      expect(controller.status.text, '⚠ Already marked: 000-802');
+    });
+
+    test(
+      'no photo on file warns, or refuses when a photo is required',
+      () async {
+        await offline();
+        await controller.onCodeScanned('000-803');
+        expect(controller.status.tone, ScanTone.warning);
+        expect(controller.status.text, contains('no photo'));
+
+        await controller.signOut();
+        repo.rosters = {
+          'ELEC2': SubjectRoster(
+            subjectCode: 'ELEC2',
+            date: '2026-09-27',
+            photoRequired: true,
+            students: _roster.students,
+          ),
+        };
+        repo.scanAnswer = _record();
+        repo.syncThrows = null;
+        await ready();
+        await _delivered();
+        repo.scanAnswer = _network;
+        await controller.onCodeScanned('000-803');
+        await _delivered();
+
+        expect(alerts.last.title, ScannerStrings.photoRequiredTitle);
+      },
+    );
+
+    test('a kept scan carries the late switch as it was', () async {
+      repo.rosters = {'ELEC2': _roster};
+      await ready();
+      await controller.toggleLate();
+      repo.scanAnswer = _network;
+      repo.syncThrows = _network;
+      await controller.onCodeScanned('000-802');
+
+      expect(store.kept.values.single.late, isTrue);
+      expect(controller.status.text, contains('LATE'));
+    });
+
+    test(
+      'back online, the kept scans are sent and the list reloaded',
+      () async {
+        await offline();
+        await controller.onCodeScanned('000-802');
+        repo.syncThrows = null;
+        repo.today = [_record()];
+
+        expect(await controller.sync(), isTrue);
+        await _delivered();
+
+        expect(repo.synced.single.single.studentNumber, '000-802');
+        expect(
+          repo.synced.single.single.scannedAt,
+          DateTime(2026, 9, 27, 7, 30),
+        );
+        expect(controller.pendingCount, 0);
+        expect(controller.isOffline, isFalse);
+        expect(store.kept, isEmpty);
+        expect(controller.attendance.single.pending, isFalse);
+        expect(alerts.last.title, ScannerStrings.syncedTitle(1));
+        expect(alerts.last.tone, ScanTone.success);
+      },
+    );
+
+    test('"already marked" from the server counts as sent', () async {
+      await offline();
+      await controller.onCodeScanned('000-802');
+      repo.syncThrows = null;
+      repo.syncAnswer = (s) =>
+          SyncOutcome(id: s.id, status: SyncStatus.alreadyMarked);
+      await controller.sync();
+
+      expect(controller.pendingCount, 0);
+      expect(controller.notSaved, isEmpty);
+    });
+
+    test(
+      'a scan the server refuses is listed with why, until cleared',
+      () async {
+        await offline(roster: false);
+        await controller.onCodeScanned('000-999');
+        repo.syncThrows = null;
+        repo.syncAnswer = (s) => SyncOutcome(
+          id: s.id,
+          status: SyncStatus.rejected,
+          rejection: const ScanRejection(
+            code: 'student_not_found',
+            message: 'Student 000-999 not found in database',
+          ),
+        );
+        await controller.sync();
+        await _delivered();
+
+        expect(controller.pendingCount, 0);
+        expect(controller.notSaved.single.rejection?.code, 'student_not_found');
+        expect(alerts.last.title, ScannerStrings.notSavedCountTitle(1));
+        // Kept until seen, even across a restart.
+        expect(store.kept.values.single.rejection, isNotNull);
+
+        await controller.dismissNotSaved();
+        expect(controller.notSaved, isEmpty);
+        expect(store.kept, isEmpty);
+      },
+    );
+
+    test('a scan the server failed on is kept for the next try', () async {
+      await offline();
+      await controller.onCodeScanned('000-802');
+      repo.syncThrows = null;
+      repo.syncAnswer = (s) => SyncOutcome(id: s.id, status: SyncStatus.error);
+      await controller.sync();
+
+      expect(controller.pendingCount, 1);
+      expect(controller.notSaved, isEmpty);
+      expect(repo.synced, hasLength(1));
+    });
+
+    test('still no signal: everything stays', () async {
+      await offline();
+      await controller.onCodeScanned('000-802');
+
+      expect(await controller.sync(), isFalse);
+      expect(controller.pendingCount, 1);
+      expect(controller.isOffline, isTrue);
+    });
+
+    test('a live scan of a student kept offline is answered at once', () async {
+      await offline();
+      await controller.onCodeScanned('000-802');
+      // The server is back, but the kept scan has not gone yet.
+      repo.syncThrows = _network;
+      controller.dispose();
+      controller = build();
+      repo.scanAnswer = _record();
+      await ready();
+      now = now.add(const Duration(seconds: 4));
+      await controller.onCodeScanned('000-802');
+
+      expect(repo.scanned, ['000-802']);
+      expect(controller.status.text, '⚠ Already marked: 000-802');
+    });
+
+    test('a kept scan survives the app being closed', () async {
+      await offline();
+      await controller.onCodeScanned('000-802');
+      controller.dispose();
+
+      controller = build();
+      repo.syncThrows = _network;
+      repo.scanAnswer = _record();
+      await controller.start();
+
+      expect(controller.pendingCount, 1);
+      expect(controller.attendance.first.pending, isTrue);
+    });
+
+    test('signing out keeps the kept scans for the next sign-in, and '
+        'forgets the class lists', () async {
+      await offline();
+      await controller.onCodeScanned('000-802');
+      await controller.signOut();
+
+      expect(store.kept, hasLength(1));
+      expect(store.rosters, isEmpty);
+      expect(store.saved, isNull);
+
+      repo.syncThrows = null;
+      await controller.signIn(email: 'a@b.c', password: 'secret');
+      expect(repo.synced, isNotEmpty);
+      expect(controller.pendingCount, 0);
+    });
+
+    test('a saved sign-in opens with no signal, on what the phone last '
+        'loaded', () async {
+      repo.rosters = {'ELEC2': _roster};
+      await ready();
+      await _delivered();
+      controller.dispose();
+
+      repo.restoreThrows = _network;
+      repo.syncThrows = _network;
+      controller = build();
+      await controller.start();
+
+      expect(controller.session, ScannerSession.signedIn);
+      expect(controller.isOffline, isTrue);
+      expect(controller.subjects, [_elec2]);
+
+      controller.selectSubject(_elec2);
+      await controller.onCodeScanned('000-802');
+      expect(controller.lastRecord?.name, 'VILLAR, CARMINA JOY P.');
+      expect(controller.pendingCount, 1);
+    });
+
+    test('the phone getting its network back sends the kept scans', () async {
+      final network = StreamController<bool>();
+      addTearDown(network.close);
+      controller.dispose();
+      controller = build(online: network.stream);
+
+      await offline();
+      network.add(false);
+      await _delivered();
+      await controller.onCodeScanned('000-802');
+      expect(controller.pendingCount, 1);
+
+      repo.syncThrows = null;
+      network.add(true);
+      await _delivered();
+      await _delivered();
+
+      expect(controller.pendingCount, 0);
+      expect(controller.isOffline, isFalse);
+    });
   });
 
   group('nameForSpeech', () {

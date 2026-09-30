@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.7.0+11
+version: 1.9.0+13
 
 environment:
   sdk: ^3.10.8
@@ -55,6 +55,10 @@ dependencies:
   local_auth: ^3.0.2
   # "You're offline" / "Back online" on the island (lib/services/connectivity.dart).
   connectivity_plus: ^7.3.1
+  # The scanner's offline queue: scans kept on the phone with no internet,
+  # and the class lists they are checked against
+  # (lib/services/offline_scan_store.dart).
+  sqflite: ^2.4.2+1
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +72,9 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_native_splash: ^2.4.7
   flutter_launcher_icons: ^0.14.4
+  # Runs the offline queue's real SQLite store in the tests, on the desktop
+  # (test/offline_scan_store_test.dart).
+  sqflite_common_ffi: ^2.4.0+3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

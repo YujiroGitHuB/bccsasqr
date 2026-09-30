@@ -285,10 +285,13 @@ permission (`403 forbidden`), and the Settings page lock
 | `POST /scanner/scan` | `{student_no, subject_code}` | `201 {record: {student_no, name, course, section, subject, date, time_in, late, photo_url, photo_missing}}` |
 | `GET /scanner/attendance` | — | `{date, records: [{date, student_no, name, course, section, subject, time_in, late}]}` — today, this account, newest first |
 | `POST /scanner/late` | `{subject_code, on}` | `{subject_code, on}` — the switch the server settled on |
+| `GET /scanner/roster?subject=CODE` | — | `{date, subject_code, photo_required, students: [{student_no, name, course, section, photo}]}` — one subject's class list, for scanning offline |
+| `POST /scanner/sync` | `{scans: [{id, student_no, subject_code, scanned_at, late}]}` | `{results: [{id, status, …}]}` — scans kept on the phone while offline; see below |
 
-`/scanner/scan` also needs the **Record attendance** permission. Who scanned,
-the date and the time come from the token and the server's clock, never the
-request. Its refusals keep the web scanner's codes:
+`/scanner/scan`, `/scanner/roster` and `/scanner/sync` also need the
+**Record attendance** permission. Who scanned, the date and the time come from
+the token and the server's clock, never the request — except a scan sent from
+the offline queue, below. Its refusals keep the web scanner's codes:
 
 | HTTP | `code` | Meaning |
 |---|---|---|
@@ -299,6 +302,42 @@ request. Its refusals keep the web scanner's codes:
 | 422 | `not_enrolled` | Not enrolled in this subject |
 | 400 | `missing_data` | No student number, or no such subject |
 | 500 | `scan_failed` | Database error — logged, offer a retry |
+
+### Scanning offline
+
+The app keeps scanning with no internet. While it is online it downloads the
+class list of each of the instructor's subjects (`/scanner/roster` — number,
+name, course, section, and whether there is a photo; never the photo), so an
+offline scan still names the student and still refuses one from another
+class. The scan is kept on the phone and sent later, up to 50 at a time:
+
+```
+POST /api/v1/scanner/sync
+{ "scans": [ { "id": "k3f9…", "student_no": "000-1023", "subject_code": "IT101",
+               "scanned_at": "2026-09-30T00:25:54.120Z", "late": false } ] }
+```
+
+`scanned_at` is the phone's clock at the moment of the scan, as a full ISO
+8601 instant; `late` is whether the late switch was on on the phone then. This
+is the one place the server takes a time from the app, so it is limited
+(`includes/offline_scan.php`): no later than now (10 minutes of clock drift
+allowed), no more than 3 calendar days back. The row is stored with
+`scanned_offline = 1` and `synced_at`, and the admin's Attendance Records show
+it with an **Offline** tag.
+
+Every scan goes through the same `scan_record()` on its own day and gets its
+own answer, keyed by `id`:
+
+| `status` | Meaning | The app |
+|---|---|---|
+| `saved` | Stored; `record` as `/scanner/scan` answers it | Drops it from the queue |
+| `already_marked` | Already in — sent before and the answer was lost, or scanned on the web meanwhile | Drops it |
+| `rejected` | Refused for good: `code` + `message` — the `/scanner/scan` codes, plus `bad_time` and `too_old` | Lists it under **Not saved** |
+| `error` | The database failed on this one | Keeps it, sends it again |
+
+Only what stops every scan fails the whole request — `401`, `403`, `503
+scanner_locked`; the app keeps the lot and tries again. `400 too_many_scans`
+above 50.
 
 ---
 

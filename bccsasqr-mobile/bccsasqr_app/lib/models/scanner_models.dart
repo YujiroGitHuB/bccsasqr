@@ -30,6 +30,16 @@ class ScannerUser {
 
   /// An admin may scan for every subject, as on the web.
   bool get isAdmin => role == 'admin';
+
+  /// The wire's own shape, so [ScannerUser.fromJson] reads it back — how the
+  /// offline store keeps it.
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'role': role,
+    'avatar_url': avatarUrl,
+  };
 }
 
 /// One entry in the subject picker.
@@ -63,6 +73,12 @@ class ScanSubject {
     lateMarking: lateMarking ?? this.lateMarking,
   );
 
+  Map<String, dynamic> toJson() => {
+    'code': code,
+    'name': name,
+    'late': lateMarking,
+  };
+
   @override
   bool operator ==(Object other) => other is ScanSubject && other.code == code;
 
@@ -89,6 +105,7 @@ class AttendanceEntry {
     required this.date,
     required this.timeIn,
     this.late = false,
+    this.pending = false,
   });
 
   factory AttendanceEntry.fromJson(Map<String, dynamic> json) =>
@@ -112,9 +129,14 @@ class AttendanceEntry {
   /// As stored — `2026-09-27`.
   final String date;
 
-  /// As stored — `07:25:54 AM`, the server's clock and never the phone's.
+  /// As stored — `07:25:54 AM`, the server's clock. A scan kept on the phone
+  /// while offline carries the phone's instead, and so does its row once
+  /// sent (see `includes/offline_scan.php`).
   final String timeIn;
   final bool late;
+
+  /// Kept on this phone, not yet on the server — scanned with no internet.
+  final bool pending;
 
   /// "BSIT — 2G", leaving out whichever half is blank.
   String get courseAndSection =>
@@ -122,7 +144,8 @@ class AttendanceEntry {
 }
 
 /// A scan the server accepted: the stored row, plus what the result card
-/// needs to show a face.
+/// needs to show a face. Or one kept on the phone with no internet, [pending]
+/// until it is sent (`PendingScan.toRecord`).
 class ScanRecord extends AttendanceEntry {
   const ScanRecord({
     required super.studentNumber,
@@ -133,6 +156,7 @@ class ScanRecord extends AttendanceEntry {
     required super.date,
     required super.timeIn,
     super.late,
+    super.pending,
     this.photoUrl,
     this.photoMissing = false,
   });

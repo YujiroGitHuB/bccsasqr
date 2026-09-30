@@ -9,6 +9,8 @@
 //    POST /scanner/scan         record one scan
 //    GET  /scanner/attendance   today's Attendance List
 //    POST /scanner/late         switch late marking on or off
+//    GET  /scanner/roster       one subject's class list, for offline
+//    POST /scanner/sync         scans kept on the phone while offline
 //
 //  Every rule — who may scan which subject, duplicates, the photo
 //  requirement, late marking — is in includes/scan_attendance.php,
@@ -178,25 +180,40 @@ function handle_scanner_scan(mysqli $conn): void
     }
 
     if ($result['success']) {
-        api_ok([
-            'record' => [
-                'student_no'    => trim((string) $body['student_no']),
-                'name'          => (string) $result['name'],
-                'course'        => (string) $result['course'],
-                'section'       => (string) $result['section'],
-                'subject'       => (string) $result['subject'],
-                'date'          => $result['date'],
-                'time_in'       => $result['time_in'],
-                'late'          => $result['late'],
-                'photo_url'     => api_asset_url($result['photo_path']),
-                'photo_missing' => $result['photo_missing'],
-            ],
-        ], 201);
+        api_ok(['record' => scanner_record_resource((string) $body['student_no'], $result)], 201);
     }
 
-    $code = $result['message'];
+    [$status, $message] = scanner_refusal($result);
 
-    [$status, $message] = match ($code) {
+    api_fail($status, $result['message'], $message, isset($result['name']) ? ['name' => $result['name']] : []);
+}
+
+/** A scan scan_record() stored, as the app reads it. */
+function scanner_record_resource(string $studentNo, array $result): array
+{
+    return [
+        'student_no'    => trim($studentNo),
+        'name'          => (string) $result['name'],
+        'course'        => (string) $result['course'],
+        'section'       => (string) $result['section'],
+        'subject'       => (string) $result['subject'],
+        'date'          => $result['date'],
+        'time_in'       => $result['time_in'],
+        'late'          => $result['late'],
+        'photo_url'     => api_asset_url($result['photo_path']),
+        'photo_missing' => $result['photo_missing'],
+    ];
+}
+
+/**
+ * The HTTP status and message for a scan scan_record() refused; its
+ * `message` is the code.
+ *
+ * @return array{0: int, 1: string}
+ */
+function scanner_refusal(array $result): array
+{
+    return match ($result['message']) {
         'already_marked'    => [409, 'Already marked today.'],
         'not_authorized'    => [403, $result['error']],
         'student_not_found' => [404, $result['error']],
@@ -204,8 +221,120 @@ function handle_scanner_scan(mysqli $conn): void
         'not_enrolled'      => [422, $result['error']],
         default             => [400, $result['error'] ?? 'Required fields are missing.'],
     };
+}
 
-    api_fail($status, $code, $message, isset($result['name']) ? ['name' => $result['name']] : []);
+/**
+ * GET /api/v1/scanner/roster?subject=IT101
+ *
+ * The students enrolled in one of this account's subjects, so the app
+ * can go on scanning that class with no internet — naming each student
+ * and refusing the ones from another class, as it would online. See
+ * scan_roster() for what is in it.
+ */
+function handle_scanner_roster(mysqli $conn): void
+{
+    $user   = scanner_guard($conn);
+    $userId = (int) $user['id'];
+    api_require_permission($user, 'attendance.record', 'Your account may not record attendance. Please contact the administrator.');
+
+    $code = trim((string) ($_GET['subject'] ?? ''));
+    if ($code === '') {
+        api_fail(400, 'missing_data', 'Select a subject first.');
+    }
+
+    if (!scan_is_admin($conn, $userId) && !scan_owns_subject($conn, $userId, $code)) {
+        api_fail(403, 'not_authorized', 'That subject is not assigned to you.');
+    }
+
+    api_ok([
+        'date'           => scan_now()->format('Y-m-d'),
+        'subject_code'   => $code,
+        'photo_required' => photo_is_required($conn),
+        'students'       => scan_roster($conn, $code),
+    ]);
+}
+
+/** The most scans one POST /scanner/sync takes; the app sends in batches. */
+const SCANNER_SYNC_MAX = 50;
+
+/**
+ * POST /api/v1/scanner/sync
+ *
+ *   { "scans": [ { "id": "k3f9…", "student_no": "000-1023",
+ *                  "subject_code": "IT101",
+ *                  "scanned_at": "2026-09-30T00:25:54.120Z",
+ *                  "late": false }, … ] }
+ *
+ * Scans the app kept on the phone while it had no internet. Each one
+ * goes through scan_record() on its own day and gets its own answer,
+ * keyed by the id the app gave it:
+ *
+ *   saved           stored; `record` as /scanner/scan answers it
+ *   already_marked  already in — sent before with the answer lost on
+ *                   the way back, or scanned on the web meanwhile
+ *   rejected        refused for good: `code` and `message`, the same
+ *                   ones /scanner/scan gives, plus bad_time / too_old
+ *   error           the database failed on this one; send it again
+ *
+ * Only what stops every scan fails the request as a whole: the
+ * sign-in, the permission, the Settings lock. The app keeps the lot
+ * and tries again later.
+ */
+function handle_scanner_sync(mysqli $conn): void
+{
+    $user   = scanner_guard($conn);
+    $userId = (int) $user['id'];
+    api_require_permission($user, 'attendance.record', 'Your account may not record attendance. Please contact the administrator.');
+
+    $scans = api_json_body()['scans'] ?? null;
+    if (!is_array($scans) || !array_is_list($scans)) {
+        api_fail(400, 'invalid_body', 'Send the scans as a list under "scans".');
+    }
+    if (count($scans) > SCANNER_SYNC_MAX) {
+        api_fail(400, 'too_many_scans', 'Send at most ' . SCANNER_SYNC_MAX . ' scans at a time.', ['max' => SCANNER_SYNC_MAX]);
+    }
+
+    $now     = scan_now();
+    $results = [];
+
+    foreach ($scans as $scan) {
+        $id = is_array($scan) && is_scalar($scan['id'] ?? null) ? (string) $scan['id'] : '';
+        // Nothing to key the answer by — the app has no way to match it.
+        if ($id === '') continue;
+
+        $time = offline_scan_time((string) ($scan['scanned_at'] ?? ''), $now);
+        if ($time['at'] === null) {
+            $results[] = ['id' => $id, 'status' => 'rejected', 'code' => $time['code'], 'message' => $time['error']];
+            continue;
+        }
+
+        $studentNo = (string) ($scan['student_no'] ?? '');
+
+        try {
+            $result = scan_record(
+                $conn,
+                $userId,
+                $studentNo,
+                (string) ($scan['subject_code'] ?? ''),
+                ['at' => $time['at'], 'late' => ($scan['late'] ?? false) === true]
+            );
+        } catch (Throwable $e) {
+            error_log('api scanner/sync: ' . $e->getMessage());
+            $results[] = ['id' => $id, 'status' => 'error', 'code' => 'scan_failed', 'message' => 'Could not save attendance. It will be sent again.'];
+            continue;
+        }
+
+        if ($result['success']) {
+            $results[] = ['id' => $id, 'status' => 'saved', 'record' => scanner_record_resource($studentNo, $result)];
+        } elseif ($result['message'] === 'already_marked') {
+            $results[] = ['id' => $id, 'status' => 'already_marked'];
+        } else {
+            [, $message] = scanner_refusal($result);
+            $results[] = ['id' => $id, 'status' => 'rejected', 'code' => $result['message'], 'message' => $message];
+        }
+    }
+
+    api_ok(['results' => $results]);
 }
 
 /** GET /api/v1/scanner/attendance — today's scans by this account. */
