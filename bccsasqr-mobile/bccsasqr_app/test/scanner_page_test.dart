@@ -1,5 +1,6 @@
 import 'package:bccsasqr_app/app.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
+import 'package:bccsasqr_app/models/scanner_models.dart';
 import 'package:bccsasqr_app/services/app_info.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/scan_feedback.dart';
@@ -24,6 +25,19 @@ class _NoExport implements QrExportService {
     required String fileName,
     String? shareText,
   }) async => fileName;
+}
+
+/// The demo server, which can be made to take its time over a saved sign-in.
+class _SlowCheck extends InMemoryScannerRepository {
+  _SlowCheck() : super(latency: Duration.zero);
+
+  Duration check = Duration.zero;
+
+  @override
+  Future<ScannerUser?> restoreSession() async {
+    await Future<void>.delayed(check);
+    return super.restoreSession();
+  }
 }
 
 /// Stands in for the camera: one button per code a test wants "scanned".
@@ -299,24 +313,67 @@ void main() {
     expect(find.text(ScannerStrings.signInOnlyInstructors), findsOneWidget);
   });
 
-  testWidgets('the scanner tab plays its splash, then asks to sign in', (
+  testWidgets('an instructor\'s phone asks to sign in, with no scanner '
+      'splash first', (tester) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+
+    await tester.pumpWidget(app());
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(ScannerSplash), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.byType(ScannerSplash), findsNothing);
+    expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+  });
+
+  testWidgets('the Scanner plays its splash the first time it is opened, and '
+      'not again', (tester) async {
+    await openScanner(tester);
+    // Played and gone by the time the scanner is up.
+    expect(find.byType(ScannerSplash), findsNothing);
+    expect(find.text(ScannerStrings.subjectPlaceholder), findsOneWidget);
+
+    await openFromMenu(tester, 'home');
+    await tester.tap(find.byKey(const ValueKey('nav.menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('menu.scanner')));
+    await tester.pump();
+    expect(find.byType(ScannerSplash), findsNothing);
+    expect(find.text(ScannerStrings.subjectPlaceholder), findsOneWidget);
+  });
+
+  testWidgets('opening the Scanner plays its splash over the page', (
     tester,
   ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
-
-    // The instructor's bar opens on it, once the role has been read.
     await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), 'demo@bcc.test');
+    await tester.enterText(find.byType(TextField).at(1), 'secret');
+    await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('nav.menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('menu.scanner')));
     await tester.pump();
     await tester.pump();
 
     expect(find.byType(ScannerSplash), findsOneWidget);
-    expect(find.text(ScannerStrings.checkingSession), findsOneWidget);
+    for (final step in ScannerSplash.steps) {
+      expect(find.text(step.label), findsOneWidget, reason: step.label);
+    }
+    // The page waits behind it: nothing on it starts under the animation.
+    expect(find.text(ScannerStrings.subjectPlaceholder), findsNothing);
 
     await tester.pumpAndSettle();
     expect(find.byType(ScannerSplash), findsNothing);
-    expect(find.text(ScannerStrings.signInHeading), findsOneWidget);
+    expect(find.text(ScannerStrings.subjectPlaceholder), findsOneWidget);
   });
 
   // At full speed, as on a phone: the timings are what is being checked.
@@ -358,27 +415,43 @@ void main() {
     expect(find.text(ScannerStrings.title), findsNothing);
   });
 
-  testWidgets('a saved sign-in says welcome back on the splash and skips '
-      'the welcome', (tester) async {
+  testWidgets('a saved sign-in opens straight on Home: no scanner splash, no '
+      'welcome', (tester) async {
     await signInAtFullSpeed(tester);
     await tester.pumpAndSettle();
 
     // The app closed and opened again: the sign-in is kept on the phone.
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(app());
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 900));
-
-    expect(find.byType(ScannerSplash), findsOneWidget);
-    expect(
-      find.text(ScannerStrings.welcomeBack('Demo Instructor')),
-      findsOneWidget,
-    );
-
     for (var i = 0; i < 30; i++) {
       await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byType(ScannerSplash), findsNothing);
       expect(find.byType(ScannerWelcome), findsNothing);
     }
+    await tester.pumpAndSettle();
+    expect(home, findsOneWidget);
+    // A quick check says nothing on its way past.
+    expect(find.text(ScannerStrings.checkingSession), findsNothing);
+  });
+
+  testWidgets('a slow check says so, after a moment', (tester) async {
+    final server = scanner = _SlowCheck();
+    await signInAtFullSpeed(tester);
+    await tester.pumpAndSettle();
+
+    // Back, with the server taking its time over the saved sign-in.
+    server.check = const Duration(seconds: 3);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(app());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text(ScannerStrings.checkingSession), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(find.text(ScannerStrings.checkingSession), findsOneWidget);
+    expect(find.byType(ScannerSplash), findsNothing);
+
+    await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
     expect(home, findsOneWidget);
   });

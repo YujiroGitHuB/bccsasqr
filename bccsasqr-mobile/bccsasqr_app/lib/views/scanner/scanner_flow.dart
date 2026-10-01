@@ -23,10 +23,14 @@ import 'scanner_sign_in_page.dart';
 /// saved sign-in goes straight in — through the phone's lock first, when the
 /// instructor turned it on — anything else to the sign-in form.
 ///
-/// Signed in, it shows [home] (the instructor's bar) with the scanner in it.
-/// Nothing of [home] is built before the sign-in, and it goes with the
+/// Signed in, it shows [home] (the instructor's shell) with the scanner in
+/// it. Nothing of [home] is built before the sign-in, and it goes with the
 /// sign-out: a student who taps "I'm an instructor" gets the form and no
 /// more. The lock covers all of it, not just the scanner.
+///
+/// No splash of its own: the app's has just played, and a saved sign-in
+/// opens straight on Home. The scanner's splash plays when the Scanner is
+/// opened (ScannerIntro), as the other tabs' do.
 class ScannerFlow extends StatefulWidget {
   const ScannerFlow({
     super.key,
@@ -116,10 +120,6 @@ class _ScannerFlowState extends State<ScannerFlow> {
   /// and answered for — whichever tab is showing, the Scanner's never opened
   /// included.
   late final StreamSubscription<ScanAlert> _alerts;
-
-  /// The splash has played its intro. Until then it stays up even when the
-  /// sign-in check has already answered.
-  bool _introDone = false;
 
   /// A sign-in typed just now, not one restored: it gets the welcome.
   bool _welcoming = false;
@@ -278,7 +278,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
   );
 
   /// Whatever the sign-in has to show in front of the signed-in side — the
-  /// splash, the form, a welcome, the lock — or null when it is open.
+  /// check, the form, a welcome, the lock — or null when it is open.
   Widget? _cover() {
     final session = _controller.session;
     final user = _controller.user;
@@ -287,23 +287,8 @@ class _ScannerFlowState extends State<ScannerFlow> {
 
     // Until the lock's switch has been read, a saved sign-in cannot be
     // shown: it might be behind the lock.
-    if (!_introDone ||
-        session == ScannerSession.checking ||
-        (signedIn && !_lock.ready)) {
-      final back = signedIn && user != null;
-      final locked = _lock.ready && _lock.locked;
-      return ScannerSplash(
-        key: const ValueKey('splash'),
-        message: !back
-            ? ScannerStrings.checkingSession
-            : locked
-            ? ScannerStrings.lockTitle
-            : ScannerStrings.welcomeBack(user.name),
-        done: back && !locked,
-        onIntroDone: () {
-          if (mounted) setState(() => _introDone = true);
-        },
-      );
+    if (session == ScannerSession.checking || (signedIn && !_lock.ready)) {
+      return const _Checking(key: ValueKey('checking'));
     }
 
     if (_welcoming && session == ScannerSession.signedIn) {
@@ -384,9 +369,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
 
         final covered = cover != null;
         final leaving =
-            session == ScannerSession.signedOut &&
-            _introDone &&
-            widget.onLeave != null;
+            session == ScannerSession.signedOut && widget.onLeave != null;
 
         return PopScope(
           canPop: !leaving,
@@ -423,6 +406,73 @@ class _ScannerFlowState extends State<ScannerFlow> {
           ),
         );
       },
+    );
+  }
+}
+
+/// The moment a saved sign-in is checked with the server, between the app's
+/// own splash and Home. Blank at first, so a quick answer flashes nothing
+/// past; a spinner and "Checking your sign-in…" fade in only when the check
+/// runs long, so a slow network does not look like a frozen app.
+class _Checking extends StatelessWidget {
+  const _Checking({super.key});
+
+  /// How long the check runs before it says so, and its fade in after.
+  static const Duration _quiet = Duration(milliseconds: 600);
+  static const Duration _fade = Duration(milliseconds: 250);
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final total = _quiet + _fade;
+
+    return Scaffold(
+      body: Center(
+        // Frame-driven rather than a timer, so "reduce motion" shortens the
+        // wait with everything else, and a test's pumpAndSettle runs through
+        // it.
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: total,
+          curve: Interval(
+            _quiet.inMicroseconds / total.inMicroseconds,
+            1,
+            curve: Curves.easeOut,
+          ),
+          builder: (context, shown, _) => shown == 0
+              // Nothing spinning while nothing is shown.
+              ? const SizedBox.shrink()
+              : Opacity(
+                  opacity: shown,
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox.square(
+                          dimension: 18,
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colors.accent,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          ScannerStrings.checkingSession,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ),
     );
   }
 }

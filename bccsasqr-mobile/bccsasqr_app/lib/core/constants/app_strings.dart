@@ -169,6 +169,9 @@ abstract final class ScannerStrings {
   // The scanner's opening splash, and the welcome after a sign-in.
   static const String splashWord = ' Scanner';
   static const String splashSemantics = 'Opening the attendance scanner';
+  static const String stepSubject = 'Pick subject';
+  static const String stepScan = 'Scan QR';
+  static const String stepPresent = 'Present';
   static String welcomeBack(String name) => 'Welcome back, $name';
   static const String welcomeLabel = 'SIGNED IN';
   static String welcomeTitle(String name) => 'Welcome, $name';

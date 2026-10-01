@@ -10,38 +10,44 @@ import '../widgets/splash_parts.dart';
 import '../widgets/viewfinder.dart';
 import 'widgets/scanner_header.dart';
 
-/// What an instructor sees while the scanner opens: a QR in a viewfinder with
-/// the scan line passing over it, while the saved sign-in is checked with the
-/// server.
-///
-/// The intro plays once whatever the network does, so a quick answer does not
-/// flash it past; a slow one keeps the line sweeping until the answer comes.
-/// It follows the app's theme — unlike the app's opening splash, which has to
-/// match the dark native launch screen.
-class ScannerSplash extends StatefulWidget {
-  const ScannerSplash({
-    super.key,
-    required this.message,
-    required this.onIntroDone,
-    this.done = false,
-  });
+/// The scanner, behind its opening splash — played the first time the
+/// Scanner is opened, as the other tabs play theirs. Not when the app opens:
+/// that is Home's moment, straight after the app's own splash.
+class ScannerIntro extends StatelessWidget {
+  const ScannerIntro({super.key, required this.page});
 
-  /// The line under the name: "Checking your sign-in…", then who is back.
-  final String message;
+  final WidgetBuilder page;
 
-  /// The check came back signed in: a tick in place of the spinner.
-  final bool done;
-
-  /// Called once, when the intro has played. The caller moves on then, or as
-  /// soon as the check answers, whichever is later.
-  final VoidCallback onIntroDone;
-
-  /// Slow enough to watch the code slide in, then a hold so "Welcome back"
-  /// can be read before the scanner takes over.
-  static const SplashTimeline timeline = SplashTimeline(
-    play: Duration(milliseconds: 1800),
-    hold: Duration(milliseconds: 500),
+  @override
+  Widget build(BuildContext context) => SplashThen(
+    splash: (onFinished) => ScannerSplash(onFinished: onFinished),
+    page: page,
   );
+}
+
+/// What an instructor sees as the scanner opens: a QR in a viewfinder with
+/// the scan line passing over it, the scanner's name, and the three steps of
+/// a scan — the other tabs' splash in shape, so they read as one family.
+///
+/// There is nothing to wait for — the subjects came with the sign-in — so it
+/// plays once and goes. It follows the app's theme, like the other tabs'.
+class ScannerSplash extends StatefulWidget {
+  const ScannerSplash({super.key, required this.onFinished});
+
+  /// Called once, when the splash has played.
+  final VoidCallback onFinished;
+
+  /// The same pace as the other tabs'.
+  static const SplashTimeline timeline = SplashTimeline(
+    play: Duration(milliseconds: 2300),
+    hold: Duration(milliseconds: 400),
+  );
+
+  static const List<SplashStep> steps = [
+    (icon: Icons.menu_book_outlined, label: ScannerStrings.stepSubject),
+    (icon: Icons.qr_code_scanner_rounded, label: ScannerStrings.stepScan),
+    (icon: Icons.how_to_reg_outlined, label: ScannerStrings.stepPresent),
+  ];
 
   @override
   State<ScannerSplash> createState() => _ScannerSplashState();
@@ -54,7 +60,8 @@ class _ScannerSplashState extends State<ScannerSplash>
     duration: ScannerSplash.timeline.total,
   )..addStatusListener(_onIntroStatus);
 
-  /// The scan line, round and round for as long as the splash is up.
+  /// The scan line, round and round while the splash is up — and gone with
+  /// it.
   late final AnimationController _sweep = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1900),
@@ -62,8 +69,12 @@ class _ScannerSplashState extends State<ScannerSplash>
 
   late final Animation<double> _frame = _slice(0.00, 0.45, Curves.easeOutBack);
   late final Animation<double> _code = _slice(0.12, 0.50, Curves.easeOutCubic);
-  late final Animation<double> _title = _slice(0.32, 0.72, Curves.easeOutCubic);
-  late final Animation<double> _status = _slice(0.55, 0.95, Curves.easeOut);
+  late final Animation<double> _title = _slice(0.30, 0.60, Curves.easeOutCubic);
+  late final List<Animation<double>> _steps = [
+    _slice(0.50, 0.70, Curves.easeOutCubic),
+    _slice(0.56, 0.76, Curves.easeOutCubic),
+    _slice(0.62, 0.82, Curves.easeOutCubic),
+  ];
 
   bool _started = false;
 
@@ -74,7 +85,7 @@ class _ScannerSplashState extends State<ScannerSplash>
       );
 
   void _onIntroStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed) widget.onIntroDone();
+    if (status == AnimationStatus.completed) widget.onFinished();
   }
 
   @override
@@ -103,8 +114,6 @@ class _ScannerSplashState extends State<ScannerSplash>
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-
     return Scaffold(
       body: Semantics(
         label: ScannerStrings.splashSemantics,
@@ -122,42 +131,17 @@ class _ScannerSplashState extends State<ScannerSplash>
                         code: _code.value,
                         sweep: _sweep.isAnimating ? _sweep.value : null,
                       ),
-                      const SizedBox(height: 28),
-                      Opacity(
-                        opacity: _title.value.clamp(0.0, 1.0),
-                        child: Transform.translate(
-                          offset: Offset(0, 14 * (1 - _title.value)),
-                          child: const _ScannerWordmark(),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Opacity(
-                        opacity: _status.value.clamp(0.0, 1.0),
-                        child: _StatusLine(
-                          message: widget.message,
-                          done: widget.done,
-                        ),
+                      const SizedBox(height: 26),
+                      splashRise(_title.value, const _ScannerWordmark()),
+                      const SizedBox(height: 30),
+                      SplashSteps(
+                        steps: ScannerSplash.steps,
+                        shown: [for (final s in _steps) s.value],
                       ),
                     ],
                   ),
                 ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: Opacity(
-                      opacity: _status.value.clamp(0.0, 1.0),
-                      child: Text(
-                        AppStrings.splashFooter,
-                        style: TextStyle(
-                          fontSize: 12,
-                          letterSpacing: 0.4,
-                          color: colors.textMuted,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                SplashFooter(shown: _steps.last.value),
               ],
             ),
           ),
@@ -334,68 +318,13 @@ class _ScannerWordmark extends StatelessWidget {
   }
 }
 
-/// A spinner and what is being waited on; a tick once it has answered.
-class _StatusLine extends StatelessWidget {
-  const _StatusLine({required this.message, required this.done});
-
-  final String message;
-  final bool done;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox.square(
-            dimension: 18,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: done
-                  ? Icon(
-                      Icons.check_circle_rounded,
-                      key: const ValueKey('done'),
-                      size: 18,
-                      color: colors.success,
-                    )
-                  : Padding(
-                      key: const ValueKey('busy'),
-                      padding: const EdgeInsets.all(2),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: colors.accent,
-                      ),
-                    ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: Text(
-                message,
-                key: ValueKey(message),
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: colors.textSecondary),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Plays once after the email and password are accepted: the instructor's
 /// photo (or initials) pops in, a ring closes round it, a tick badge lands on
 /// its corner — with a burst of dots and a ripple going out — and they are
 /// greeted by name while a bar fills as their subjects load behind it. A
-/// saved sign-in skips this — the splash says "Welcome back" instead —
-/// unless it was behind the fingerprint lock: opening that plays this too,
-/// as [ScannerWelcome.unlocked].
+/// saved sign-in skips this and opens straight on Home, which greets them by
+/// name — unless it was behind the fingerprint lock: opening that plays this
+/// too, as [ScannerWelcome.unlocked].
 class ScannerWelcome extends StatefulWidget {
   const ScannerWelcome({
     super.key,

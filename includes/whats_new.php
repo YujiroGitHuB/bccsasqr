@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-01';
+const WHATS_NEW_VERSION = '2026-10-01.2';
 
 /**
  * The changelog, newest release first.
@@ -74,9 +74,16 @@ function whats_new_releases(): array
             'id'      => '2026-10-01',
             'date'    => '2026-10-01',
             'icon'    => 'bi-grid',
-            'title'   => 'One Menu button in the app',
-            'summary' => 'The bottom of the app’s instructor screen is now only the round Menu button — Home, Scanner, Attendance and Settings were in the Menu already, so the bar said the same things twice.',
+            'title'   => 'One Menu button in the app, and straight to Home',
+            'summary' => 'The bottom of the app’s instructor screen is now only the round Menu button — Home, Scanner, Attendance and Settings were in the Menu already, so the bar said the same things twice. The app now opens straight on Home, and the scanner’s splash plays when the Scanner is opened.',
             'items'   => [
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-qr-code-scan',
+                    'title' => 'The app opens straight on Home',
+                    'text'  => 'Signed in, the app no longer shows the scanner&rsquo;s splash before <strong>Home</strong> &mdash; Home opens right after the app&rsquo;s own opening screen. The scanner&rsquo;s splash now plays when you first open the <strong>Scanner</strong>, as <strong>QR Code</strong>, <strong>Attendance</strong> and <strong>Links</strong> play theirs. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-grid-3x3-gap',

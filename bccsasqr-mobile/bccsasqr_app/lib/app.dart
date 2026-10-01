@@ -48,6 +48,7 @@ import 'views/profile/profile_splash.dart';
 import 'views/qr_generator_page.dart';
 import 'views/role_picker_page.dart';
 import 'views/scanner/scanner_flow.dart';
+import 'views/scanner/scanner_intro.dart';
 import 'views/scanner/scanner_page.dart';
 import 'views/settings_page.dart';
 import 'views/splash_page.dart';
@@ -263,8 +264,9 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   bool _scannerOpened = false;
 
   /// "I'm a student" was just picked: the student's splash plays before the
-  /// home screen, as the scanner's does after "I'm an instructor". Not on a
-  /// launch with the role already kept — the app's own splash has played.
+  /// home screen. Not on a launch with the role already kept — the app's own
+  /// splash has played. "I'm an instructor" goes straight to the sign-in;
+  /// the scanner's splash waits for the Scanner to be opened.
   bool _studentWelcome = false;
 
   @override
@@ -502,7 +504,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
           whatsNew: _whatsNew,
         ),
         generatorBuilder: _generator,
-        scannerBuilder: scanner,
+        // Its splash the first time it is opened, as the other tabs.
+        scannerBuilder: (context) => ScannerIntro(page: scanner),
         trackerBuilder: _trackerPage,
         settingsBuilder: (context) =>
             _instructorSettings(context, session, lock),

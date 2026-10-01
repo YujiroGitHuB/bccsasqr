@@ -18,18 +18,32 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01';
+  static const String version = '2026-10-01.2';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
       id: '2026-10-01',
       icon: Icons.grid_view_rounded,
-      title: 'Just the Menu button',
+      title: 'Just the Menu button, and straight to Home',
       summary:
           'The bottom of the screen is now only the round Menu button. '
           'Everything is in the Menu, Home included, and each page runs all '
-          'the way down under the button.',
+          'the way down under the button. The app opens straight on Home, '
+          'and the scanner\'s splash plays when you open the Scanner.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.qr_code_scanner_rounded,
+          title: 'Straight to Home when the app opens',
+          text:
+              'The scanner\'s splash no longer comes before **Home** when you '
+              'open the app — Home opens right after the app\'s own opening '
+              'screen. The scanner\'s splash now plays when you first open '
+              'the **Scanner**, as **QR Code**, **Attendance** and **Links** '
+              'play theirs.',
+          link: false,
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.improved,
           area: WhatsNewArea.scanner,
