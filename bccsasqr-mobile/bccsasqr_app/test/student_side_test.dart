@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:bccsasqr_app/app.dart';
 import 'package:bccsasqr_app/controllers/check_in_controller.dart';
 import 'package:bccsasqr_app/controllers/my_attendance_controller.dart';
+import 'package:bccsasqr_app/controllers/notifications_controller.dart';
 import 'package:bccsasqr_app/controllers/profile_controller.dart';
 import 'package:bccsasqr_app/controllers/settings_controller.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
@@ -13,6 +15,7 @@ import 'package:bccsasqr_app/models/app_role.dart';
 import 'package:bccsasqr_app/models/app_settings.dart';
 import 'package:bccsasqr_app/models/attendance_history.dart';
 import 'package:bccsasqr_app/models/class_link.dart';
+import 'package:bccsasqr_app/models/live_update.dart';
 import 'package:bccsasqr_app/models/qr_payload.dart';
 import 'package:bccsasqr_app/models/student_profile.dart';
 import 'package:bccsasqr_app/models/student_record.dart';
@@ -20,6 +23,8 @@ import 'package:bccsasqr_app/models/whats_new.dart';
 import 'package:bccsasqr_app/services/check_in_repository.dart';
 import 'package:bccsasqr_app/services/device_lock.dart';
 import 'package:bccsasqr_app/services/http_student_repository.dart';
+import 'package:bccsasqr_app/services/live_repository.dart';
+import 'package:bccsasqr_app/services/notice_store.dart';
 import 'package:bccsasqr_app/services/photo_repository.dart';
 import 'package:bccsasqr_app/services/profile_store.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
@@ -31,9 +36,11 @@ import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/services/tracker_repository.dart';
 import 'package:bccsasqr_app/views/check_in_page.dart';
 import 'package:bccsasqr_app/views/check_in_splash.dart';
+import 'package:bccsasqr_app/views/live_notices.dart';
 import 'package:bccsasqr_app/views/my_attendance_page.dart';
 import 'package:bccsasqr_app/views/show_qr_page.dart';
 import 'package:bccsasqr_app/views/student_menu.dart';
+import 'package:bccsasqr_app/views/widgets/island.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -109,6 +116,43 @@ AttendanceHistory _history(List<AttendanceDay> days) => AttendanceHistory(
     ),
   ],
 );
+
+/// The live feed, scripted by the test: what the instructor records, and
+/// what the server refuses.
+class _Live implements LiveRepository {
+  final List<LiveRecord> records = [];
+  StudentLookupException? failure;
+  int asked = 0;
+
+  void scan(int id, String timeIn, {bool late = false}) => records.add(
+    LiveRecord(
+      id: id,
+      subject: 'Object Oriented Programming',
+      instructor: 'Sample Instructor',
+      day: _day(DateTime(2026, 10, 1), timeIn, late: late),
+    ),
+  );
+
+  @override
+  Future<LiveUpdate> fetchLive(
+    StudentNumber number, {
+    required String lastName,
+    int? since,
+  }) async {
+    asked++;
+    if (failure case final f?) throw f;
+    return LiveUpdate(
+      cursor: records.fold(0, (top, r) => math.max(top, r.id)),
+      count: records.length,
+      records: since == null
+          ? const []
+          : [
+              for (final r in records.reversed)
+                if (r.id > since) r,
+            ],
+    );
+  }
+}
 
 class _Export implements QrExportService {
   int saved = 0;
@@ -198,6 +242,13 @@ class _PhoneLock implements DeviceLock {
 
 Widget _app(Widget home) =>
     MaterialApp(theme: AppTheme.build(AppPalette.light), home: home);
+
+/// [home] under the island, as the app has it.
+Widget _islandApp(Widget home) => MaterialApp(
+  theme: AppTheme.build(AppPalette.light),
+  builder: (context, child) => IslandHost(child: child!),
+  home: home,
+);
 
 void main() {
   setUp(() {
@@ -349,80 +400,106 @@ void main() {
       savedAt: _now,
     );
 
-    testWidgets('holds the screen on, and says when the scan lands', (
-      tester,
-    ) async {
+    testWidgets('holds the screen on, hurries the feed, and the scan lands '
+        'on the island', (tester) async {
       final profile = await profileOf(_kept);
-      final tracker = _Tracker(_history([]));
-      final attendance = MyAttendanceController(
+      final live = _Live();
+      final notices = NotificationsController(
         profile: profile,
-        repository: tracker,
+        repository: live,
+        store: MemoryNoticeStore(),
         clock: () => _now,
+        hurriedEvery: const Duration(seconds: 2),
       );
-      addTearDown(attendance.dispose);
-      await attendance.refresh();
+      addTearDown(notices.dispose);
+      final settings = SettingsController(store: MemorySettingsStore());
       final awake = <bool>[];
 
       await tester.pumpWidget(
-        _app(
-          ShowQrPage(
-            code: code,
-            exportService: _Export(),
-            attendance: attendance,
-            keepAwake: (on) async => awake.add(on),
-            watchEvery: const Duration(seconds: 1),
+        _islandApp(
+          LiveNotices(
+            controller: notices,
+            settings: settings,
+            now: () => _now,
+            child: ShowQrPage(
+              code: code,
+              exportService: _Export(),
+              live: notices,
+              keepAwake: (on) async => awake.add(on),
+            ),
           ),
         ),
       );
+      await tester.pump();
       expect(awake, [true]);
+      // The first look: where the record stands.
+      expect(live.asked, 1);
 
-      await tester.pump(const Duration(seconds: 1));
-      expect(find.text(ShowQrStrings.marked), findsNothing);
+      // Quicker while the code is up.
+      await tester.pump(const Duration(seconds: 2));
+      expect(live.asked, 2);
+      expect(find.text(NoticeStrings.present), findsNothing);
 
       // The instructor scans.
-      tracker.history = _history([_day(DateTime(2026, 10, 1), '08:04:12 AM')]);
-      await tester.pump(const Duration(seconds: 1));
+      live.scan(7, '08:04:12 AM');
+      await tester.pump(const Duration(seconds: 2));
       await tester.pump();
-      expect(find.textContaining(ShowQrStrings.marked), findsOneWidget);
+      expect(find.text(NoticeStrings.present), findsOneWidget);
+      expect(
+        find.text('Object Oriented Programming · 8:04 AM · on time'),
+        findsOneWidget,
+      );
 
-      // Said once, then the asking stops.
-      final asked = tracker.asked;
+      // Then back to the feed's own pace.
+      final asked = live.asked;
+      await tester.pump(const Duration(seconds: 10));
+      expect(live.asked, asked);
       await tester.pump(const Duration(seconds: 5));
-      expect(tracker.asked, asked);
+      expect(live.asked, asked + 1);
 
       await tester.pumpWidget(const SizedBox());
       expect(awake, [true, false]);
     });
 
-    testWidgets('stops asking when the server says slow down', (tester) async {
+    testWidgets('waits as long as the server asks, even with the code up', (
+      tester,
+    ) async {
       final profile = await profileOf(_kept);
-      final tracker = _Tracker(_history([]));
-      final attendance = MyAttendanceController(
+      final live = _Live();
+      final notices = NotificationsController(
         profile: profile,
-        repository: tracker,
+        repository: live,
+        store: MemoryNoticeStore(),
         clock: () => _now,
+        hurriedEvery: const Duration(seconds: 2),
       );
-      addTearDown(attendance.dispose);
+      addTearDown(notices.dispose);
 
       await tester.pumpWidget(
-        _app(
-          ShowQrPage(
-            code: code,
-            exportService: _Export(),
-            attendance: attendance,
-            watchEvery: const Duration(seconds: 1),
+        _islandApp(
+          LiveNotices(
+            controller: notices,
+            settings: SettingsController(store: MemorySettingsStore()),
+            child: ShowQrPage(
+              code: code,
+              exportService: _Export(),
+              live: notices,
+            ),
           ),
         ),
       );
-      tracker.failure = const StudentLookupException(
+      await tester.pump();
+      live.failure = const StudentLookupException(
         'Too many requests.',
         code: 'rate_limited',
+        details: {'retry_after': 30},
       );
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pump();
-      final asked = tracker.asked;
-      await tester.pump(const Duration(seconds: 5));
-      expect(tracker.asked, asked);
+      await tester.pump(const Duration(seconds: 2));
+      final asked = live.asked;
+      await tester.pump(const Duration(seconds: 25));
+      expect(live.asked, asked);
+      await tester.pump(const Duration(seconds: 6));
+      expect(live.asked, asked + 1);
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -676,7 +753,7 @@ void main() {
               return const SizedBox();
             },
             onSetUp: () {},
-            onCheckedIn: () => checkedIn++,
+            onCheckedIn: (_) => checkedIn++,
           ),
         ),
       );
@@ -1080,7 +1157,7 @@ void main() {
         (
           'general',
           MenuStrings.general,
-          ['home', 'whatsNew', 'settings', 'tour'],
+          ['home', 'notifications', 'whatsNew', 'settings', 'tour'],
         ),
       ]) {
         final group = find.byKey(ValueKey('menu.group.$name'));

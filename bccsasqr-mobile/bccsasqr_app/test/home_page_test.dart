@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:bccsasqr_app/controllers/my_attendance_controller.dart';
 import 'package:bccsasqr_app/controllers/my_qr_controller.dart';
+import 'package:bccsasqr_app/controllers/notifications_controller.dart';
 import 'package:bccsasqr_app/controllers/profile_controller.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/core/theme/app_colors.dart';
@@ -9,9 +10,12 @@ import 'package:bccsasqr_app/core/theme/app_theme.dart';
 import 'package:bccsasqr_app/core/utils/student_number.dart';
 import 'package:bccsasqr_app/models/attendance_history.dart';
 import 'package:bccsasqr_app/models/qr_payload.dart';
+import 'package:bccsasqr_app/models/student_notice.dart';
 import 'package:bccsasqr_app/models/student_profile.dart';
 import 'package:bccsasqr_app/models/student_record.dart';
 import 'package:bccsasqr_app/models/terms_document.dart';
+import 'package:bccsasqr_app/services/live_repository.dart';
+import 'package:bccsasqr_app/services/notice_store.dart';
 import 'package:bccsasqr_app/services/photo_repository.dart';
 import 'package:bccsasqr_app/services/profile_store.dart';
 import 'package:bccsasqr_app/services/saved_qr_store.dart';
@@ -144,7 +148,9 @@ void main() {
   });
 
   /// Home over its three controllers. [opened] collects the tabs it asks
-  /// for; [shown] counts Show to scanner.
+  /// for; [shown] counts Show to scanner. [cardTurn] has the card turn by
+  /// itself; [still] is "reduce motion"; [onScreen] says whether Home is in
+  /// sight, as the shell's TickerMode does.
   Future<void> pumpHome(
     WidgetTester tester, {
     StudentProfile? profile,
@@ -153,6 +159,11 @@ void main() {
     int hour = 9,
     List<StudentTab>? opened,
     List<void>? shown,
+    Duration? cardTurn,
+    bool still = false,
+    ValueNotifier<bool>? onScreen,
+    NotificationsController? notifications,
+    WidgetBuilder? notificationsBuilder,
   }) async {
     final profiles = ProfileController(
       store: MemoryProfileStore(profile),
@@ -175,16 +186,29 @@ void main() {
     });
     await profiles.load();
 
+    final visible = onScreen ?? ValueNotifier(true);
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.build(AppPalette.light),
-        home: HomePage(
-          profile: profiles,
-          qr: qr,
-          attendance: attendance,
-          onOpen: (tab) => opened?.add(tab),
-          onShowQr: () => shown?.add(null),
-          now: () => DateTime(2026, 10, 1, hour),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: still),
+          child: child!,
+        ),
+        home: ValueListenableBuilder<bool>(
+          valueListenable: visible,
+          builder: (context, on, child) =>
+              TickerMode(enabled: on, child: child!),
+          child: HomePage(
+            profile: profiles,
+            qr: qr,
+            attendance: attendance,
+            onOpen: (tab) => opened?.add(tab),
+            onShowQr: () => shown?.add(null),
+            now: () => DateTime(2026, 10, 1, hour),
+            cardTurn: cardTurn,
+            notifications: notifications,
+            notificationsBuilder: notificationsBuilder,
+          ),
         ),
       ),
     );
@@ -373,6 +397,123 @@ void main() {
       expect(showsBack(), isTrue);
     });
 
+    String selectedSide(WidgetTester tester) => tester
+        .widget<SegmentedButton<Object>>(
+          find.byWidgetPredicate((w) => w is SegmentedButton),
+        )
+        .selected
+        .single
+        .toString();
+
+    testWidgets('turns over by itself, and back, the switch following', (
+      tester,
+    ) async {
+      await pumpHome(
+        tester,
+        profile: kept,
+        cardTurn: const Duration(seconds: 5),
+      );
+      expect(showsBack(), isFalse);
+
+      // Rests on the front, then turns: one turn that settles.
+      await tester.pump(const Duration(seconds: 4));
+      expect(tester.hasRunningAnimations, isFalse);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isTrue);
+      expect(selectedSide(tester), endsWith('back'));
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isFalse);
+      expect(selectedSide(tester), endsWith('front'));
+    });
+
+    testWidgets('stays on the face the student turns it to', (tester) async {
+      await pumpHome(
+        tester,
+        profile: kept,
+        cardTurn: const Duration(seconds: 5),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('studentCard')));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isTrue);
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isTrue);
+    });
+
+    testWidgets('the Card / QR code switch counts as turning it', (
+      tester,
+    ) async {
+      await pumpHome(
+        tester,
+        profile: kept,
+        cardTurn: const Duration(seconds: 5),
+      );
+      await tester.pump(const Duration(seconds: 2));
+      await tester.tap(find.byKey(const ValueKey('home.cardSide.back')));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isTrue);
+    });
+
+    testWidgets('waits while Home is out of sight, and starts again when it '
+        'is back', (tester) async {
+      final onScreen = ValueNotifier(true);
+      addTearDown(onScreen.dispose);
+      await pumpHome(
+        tester,
+        profile: kept,
+        cardTurn: const Duration(seconds: 5),
+        onScreen: onScreen,
+      );
+
+      // Another part opened over Home before the first turn.
+      onScreen.value = false;
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 30));
+
+      // Back: a fresh rest first — no turn saved up while away, which
+      // would play out over the first frames back.
+      onScreen.value = true;
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      expect(showsBack(), isFalse);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isTrue);
+
+      // Turned by the student, then away and back: a new visit, so the
+      // card turns by itself again.
+      await tester.tap(find.byKey(const ValueKey('studentCard')));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isFalse);
+      onScreen.value = false;
+      await tester.pump();
+      onScreen.value = true;
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isTrue);
+    });
+
+    testWidgets('never turns by itself under "reduce motion"', (tester) async {
+      await pumpHome(
+        tester,
+        profile: kept,
+        cardTurn: const Duration(seconds: 5),
+        still: true,
+      );
+
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isFalse);
+    });
+
     testWidgets('an up-and-down drag on it scrolls Home instead', (
       tester,
     ) async {
@@ -393,6 +534,67 @@ void main() {
       expect(after.dy, lessThan(before.dy));
       expect(showsBack(), isFalse);
     });
+  });
+
+  testWidgets('the bell counts what is new in Notifications, and opens it', (
+    tester,
+  ) async {
+    final profiles = ProfileController(
+      store: MemoryProfileStore(kept),
+      repository: _Photos(),
+    );
+    addTearDown(profiles.dispose);
+    await profiles.load();
+    final notices = NotificationsController(
+      profile: profiles,
+      repository: const InMemoryLiveRepository(),
+      store: MemoryNoticeStore(
+        NoticeFeed(
+          studentNumber: _number.value,
+          cursor: 2,
+          count: 2,
+          notices: [
+            for (final id in [2, 1])
+              StudentNotice(
+                id: StudentNotice.recordId(id),
+                kind: NoticeKind.present,
+                subject: 'Object Oriented Programming',
+                day: _day(DateTime(2026, 10, 1), '08:0$id:00 AM'),
+                at: _today,
+              ),
+          ],
+        ),
+      ),
+    );
+    addTearDown(notices.dispose);
+    var opened = 0;
+
+    await pumpHome(
+      tester,
+      profile: kept,
+      notifications: notices,
+      notificationsBuilder: (context) {
+        opened++;
+        return const Scaffold(body: Text('notifications page'));
+      },
+    );
+
+    final bell = find.byKey(const ValueKey('home.notifications'));
+    expect(find.descendant(of: bell, matching: find.text('2')), findsOneWidget);
+    expect(
+      tester.widget<IconButton>(bell).tooltip,
+      NoticeStrings.openUnread(2),
+    );
+
+    notices.markAllRead();
+    await tester.pump();
+    expect(find.descendant(of: bell, matching: find.text('2')), findsNothing);
+    expect(tester.widget<IconButton>(bell).tooltip, NoticeStrings.open);
+
+    await tester.tap(bell);
+    await tester.pumpAndSettle();
+    expect(opened, 1);
+    expect(find.text('notifications page'), findsOneWidget);
   });
 
   testWidgets('lays out on a small phone without overflowing', (tester) async {

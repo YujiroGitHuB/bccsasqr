@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -21,10 +23,19 @@ enum CardSide { front, back }
 /// the next one with a flick. A tap flips it, and so does [side] — Home's
 /// Card / QR code switch — which the card also sets once it settles.
 ///
+/// With [turnEvery] it also turns over by itself, front to code and back,
+/// resting that long on each face (asked for on 2026-10-01): a student
+/// glancing at Home sees both sides without touching it. Once they turn it
+/// themselves — a drag, a tap, the switch — it stays on the face they chose
+/// until Home is left and opened again. It waits while Home is out of sight
+/// (another part, a page over it, the lock) or the app is in the
+/// background, and never turns by itself under "reduce motion" or a screen
+/// reader, whose label would change under the reader's finger.
+///
 /// No 3D engine: each face, and the slices that make the card's edge, is a
 /// flat widget under a perspective transform. Every movement is a drag or one
-/// eased turn that settles, so nothing moves while the card is left alone —
-/// the swing into place when it first shows included.
+/// eased turn that settles — the swing into place when it first shows, and
+/// each turn of its own — so between turns nothing moves.
 ///
 /// For looking at. The scanner reads the flat code on Show to scanner; a
 /// tilted one reads badly.
@@ -36,6 +47,7 @@ class StudentCard3D extends StatefulWidget {
     required this.side,
     this.photo,
     this.photoUrl,
+    this.turnEvery,
   });
 
   final StudentRecord record;
@@ -50,6 +62,10 @@ class StudentCard3D extends StatefulWidget {
   /// offline; initials without either.
   final Uint8List? photo;
   final String? photoUrl;
+
+  /// How long it rests on a face before turning over by itself; null keeps
+  /// it still until it is turned (Settings → Turn the card by itself).
+  final Duration? turnEvery;
 
   /// The card, as drawn: a little over an ID card's proportions, upright.
   static const Size size = Size(228, 362);
@@ -85,6 +101,18 @@ class _StudentCard3DState extends State<StudentCard3D>
   double _dragRx = 0;
   Offset _dragStart = Offset.zero;
 
+  // Turning by itself: the next turn, and what holds it back.
+  Timer? _auto;
+  late final AppLifecycleListener _lifecycle;
+  ValueListenable<bool>? _onScreen;
+
+  /// The student turned it this visit: it stays on their face.
+  bool _taken = false;
+  bool _appShown = true;
+
+  /// "Reduce motion", or a screen reader.
+  bool _calm = false;
+
   bool get _still => MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
   /// The face toward the student at [ry] degrees.
@@ -102,6 +130,14 @@ class _StudentCard3DState extends State<StudentCard3D>
           ..addListener(_onTurn)
           ..addStatusListener(_onTurnStatus);
     widget.side.addListener(_onSide);
+    _lifecycle = AppLifecycleListener(
+      onStateChange: (state) {
+        _appShown =
+            state == AppLifecycleState.resumed ||
+            state == AppLifecycleState.inactive;
+        _arm();
+      },
+    );
     _ry = _toRy = widget.side.value == CardSide.front ? 0 : 180;
     // Swings into place the first time it shows.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -115,19 +151,83 @@ class _StudentCard3DState extends State<StudentCard3D>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _calm =
+        _still || (MediaQuery.maybeAccessibleNavigationOf(context) ?? false);
+    _watchScreen();
+    _arm();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    // Moved in the tree: the TickerMode above may be another one.
+    _watchScreen();
+    _arm();
+  }
+
+  @override
   void didUpdateWidget(StudentCard3D oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.side != widget.side) {
       oldWidget.side.removeListener(_onSide);
       widget.side.addListener(_onSide);
     }
+    if (oldWidget.turnEvery != widget.turnEvery) _arm();
   }
 
   @override
   void dispose() {
+    _auto?.cancel();
+    _onScreen?.removeListener(_onScreenChanged);
+    _lifecycle.dispose();
     widget.side.removeListener(_onSide);
     _turn.dispose();
     super.dispose();
+  }
+
+  /// Whether Home is in sight — its tab showing, nothing pushed over it, not
+  /// under the lock: what TickerMode above the card says.
+  void _watchScreen() {
+    final onScreen = TickerMode.getNotifier(context);
+    if (identical(onScreen, _onScreen)) return;
+    _onScreen?.removeListener(_onScreenChanged);
+    _onScreen = onScreen..addListener(_onScreenChanged);
+  }
+
+  void _onScreenChanged() {
+    // Back in sight is a new visit: the card is the card's to turn again.
+    if (_onScreen?.value ?? true) _taken = false;
+    _arm();
+  }
+
+  /// Sets the next turn of its own going, if one is due: none while a turn
+  /// is under way — its end sets the next — or anything holds it back.
+  void _arm() {
+    _auto?.cancel();
+    _auto = null;
+    final every = widget.turnEvery;
+    if (every == null ||
+        _taken ||
+        _calm ||
+        !_appShown ||
+        !(_onScreen?.value ?? true) ||
+        _turn.isAnimating) {
+      return;
+    }
+    _auto = Timer(every, () {
+      _auto = null;
+      // No click: a buzz every few seconds would be a phone left ringing.
+      if (mounted) _settle(_nearest(_toRy) + 180, haptic: false);
+    });
+  }
+
+  /// The student turned it: it stays where they leave it this visit.
+  void _take() {
+    _taken = true;
+    _auto?.cancel();
+    _auto = null;
   }
 
   void _onTurn() {
@@ -138,26 +238,29 @@ class _StudentCard3DState extends State<StudentCard3D>
     });
   }
 
-  /// Settled: tell the switch which face is up.
+  /// Settled: tell the switch which face is up, and rest before the next
+  /// turn of its own.
   void _onTurnStatus(AnimationStatus status) {
     if (status != AnimationStatus.completed) return;
     final side = _sideAt(_toRy);
     if (widget.side.value != side) widget.side.value = side;
+    _arm();
   }
 
   /// The switch asked for a face the card is not turning to.
   void _onSide() {
     if (_sideAt(_toRy) == widget.side.value) return;
+    _take();
     _settle(_toRy + 180);
   }
 
   /// Turns to [ry] — always a whole face — and lies flat.
-  void _settle(double ry, {Duration? duration}) {
+  void _settle(double ry, {Duration? duration, bool haptic = true}) {
     final turnsFace = _sideAt(ry) != _sideAt(_toRy);
     _fromRy = _ry;
     _fromRx = _rx;
     _toRy = ry;
-    if (turnsFace) HapticFeedback.selectionClick();
+    if (turnsFace && haptic) HapticFeedback.selectionClick();
     if (_still) {
       _turn.value = 1;
       _onTurn();
@@ -172,9 +275,13 @@ class _StudentCard3DState extends State<StudentCard3D>
   /// The nearest whole face to [ry].
   static double _nearest(double ry) => (ry / 180).roundToDouble() * 180;
 
-  void _flip() => _settle(_nearest(_toRy) + 180);
+  void _flip() {
+    _take();
+    _settle(_nearest(_toRy) + 180);
+  }
 
   void _onDragStart(DragStartDetails details) {
+    _take();
     _turn.stop();
     _dragRy = _ry;
     _dragRx = _rx;

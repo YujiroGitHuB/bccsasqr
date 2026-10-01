@@ -8,11 +8,13 @@ import '../core/utils/network_error.dart';
 import '../core/utils/student_number.dart';
 import '../models/attendance_history.dart';
 import '../models/class_link.dart';
+import '../models/live_update.dart';
 import '../models/qr_payload.dart';
 import '../models/student_profile.dart';
 import '../models/student_record.dart';
 import '../models/terms_document.dart';
 import 'check_in_repository.dart';
+import 'live_repository.dart';
 import 'photo_repository.dart';
 import 'student_repository.dart';
 import 'tracker_repository.dart';
@@ -34,15 +36,16 @@ import 'tracker_repository.dart';
 /// `terms_not_accepted` instead of merely showing it.
 ///
 /// It serves the Attendance Tracker too ([TrackerRepository]), My Profile's
-/// photo ([StudentPhotoRepository]) and Check in ([CheckInRepository]): the
-/// half of the API a student uses without signing in, over the same
-/// connection.
+/// photo ([StudentPhotoRepository]), Check in ([CheckInRepository]) and the
+/// live feed behind Notifications ([LiveRepository]): the half of the API a
+/// student uses without signing in, over the same connection.
 class HttpStudentRepository
     implements
         StudentRepository,
         TrackerRepository,
         StudentPhotoRepository,
-        CheckInRepository {
+        CheckInRepository,
+        LiveRepository {
   HttpStudentRepository({
     http.Client? client,
     String? baseUrl,
@@ -162,6 +165,27 @@ class HttpStudentRepository
     } on FormatException catch (e) {
       throw StudentLookupException(
         'Malformed attendance from the server. ($e)',
+      );
+    }
+  }
+
+  @override
+  Future<LiveUpdate> fetchLive(
+    StudentNumber number, {
+    required String lastName,
+    int? since,
+  }) async {
+    final data = await _post(Uri.parse('${_studentUri(number)}/live'), {
+      'last_name': lastName,
+      'since': ?since,
+    });
+
+    try {
+      return LiveUpdate.fromJson(data);
+    } on FormatException catch (e) {
+      throw StudentLookupException(
+        'Malformed live update from the server. ($e)',
+        code: 'bad_response',
       );
     }
   }

@@ -588,6 +588,17 @@ abstract final class SettingsStrings {
   static const String voiceBodyStudent =
       'Read each step aloud in My QR Code and My Attendance';
 
+  // A student's: the live feed's island, and Home's card.
+  static const String notifications = 'NOTIFICATIONS';
+  static const String alerts = 'Attendance alerts';
+  static const String alertsBody =
+      'A note at the top of the screen the moment you are marked present or '
+      'late. Notifications keeps the list either way.';
+  static const String cardTurns = 'Turn the card by itself';
+  static const String cardTurnsBody =
+      'Home\'s card turns over every few seconds to show your QR code, until '
+      'you turn it yourself';
+
   static const String role = 'ROLE';
 
   // An instructor's: who is signed in, and the way out.
@@ -1044,11 +1055,60 @@ abstract final class ShowQrStrings {
   static const String save = 'Save to gallery';
   static const String saved = 'QR code saved and ready to share.';
   static const String saveFailed = 'Could not save the QR code.';
+}
 
-  // The island once the scan reaches the records.
-  static const String marked = 'Marked present';
-  static String markedBody(String subject, String time, {bool late = false}) =>
-      '$subject · $time${late ? ' · late' : ' · on time'}';
+/// Notifications — what happened to the student's attendance, told the
+/// moment the phone hears of it — and the island that says so on any page.
+abstract final class NoticeStrings {
+  static const String title = 'Notifications';
+  static const String open = 'Notifications';
+  static String openUnread(int n) =>
+      n == 1 ? 'Notifications — 1 new' : 'Notifications — $n new';
+
+  static const String intro =
+      'Your attendance as it happens — no need to refresh.';
+  static String checked(String time) => 'Live · checked $time';
+  static const String waiting = 'Live · checking…';
+
+  // What happened.
+  static const String present = 'Marked present';
+  static const String late = 'Marked late';
+  static const String removed = 'Removed from your records';
+
+  /// "Object Oriented Programming · 8:04 AM · on time"; a removed record
+  /// leaves the last part off.
+  static String body(String subject, String when, {bool? late}) =>
+      [subject, when, if (late != null) late ? 'late' : 'on time'].join(' · ');
+  static const String offline = 'Sent later from your instructor\'s phone';
+
+  // Several at once, after the app was closed for a while.
+  static String several(int n) => '$n updates to your attendance';
+  static String severalBody(String first, int more) =>
+      '$first, and $more more. Tap to see them.';
+
+  // The list.
+  static const String today = 'TODAY';
+  static const String yesterday = 'YESTERDAY';
+  static const String earlier = 'EARLIER';
+  static const String justNow = 'just now';
+  static String minutesAgo(int n) => '$n min ago';
+  static String hoursAgo(int n) => n == 1 ? '1 hr ago' : '$n hrs ago';
+  static const String newBadge = 'NEW';
+
+  static const String emptyTitle = 'No notifications yet';
+  static const String emptyBody =
+      'When your instructor scans your QR code or you check in, it shows '
+      'here — and at the top of your screen — right away. No need to '
+      'refresh.';
+  static const String setUpTitle = 'Set up this phone first';
+  static const String setUpBody =
+      'Notifications are for the student this phone is set up for. Enter '
+      'your student number and last name once in My Profile.';
+  static const String setUpAction = 'Open My Profile';
+  static const String stoppedTitle = 'Paused';
+  static const String stoppedBody =
+      'Your profile no longer matches the school record, so the app has '
+      'stopped checking. Set it up again in My Profile.';
 }
 
 /// My Attendance — the tracker for the student this phone is set up for,

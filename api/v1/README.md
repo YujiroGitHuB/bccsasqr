@@ -66,6 +66,9 @@ should branch on — it never changes wording.
 ## Rate limits
 
 Per IP, per endpoint group: **20 lookups/minute**, **10 acceptances/minute**.
+The live feed (`POST /students/{student_no}/live`) is counted per student
+number as well, 30 a minute, so a class on one Wi-Fi does not share one
+allowance.
 Over the limit you get `429` with a `Retry-After` header and
 `details.retry_after` in seconds. Debounce the lookup in the app (the web page
 waits 500 ms after the last keystroke) and you will never see it.
@@ -276,6 +279,47 @@ Errors: as `/verify`, plus `missing_photo` (400), `photo_too_large` (413),
 `/verify` and `/photo` share one limit: **10 per 15 minutes per student number
 per IP** — per number, so a whole class uploading on the school Wi-Fi does not
 lock itself out.
+
+### `POST /students/{student_no}/live`
+
+The app's live feed: what is new on the student's record since the phone last
+looked. The app asks every 15 seconds while it is open (every 6 while the code
+is up for the scanner), so a student is told "Marked present" the moment the
+scan lands — no pull to refresh. Only what changed comes back; the whole
+history stays with `/attendance`.
+
+```json
+POST /api/v1/students/000-1023/live
+Content-Type: application/json
+
+{ "last_name": "Santos", "since": 6950 }
+```
+
+```json
+{ "success": true, "data": {
+  "cursor": 6957, "count": 43, "more": false,
+  "records": [
+    { "id": 6957, "subject": "Object Oriented Programming", "instructor": "Sample Instructor",
+      "date": "2026-10-01", "time_in": "08:04:12 AM", "late": false, "offline": false }
+  ]
+} }
+```
+
+`since` is the `cursor` of the previous answer. Leave it out on the phone's
+first look: `records` is then empty — a phone set up today is not told about
+every scan of the semester. `records` holds at most 25, newest first; `more`
+says there were more. Records are never edited after they are written (the
+late mark is stamped at the scan), only added or deleted, so a `count` lower
+than the last one plus the new records means one was deleted — ask
+`/attendance` again to see which. `offline` marks a scan the instructor's
+phone kept with no signal and sent later; its time is when it was scanned.
+
+The last name is the proof, as for `/verify` and Check in. Errors:
+`missing_last_name` (400), `identity_mismatch` (403 — the same message for a
+wrong number and a wrong name), `invalid_student_no` (400), `tracker_locked`
+(503 — the tracker's Settings lock). Limited **30 a minute per student
+number per IP** — per number, so a class on the school Wi-Fi does not slow
+itself down.
 
 ---
 

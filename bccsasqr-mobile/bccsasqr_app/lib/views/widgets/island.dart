@@ -17,6 +17,7 @@ class IslandMessage {
     this.tone = IslandTone.info,
     this.icon,
     this.hold = const Duration(milliseconds: 2600),
+    this.onTap,
   });
 
   final String title;
@@ -28,6 +29,10 @@ class IslandMessage {
 
   /// How long it stays open, once open.
   final Duration hold;
+
+  /// Where a tap takes the reader — Notifications, for several at once. A
+  /// tap closes the island either way.
+  final VoidCallback? onTap;
 }
 
 /// The app's way of saying something that needs no answer — a QR saved, a
@@ -312,7 +317,10 @@ class _Island extends StatelessWidget {
       child: Transform.translate(
         offset: Offset(0, -10 * (1 - grow.clamp(0.0, 1.0))),
         child: GestureDetector(
-          onTap: onDismiss,
+          onTap: () {
+            message.onTap?.call();
+            onDismiss();
+          },
           onVerticalDragEnd: (d) {
             if ((d.primaryVelocity ?? 0) < -100) onDismiss();
           },

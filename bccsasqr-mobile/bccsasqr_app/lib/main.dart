@@ -6,6 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'services/check_in_repository.dart';
 import 'services/connectivity.dart';
 import 'services/device_lock.dart';
+import 'services/notice_store.dart';
 import 'services/onboarding_store.dart';
 import 'services/profile_store.dart';
 import 'services/saved_qr_store.dart';
@@ -22,6 +23,7 @@ void main() {
       onboardingStore: SharedPrefsOnboardingStore(),
       profileStore: SharedPrefsProfileStore(),
       deviceTokenStore: SharedPrefsDeviceTokenStore(),
+      noticeStore: SharedPrefsNoticeStore(),
       deviceLock: LocalAuthDeviceLock(),
       studentLockStore: const SharedPrefsLockSwitchStore.student(),
     ),

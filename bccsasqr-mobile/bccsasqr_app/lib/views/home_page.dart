@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../controllers/my_attendance_controller.dart';
 import '../controllers/my_qr_controller.dart';
+import '../controllers/notifications_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/whats_new_controller.dart';
 import '../core/constants/app_strings.dart';
@@ -34,6 +35,10 @@ import 'widgets/surface_panel.dart';
 ///
 /// The pieces rise in one after another the first time the screen shows,
 /// not again on the way back from another tab.
+///
+/// Nothing on it needs a pull to stay current: the live feed adds a scan to
+/// the Today card and the summary the moment it lands, and the bell beside
+/// What's New counts what is new in Notifications.
 class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
@@ -44,6 +49,9 @@ class HomePage extends StatefulWidget {
     required this.onShowQr,
     this.whatsNewBuilder,
     this.whatsNew,
+    this.notificationsBuilder,
+    this.notifications,
+    this.cardTurn,
     this.now = DateTime.now,
   });
 
@@ -63,6 +71,15 @@ class HomePage extends StatefulWidget {
   /// page is opened or the card closed.
   final WidgetBuilder? whatsNewBuilder;
   final WhatsNewController? whatsNew;
+
+  /// Notifications, from the bell beside the greeting, which counts what
+  /// the student has not seen there yet.
+  final WidgetBuilder? notificationsBuilder;
+  final NotificationsController? notifications;
+
+  /// How long the card rests on each face before turning over by itself;
+  /// null keeps it still (see [StudentCard3D.turnEvery]).
+  final Duration? cardTurn;
 
   /// The clock the greeting is picked by. Overridable for tests.
   final DateTime Function() now;
@@ -123,6 +140,12 @@ class _HomePageState extends State<HomePage>
     Navigator.of(context).push(MaterialPageRoute<void>(builder: news));
   }
 
+  void _openNotifications() {
+    final page = widget.notificationsBuilder;
+    if (page == null) return;
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: page));
+  }
+
   String get _greeting {
     final hour = widget.now().hour;
     return hour < 12
@@ -149,6 +172,7 @@ class _HomePageState extends State<HomePage>
         widget.qr,
         widget.attendance,
         widget.whatsNew ?? const _Silent(),
+        widget.notifications ?? const _Silent(),
       ]),
       builder: (context, _) {
         final profile = widget.profile.profile;
@@ -193,6 +217,10 @@ class _HomePageState extends State<HomePage>
                             onWhatsNew: widget.whatsNewBuilder == null
                                 ? null
                                 : _openNews,
+                            notices: widget.notifications?.unread ?? 0,
+                            onNotifications: widget.notificationsBuilder == null
+                                ? null
+                                : _openNotifications,
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -220,6 +248,7 @@ class _HomePageState extends State<HomePage>
                                 code: code,
                                 profile: widget.profile,
                                 onShow: widget.onShowQr,
+                                turnEvery: widget.cardTurn,
                               ),
                               null => _QrCard(
                                 key: const ValueKey('home.ask'),
@@ -303,7 +332,8 @@ class _Folding extends StatelessWidget {
 }
 
 /// The student's face, "Good morning," and their name — or, before the
-/// phone is set up, the question the cards answer — and What's New.
+/// phone is set up, the question the cards answer — then Notifications and
+/// What's New.
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.greeting,
@@ -312,6 +342,8 @@ class _TopBar extends StatelessWidget {
     required this.unread,
     required this.onProfile,
     required this.onWhatsNew,
+    this.notices = 0,
+    this.onNotifications,
   });
 
   final String greeting;
@@ -321,11 +353,22 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onProfile;
   final VoidCallback? onWhatsNew;
 
+  /// How many notifications are new, on the bell.
+  final int notices;
+  final VoidCallback? onNotifications;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final kept = profile;
     final news = onWhatsNew;
+    final bell = onNotifications;
+    final buttonStyle = IconButton.styleFrom(
+      backgroundColor: colors.surface,
+      side: BorderSide(color: colors.border),
+      minimumSize: const Size(46, 46),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    );
 
     return Row(
       children: [
@@ -379,20 +422,36 @@ class _TopBar extends StatelessWidget {
             ],
           ),
         ),
+        if (bell != null) ...[
+          const SizedBox(width: 8),
+          IconButton(
+            key: const ValueKey('home.notifications'),
+            onPressed: bell,
+            tooltip: notices == 0
+                ? NoticeStrings.open
+                : NoticeStrings.openUnread(notices),
+            style: buttonStyle,
+            color: notices == 0 ? colors.textSecondary : colors.accent,
+            icon: Badge(
+              isLabelVisible: notices > 0,
+              label: Text(notices > 9 ? '9+' : '$notices'),
+              backgroundColor: colors.accent,
+              textColor: colors.onAccent,
+              child: Icon(
+                notices == 0
+                    ? Icons.notifications_none_rounded
+                    : Icons.notifications_active_rounded,
+              ),
+            ),
+          ),
+        ],
         if (news != null) ...[
           const SizedBox(width: 8),
           IconButton(
             key: const ValueKey('home.whatsNew'),
             onPressed: news,
             tooltip: unread ? WhatsNewStrings.openUnread : WhatsNewStrings.open,
-            style: IconButton.styleFrom(
-              backgroundColor: colors.surface,
-              side: BorderSide(color: colors.border),
-              minimumSize: const Size(46, 46),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
+            style: buttonStyle,
             color: unread ? colors.accent : colors.textSecondary,
             icon: Badge(
               isLabelVisible: unread,
@@ -498,6 +557,7 @@ class _CardSection extends StatefulWidget {
     required this.code,
     required this.profile,
     required this.onShow,
+    this.turnEvery,
   });
 
   final SavedQr code;
@@ -505,6 +565,9 @@ class _CardSection extends StatefulWidget {
   /// For the photo on the front: the one being saved, then the one kept.
   final ProfileController profile;
   final VoidCallback onShow;
+
+  /// The card's own turns — see [StudentCard3D.turnEvery].
+  final Duration? turnEvery;
 
   @override
   State<_CardSection> createState() => _CardSectionState();
@@ -543,6 +606,7 @@ class _CardSectionState extends State<_CardSection> {
             side: _side,
             photo: widget.profile.pendingPhoto ?? kept?.photo,
             photoUrl: kept?.photoUrl,
+            turnEvery: widget.turnEvery,
           ),
         ),
         Center(

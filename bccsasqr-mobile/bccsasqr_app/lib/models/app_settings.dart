@@ -10,6 +10,8 @@ class AppSettings {
     this.vibration = true,
     this.voice = true,
     this.checkInCamera = false,
+    this.alerts = true,
+    this.cardTurns = true,
   });
 
   /// Light, Dark, or whatever the phone is set to — the web's theme toggle,
@@ -30,18 +32,31 @@ class AppSettings {
   /// code from the group chat never has the camera start (2026-10-01).
   final bool checkInCamera;
 
+  /// The island when the live feed brings something — "Marked present" —
+  /// on any page of the student's side. Notifications keeps the list either
+  /// way (2026-10-01).
+  final bool alerts;
+
+  /// Home's card turns over by itself every few seconds, front to code and
+  /// back, until the student turns it (2026-10-01).
+  final bool cardTurns;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     bool? sound,
     bool? vibration,
     bool? voice,
     bool? checkInCamera,
+    bool? alerts,
+    bool? cardTurns,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
     sound: sound ?? this.sound,
     vibration: vibration ?? this.vibration,
     voice: voice ?? this.voice,
     checkInCamera: checkInCamera ?? this.checkInCamera,
+    alerts: alerts ?? this.alerts,
+    cardTurns: cardTurns ?? this.cardTurns,
   );
 
   @override
@@ -51,9 +66,18 @@ class AppSettings {
       other.sound == sound &&
       other.vibration == vibration &&
       other.voice == voice &&
-      other.checkInCamera == checkInCamera;
+      other.checkInCamera == checkInCamera &&
+      other.alerts == alerts &&
+      other.cardTurns == cardTurns;
 
   @override
-  int get hashCode =>
-      Object.hash(themeMode, sound, vibration, voice, checkInCamera);
+  int get hashCode => Object.hash(
+    themeMode,
+    sound,
+    vibration,
+    voice,
+    checkInCamera,
+    alerts,
+    cardTurns,
+  );
 }

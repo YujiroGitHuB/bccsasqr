@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../controllers/my_qr_controller.dart';
+import '../controllers/notifications_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/whats_new_controller.dart';
 import '../core/constants/app_strings.dart';
@@ -13,8 +14,8 @@ import 'widgets/profile_avatar.dart';
 /// What the Menu button at the foot of the student's screen opens: every
 /// part of the side, under what it is for. IN CLASS — the QR code first and
 /// widest, and Check in, the two ways to be marked present. MY RECORDS — My
-/// QR Code, Attendance and My Profile. GENERAL — Home, What's New, Settings
-/// and the tour. ACCOUNT — whose phone this is, at the foot. The
+/// QR Code, Attendance and My Profile. GENERAL — Home, Notifications, What's
+/// New, Settings and the tour. ACCOUNT — whose phone this is, at the foot. The
 /// instructor's Menu, laid out for a student.
 ///
 /// Its pieces rise in one after another along [MenuHandle.shown] — the same
@@ -29,6 +30,8 @@ class StudentMenu extends StatelessWidget {
     required this.onShowQr,
     this.whatsNewBuilder,
     this.whatsNew,
+    this.notificationsBuilder,
+    this.notifications,
     this.tourBuilder,
   });
 
@@ -41,6 +44,10 @@ class StudentMenu extends StatelessWidget {
 
   final WidgetBuilder? whatsNewBuilder;
   final WhatsNewController? whatsNew;
+
+  /// Notifications, with a dot while something there is new.
+  final WidgetBuilder? notificationsBuilder;
+  final NotificationsController? notifications;
   final WidgetBuilder? tourBuilder;
 
   /// Closes the Menu, then opens [builder] over the shell.
@@ -68,13 +75,20 @@ class StudentMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final news = whatsNewBuilder;
+    final notices = notificationsBuilder;
     final tour = tourBuilder;
 
     return ListenableBuilder(
-      listenable: Listenable.merge([profile, qr, whatsNew ?? const _Silent()]),
+      listenable: Listenable.merge([
+        profile,
+        qr,
+        whatsNew ?? const _Silent(),
+        notifications ?? const _Silent(),
+      ]),
       builder: (context, _) {
         final kept = profile.profile;
         final unread = whatsNew?.unread ?? false;
+        final newNotices = notifications?.unread ?? 0;
 
         MenuTile tab(StudentTab tab, IconData icon, String label) => MenuTile(
           name: tab.name,
@@ -140,6 +154,19 @@ class StudentMenu extends StatelessWidget {
                 label: MenuStrings.general,
                 tiles: [
                   tab(StudentTab.home, Icons.home_rounded, NavStrings.home),
+                  if (notices != null)
+                    MenuTile(
+                      name: 'notifications',
+                      icon: newNotices == 0
+                          ? Icons.notifications_none_rounded
+                          : Icons.notifications_active_rounded,
+                      label: NoticeStrings.title,
+                      tooltip: newNotices == 0
+                          ? null
+                          : NoticeStrings.openUnread(newNotices),
+                      dot: newNotices > 0,
+                      onTap: () => _page(context, notices),
+                    ),
                   if (news != null)
                     MenuTile(
                       name: 'whatsNew',

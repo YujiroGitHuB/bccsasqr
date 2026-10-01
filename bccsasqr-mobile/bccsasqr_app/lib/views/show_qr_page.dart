@@ -1,15 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../controllers/my_attendance_controller.dart';
+import '../controllers/notifications_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import '../models/student_notice.dart';
 import '../services/qr_export_service.dart';
 import '../services/saved_qr_store.dart';
-import 'instructor_home.dart' show shortTime;
 import 'widgets/island.dart';
 import 'widgets/qr_card.dart';
 
@@ -17,32 +16,31 @@ import 'widgets/qr_card.dart';
 /// same card My QR Code saves, as large as the phone allows, with the screen
 /// held on while it is up.
 ///
-/// While it is up, the app asks the records every few seconds whether a new
-/// scan of today's has landed, and says so on the island: "Marked present".
-/// The asking stops at the first one, when the page closes, after
-/// [watchFor], or when the server asks the phone to slow down — a whole
-/// class on the school Wi-Fi is one address to it.
+/// While it is up, the live feed asks at its quicker pace (a [NoticeHurry]),
+/// so "Marked present" is on the island seconds after the instructor's
+/// scan — said by LiveNotices, over this page. The hurry ends at the first
+/// one, when the page closes, or after [watchFor]; the feed itself slows
+/// down when the server asks it to.
 class ShowQrPage extends StatefulWidget {
   const ShowQrPage({
     super.key,
     required this.code,
     required this.exportService,
-    this.attendance,
+    this.live,
     this.keepAwake,
-    this.watchEvery = const Duration(seconds: 8),
     this.watchFor = const Duration(minutes: 3),
   });
 
   final SavedQr code;
   final QrExportService exportService;
 
-  /// Whose scans to watch for. Without it the page only shows the code.
-  final MyAttendanceController? attendance;
+  /// The feed the scan comes through. Without it the page only shows the
+  /// code.
+  final NotificationsController? live;
 
   /// Holds the screen on while the page is up, and lets it go after.
   final Future<void> Function(bool on)? keepAwake;
 
-  final Duration watchEvery;
   final Duration watchFor;
 
   @override
@@ -51,23 +49,24 @@ class ShowQrPage extends StatefulWidget {
 
 class _ShowQrPageState extends State<ShowQrPage> {
   final GlobalKey _boundary = GlobalKey();
-  Timer? _watch;
+  NoticeHurry? _hurry;
   Timer? _giveUp;
-  Set<String> _seen = const {};
+  StreamSubscription<List<StudentNotice>>? _arrivals;
   bool _saving = false;
-
-  static String _key(TodayScan s) => '${s.subject}|${s.day.timeIn}';
 
   @override
   void initState() {
     super.initState();
     unawaited(widget.keepAwake?.call(true));
 
-    final attendance = widget.attendance;
-    if (attendance != null && attendance.hasStudent) {
-      _seen = {for (final s in attendance.today) _key(s)};
-      _watch = Timer.periodic(widget.watchEvery, (_) => _check());
+    // Held even before the feed knows its student: it asks for no one until
+    // it does.
+    final live = widget.live;
+    if (live != null) {
+      _hurry = live.hurry();
       _giveUp = Timer(widget.watchFor, _stopWatching);
+      // The scan is in: back to the feed's own pace.
+      _arrivals = live.arrivals.listen((_) => _stopWatching());
     }
   }
 
@@ -79,47 +78,12 @@ class _ShowQrPageState extends State<ShowQrPage> {
   }
 
   void _stopWatching() {
-    _watch?.cancel();
+    _hurry?.release();
     _giveUp?.cancel();
-    _watch = null;
+    unawaited(_arrivals?.cancel());
+    _hurry = null;
     _giveUp = null;
-  }
-
-  /// One look at the records. A new scan of today's is the one just made.
-  Future<void> _check() async {
-    final attendance = widget.attendance;
-    if (attendance == null || attendance.isLoading) return;
-    await attendance.refresh();
-    if (!mounted || _watch == null) return;
-
-    if (attendance.errorCode == 'rate_limited') {
-      _stopWatching();
-      return;
-    }
-
-    final fresh = [
-      for (final s in attendance.today)
-        if (!_seen.contains(_key(s))) s,
-    ];
-    if (fresh.isEmpty) return;
-
-    _stopWatching();
-    final scan = fresh.first;
-    unawaited(HapticFeedback.mediumImpact());
-    Island.show(
-      context,
-      IslandMessage(
-        title: ShowQrStrings.marked,
-        body: ShowQrStrings.markedBody(
-          scan.subject,
-          shortTime(scan.day.timeIn),
-          late: scan.day.late,
-        ),
-        tone: scan.day.late ? IslandTone.warning : IslandTone.success,
-        icon: Icons.how_to_reg_rounded,
-        hold: const Duration(seconds: 4),
-      ),
-    );
+    _arrivals = null;
   }
 
   Future<void> _save() async {

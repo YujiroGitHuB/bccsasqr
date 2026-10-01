@@ -16,8 +16,9 @@ import 'widgets/island.dart';
 import 'widgets/surface_panel.dart';
 
 /// The instructor's account, theme, the scanner's beep / buzz / voice, the
-/// role, and what version this is. A pushed page on a student's phone; on an
-/// instructor's, a tab the Menu opens.
+/// role, and what version this is — and on a student's phone their lock,
+/// the attendance alerts and Home's card. A tab the Menu opens on either
+/// side.
 ///
 /// Every switch applies the moment it is flipped — there is no Save.
 class SettingsPage extends StatefulWidget {
@@ -250,10 +251,50 @@ class _SettingsPageState extends State<SettingsPage> {
                               color: colors.textSecondary,
                             ),
                           ),
+                          // Home's card is the student's alone.
+                          if (role == AppRole.student) ...[
+                            const SizedBox(height: 6),
+                            _SwitchRow(
+                              key: const ValueKey('settings.cardTurns'),
+                              icon: Icons.flip_rounded,
+                              title: SettingsStrings.cardTurns,
+                              body: SettingsStrings.cardTurnsBody,
+                              value: c.cardTurns,
+                              onChanged: c.setCardTurns,
+                            ),
+                          ],
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // ── Notifications ──────────────────────────────────
+                    // A student's: the island when the live feed brings
+                    // something. The list fills either way.
+                    if (role == AppRole.student) ...[
+                      SurfacePanel(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const PanelHeading(
+                              icon: Icons.notifications_none_rounded,
+                              label: SettingsStrings.notifications,
+                            ),
+                            const SizedBox(height: 6),
+                            _SwitchRow(
+                              key: const ValueKey('settings.alerts'),
+                              icon: Icons.notifications_active_outlined,
+                              title: SettingsStrings.alerts,
+                              body: SettingsStrings.alertsBody,
+                              value: c.alerts,
+                              onChanged: c.setAlerts,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     // ── Scanner feedback ───────────────────────────────
                     SurfacePanel(

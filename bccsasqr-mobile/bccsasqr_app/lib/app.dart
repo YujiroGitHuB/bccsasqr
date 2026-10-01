@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'controllers/check_in_controller.dart';
 import 'controllers/my_attendance_controller.dart';
 import 'controllers/my_qr_controller.dart';
+import 'controllers/notifications_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/role_controller.dart';
 import 'controllers/scanner_controller.dart';
@@ -25,6 +26,8 @@ import 'services/device_lock.dart';
 import 'services/http_scanner_repository.dart';
 import 'services/http_student_repository.dart';
 import 'services/link_repository.dart';
+import 'services/live_repository.dart';
+import 'services/notice_store.dart';
 import 'services/offline_scan_store.dart';
 import 'services/onboarding_store.dart';
 import 'services/photo_picker.dart';
@@ -51,7 +54,9 @@ import 'views/instructor_menu.dart';
 import 'views/instructor_shell.dart';
 import 'views/links/links_page.dart';
 import 'views/links/links_splash.dart';
+import 'views/live_notices.dart';
 import 'views/my_attendance_page.dart';
+import 'views/notifications_page.dart';
 import 'views/onboarding_page.dart';
 import 'views/profile/profile_page.dart';
 import 'views/profile/profile_splash.dart';
@@ -105,6 +110,8 @@ class BccSasqrApp extends StatefulWidget {
     this.photoPicker = const DevicePhotoPicker(),
     this.checkInRepository,
     this.deviceTokenStore,
+    this.liveRepository,
+    this.noticeStore,
     this.showSplash = true,
   });
 
@@ -188,6 +195,15 @@ class BccSasqrApp extends StatefulWidget {
   /// main.dart passes the phone's own: with none it is kept while the app
   /// runs.
   final DeviceTokenStore? deviceTokenStore;
+
+  /// The live feed behind Notifications. The student repository's when it
+  /// serves the feed too (the real one does); in demo mode nothing new ever
+  /// comes.
+  final LiveRepository? liveRepository;
+
+  /// What Notifications has shown, kept between launches. Only main.dart
+  /// passes the phone's own: with none it is kept while the app runs.
+  final NoticeStore? noticeStore;
 
   /// Tests that are about the generator switch the opening animation off.
   final bool showSplash;
@@ -295,6 +311,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   MyQrController? _myQrMade;
   MyAttendanceController? _myAttendanceMade;
   CheckInController? _checkInMade;
+  NotificationsController? _noticesMade;
 
   MyQrController get _myQr => _myQrMade ??= MyQrController(
     profile: _profile,
@@ -304,6 +321,23 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
 
   MyAttendanceController get _myAttendance => _myAttendanceMade ??=
       MyAttendanceController(profile: _profile, repository: _tracker);
+
+  /// Asks only while the student's side is open on screen (LiveNotices).
+  NotificationsController get _notices =>
+      _noticesMade ??= NotificationsController(
+        profile: _profile,
+        repository:
+            widget.liveRepository ??
+            switch (_repository) {
+              final LiveRepository both => both,
+              _ => const InMemoryLiveRepository(),
+            },
+        store: widget.noticeStore ?? MemoryNoticeStore(),
+        attendance: _myAttendance,
+      );
+
+  /// How long Home's card rests on a face before turning over by itself.
+  static const Duration _cardTurn = Duration(seconds: 5);
 
   CheckInController get _checkIn => _checkInMade ??= CheckInController(
     repository:
@@ -396,6 +430,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     _myQrMade?.dispose();
     _myAttendanceMade?.dispose();
     _checkInMade?.dispose();
+    _noticesMade?.dispose();
     _tab.dispose();
     _studentTab.dispose();
     super.dispose();
@@ -509,12 +544,27 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         builder: (context) => ShowQrPage(
           code: code,
           exportService: _exportService,
-          attendance: _myAttendance,
+          live: _notices,
           keepAwake: widget.keepAwake,
         ),
       ),
     );
   }
+
+  /// From the bell on Home, the Menu, and a tap on the island. A notice
+  /// opens My Attendance, down on the shell — past Show to scanner too, if
+  /// the island was tapped over it.
+  Widget _studentNotifications(BuildContext context) => NotificationsPage(
+    controller: _notices,
+    onOpenAttendance: () {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      _studentTab.value = StudentTab.tracker;
+    },
+    onSetUp: () {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      _studentTab.value = StudentTab.profile;
+    },
+  );
 
   /// The student's side: the shell, opening on Home, with the Menu button
   /// at its foot — the instructor's, laid out for a student — behind the
@@ -525,40 +575,63 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     deviceLock: widget.deviceLock ?? const NoDeviceLock(),
     store: widget.studentLockStore ?? MemoryLockSwitchStore(),
     clock: widget.lockClock,
-    builder: (context, lock) => StudentShell(
-      tab: _studentTab,
-      homeBuilder: (context) => HomePage(
-        profile: _profile,
-        qr: _myQr,
-        attendance: _myAttendance,
-        onOpen: (tab) => _studentTab.value = tab,
-        onShowQr: () => _showQr(context),
-        whatsNewBuilder: _studentWhatsNew,
-        whatsNew: _whatsNew,
-      ),
-      generatorBuilder: _studentGenerator,
-      trackerBuilder: _studentTracker,
-      // Its splash the first time it is opened, as the other tabs.
-      checkInBuilder: (context) => CheckInIntro(
-        page: (context) => CheckInPage(
-          controller: _checkIn,
-          profile: _profile,
-          settings: _settings,
-          cameraBuilder: widget.cameraBuilder,
-          onSetUp: () => _studentTab.value = StudentTab.profile,
-          onCheckedIn: () => unawaited(_myAttendance.refresh()),
+    // The live feed listens while this is open, and says what it brings
+    // over whatever page is up.
+    builder: (context, lock) => LiveNotices(
+      controller: _notices,
+      settings: _settings,
+      lock: lock,
+      onOpen: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: _studentNotifications)),
+      child: StudentShell(
+        tab: _studentTab,
+        // Under the settings, so Turn the card by itself takes at once: the
+        // lock keeps this side built, and would not rebuild it otherwise.
+        homeBuilder: (context) => ListenableBuilder(
+          listenable: _settings,
+          builder: (context, _) => HomePage(
+            profile: _profile,
+            qr: _myQr,
+            attendance: _myAttendance,
+            onOpen: (tab) => _studentTab.value = tab,
+            onShowQr: () => _showQr(context),
+            whatsNewBuilder: _studentWhatsNew,
+            whatsNew: _whatsNew,
+            notificationsBuilder: _studentNotifications,
+            notifications: _notices,
+            cardTurn: _settings.cardTurns ? _cardTurn : null,
+          ),
         ),
-      ),
-      profileBuilder: _profilePage,
-      settingsBuilder: (context) => _studentSettings(context, lock),
-      menuBuilder: (context, menu) => StudentMenu(
-        menu: menu,
-        profile: _profile,
-        qr: _myQr,
-        onShowQr: () => _showQr(context),
-        whatsNewBuilder: _studentWhatsNew,
-        whatsNew: _whatsNew,
-        tourBuilder: _tour,
+        generatorBuilder: _studentGenerator,
+        trackerBuilder: _studentTracker,
+        // Its splash the first time it is opened, as the other tabs.
+        checkInBuilder: (context) => CheckInIntro(
+          page: (context) => CheckInPage(
+            controller: _checkIn,
+            profile: _profile,
+            settings: _settings,
+            cameraBuilder: widget.cameraBuilder,
+            onSetUp: () => _studentTab.value = StudentTab.profile,
+            onCheckedIn: (result) {
+              unawaited(_myAttendance.refresh());
+              _notices.acknowledge(result.subject, result.timeIn);
+            },
+          ),
+        ),
+        profileBuilder: _profilePage,
+        settingsBuilder: (context) => _studentSettings(context, lock),
+        menuBuilder: (context, menu) => StudentMenu(
+          menu: menu,
+          profile: _profile,
+          qr: _myQr,
+          onShowQr: () => _showQr(context),
+          whatsNewBuilder: _studentWhatsNew,
+          whatsNew: _whatsNew,
+          notificationsBuilder: _studentNotifications,
+          notifications: _notices,
+          tourBuilder: _tour,
+        ),
       ),
     ),
   );

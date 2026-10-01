@@ -215,6 +215,33 @@ void main() {
       expect(find.byTooltip(AppStrings.homeBack), findsNothing);
     });
 
+    testWidgets('a student turns off the alerts and the card\'s own turns, '
+        'and both are saved', (tester) async {
+      await tester.pumpWidget(app(role: AppRole.student));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('home.settings')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(SettingsStrings.notifications), findsOneWidget);
+      expect(store.saved.alerts, isTrue);
+      expect(store.saved.cardTurns, isTrue);
+
+      await tester.tap(find.byKey(const ValueKey('settings.alerts')));
+      await tester.tap(find.byKey(const ValueKey('settings.cardTurns')));
+      await tester.pumpAndSettle();
+
+      expect(store.saved.alerts, isFalse);
+      expect(store.saved.cardTurns, isFalse);
+    });
+
+    testWidgets('an instructor\'s Settings has neither', (tester) async {
+      await openSettings(tester);
+
+      expect(find.text(SettingsStrings.notifications), findsNothing);
+      expect(find.byKey(const ValueKey('settings.alerts')), findsNothing);
+      expect(find.byKey(const ValueKey('settings.cardTurns')), findsNothing);
+    });
+
     testWidgets('picking Dark repaints the app dark, and is remembered', (
       tester,
     ) async {

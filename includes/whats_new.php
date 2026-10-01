@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-01.8';
+const WHATS_NEW_VERSION = '2026-10-01.9';
 
 /**
  * The changelog, newest release first.
@@ -74,9 +74,16 @@ function whats_new_releases(): array
             'id'      => '2026-10-01',
             'date'    => '2026-10-01',
             'icon'    => 'bi-grid',
-            'title'   => 'One Menu button in the app, for students too, and Check in',
-            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on a card they can turn and flip, a note when your scan reaches the records, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. The app now opens straight on Home, the scanner’s splash plays when the Scanner is opened, and the app’s Menu sorts its parts into named groups. Students can paste the link you share straight into Check in, every check-in from the app asks for the student’s own fingerprint, and students can lock their side of the app with it.',
+            'title'   => 'One Menu button in the app, Check in, and students told the moment you scan',
+            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on a card that turns over by itself, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. Students with the app are now told on their phone the moment your scan reaches the records, with no refreshing. The app now opens straight on Home, the scanner’s splash plays when the Scanner is opened, and the app’s Menu sorts its parts into named groups. Students can paste the link you share straight into Check in, every check-in from the app asks for the student’s own fingerprint, and students can lock their side of the app with it.',
             'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-bell',
+                    'title' => 'Students are told on their phone the moment you scan them',
+                    'text'  => 'Students with the app now see <strong>Marked present</strong> &mdash; or <strong>Marked late</strong> &mdash; at the top of their screen within seconds of your scan, whether it came from the scanner, an attendance link, or a scan your phone kept offline and sent later. Their Home and attendance update by themselves, with no refreshing, so the line at the door can check for themselves instead of asking you. A record you delete is told to them too, and the app&rsquo;s new <strong>Notifications</strong> lists every change. Students get this by downloading the app again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-fingerprint',

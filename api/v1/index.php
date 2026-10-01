@@ -39,6 +39,7 @@ require_once __DIR__ . '/handlers/scanner.php';
 require_once __DIR__ . '/handlers/tracker.php';
 require_once __DIR__ . '/handlers/links.php';
 require_once __DIR__ . '/handlers/checkin.php';
+require_once __DIR__ . '/handlers/live.php';
 
 $path   = api_path();
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -56,6 +57,8 @@ $routes = [
     // The student's own photo — see handlers/photos.php.
     ['POST', '#^students/([^/]+)/verify$#', fn($m) => handle_student_verify($GLOBALS['conn'], $m[1])],
     ['POST', '#^students/([^/]+)/photo$#',  fn($m) => handle_student_photo($GLOBALS['conn'], $m[1])],
+    // What is new on the student's record — see handlers/live.php.
+    ['POST', '#^students/([^/]+)/live$#',   fn($m) => handle_student_live($GLOBALS['conn'], $m[1])],
     ['GET',  '#^students/([^/]+)$#',       fn($m) => handle_student($GLOBALS['conn'], $m[1])],
 
     // The scanner — signed in, see handlers/scanner.php.

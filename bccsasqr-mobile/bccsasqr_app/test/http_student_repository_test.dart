@@ -587,6 +587,109 @@ void main() {
       );
     });
   });
+
+  group('fetchLive', () {
+    // A made-up student: year 000 never occurs in the school's numbers.
+    final number = StudentNumber.tryParse('000-1023')!;
+
+    test('the first look sends the last name and no cursor', () async {
+      late http.Request sent;
+      final repo = repoReturning(
+        ok({'cursor': 6950, 'count': 42, 'records': [], 'more': false}),
+        onRequest: (r) => sent = r,
+      );
+
+      final update = await repo.fetchLive(number, lastName: 'Santos');
+
+      expect(sent.method, 'POST');
+      expect(sent.url.path, '/bccsasqr/api/v1/students/000-1023/live');
+      expect(jsonDecode(sent.body), {'last_name': 'Santos'});
+      expect(update.cursor, 6950);
+      expect(update.count, 42);
+      expect(update.records, isEmpty);
+    });
+
+    test('a later look sends the cursor and reads the new records', () async {
+      late http.Request sent;
+      final repo = repoReturning(
+        ok({
+          'cursor': 6957,
+          'count': 43,
+          'more': false,
+          'records': [
+            {
+              'id': 6957,
+              'subject': 'Object Oriented Programming',
+              'instructor': 'Sample Instructor',
+              'date': '2026-10-01',
+              'time_in': '08:16:40 AM',
+              'late': true,
+              'offline': true,
+            },
+            // No subject on the row: the tracker's name for it.
+            {'id': 6956, 'date': '2026-10-01', 'time_in': '07:58:02 AM'},
+            {'subject': 'no id — left out'},
+          ],
+        }),
+        onRequest: (r) => sent = r,
+      );
+
+      final update = await repo.fetchLive(
+        number,
+        lastName: 'Santos',
+        since: 6950,
+      );
+
+      expect(jsonDecode(sent.body), {'last_name': 'Santos', 'since': 6950});
+      expect(update.records, hasLength(2));
+      final record = update.records.first;
+      expect(record.id, 6957);
+      expect(record.day.date, DateTime(2026, 10, 1));
+      expect(record.day.timeIn, '08:16:40 AM');
+      expect(record.day.late, isTrue);
+      expect(record.offline, isTrue);
+      expect(update.records.last.subject, 'No Subject');
+      expect(update.records.last.instructor, 'N/A');
+    });
+
+    test('a refusal keeps its code and its wait', () async {
+      final repo = repoReturning(
+        jsonEncode({
+          'success': false,
+          'error': {
+            'code': 'rate_limited',
+            'message': 'Too many requests.',
+            'details': {'retry_after': 12},
+          },
+        }),
+        status: 429,
+      );
+
+      expect(
+        () => repo.fetchLive(number, lastName: 'Santos', since: 1),
+        throwsA(
+          isA<StudentLookupException>()
+              .having((e) => e.code, 'code', 'rate_limited')
+              .having((e) => e.details?['retry_after'], 'retry_after', 12),
+        ),
+      );
+    });
+
+    test('an answer with no cursor is a bad response, not a crash', () async {
+      final repo = repoReturning(ok({'records': []}));
+
+      expect(
+        () => repo.fetchLive(number, lastName: 'Santos'),
+        throwsA(
+          isA<StudentLookupException>().having(
+            (e) => e.code,
+            'code',
+            'bad_response',
+          ),
+        ),
+      );
+    });
+  });
 }
 
 /// Stands in for a transport-level failure (DNS, TLS, refused connection).

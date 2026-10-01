@@ -19,26 +19,85 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01.8';
+  static const String version = '2026-10-01.9';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
       id: '2026-10-01',
       icon: Icons.grid_view_rounded,
-      title: 'One Menu button, for students too',
+      title: 'One Menu button, and attendance as it happens',
       summary:
           'The bottom of the screen is now only the round Menu button, on '
           'both sides of the app, and the Menu sorts its parts into named '
-          'groups. Students get a new Home with their QR code on a card they '
-          'can turn and flip, a note when the scan reaches the records, their '
-          'own attendance with nothing to type, Check in for classes that use '
-          'an attendance link — paste the shared link, or turn the camera on '
-          'to scan, and confirm with your fingerprint — and a fingerprint '
-          'lock. Instructors open straight on Home, the scanner\'s splash '
-          'plays when you open the Scanner, and a shared link carries its '
-          'class code. A phone opening the app for the first time gets a '
-          'short opening after Get started.',
+          'groups. Students get a new Home with their QR code on a card that '
+          'turns over by itself, their own attendance with nothing to type, '
+          'Check in for classes that use an attendance link — paste the '
+          'shared link, or turn the camera on to scan, and confirm with your '
+          'fingerprint — and a fingerprint lock. Students are now told the '
+          'moment they are marked present, on any page, with no pull to '
+          'refresh, and Notifications lists every change. Instructors open '
+          'straight on Home, the scanner\'s splash plays when you open the '
+          'Scanner, and a shared link carries its class code. A phone opening '
+          'the app for the first time gets a short opening after Get started.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.tracker,
+          side: WhatsNewSide.student,
+          icon: Icons.notifications_active_outlined,
+          title: 'Told the moment you are marked present',
+          text:
+              'When your instructor scans your QR code, **Marked present** '
+              'drops in at the top of your screen within seconds — on Home, on '
+              '**Show to scanner**, anywhere in the app — and Home\'s **Marked '
+              'present today** and your attendance update by themselves. No '
+              'more pulling down to refresh. A late mark, a scan your '
+              'instructor\'s phone sent later, and a record your instructor '
+              'removed are told the same way. Prefer it quiet? Turn off '
+              '**Attendance alerts** in Settings.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.tracker,
+          side: WhatsNewSide.student,
+          icon: Icons.notifications_none_rounded,
+          title: 'Notifications: every change, in one list',
+          text:
+              'Tap the bell beside What\'s New on Home — or **Notifications** '
+              'in the Menu — for every change to your attendance, newest '
+              'first. The bell counts what you have not seen yet, and what '
+              'happened while the app was closed is there the next time you '
+              'open it.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.qr,
+          side: WhatsNewSide.student,
+          icon: Icons.flip_rounded,
+          title: 'Your card turns by itself',
+          text:
+              'The card on Home now turns over every few seconds, so your '
+              'details and your QR code both show without a touch. Turn it '
+              'yourself — drag, tap, or **Card** / **QR code** — and it stays '
+              'where you leave it. Rather it stood still? Turn off **Turn the '
+              'card by itself** in Settings.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          side: WhatsNewSide.instructor,
+          icon: Icons.mark_email_read_outlined,
+          title: 'Students see your scan on their own phone',
+          text:
+              'A student with the app now gets **Marked present** — or '
+              '**Marked late** — on their phone within seconds of your scan, '
+              'so the line at the door can check for themselves instead of '
+              'asking. Scans kept offline tell them when they reach the '
+              'records.',
+          link: false,
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.improved,
           area: WhatsNewArea.checkIn,

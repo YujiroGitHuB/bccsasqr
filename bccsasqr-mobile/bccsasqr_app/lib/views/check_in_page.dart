@@ -49,8 +49,9 @@ class CheckInPage extends StatefulWidget {
   /// Opens My Profile.
   final VoidCallback onSetUp;
 
-  /// After a check-in the records took — Home's attendance asks again.
-  final VoidCallback? onCheckedIn;
+  /// After a check-in the records took — Home's attendance asks again, and
+  /// the live feed files the record without a second island for it.
+  final ValueChanged<CheckInResult>? onCheckedIn;
 
   @override
   State<CheckInPage> createState() => _CheckInPageState();
@@ -152,7 +153,7 @@ class _CheckInPageState extends State<CheckInPage> {
         hold: const Duration(seconds: 4),
       ),
     );
-    widget.onCheckedIn?.call();
+    widget.onCheckedIn?.call(result);
   }
 
   @override
