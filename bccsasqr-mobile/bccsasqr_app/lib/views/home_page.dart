@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../controllers/my_attendance_controller.dart';
 import '../controllers/my_qr_controller.dart';
@@ -12,7 +11,6 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/date_label.dart';
 import '../models/attendance_history.dart';
-import '../models/qr_payload.dart';
 import '../models/student_profile.dart';
 import '../services/saved_qr_store.dart';
 import 'instructor_home.dart' show codeParts, shortTime;
@@ -21,6 +19,7 @@ import 'widgets/destination_card.dart';
 import 'widgets/press_scale.dart';
 import 'widgets/profile_avatar.dart';
 import 'widgets/splash_parts.dart';
+import 'widgets/student_card_3d.dart';
 import 'widgets/surface_panel.dart';
 
 /// The student's Home — what their phone opens on, with the Menu button
@@ -213,13 +212,24 @@ class _HomePageState extends State<HomePage>
                         ),
                         _rise(
                           1,
-                          _QrCard(
-                            status: widget.qr.status,
-                            code: widget.qr.code,
-                            message: widget.qr.message,
-                            onShow: widget.onShowQr,
-                            onMake: () => widget.onOpen(StudentTab.qr),
-                            onSetUp: () => widget.onOpen(StudentTab.profile),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 260),
+                            child: switch (widget.qr.code) {
+                              final code? => _CardSection(
+                                key: const ValueKey('home.card'),
+                                code: code,
+                                profile: widget.profile,
+                                onShow: widget.onShowQr,
+                              ),
+                              null => _QrCard(
+                                key: const ValueKey('home.ask'),
+                                status: widget.qr.status,
+                                message: widget.qr.message,
+                                onMake: () => widget.onOpen(StudentTab.qr),
+                                onSetUp: () =>
+                                    widget.onOpen(StudentTab.profile),
+                              ),
+                            },
                           ),
                         ),
                         _Folding(
@@ -397,32 +407,27 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-/// The student's QR code: the code itself, ready for the scanner — or the
-/// one step that gets them one.
+/// No code on the phone yet: the one step that gets the student one — or,
+/// while the phone asks, a spinner. The code itself is [_CardSection].
 class _QrCard extends StatelessWidget {
   const _QrCard({
+    super.key,
     required this.status,
-    required this.code,
     required this.message,
-    required this.onShow,
     required this.onMake,
     required this.onSetUp,
   });
 
   final MyQrStatus status;
-  final SavedQr? code;
   final String? message;
-  final VoidCallback onShow;
   final VoidCallback onMake;
   final VoidCallback onSetUp;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final code = this.code;
 
     final Widget body = switch (status) {
-      MyQrStatus.ready when code != null => _Ready(code: code, onShow: onShow),
       MyQrStatus.noProfile => _Ask(
         title: AppStrings.homeStudentTitle,
         body: StudentStrings.setUpBody,
@@ -453,7 +458,7 @@ class _QrCard extends StatelessWidget {
           onPressed: onMake,
         ),
       ),
-      _ => const _Loading(),
+      MyQrStatus.loading || MyQrStatus.ready => const _Loading(),
     };
 
     return Container(
@@ -484,85 +489,143 @@ class _QrCard extends StatelessWidget {
   }
 }
 
-/// The code on the phone: whose it is, the code on its own colours, and
-/// the way to put it full screen.
-class _Ready extends StatelessWidget {
-  const _Ready({required this.code, required this.onShow});
+/// The code on the phone, on a card the student can turn — the student on
+/// the front, the code on the back (see [StudentCard3D]) — with the switch
+/// between the two faces and the way to put the code full screen.
+class _CardSection extends StatefulWidget {
+  const _CardSection({
+    super.key,
+    required this.code,
+    required this.profile,
+    required this.onShow,
+  });
 
   final SavedQr code;
+
+  /// For the photo on the front: the one being saved, then the one kept.
+  final ProfileController profile;
   final VoidCallback onShow;
+
+  @override
+  State<_CardSection> createState() => _CardSectionState();
+}
+
+class _CardSectionState extends State<_CardSection> {
+  final ValueNotifier<CardSide> _side = ValueNotifier(CardSide.front);
+
+  @override
+  void dispose() {
+    _side.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final record = code.record;
+    final kept = widget.profile.profile;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    StudentStrings.qrLabel,
+        Text(
+          StudentStrings.qrLabel,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.4,
+            color: colors.textSecondary,
+          ),
+        ),
+        Center(
+          child: StudentCard3D(
+            record: widget.code.record,
+            payload: widget.code.payload,
+            side: _side,
+            photo: widget.profile.pendingPhoto ?? kept?.photo,
+            photoUrl: kept?.photoUrl,
+          ),
+        ),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: colors.border),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.touch_app_outlined, size: 16, color: colors.accent),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    StudentStrings.cardHint,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.4,
-                      color: colors.accent,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    record.fullName,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      height: 1.2,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    record.studentNumber.value,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
                       color: colors.textSecondary,
-                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      for (final part in [record.course, record.section])
-                        if (part.trim().isNotEmpty) _Chip(label: part.trim()),
-                    ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        ValueListenableBuilder<CardSide>(
+          valueListenable: _side,
+          builder: (context, side, _) => SegmentedButton<CardSide>(
+            segments: [
+              for (final (face, label, icon) in [
+                (
+                  CardSide.front,
+                  StudentStrings.cardSideFront,
+                  Icons.badge_outlined,
+                ),
+                (
+                  CardSide.back,
+                  StudentStrings.cardSideBack,
+                  Icons.qr_code_2_rounded,
+                ),
+              ])
+                ButtonSegment(
+                  value: face,
+                  icon: Icon(icon, size: 18),
+                  label: Text(
+                    label,
+                    key: ValueKey('home.cardSide.${face.name}'),
                   ),
-                ],
+                ),
+            ],
+            selected: {side},
+            showSelectedIcon: false,
+            onSelectionChanged: (picked) => _side.value = picked.first,
+            style: SegmentedButton.styleFrom(
+              minimumSize: const Size(0, 44),
+              backgroundColor: colors.surfaceSunken,
+              foregroundColor: colors.textSecondary,
+              selectedBackgroundColor: colors.accentWash(0.14),
+              selectedForegroundColor: colors.accent,
+              side: BorderSide(color: colors.border),
+              textStyle: const TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: 14),
-            _QrPlate(payload: code.payload),
-          ],
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         _CardButton(
           name: 'showQr',
           icon: Icons.fit_screen_rounded,
           label: StudentStrings.showToScanner,
-          onPressed: onShow,
+          onPressed: widget.onShow,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.phone_android_rounded,
@@ -570,7 +633,7 @@ class _Ready extends StatelessWidget {
               color: colors.textSecondary,
             ),
             const SizedBox(width: 6),
-            Expanded(
+            Flexible(
               child: Text(
                 StudentStrings.savedOffline,
                 style: TextStyle(fontSize: 12, color: colors.textSecondary),
@@ -579,58 +642,6 @@ class _Ready extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-/// The code on the colours the server gave it — the ones the card students
-/// save is drawn in — tipped a little, like a card held out.
-class _QrPlate extends StatelessWidget {
-  const _QrPlate({required this.payload});
-
-  final QrPayload payload;
-
-  @override
-  Widget build(BuildContext context) {
-    final spec = payload.spec;
-
-    return Transform.rotate(
-      angle: -0.05,
-      child: Container(
-        width: 112,
-        height: 112,
-        padding: const EdgeInsets.all(9),
-        decoration: BoxDecoration(
-          color: spec.background,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              // A shadow reads on both grounds only as black.
-              color: const Color(
-                0xFF000000,
-              ).withValues(alpha: context.colors.isDark ? 0.35 : 0.14),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: ExcludeSemantics(
-          child: QrImageView(
-            data: payload.encode(),
-            version: QrVersions.auto,
-            padding: EdgeInsets.zero,
-            backgroundColor: spec.background,
-            eyeStyle: QrEyeStyle(
-              eyeShape: QrEyeShape.square,
-              color: spec.foreground,
-            ),
-            dataModuleStyle: QrDataModuleStyle(
-              dataModuleShape: QrDataModuleShape.square,
-              color: spec.foreground,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -743,34 +754,6 @@ class _CardButton extends StatelessWidget {
       textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
     ),
   );
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: colors.accentWash(0.10),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
-          color: colors.accent,
-        ),
-      ),
-    );
-  }
 }
 
 /// Whether today's scan reached the records — green once it has, the

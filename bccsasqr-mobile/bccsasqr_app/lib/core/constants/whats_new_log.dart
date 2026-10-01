@@ -19,7 +19,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01.3';
+  static const String version = '2026-10-01.4';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -29,11 +29,25 @@ abstract final class WhatsNewLog {
       summary:
           'The bottom of the screen is now only the round Menu button, on '
           'both sides of the app. Students get a new Home with their QR code '
-          'on it, ready to show, a note when the scan reaches the records, '
-          'their own attendance with nothing to type, and Check in for '
-          'classes that use an attendance link. Instructors open straight on '
-          'Home, and the scanner\'s splash plays when you open the Scanner.',
+          'on a card they can turn and flip, a note when the scan reaches '
+          'the records, their own attendance with nothing to type, and Check '
+          'in for classes that use an attendance link. Instructors open '
+          'straight on Home, and the scanner\'s splash plays when you open '
+          'the Scanner.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.qr,
+          side: WhatsNewSide.student,
+          icon: Icons.badge_outlined,
+          title: 'Your QR code on a card you can turn',
+          text:
+              'On Home, your code is now on a student card: your photo, name, '
+              'number and course on the front, the QR code on the back. Drag '
+              'it sideways to turn it, or tap it to flip it — **Card** and '
+              '**QR code** under it do the same. When it is time to be '
+              'scanned, tap **Show to scanner**: the flat code reads best.',
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.improved,
           area: WhatsNewArea.qr,

@@ -298,6 +298,103 @@ void main() {
     expect(opened, [StudentTab.tracker]);
   });
 
+  group('the card the code is on', () {
+    /// The face toward the student: the front has their name, the back
+    /// the code's heading.
+    bool showsBack() =>
+        find.text(StudentStrings.cardScan).evaluate().isNotEmpty;
+
+    testWidgets('swings into place once, then stands still on the front', (
+      tester,
+    ) async {
+      await pumpHome(tester, profile: kept);
+
+      expect(find.byKey(const ValueKey('studentCard')), findsOneWidget);
+      expect(find.text(_record.fullName), findsOneWidget);
+      expect(showsBack(), isFalse);
+      // Settled: nothing left to animate.
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('a tap flips it to the code, and back', (tester) async {
+      await pumpHome(tester, profile: kept);
+
+      await tester.tap(find.byKey(const ValueKey('studentCard')));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isTrue);
+      expect(find.text(_record.fullName), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('studentCard')));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isFalse);
+    });
+
+    testWidgets('the Card / QR code switch turns it, and follows a tap', (
+      tester,
+    ) async {
+      await pumpHome(tester, profile: kept);
+
+      await tester.tap(find.byKey(const ValueKey('home.cardSide.back')));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isTrue);
+
+      await tester.tap(find.byKey(const ValueKey('studentCard')));
+      await tester.pumpAndSettle();
+      expect(showsBack(), isFalse);
+      final selected = tester
+          .widget<SegmentedButton<Object>>(
+            find.byWidgetPredicate((w) => w is SegmentedButton),
+          )
+          .selected;
+      expect(selected.single.toString(), endsWith('front'));
+    });
+
+    testWidgets('a drag sideways turns it; let go past half and it lands on '
+        'the other face', (tester) async {
+      await pumpHome(tester, profile: kept);
+      final card = find.byKey(const ValueKey('studentCard'));
+
+      // A short drag springs back.
+      await tester.timedDrag(
+        card,
+        const Offset(-60, 0),
+        const Duration(milliseconds: 600),
+      );
+      await tester.pumpAndSettle();
+      expect(showsBack(), isFalse);
+
+      // Past a quarter turn — 90 degrees is 150 px of drag.
+      await tester.timedDrag(
+        card,
+        const Offset(-200, 0),
+        const Duration(milliseconds: 900),
+      );
+      await tester.pumpAndSettle();
+      expect(showsBack(), isTrue);
+    });
+
+    testWidgets('an up-and-down drag on it scrolls Home instead', (
+      tester,
+    ) async {
+      await pumpHome(tester, profile: kept);
+      final before = tester.getTopLeft(
+        find.byKey(const ValueKey('studentCard')),
+      );
+
+      await tester.drag(
+        find.byKey(const ValueKey('studentCard')),
+        const Offset(0, -200),
+      );
+      await tester.pumpAndSettle();
+
+      final after = tester.getTopLeft(
+        find.byKey(const ValueKey('studentCard')),
+      );
+      expect(after.dy, lessThan(before.dy));
+      expect(showsBack(), isFalse);
+    });
+  });
+
   testWidgets('lays out on a small phone without overflowing', (tester) async {
     TestWidgetsFlutterBinding
         .instance

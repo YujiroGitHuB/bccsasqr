@@ -925,6 +925,17 @@ abstract final class StudentStrings {
       'You\'re offline. Make your code once with internet and it opens here '
       'after that.';
 
+  // Home: the card the code is on.
+  static const String cardStudent = 'STUDENT';
+  static const String cardScan = 'SCAN FOR ATTENDANCE';
+  static const String cardHint = 'Drag to turn · Tap to flip';
+  static const String cardSideFront = 'Card';
+  static const String cardSideBack = 'QR code';
+  static String cardFrontSemantics(String name, String number) =>
+      'Your student card: $name, $number. Tap to show the QR code.';
+  static const String cardBackSemantics =
+      'Your QR code. Tap to show the card.';
+
   // Home: today.
   static const String presentToday = 'Marked present today';
   static String presentTodayIn(int n) => 'Marked present in $n subjects today';

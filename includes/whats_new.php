@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-01.3';
+const WHATS_NEW_VERSION = '2026-10-01.4';
 
 /**
  * The changelog, newest release first.
@@ -75,7 +75,7 @@ function whats_new_releases(): array
             'date'    => '2026-10-01',
             'icon'    => 'bi-grid',
             'title'   => 'One Menu button in the app, for students too, and Check in',
-            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on it, a note when your scan reaches the records, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. The app now opens straight on Home, and the scanner’s splash plays when the Scanner is opened.',
+            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on a card they can turn and flip, a note when your scan reaches the records, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. The app now opens straight on Home, and the scanner’s splash plays when the Scanner is opened.',
             'items'   => [
                 [
                     'type'  => 'new',
@@ -88,7 +88,7 @@ function whats_new_releases(): array
                     'type'  => 'improved',
                     'icon'  => 'bi-phone',
                     'title' => 'The app’s student side has a new Home and the Menu button',
-                    'text'  => 'Students now see their QR code right on the app&rsquo;s <strong>Home</strong>, with <strong>Show to scanner</strong> to fill the screen for your camera, and a <strong>Marked present</strong> note as soon as your scan reaches the records &mdash; so they know at the door that it went through. <strong>My Attendance</strong> opens on their own record without typing a number. Everything else is behind the same round <strong>Menu</strong> button as yours. Students get this by downloading the app again.',
+                    'text'  => 'Students now see their QR code right on the app&rsquo;s <strong>Home</strong>, on a student card they can turn and flip &mdash; their photo, name and course on the front, the code on the back &mdash; with <strong>Show to scanner</strong> to fill the screen for your camera, and a <strong>Marked present</strong> note as soon as your scan reaches the records &mdash; so they know at the door that it went through. <strong>My Attendance</strong> opens on their own record without typing a number. Everything else is behind the same round <strong>Menu</strong> button as yours. Students get this by downloading the app again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
                 [
