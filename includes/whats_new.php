@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-01.4';
+const WHATS_NEW_VERSION = '2026-10-01.5';
 
 /**
  * The changelog, newest release first.
@@ -75,8 +75,15 @@ function whats_new_releases(): array
             'date'    => '2026-10-01',
             'icon'    => 'bi-grid',
             'title'   => 'One Menu button in the app, for students too, and Check in',
-            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on a card they can turn and flip, a note when your scan reaches the records, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. The app now opens straight on Home, and the scanner’s splash plays when the Scanner is opened.',
+            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on a card they can turn and flip, a note when your scan reaches the records, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. The app now opens straight on Home, the scanner’s splash plays when the Scanner is opened, and the app’s Menu sorts its parts into named groups.',
             'items'   => [
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-collection',
+                    'title' => 'The app’s Menu is sorted into groups',
+                    'text'  => 'Every part of the app&rsquo;s <strong>Menu</strong> now sits under a name, so it is quicker to find: <strong>IN CLASS</strong> for <strong>Scan attendance</strong>, <strong>Today&rsquo;s scans</strong> and <strong>Links</strong>; <strong>STUDENTS</strong> for <strong>QR Code</strong> and <strong>Attendance</strong>; <strong>GENERAL</strong> for <strong>Home</strong>, What&rsquo;s New, Settings and the App tour; and <strong>ACCOUNT</strong> for your sign-in. Students&rsquo; Menus are grouped the same way. A phone opening the app for the first time also gets a short opening after <strong>Get started</strong>, before it asks who is using the phone. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-qr-code-scan',

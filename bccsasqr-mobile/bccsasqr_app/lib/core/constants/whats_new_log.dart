@@ -19,7 +19,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01.4';
+  static const String version = '2026-10-01.5';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -28,13 +28,71 @@ abstract final class WhatsNewLog {
       title: 'One Menu button, for students too',
       summary:
           'The bottom of the screen is now only the round Menu button, on '
-          'both sides of the app. Students get a new Home with their QR code '
-          'on a card they can turn and flip, a note when the scan reaches '
-          'the records, their own attendance with nothing to type, and Check '
-          'in for classes that use an attendance link. Instructors open '
-          'straight on Home, and the scanner\'s splash plays when you open '
-          'the Scanner.',
+          'both sides of the app, and the Menu sorts its parts into named '
+          'groups. Students get a new Home with their QR code on a card they '
+          'can turn and flip, a note when the scan reaches the records, their '
+          'own attendance with nothing to type, and Check in for classes '
+          'that use an attendance link. Instructors open straight on Home, '
+          'and the scanner\'s splash plays when you open the Scanner. A phone '
+          'opening the app for the first time gets a short opening after Get '
+          'started.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.profile,
+          side: WhatsNewSide.student,
+          icon: Icons.category_outlined,
+          title: 'The Menu, sorted into groups',
+          text:
+              'Each part of the **Menu** now sits under a name, so it is '
+              'quicker to find: **IN CLASS** for **Show my QR code** and '
+              '**Check in**, **MY RECORDS** for **My QR Code**, **Attendance** '
+              'and **My Profile**, **GENERAL** for **Home**, What\'s New, '
+              'Settings and the App tour, and **ACCOUNT** at the bottom for '
+              'whose phone it is.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.profile,
+          side: WhatsNewSide.student,
+          icon: Icons.celebration_outlined,
+          title: 'An opening after Get started',
+          text:
+              'On a phone opening the app for the first time, **Get started** '
+              'at the end of the introduction — or **Skip** — now plays a '
+              'short opening: the QR code, the scan and the attendance gather '
+              'round the school seal before the app asks who is using the '
+              'phone.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.category_outlined,
+          title: 'The Menu, sorted into groups',
+          text:
+              'Each part of the **Menu** now sits under a name, so it is '
+              'quicker to find: **IN CLASS** for **Scan attendance**, '
+              '**Today\'s scans** and **Links**, **STUDENTS** for **QR Code** '
+              'and **Attendance**, **GENERAL** for **Home**, What\'s New, '
+              '**Settings** and the App tour, and **ACCOUNT** at the bottom '
+              'for your sign-in and **Sign out**.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.scanner,
+          icon: Icons.celebration_outlined,
+          title: 'An opening after Get started',
+          text:
+              'On a phone opening the app for the first time, **Get started** '
+              'at the end of the introduction — or **Skip** — now plays a '
+              'short opening: the QR code, the scan and the attendance gather '
+              'round the school seal before the app asks who is using the '
+              'phone.',
+          link: false,
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.added,
           area: WhatsNewArea.qr,

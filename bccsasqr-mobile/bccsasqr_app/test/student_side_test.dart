@@ -29,6 +29,7 @@ import 'package:bccsasqr_app/services/tracker_repository.dart';
 import 'package:bccsasqr_app/views/check_in_page.dart';
 import 'package:bccsasqr_app/views/my_attendance_page.dart';
 import 'package:bccsasqr_app/views/show_qr_page.dart';
+import 'package:bccsasqr_app/views/student_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -637,6 +638,50 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('checkIn')), findsOneWidget);
       expect(find.text(MenuStrings.title), findsNothing);
+    });
+
+    testWidgets('puts each part under the name of its group', (tester) async {
+      await tester.pumpWidget(appWith(_kept));
+      await tester.pumpAndSettle();
+      await openMenu(tester);
+
+      for (final (name, label, items) in [
+        ('inClass', MenuStrings.inClass, ['showQr', 'checkIn']),
+        ('records', MenuStrings.myRecords, ['qr', 'tracker', 'profile']),
+        (
+          'general',
+          MenuStrings.general,
+          ['home', 'whatsNew', 'settings', 'tour'],
+        ),
+      ]) {
+        final group = find.byKey(ValueKey('menu.group.$name'));
+        expect(
+          find.descendant(of: group, matching: find.text(label)),
+          findsOneWidget,
+          reason: name,
+        );
+        for (final item in items) {
+          expect(
+            find.descendant(
+              of: group,
+              matching: find.byKey(ValueKey('menu.$item')),
+            ),
+            findsOneWidget,
+            reason: '$name: $item',
+          );
+        }
+      }
+
+      // Whose phone this is, under its own name at the foot.
+      final account = find.descendant(
+        of: find.byType(StudentMenu),
+        matching: find.text(MenuStrings.account),
+      );
+      expect(account, findsOneWidget);
+      expect(
+        tester.getRect(find.byKey(const ValueKey('menu.notYou'))).top,
+        greaterThan(tester.getRect(account).bottom),
+      );
     });
 
     testWidgets('its big card puts the code full screen', (tester) async {

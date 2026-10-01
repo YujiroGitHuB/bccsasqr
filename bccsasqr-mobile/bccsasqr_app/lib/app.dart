@@ -42,6 +42,7 @@ import 'services/token_store.dart';
 import 'services/tracker_repository.dart';
 import 'services/whats_new_store.dart';
 import 'views/generator_splash.dart';
+import 'views/get_started_splash.dart';
 import 'views/check_in_page.dart';
 import 'views/home_page.dart';
 import 'views/instructor_home.dart';
@@ -316,6 +317,10 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   /// Whether the introduction has been seen; null while the store answers.
   bool? _onboarded;
 
+  /// The introduction was just ended: its splash plays before the question.
+  /// Not when Settings → Role asks the question again.
+  bool _gettingStarted = false;
+
   bool _scannerOpened = false;
 
   /// "I'm a student" was just picked: the student's splash plays before the
@@ -344,9 +349,13 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     }
   }
 
-  /// **Skip**, or **Get started** on the last slide: on to the question.
+  /// **Skip**, or **Get started** on the last slide: the getting-started
+  /// splash, then the question.
   void _finishOnboarding() {
-    setState(() => _onboarded = true);
+    setState(() {
+      _onboarded = true;
+      _gettingStarted = true;
+    });
     widget.onboardingStore?.markSeen();
   }
 
@@ -644,8 +653,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     );
   }
 
-  /// After the splash: on the first launch the introduction and then the
-  /// question, then the half of the app it picked.
+  /// After the splash: on the first launch the introduction, its splash and
+  /// then the question, then the half of the app it picked.
   Widget _home() {
     // Only without the splash (tests), for the moment the stores take.
     if (!_role.loaded || _onboarded == null) {
@@ -658,6 +667,10 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       null when _onboarded == false => OnboardingPage(
         key: const ValueKey('onboarding'),
         onDone: _finishOnboarding,
+      ),
+      null when _gettingStarted => GetStartedSplash(
+        key: const ValueKey('get-started'),
+        onFinished: () => setState(() => _gettingStarted = false),
       ),
       null => RolePickerPage(
         key: const ValueKey('role'),

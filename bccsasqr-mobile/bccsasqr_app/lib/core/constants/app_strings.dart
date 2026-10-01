@@ -51,6 +51,14 @@ abstract final class AppStrings {
   static const String studentStepScan = 'Get scanned';
   static const String studentStepCheck = 'See days';
 
+  // The splash after Get started (or Skip) ends the introduction: the parts
+  // of the app gathering round the seal, and what comes next.
+  static const String startSplashTagline = 'LET\'S GET YOU SET UP';
+  static const String startSplashSemantics = 'Getting BCC SASQR ready';
+  static const String startStepRole = 'Pick a role';
+  static const String startStepSetUp = 'Set up';
+  static const String startStepReady = 'All set';
+
   static const String chipVerified = 'Verified records only';
   static const String chipFreeDownload = 'Free download';
 
@@ -872,6 +880,14 @@ abstract final class MenuStrings {
   static const String subtitle = 'Everything in one place';
   static const String scan = 'Scan attendance';
   static const String signedIn = 'Signed in on this phone';
+
+  // The groups the parts sit under, by what each is for. Both sides open
+  // with what is done in class and close with the phone's account.
+  static const String inClass = 'IN CLASS';
+  static const String students = 'STUDENTS';
+  static const String myRecords = 'MY RECORDS';
+  static const String general = 'GENERAL';
+  static const String account = 'ACCOUNT';
 }
 
 /// The card that opens from Settings → Version.
@@ -933,8 +949,7 @@ abstract final class StudentStrings {
   static const String cardSideBack = 'QR code';
   static String cardFrontSemantics(String name, String number) =>
       'Your student card: $name, $number. Tap to show the QR code.';
-  static const String cardBackSemantics =
-      'Your QR code. Tap to show the card.';
+  static const String cardBackSemantics = 'Your QR code. Tap to show the card.';
 
   // Home: today.
   static const String presentToday = 'Marked present today';

@@ -1,8 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import 'widgets/press_scale.dart';
+import 'widgets/splash_parts.dart';
 
 /// What the shell hands the Menu's panel: how far open it is, the tabs this
 /// phone has, the one showing, and the ways out of it.
@@ -562,6 +565,174 @@ class MenuTile extends StatelessWidget {
   }
 }
 
+/// One group of the Menu: its name, and the parts under it — the widest
+/// first, when it has one.
+@immutable
+class MenuGroup {
+  const MenuGroup({
+    required this.name,
+    required this.label,
+    this.lead,
+    this.tiles = const [],
+  });
+
+  /// `menu.group.<name>`, for tests.
+  final String name;
+
+  /// What the parts under it are for, in capitals: `IN CLASS`, `GENERAL`.
+  final String label;
+
+  final Widget? lead;
+  final List<Widget> tiles;
+}
+
+/// The inside of the Menu, top to bottom: [heading], each of [groups] under
+/// its name, then [account] under [MenuStrings.account].
+///
+/// Grouped since 2026-10-01: until then every part sat in one grid — the
+/// day's scans beside the tour beside Settings — with nothing to say which
+/// belonged with which. The web's sidebar names its groups the same way
+/// (ATTENDANCE, QR TOOLS, ACCOUNT).
+///
+/// Each piece rises in a little after the one above it, along [shown] — the
+/// timeline that opens and closes the panel — so nothing on it moves once
+/// the panel is still.
+class MenuBody extends StatelessWidget {
+  const MenuBody({
+    super.key,
+    required this.shown,
+    required this.heading,
+    required this.groups,
+    this.account,
+  });
+
+  final Animation<double> shown;
+  final Widget heading;
+  final List<MenuGroup> groups;
+
+  /// Whose phone this is, and the way out of it.
+  final Widget? account;
+
+  /// Where the first piece starts on the panel's timeline, how far behind
+  /// the one above it each next one starts, and how long each takes to land.
+  static const double _first = 0.20;
+  static const double _step = 0.03;
+  static const double _span = 0.42;
+
+  /// [child] rising in as piece number [order] from the top, at [t] of the
+  /// panel's timeline.
+  static Widget _rise(double t, int order, Widget child) {
+    final begin = math.min(_first + _step * order, 0.9);
+    return splashRise(
+      Interval(
+        begin,
+        math.min(begin + _span, 1),
+        curve: Curves.easeOutCubic,
+      ).transform(t),
+      child,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: shown,
+      builder: (context, _) {
+        final t = shown.value;
+        // Counted as the pieces are laid out, top to bottom. A grid's tiles
+        // are counted here too, before the grid builds them.
+        var order = 0;
+        Widget rise(Widget child) => _rise(t, order++, child);
+
+        final children = <Widget>[rise(heading)];
+        for (final group in groups) {
+          final parts = <Widget>[
+            rise(MenuSectionLabel(label: group.label)),
+            const SizedBox(height: 10),
+          ];
+          if (group.lead case final lead?) {
+            parts.add(rise(lead));
+            if (group.tiles.isNotEmpty) parts.add(const SizedBox(height: 12));
+          }
+          if (group.tiles.isNotEmpty) {
+            final first = order;
+            order += group.tiles.length;
+            parts.add(
+              MenuTileGrid(
+                tiles: group.tiles,
+                rise: (i, tile) => _rise(t, first + i, tile),
+              ),
+            );
+          }
+          children.addAll([
+            const SizedBox(height: 18),
+            KeyedSubtree(
+              key: ValueKey('menu.group.${group.name}'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: parts,
+              ),
+            ),
+          ]);
+        }
+        if (account case final account?) {
+          children.addAll([
+            const SizedBox(height: 18),
+            rise(const MenuSectionLabel(label: MenuStrings.account)),
+            const SizedBox(height: 10),
+            rise(account),
+          ]);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        );
+      },
+    );
+  }
+}
+
+/// A group's name in the Menu, with a hairline running on to the edge.
+class MenuSectionLabel extends StatelessWidget {
+  const MenuSectionLabel({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return Semantics(
+      header: true,
+      child: LayoutBuilder(
+        // However large the text, the name is cut short before it can push
+        // the line off the edge.
+        builder: (context, box) => Row(
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: box.maxWidth * 0.75),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: colors.textSecondary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Container(height: 1, color: colors.border)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// [tiles] in rows of four, each rising along [rise] a little after the one
 /// before it.
 class MenuTileGrid extends StatelessWidget {
@@ -694,8 +865,8 @@ class MenuHeading extends StatelessWidget {
   }
 }
 
-/// The widest thing in the Menu, first: what the app is opened for — the
-/// instructor's scanner, the student's QR code.
+/// The widest thing in the Menu, first, at the head of IN CLASS: what the app
+/// is opened for — the instructor's scanner, the student's QR code.
 class MenuLeadCard extends StatelessWidget {
   const MenuLeadCard({
     super.key,
@@ -788,8 +959,9 @@ class MenuLeadCard extends StatelessWidget {
   }
 }
 
-/// Whose phone this is, at the foot of the Menu, and the way out of it —
-/// [action] asks first, as the same button elsewhere does.
+/// Whose phone this is, at the foot of the Menu under its ACCOUNT label, and
+/// the way out of it — [action] asks first, as the same button elsewhere
+/// does.
 class MenuAccountRow extends StatelessWidget {
   const MenuAccountRow({
     super.key,
@@ -808,43 +980,37 @@ class MenuAccountRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
 
-    return Container(
-      padding: const EdgeInsets.only(top: 14),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: colors.border)),
-      ),
-      child: Row(
-        children: [
-          avatar,
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                  ),
+    return Row(
+      children: [
+        avatar,
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, color: colors.textSecondary),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          action,
-        ],
-      ),
+        ),
+        const SizedBox(width: 8),
+        action,
+      ],
     );
   }
 }

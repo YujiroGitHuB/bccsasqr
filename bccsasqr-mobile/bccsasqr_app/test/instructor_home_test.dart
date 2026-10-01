@@ -556,6 +556,59 @@ void main() {
       expect(_home, findsOneWidget);
     });
 
+    testWidgets('the Menu puts each part under the name of its group', (
+      tester,
+    ) async {
+      await signIn(tester);
+      await tap(tester, 'nav.menu');
+
+      for (final (name, label, items) in [
+        ('inClass', MenuStrings.inClass, ['scanner', 'today', 'links']),
+        ('students', MenuStrings.students, ['qr', 'tracker']),
+        (
+          'general',
+          MenuStrings.general,
+          ['home', 'whatsNew', 'settings', 'tour'],
+        ),
+      ]) {
+        final group = find.byKey(ValueKey('menu.group.$name'));
+        expect(
+          find.descendant(of: group, matching: find.text(label)),
+          findsOneWidget,
+          reason: name,
+        );
+        for (final item in items) {
+          expect(
+            find.descendant(
+              of: group,
+              matching: find.byKey(ValueKey('menu.$item')),
+            ),
+            findsOneWidget,
+            reason: '$name: $item',
+          );
+        }
+      }
+
+      // Who is signed in, under its own name at the foot.
+      final account = find.descendant(
+        of: find.byType(InstructorMenu),
+        matching: find.text(MenuStrings.account),
+      );
+      expect(account, findsOneWidget);
+      expect(
+        tester.getRect(account).top,
+        greaterThan(
+          tester
+              .getRect(find.byKey(const ValueKey('menu.group.general')))
+              .bottom,
+        ),
+      );
+      expect(
+        tester.getRect(find.byKey(const ValueKey('menu.signOut'))).top,
+        greaterThan(tester.getRect(account).bottom),
+      );
+    });
+
     testWidgets('each Menu item opens its part, and the Menu goes', (
       tester,
     ) async {
@@ -619,6 +672,18 @@ void main() {
       await tap(tester, 'nav.menu');
       expect(find.byKey(const ValueKey('menu.qr')), findsOneWidget);
       expect(find.byKey(const ValueKey('menu.links')), findsNothing);
+      // IN CLASS keeps the scanner and today's scans.
+      final inClass = find.byKey(const ValueKey('menu.group.inClass'));
+      for (final item in ['scanner', 'today']) {
+        expect(
+          find.descendant(
+            of: inClass,
+            matching: find.byKey(ValueKey('menu.$item')),
+          ),
+          findsOneWidget,
+          reason: item,
+        );
+      }
     });
 
     testWidgets('signing out from the Menu asks first', (tester) async {

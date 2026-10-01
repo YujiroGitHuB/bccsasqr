@@ -9,12 +9,13 @@ import '../models/student_profile.dart';
 import 'menu_shell.dart';
 import 'student_shell.dart';
 import 'widgets/profile_avatar.dart';
-import 'widgets/splash_parts.dart';
 
-/// What the Menu button at the foot of the student's screen opens: the QR
-/// code first and widest, then a tile for every part of the side, Home
-/// first, and whose phone this is at the foot. The instructor's Menu, laid
-/// out for a student.
+/// What the Menu button at the foot of the student's screen opens: every
+/// part of the side, under what it is for. IN CLASS — the QR code first and
+/// widest, and Check in, the two ways to be marked present. MY RECORDS — My
+/// QR Code, Attendance and My Profile. GENERAL — Home, What's New, Settings
+/// and the tour. ACCOUNT — whose phone this is, at the foot. The
+/// instructor's Menu, laid out for a student.
 ///
 /// Its pieces rise in one after another along [MenuHandle.shown] — the same
 /// timeline that opens and closes the panel — so nothing on it moves once
@@ -83,47 +84,6 @@ class StudentMenu extends StatelessWidget {
           onTap: () => menu.open(tab),
         );
 
-        final tiles = [
-          tab(StudentTab.home, Icons.home_rounded, NavStrings.home),
-          tab(StudentTab.qr, Icons.qr_code_2_rounded, StudentStrings.myQr),
-          tab(
-            StudentTab.tracker,
-            Icons.event_available_rounded,
-            StudentStrings.attendance,
-          ),
-          tab(
-            StudentTab.checkIn,
-            Icons.qr_code_scanner_rounded,
-            StudentStrings.checkIn,
-          ),
-          tab(
-            StudentTab.profile,
-            Icons.account_circle_outlined,
-            StudentStrings.profile,
-          ),
-          if (news != null)
-            MenuTile(
-              name: 'whatsNew',
-              icon: Icons.auto_awesome_outlined,
-              label: SettingsStrings.whatsNew,
-              tooltip: unread ? WhatsNewStrings.openUnread : null,
-              dot: unread,
-              onTap: () => _page(context, news),
-            ),
-          tab(
-            StudentTab.settings,
-            Icons.settings_outlined,
-            NavStrings.settings,
-          ),
-          if (tour != null)
-            MenuTile(
-              name: 'tour',
-              icon: Icons.slideshow_outlined,
-              label: SettingsStrings.tour,
-              onTap: () => _page(context, tour),
-            ),
-        ];
-
         final number = kept?.record.studentNumber.value;
         final leadBody = switch (qr.status) {
           MyQrStatus.ready => StudentStrings.showQrBody(number ?? ''),
@@ -132,82 +92,108 @@ class StudentMenu extends StatelessWidget {
         };
 
         return MenuPanelCard(
-          child: AnimatedBuilder(
-            animation: menu.shown,
-            builder: (context, _) {
-              final t = menu.shown.value;
-              Widget rise(double begin, double end, Widget child) => splashRise(
-                Interval(begin, end, curve: Curves.easeOutCubic).transform(t),
-                child,
-              );
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  rise(
-                    0.20,
-                    0.62,
-                    const MenuHeading(role: StudentStrings.role),
-                  ),
-                  const SizedBox(height: 16),
-                  rise(
-                    0.26,
-                    0.68,
-                    MenuLeadCard(
-                      name: 'showQr',
-                      icon: Icons.qr_code_2_rounded,
-                      title: StudentStrings.showQr,
-                      subtitle: leadBody,
-                      onTap: _lead,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  MenuTileGrid(
-                    tiles: tiles,
-                    rise: (i, tile) => rise(
-                      0.32 + 0.04 * i,
-                      (0.70 + 0.04 * i).clamp(0.0, 1.0),
-                      tile,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  rise(
-                    0.56,
-                    1.00,
-                    kept == null
-                        ? MenuAccountRow(
-                            avatar: const ProfileAvatar(size: 36),
-                            name: StudentStrings.notSetUpName,
-                            subtitle: StudentStrings.notSetUpBody,
-                            action: _AccountButton(
-                              name: 'setUp',
-                              icon: Icons.person_add_alt_1_rounded,
-                              label: StudentStrings.setUp,
-                              onPressed: () => menu.open(StudentTab.profile),
-                            ),
-                          )
-                        : MenuAccountRow(
-                            avatar: ProfileAvatar(
-                              size: 36,
-                              name: kept.record.fullName,
-                              photo: kept.photo,
-                              photoUrl: kept.photoUrl,
-                            ),
-                            // The name they are greeted by: the full one,
-                            // surname first, is cut off beside the button.
-                            name: kept.givenName,
-                            subtitle: StudentStrings.onThisPhone(number!),
-                            action: _AccountButton(
-                              name: 'notYou',
-                              icon: Icons.person_remove_alt_1_outlined,
-                              label: StudentStrings.notYou,
-                              onPressed: () => _forget(context, kept),
-                            ),
-                          ),
+          child: MenuBody(
+            shown: menu.shown,
+            heading: const MenuHeading(role: StudentStrings.role),
+            groups: [
+              MenuGroup(
+                name: 'inClass',
+                label: MenuStrings.inClass,
+                lead: MenuLeadCard(
+                  name: 'showQr',
+                  icon: Icons.qr_code_2_rounded,
+                  title: StudentStrings.showQr,
+                  subtitle: leadBody,
+                  onTap: _lead,
+                ),
+                tiles: [
+                  tab(
+                    StudentTab.checkIn,
+                    Icons.qr_code_scanner_rounded,
+                    StudentStrings.checkIn,
                   ),
                 ],
-              );
-            },
+              ),
+              MenuGroup(
+                name: 'records',
+                label: MenuStrings.myRecords,
+                tiles: [
+                  tab(
+                    StudentTab.qr,
+                    Icons.qr_code_2_rounded,
+                    StudentStrings.myQr,
+                  ),
+                  tab(
+                    StudentTab.tracker,
+                    Icons.event_available_rounded,
+                    StudentStrings.attendance,
+                  ),
+                  tab(
+                    StudentTab.profile,
+                    Icons.account_circle_outlined,
+                    StudentStrings.profile,
+                  ),
+                ],
+              ),
+              MenuGroup(
+                name: 'general',
+                label: MenuStrings.general,
+                tiles: [
+                  tab(StudentTab.home, Icons.home_rounded, NavStrings.home),
+                  if (news != null)
+                    MenuTile(
+                      name: 'whatsNew',
+                      icon: Icons.auto_awesome_outlined,
+                      label: SettingsStrings.whatsNew,
+                      tooltip: unread ? WhatsNewStrings.openUnread : null,
+                      dot: unread,
+                      onTap: () => _page(context, news),
+                    ),
+                  tab(
+                    StudentTab.settings,
+                    Icons.settings_outlined,
+                    NavStrings.settings,
+                  ),
+                  if (tour != null)
+                    MenuTile(
+                      name: 'tour',
+                      icon: Icons.slideshow_outlined,
+                      label: SettingsStrings.tour,
+                      onTap: () => _page(context, tour),
+                    ),
+                ],
+              ),
+            ],
+            account: kept == null
+                ? MenuAccountRow(
+                    avatar: const ProfileAvatar(size: 36),
+                    name: StudentStrings.notSetUpName,
+                    subtitle: StudentStrings.notSetUpBody,
+                    action: _AccountButton(
+                      name: 'setUp',
+                      icon: Icons.person_add_alt_1_rounded,
+                      label: StudentStrings.setUp,
+                      onPressed: () => menu.open(StudentTab.profile),
+                    ),
+                  )
+                : MenuAccountRow(
+                    avatar: ProfileAvatar(
+                      size: 36,
+                      name: kept.record.fullName,
+                      photo: kept.photo,
+                      photoUrl: kept.photoUrl,
+                    ),
+                    // The name they are greeted by: the full one, surname
+                    // first, is cut off beside the button.
+                    name: kept.givenName,
+                    subtitle: StudentStrings.onThisPhone(number!),
+                    action: _AccountButton(
+                      name: 'notYou',
+                      icon: Icons.person_remove_alt_1_outlined,
+                      label: StudentStrings.notYou,
+                      onPressed: () => _forget(context, kept),
+                    ),
+                  ),
           ),
         );
       },

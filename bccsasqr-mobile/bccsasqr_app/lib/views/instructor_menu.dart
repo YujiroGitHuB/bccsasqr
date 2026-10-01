@@ -9,13 +9,14 @@ import 'menu_shell.dart';
 import 'scanner/widgets/attendance_sheet.dart';
 import 'scanner/widgets/scanner_header.dart';
 import 'scanner/widgets/sign_out_dialog.dart';
-import 'widgets/splash_parts.dart';
 
 /// What the Menu button at the foot of the screen opens: every part of the
-/// instructor's side, one tap each — the scanner first and largest, then a
-/// tile for everything else, Home first, and who is signed in with the way
-/// out at the foot. The part showing under it is marked, as a tab on a bar
-/// would be. GoTyme's one-button menu, in the app's own colours.
+/// instructor's side, one tap each, under what it is for. IN CLASS — the
+/// scanner first and largest, today's scans and the attendance links.
+/// STUDENTS — a student's QR code and a student's attendance. GENERAL —
+/// Home, What's New, Settings and the tour. ACCOUNT — who is signed in, with
+/// the way out. The part showing under it is marked, as a tab on a bar would
+/// be. GoTyme's one-button menu, in the app's own colours.
 ///
 /// Its pieces rise in one after another along [MenuHandle.shown] — the same
 /// timeline that opens and closes the panel — so nothing on it moves once
@@ -87,108 +88,91 @@ class InstructorMenu extends StatelessWidget {
               onTap: () => menu.open(tab),
             );
 
-        final tiles = [
-          tab(InstructorTab.home, Icons.home_rounded, NavStrings.home),
-          tab(InstructorTab.qr, Icons.qr_code_2_rounded, NavStrings.qr),
-          if (menu.tabs.contains(InstructorTab.links))
-            tab(InstructorTab.links, Icons.link_rounded, NavStrings.links),
-          tab(
-            InstructorTab.tracker,
-            Icons.event_available_rounded,
-            NavStrings.tracker,
-          ),
-          MenuTile(
-            name: 'today',
-            icon: Icons.format_list_bulleted_rounded,
-            label: InstructorHomeStrings.todayList,
-            onTap: () => _today(context),
-          ),
-          if (news != null)
-            MenuTile(
-              name: 'whatsNew',
-              icon: Icons.auto_awesome_outlined,
-              label: SettingsStrings.whatsNew,
-              tooltip: unread ? WhatsNewStrings.openUnread : null,
-              dot: unread,
-              onTap: () => _page(context, news),
-            ),
-          tab(
-            InstructorTab.settings,
-            Icons.settings_outlined,
-            NavStrings.settings,
-          ),
-          if (tour != null)
-            MenuTile(
-              name: 'tour',
-              icon: Icons.slideshow_outlined,
-              label: SettingsStrings.tour,
-              onTap: () => _page(context, tour),
-            ),
-        ];
-
         return MenuPanelCard(
-          child: AnimatedBuilder(
-            animation: menu.shown,
-            builder: (context, _) {
-              final t = menu.shown.value;
-              Widget rise(double begin, double end, Widget child) => splashRise(
-                Interval(begin, end, curve: Curves.easeOutCubic).transform(t),
-                child,
-              );
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  rise(
-                    0.20,
-                    0.62,
-                    MenuHeading(
-                      role: (user?.isAdmin ?? false)
-                          ? ScannerStrings.roleAdmin
-                          : ScannerStrings.roleInstructor,
-                    ),
+          child: MenuBody(
+            shown: menu.shown,
+            heading: MenuHeading(
+              role: (user?.isAdmin ?? false)
+                  ? ScannerStrings.roleAdmin
+                  : ScannerStrings.roleInstructor,
+            ),
+            groups: [
+              MenuGroup(
+                name: 'inClass',
+                label: MenuStrings.inClass,
+                lead: MenuLeadCard(
+                  name: 'scanner',
+                  icon: Icons.qr_code_scanner_rounded,
+                  title: MenuStrings.scan,
+                  subtitle:
+                      selected?.label ?? InstructorHomeStrings.pickSubject,
+                  selected: menu.current == InstructorTab.scanner,
+                  onTap: () => menu.open(InstructorTab.scanner),
+                ),
+                tiles: [
+                  MenuTile(
+                    name: 'today',
+                    icon: Icons.format_list_bulleted_rounded,
+                    label: InstructorHomeStrings.todayList,
+                    onTap: () => _today(context),
                   ),
-                  const SizedBox(height: 16),
-                  rise(
-                    0.26,
-                    0.68,
-                    MenuLeadCard(
-                      name: 'scanner',
-                      icon: Icons.qr_code_scanner_rounded,
-                      title: MenuStrings.scan,
-                      subtitle:
-                          selected?.label ?? InstructorHomeStrings.pickSubject,
-                      selected: menu.current == InstructorTab.scanner,
-                      onTap: () => menu.open(InstructorTab.scanner),
+                  if (menu.tabs.contains(InstructorTab.links))
+                    tab(
+                      InstructorTab.links,
+                      Icons.link_rounded,
+                      NavStrings.links,
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  MenuTileGrid(
-                    tiles: tiles,
-                    rise: (i, tile) => rise(
-                      0.32 + 0.04 * i,
-                      (0.70 + 0.04 * i).clamp(0.0, 1.0),
-                      tile,
-                    ),
-                  ),
-                  if (user != null) ...[
-                    const SizedBox(height: 16),
-                    rise(
-                      0.56,
-                      1.00,
-                      MenuAccountRow(
-                        avatar: UserAvatar(user: user, size: 36),
-                        name: user.name,
-                        subtitle: MenuStrings.signedIn,
-                        action: _SignOutButton(
-                          onPressed: () => _signOut(context),
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
-              );
-            },
+              ),
+              MenuGroup(
+                name: 'students',
+                label: MenuStrings.students,
+                tiles: [
+                  tab(InstructorTab.qr, Icons.qr_code_2_rounded, NavStrings.qr),
+                  tab(
+                    InstructorTab.tracker,
+                    Icons.event_available_rounded,
+                    NavStrings.tracker,
+                  ),
+                ],
+              ),
+              MenuGroup(
+                name: 'general',
+                label: MenuStrings.general,
+                tiles: [
+                  tab(InstructorTab.home, Icons.home_rounded, NavStrings.home),
+                  if (news != null)
+                    MenuTile(
+                      name: 'whatsNew',
+                      icon: Icons.auto_awesome_outlined,
+                      label: SettingsStrings.whatsNew,
+                      tooltip: unread ? WhatsNewStrings.openUnread : null,
+                      dot: unread,
+                      onTap: () => _page(context, news),
+                    ),
+                  tab(
+                    InstructorTab.settings,
+                    Icons.settings_outlined,
+                    NavStrings.settings,
+                  ),
+                  if (tour != null)
+                    MenuTile(
+                      name: 'tour',
+                      icon: Icons.slideshow_outlined,
+                      label: SettingsStrings.tour,
+                      onTap: () => _page(context, tour),
+                    ),
+                ],
+              ),
+            ],
+            account: user == null
+                ? null
+                : MenuAccountRow(
+                    avatar: UserAvatar(user: user, size: 36),
+                    name: user.name,
+                    subtitle: MenuStrings.signedIn,
+                    action: _SignOutButton(onPressed: () => _signOut(context)),
+                  ),
           ),
         );
       },

@@ -433,12 +433,17 @@ class _MiniChip extends StatelessWidget {
         children: [
           Icon(icon, size: 12.5, color: colors.textSecondary),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: colors.textSecondary,
+          // Never wider than the card, whatever the text size.
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: colors.textSecondary,
+              ),
             ),
           ),
         ],
