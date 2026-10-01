@@ -44,6 +44,7 @@ import 'services/whats_new_store.dart';
 import 'views/generator_splash.dart';
 import 'views/get_started_splash.dart';
 import 'views/check_in_page.dart';
+import 'views/check_in_splash.dart';
 import 'views/home_page.dart';
 import 'views/instructor_home.dart';
 import 'views/instructor_menu.dart';
@@ -537,13 +538,16 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       ),
       generatorBuilder: _studentGenerator,
       trackerBuilder: _studentTracker,
-      checkInBuilder: (context) => CheckInPage(
-        controller: _checkIn,
-        profile: _profile,
-        settings: _settings,
-        cameraBuilder: widget.cameraBuilder,
-        onSetUp: () => _studentTab.value = StudentTab.profile,
-        onCheckedIn: () => unawaited(_myAttendance.refresh()),
+      // Its splash the first time it is opened, as the other tabs.
+      checkInBuilder: (context) => CheckInIntro(
+        page: (context) => CheckInPage(
+          controller: _checkIn,
+          profile: _profile,
+          settings: _settings,
+          cameraBuilder: widget.cameraBuilder,
+          onSetUp: () => _studentTab.value = StudentTab.profile,
+          onCheckedIn: () => unawaited(_myAttendance.refresh()),
+        ),
       ),
       profileBuilder: _profilePage,
       settingsBuilder: (context) => _studentSettings(context, lock),

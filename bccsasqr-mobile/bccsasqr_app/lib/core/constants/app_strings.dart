@@ -1071,6 +1071,13 @@ abstract final class MyAttendanceStrings {
 abstract final class CheckInStrings {
   static const String title = 'Check in';
   static const String subtitle = 'For classes that use an attendance link';
+
+  // Its opening splash: the code dropping in, the finger, the tick.
+  static const String splashTagline = 'CLASS CHECK-IN';
+  static const String splashSemantics = 'Opening Check in';
+  static const String stepCode = 'Scan or paste';
+  static const String stepConfirm = 'Confirm';
+  static const String stepDone = 'Checked in';
   static const String cameraHint =
       'Point at the class QR on the screen or board';
 
@@ -1079,6 +1086,7 @@ abstract final class CheckInStrings {
   static const String scanBody = 'On the screen or board in class';
   static const String cameraOn = 'Turn on camera';
   static const String cameraOff = 'Stop camera';
+  static const String cameraStop = 'Stop';
 
   static const String orType = 'OR TYPE THE CLASS CODE';
 
@@ -1102,6 +1110,9 @@ abstract final class CheckInStrings {
   static const String checkingIn = 'Checking in…';
   static String sends(String number) =>
       'Sends $number from this phone — nothing to type.';
+
+  /// Pull to refresh with the class on screen, and no signal.
+  static const String refreshFailed = 'Could not refresh the class';
 
   // On a phone with a screen lock, every check-in asks for it first.
   static String sendsConfirmed(String number) =>

@@ -19,7 +19,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01.7';
+  static const String version = '2026-10-01.8';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -39,6 +39,19 @@ abstract final class WhatsNewLog {
           'class code. A phone opening the app for the first time gets a '
           'short opening after Get started.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.checkIn,
+          side: WhatsNewSide.student,
+          icon: Icons.refresh_rounded,
+          title: 'Check in: an opening, and pull to refresh',
+          text:
+              'The first time you open **Check in**, a short opening plays, '
+              'as **My QR Code** and **Attendance** do. Pull the page down to '
+              'refresh the class on it — its late and closing times — or to '
+              'start over. **Stop** for the camera now sits beside **Scan the '
+              'class QR**, no longer over the picture.',
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.added,
           area: WhatsNewArea.checkIn,
@@ -100,8 +113,8 @@ abstract final class WhatsNewLog {
           title: 'The camera waits until you turn it on',
           text:
               '**Check in** now opens with the camera off. Tap **Scan the '
-              'class QR** to turn it on, and **Stop camera** on the picture '
-              'to turn it off again — the app remembers which you chose.',
+              'class QR** to turn it on, and **Stop** beside it to turn it '
+              'off again — the app remembers which you chose.',
         ),
         WhatsNewItem(
           kind: WhatsNewKind.improved,

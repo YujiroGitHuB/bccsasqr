@@ -98,6 +98,26 @@ class _CheckInPageState extends State<CheckInPage> {
     widget.controller.onPasted(text);
   }
 
+  /// Pull to refresh, as on Home and My Attendance. A class kept on screen
+  /// whose refresh found no signal says so on the island; anything else
+  /// shows on the page itself.
+  Future<void> _refresh() async {
+    final controller = widget.controller;
+    await controller.refresh();
+    if (!mounted) return;
+    final error = controller.error;
+    if (error != null && controller.stage == CheckInStage.found) {
+      Island.show(
+        context,
+        IslandMessage(
+          title: CheckInStrings.refreshFailed,
+          body: error,
+          tone: IslandTone.error,
+        ),
+      );
+    }
+  }
+
   Future<void> _confirm() async {
     FocusScope.of(context).unfocus();
     final controller = widget.controller;
@@ -154,114 +174,112 @@ class _CheckInPageState extends State<CheckInPage> {
             final profile = widget.profile.profile;
             final settings = widget.settings;
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                AppTheme.pagePadding,
-                14,
-                AppTheme.pagePadding,
-                28 + MediaQuery.paddingOf(context).bottom,
-              ),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 560),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        CheckInStrings.title,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: colors.textPrimary,
+            return RefreshIndicator(
+              onRefresh: _refresh,
+              color: colors.accent,
+              backgroundColor: colors.surfaceRaised,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.pagePadding,
+                  14,
+                  AppTheme.pagePadding,
+                  28 + MediaQuery.paddingOf(context).bottom,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          CheckInStrings.title,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: colors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        CheckInStrings.subtitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (!widget.profile.loaded)
-                        const SizedBox.shrink()
-                      else if (profile == null)
-                        _SetUpFirst(onSetUp: widget.onSetUp)
-                      else ...[
-                        AnimatedSize(
-                          duration: const Duration(milliseconds: 240),
-                          curve: Curves.easeOut,
-                          alignment: Alignment.topCenter,
-                          child: settings.checkInCamera
-                              ? _Camera(
-                                  controller: controller,
-                                  cameraBuilder: widget.cameraBuilder,
-                                  onStop: () =>
-                                      settings.setCheckInCamera(false),
-                                )
-                              : _CameraOff(
-                                  onTurnOn: () =>
-                                      settings.setCheckInCamera(true),
-                                ),
+                        const SizedBox(height: 4),
+                        Text(
+                          CheckInStrings.subtitle,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: 16),
-                        _Divider(),
-                        const SizedBox(height: 14),
-                        _CodeBoxes(
-                          field: _field,
-                          enabled: !controller.busy,
-                          onChanged: controller.onCodeTyped,
-                        ),
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          key: const ValueKey('checkIn.paste'),
-                          onPressed: controller.busy ? null : _paste,
-                          icon: const Icon(
-                            Icons.content_paste_rounded,
-                            size: 18,
+                        if (!widget.profile.loaded)
+                          const SizedBox.shrink()
+                        else if (profile == null)
+                          _SetUpFirst(onSetUp: widget.onSetUp)
+                        else ...[
+                          _ScanCard(
+                            on: settings.checkInCamera,
+                            controller: controller,
+                            cameraBuilder: widget.cameraBuilder,
+                            onTurnOn: () => settings.setCheckInCamera(true),
+                            onStop: () => settings.setCheckInCamera(false),
                           ),
-                          label: const Text(CheckInStrings.paste),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(46),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                          const SizedBox(height: 16),
+                          _Divider(),
+                          const SizedBox(height: 14),
+                          _CodeBoxes(
+                            field: _field,
+                            enabled: !controller.busy,
+                            onChanged: controller.onCodeTyped,
+                          ),
+                          const SizedBox(height: 10),
+                          OutlinedButton.icon(
+                            key: const ValueKey('checkIn.paste'),
+                            onPressed: controller.busy ? null : _paste,
+                            icon: const Icon(
+                              Icons.content_paste_rounded,
+                              size: 18,
                             ),
-                            textStyle: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                            label: const Text(CheckInStrings.paste),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(46),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                        if (controller.error case final error?
-                            when controller.stage == CheckInStage.idle) ...[
-                          const SizedBox(height: 12),
-                          _ErrorLine(text: error),
+                          if (controller.error case final error?
+                              when controller.stage == CheckInStage.idle) ...[
+                            const SizedBox(height: 12),
+                            _ErrorLine(text: error),
+                          ],
+                          const SizedBox(height: 16),
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 240),
+                            curve: Curves.easeOut,
+                            alignment: Alignment.topCenter,
+                            child: switch (controller.stage) {
+                              CheckInStage.looking => const _Looking(),
+                              CheckInStage.found ||
+                              CheckInStage.sending => _ClassCard(
+                                link: controller.link!,
+                                name: profile.givenName,
+                                number: profile.record.studentNumber.value,
+                                sending:
+                                    controller.stage == CheckInStage.sending,
+                                asksOwner: controller.asksOwner,
+                                onConfirm: _confirm,
+                                onAnother: controller.reset,
+                              ),
+                              CheckInStage.idle => const SizedBox(
+                                width: double.infinity,
+                              ),
+                            },
+                          ),
                         ],
-                        const SizedBox(height: 16),
-                        AnimatedSize(
-                          duration: const Duration(milliseconds: 240),
-                          curve: Curves.easeOut,
-                          alignment: Alignment.topCenter,
-                          child: switch (controller.stage) {
-                            CheckInStage.looking => const _Looking(),
-                            CheckInStage.found ||
-                            CheckInStage.sending => _ClassCard(
-                              link: controller.link!,
-                              name: profile.givenName,
-                              number: profile.record.studentNumber.value,
-                              sending: controller.stage == CheckInStage.sending,
-                              asksOwner: controller.asksOwner,
-                              onConfirm: _confirm,
-                              onAnother: controller.reset,
-                            ),
-                            CheckInStage.idle => const SizedBox(
-                              width: double.infinity,
-                            ),
-                          },
-                        ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -273,22 +291,163 @@ class _CheckInPageState extends State<CheckInPage> {
   }
 }
 
-/// The camera, framed — live while there is nothing else on screen, a green
-/// tick once a code is read. Off whenever this tab is out of sight: the
-/// shell stops its tickers, as it does for the scanner's camera.
-class _Camera extends StatelessWidget {
-  const _Camera({
+/// The camera, in one card the width of the page: what it is for, and its
+/// switch at the right of the card's header — the camera to turn it on,
+/// Stop to let it go — with the picture opening under the header while it
+/// is on. Off is how Check in opens until the student turns it on: short,
+/// so the code boxes and Paste sit near the top.
+///
+/// The switch keeps one place, on and off. Stop used to float over the
+/// picture's corner, on the viewfinder (moved 2026-10-01).
+class _ScanCard extends StatelessWidget {
+  const _ScanCard({
+    required this.on,
     required this.controller,
     required this.cameraBuilder,
+    required this.onTurnOn,
     required this.onStop,
   });
 
+  final bool on;
   final CheckInController controller;
   final QrCameraBuilder cameraBuilder;
-
-  /// The camera's switch, over the picture: off until it is turned on
-  /// again.
+  final VoidCallback onTurnOn;
   final VoidCallback onStop;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    final header = Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            height: 44,
+            width: 44,
+            decoration: BoxDecoration(
+              color: colors.accentWash(0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: colors.accentWash(0.30)),
+            ),
+            child: Icon(
+              Icons.qr_code_scanner_rounded,
+              size: 23,
+              color: colors.accent,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  CheckInStrings.scanTitle,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  CheckInStrings.scanBody,
+                  style: TextStyle(fontSize: 12.5, color: colors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (on)
+            _StopButton(onPressed: onStop)
+          else
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Tooltip(
+                message: CheckInStrings.cameraOn,
+                child: Icon(Icons.videocam_rounded, color: colors.accent),
+              ),
+            ),
+        ],
+      ),
+    );
+
+    // Sinks under the finger only while the whole card is the switch.
+    return PressScale(
+      scale: on ? 1 : 0.97,
+      child: Material(
+        color: colors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: on ? colors.accentWash(0.35) : colors.border),
+        ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOut,
+          alignment: Alignment.topCenter,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Off, the whole header turns it on; on, only Stop answers.
+              InkWell(
+                key: const ValueKey('checkIn.cameraOn'),
+                onTap: on ? null : onTurnOn,
+                child: header,
+              ),
+              if (on)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  child: _CameraView(
+                    controller: controller,
+                    cameraBuilder: cameraBuilder,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// At the right of the camera card's header while the camera runs: lets it
+/// go until it is turned on again. Outlined, like the scanner's — a switch,
+/// not the page's main action.
+class _StopButton extends StatelessWidget {
+  const _StopButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: CheckInStrings.cameraOff,
+      child: OutlinedButton.icon(
+        key: const ValueKey('checkIn.cameraOff'),
+        onPressed: onPressed,
+        icon: const Icon(Icons.videocam_off_rounded, size: 18),
+        label: const Text(CheckInStrings.cameraStop),
+        // The theme's buttons are full width; this one sits in a row.
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 38),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+}
+
+/// The picture, framed — live while there is nothing else on screen, a
+/// green tick once a code is read. Off whenever this tab is out of sight:
+/// the shell stops its tickers, as it does for the scanner's camera.
+class _CameraView extends StatelessWidget {
+  const _CameraView({required this.controller, required this.cameraBuilder});
+
+  final CheckInController controller;
+  final QrCameraBuilder cameraBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -296,7 +455,8 @@ class _Camera extends StatelessWidget {
     final live = controller.cameraOn;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
+      key: const ValueKey('checkIn.camera'),
+      borderRadius: BorderRadius.circular(14),
       child: SizedBox(
         height: 228,
         child: Stack(
@@ -337,7 +497,7 @@ class _Camera extends StatelessWidget {
                 ),
               ),
             ),
-            if (live) ...[
+            if (live)
               const Positioned(
                 left: 12,
                 right: 12,
@@ -353,134 +513,7 @@ class _Camera extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: _StopCamera(onPressed: onStop),
-              ),
-            ],
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Over the picture's corner: lets the camera go. White on a dark pill — the
-/// picture behind it is a camera's, in both themes.
-class _StopCamera extends StatelessWidget {
-  const _StopCamera({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    const ink = Color(0xFFFFFFFF);
-
-    return Material(
-      color: const Color(0x99000000),
-      shape: const StadiumBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        key: const ValueKey('checkIn.cameraOff'),
-        onTap: onPressed,
-        child: const Padding(
-          padding: EdgeInsets.fromLTRB(10, 7, 12, 7),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.videocam_off_rounded, size: 16, color: ink),
-              SizedBox(width: 6),
-              Text(
-                CheckInStrings.cameraOff,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: ink,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Where the camera is while it is off — how Check in opens until the
-/// student turns it on: what it is for, and the switch, in one card the
-/// width of the page. Short, so the code boxes and Paste sit near the top.
-class _CameraOff extends StatelessWidget {
-  const _CameraOff({required this.onTurnOn});
-
-  final VoidCallback onTurnOn;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final radius = BorderRadius.circular(18);
-
-    return PressScale(
-      child: Material(
-        color: colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: BorderSide(color: colors.border),
-        ),
-        child: InkWell(
-          key: const ValueKey('checkIn.cameraOn'),
-          onTap: onTurnOn,
-          borderRadius: radius,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
-            child: Row(
-              children: [
-                Container(
-                  height: 44,
-                  width: 44,
-                  decoration: BoxDecoration(
-                    color: colors.accentWash(0.12),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: colors.accentWash(0.30)),
-                  ),
-                  child: Icon(
-                    Icons.qr_code_scanner_rounded,
-                    size: 23,
-                    color: colors.accent,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        CheckInStrings.scanTitle,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        CheckInStrings.scanBody,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Tooltip(
-                  message: CheckInStrings.cameraOn,
-                  child: Icon(Icons.videocam_rounded, color: colors.accent),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

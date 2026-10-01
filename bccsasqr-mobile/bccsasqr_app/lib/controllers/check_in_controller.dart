@@ -221,6 +221,39 @@ class CheckInController extends ChangeNotifier {
     }
   }
 
+  /// Pull to refresh. The class on screen is asked about again — its late
+  /// and closing times move on, and a link closed or renewed meanwhile says
+  /// so. With none, the page starts fresh: the last message and a code half
+  /// typed are cleared. Nothing while a look-up or a check-in is on its way.
+  Future<void> refresh() async {
+    switch (_stage) {
+      case CheckInStage.looking || CheckInStage.sending:
+        return;
+      case CheckInStage.idle:
+        reset();
+      case CheckInStage.found:
+        final link = _link;
+        if (link == null) return;
+        final token = ++_token;
+        try {
+          final asksOwner = _deviceLock.isAvailable();
+          final fresh = await _repository.findClass(link.shortCode);
+          final asks = await asksOwner;
+          if (_disposed || token != _token) return;
+          _link = fresh;
+          _asksOwner = asks;
+          _error = null;
+        } on StudentLookupException catch (e) {
+          if (_disposed || token != _token) return;
+          _error = e.message;
+          // No signal keeps the class to try again; anything else — closed,
+          // renewed — leaves nothing to check in to.
+          if (e.code != 'network') _clear();
+        }
+        notifyListeners();
+    }
+  }
+
   /// Back to the camera — "Scan another code", or after a check-in.
   void reset() {
     _token++;

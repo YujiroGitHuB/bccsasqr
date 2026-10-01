@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-01.7';
+const WHATS_NEW_VERSION = '2026-10-01.8';
 
 /**
  * The changelog, newest release first.
@@ -88,7 +88,7 @@ function whats_new_releases(): array
                     'type'  => 'improved',
                     'icon'  => 'bi-clipboard-check',
                     'title' => 'Students can paste the link you share into Check in',
-                    'text'  => 'When you share a link from the app&rsquo;s <strong>Links</strong>, the message now ends with the class code on a line of its own. Students with the app copy the whole message, the link or just the code, open <strong>Check in</strong> and tap <strong>Paste link or code</strong> &mdash; the class comes up at once, no typing. A link copied from this page pastes the same way. Check in&rsquo;s camera now stays off until the student turns it on, and students can lock their side of the app with their phone&rsquo;s fingerprint, face or screen lock. Students get this by downloading the app again.',
+                    'text'  => 'When you share a link from the app&rsquo;s <strong>Links</strong>, the message now ends with the class code on a line of its own. Students with the app copy the whole message, the link or just the code, open <strong>Check in</strong> and tap <strong>Paste link or code</strong> &mdash; the class comes up at once, no typing. A link copied from this page pastes the same way. Check in&rsquo;s camera now stays off until the student turns it on, the page refreshes with a pull, and students can lock their side of the app with their phone&rsquo;s fingerprint, face or screen lock. Students get this by downloading the app again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
                 [

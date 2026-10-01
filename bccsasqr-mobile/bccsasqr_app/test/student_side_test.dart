@@ -30,6 +30,7 @@ import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/services/tracker_repository.dart';
 import 'package:bccsasqr_app/views/check_in_page.dart';
+import 'package:bccsasqr_app/views/check_in_splash.dart';
 import 'package:bccsasqr_app/views/my_attendance_page.dart';
 import 'package:bccsasqr_app/views/show_qr_page.dart';
 import 'package:bccsasqr_app/views/student_menu.dart';
@@ -141,9 +142,14 @@ class _CheckIns implements CheckInRepository {
     lateIn: 600,
   );
 
+  /// What the next look-ups answer instead of the class — the link closed
+  /// meanwhile, say.
+  StudentLookupException? lookupRefusal;
+
   @override
   Future<ClassLink> findClass(String code) async {
     lookedUp.add(code);
+    if (lookupRefusal case final r?) throw r;
     if (code != link.shortCode) {
       throw const StudentLookupException(
         'This attendance link is not valid.',
@@ -543,6 +549,34 @@ void main() {
       expect(server.devicesSent, hasLength(1));
     });
 
+    test('a pull to refresh asks about the class again; with none, the page '
+        'starts fresh', () async {
+      final (controller, server, _) = await setUpCheckIn(_kept);
+      controller.onCodeTyped('K7P2QX');
+      await pumpEventQueue();
+
+      await controller.refresh();
+      expect(server.lookedUp, ['K7P2QX', 'K7P2QX']);
+      expect(controller.stage, CheckInStage.found);
+
+      // Closed meanwhile: nothing left to check in to, and it says why.
+      server.lookupRefusal = const StudentLookupException(
+        'This attendance link has expired.',
+        code: 'link_closed',
+      );
+      await controller.refresh();
+      expect(controller.stage, CheckInStage.idle);
+      expect(controller.link, isNull);
+      expect(controller.error, 'This attendance link has expired.');
+
+      // Nothing on screen: the message and the half-typed code go.
+      controller.onCodeTyped('AB');
+      await controller.refresh();
+      expect(controller.error, isNull);
+      expect(controller.code, isEmpty);
+      expect(server.lookedUp, hasLength(3));
+    });
+
     test('a phone with no screen lock sends without asking', () async {
       final lock = _PhoneLock()..available = false;
       final (controller, server, _) = await setUpCheckIn(_kept, lock: lock);
@@ -758,10 +792,51 @@ void main() {
       expect(camera, findsOneWidget);
       expect(store.saved.checkInCamera, isTrue);
 
-      await tester.tap(find.byKey(const ValueKey('checkIn.cameraOff')));
+      // Stop is in the card's header, where the camera icon was: above the
+      // picture, not on it.
+      final stop = find.byKey(const ValueKey('checkIn.cameraOff'));
+      final picture = find.byKey(const ValueKey('checkIn.camera'));
+      expect(
+        tester.getRect(stop).bottom,
+        lessThanOrEqualTo(tester.getRect(picture).top),
+      );
+
+      await tester.tap(stop);
       await tester.pumpAndSettle();
       expect(camera, findsNothing);
       expect(store.saved.checkInCamera, isFalse);
+    });
+
+    testWidgets('pulling the page down refreshes the class on it', (
+      tester,
+    ) async {
+      final (controller, server, _) = await setUpCheckIn(_kept);
+      final profile = await profileOf(_kept);
+
+      await tester.pumpWidget(
+        _app(
+          CheckInPage(
+            controller: controller,
+            profile: profile,
+            settings: await settingsWith(),
+            cameraBuilder: (context, onCode) => const SizedBox(),
+            onSetUp: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      controller.onCodeTyped('K7P2QX');
+      await tester.pumpAndSettle();
+      expect(server.lookedUp, hasLength(1));
+
+      await tester.fling(
+        find.byType(SingleChildScrollView),
+        const Offset(0, 400),
+        1200,
+      );
+      await tester.pumpAndSettle();
+      expect(server.lookedUp, hasLength(2));
+      expect(find.byKey(const ValueKey('checkIn.class')), findsOneWidget);
     });
 
     testWidgets('lays out on a small phone, camera on and off, without '
@@ -964,6 +1039,34 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('checkIn')), findsOneWidget);
       expect(find.text(MenuStrings.title), findsNothing);
+    });
+
+    testWidgets('Check in plays its own splash the first time it opens', (
+      tester,
+    ) async {
+      await tester.pumpWidget(appWith(_kept));
+      await tester.pumpAndSettle();
+      await openMenu(tester);
+      await tester.tap(find.byKey(const ValueKey('menu.checkIn')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 800));
+
+      expect(find.byType(CheckInSplash), findsOneWidget);
+      expect(find.text(CheckInStrings.splashTagline), findsOneWidget);
+
+      await tester.pumpAndSettle();
+      expect(find.byType(CheckInSplash), findsNothing);
+      expect(find.byKey(const ValueKey('checkIn')), findsOneWidget);
+
+      // Only the first time: the tab is kept after that.
+      await openMenu(tester);
+      await tester.tap(find.byKey(const ValueKey('menu.home')));
+      await tester.pumpAndSettle();
+      await openMenu(tester);
+      await tester.tap(find.byKey(const ValueKey('menu.checkIn')));
+      await tester.pump();
+      expect(find.byType(CheckInSplash), findsNothing);
+      await tester.pumpAndSettle();
     });
 
     testWidgets('puts each part under the name of its group', (tester) async {
