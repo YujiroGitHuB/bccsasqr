@@ -173,16 +173,21 @@ class _ScannerPageState extends State<ScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // The foot is left to the padding, so the page runs on under the Menu
+      // button and still ends clear of it.
       body: SafeArea(
+        bottom: false,
         child: RefreshIndicator(
           onRefresh: _controller.refresh,
           color: context.colors.accent,
           backgroundColor: context.colors.surfaceRaised,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.pagePadding,
-              vertical: 16,
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.pagePadding,
+              16,
+              AppTheme.pagePadding,
+              16 + MediaQuery.paddingOf(context).bottom,
             ),
             child: Center(
               child: ConstrainedBox(

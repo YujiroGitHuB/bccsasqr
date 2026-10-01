@@ -16,10 +16,11 @@ import 'widgets/press_scale.dart';
 import 'widgets/splash_parts.dart';
 import 'widgets/surface_panel.dart';
 
-/// The instructor's Home — what the bar opens on. Today at a glance: how many
+/// The instructor's Home — what the app opens on. Today at a glance: how many
 /// were scanned, on time and late, and in which subjects; any scans not sent
 /// yet; the newest few. The scanner is one tap away from the top card, and
-/// the rest of the instructor's side from the shortcuts under it.
+/// the rest of the instructor's side from the shortcuts under it and the
+/// Menu button at the foot.
 ///
 /// Everything here is read from the scanner's own controller — the list the
 /// scanner shows — so nothing is fetched twice, and a scan made on the
@@ -39,7 +40,7 @@ class InstructorHome extends StatefulWidget {
 
   final ScannerController session;
 
-  /// Shows a tab — one on the bar, or one the Menu opens (QR Code, Links).
+  /// Shows another tab, as the Menu would.
   final ValueChanged<InstructorTab> onOpen;
 
   /// The What's New page, from the button beside the greeting. While
@@ -166,18 +167,21 @@ class _InstructorHomeState extends State<InstructorHome>
 
         return Scaffold(
           key: const ValueKey('instructorHome'),
+          // The foot is left to the padding, so the page runs on under the
+          // Menu button and still ends clear of it.
           body: SafeArea(
+            bottom: false,
             child: RefreshIndicator(
               onRefresh: session.refresh,
               color: colors.accent,
               backgroundColor: colors.surfaceRaised,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
+                padding: EdgeInsets.fromLTRB(
                   AppTheme.pagePadding,
                   12,
                   AppTheme.pagePadding,
-                  28,
+                  28 + MediaQuery.paddingOf(context).bottom,
                 ),
                 child: Center(
                   child: ConstrainedBox(

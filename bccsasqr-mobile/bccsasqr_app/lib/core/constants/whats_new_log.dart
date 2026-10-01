@@ -18,9 +18,35 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-09-30.8';
+  static const String version = '2026-10-01';
 
   static const List<WhatsNewRelease> releases = [
+    WhatsNewRelease(
+      id: '2026-10-01',
+      icon: Icons.grid_view_rounded,
+      title: 'Just the Menu button',
+      summary:
+          'The bottom of the screen is now only the round Menu button. '
+          'Everything is in the Menu, Home included, and each page runs all '
+          'the way down under the button.',
+      items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.scanner,
+          icon: Icons.grid_view_rounded,
+          title: 'One Menu button at the bottom',
+          text:
+              '**Home**, **Scanner**, **Attendance** and **Settings** are no '
+              'longer on the bar — they were in the **Menu** already. Only '
+              'the round **Menu** button is left at the bottom, and the page '
+              'runs all the way down under it, so more of it fits on the '
+              'screen. Tap it for any part, **Home** included; the one you '
+              'are on is marked. The phone\'s back button still takes you '
+              '**Home**.',
+          link: false,
+        ),
+      ],
+    ),
     WhatsNewRelease(
       id: '2026-09-30',
       icon: Icons.cloud_off_rounded,

@@ -76,7 +76,11 @@ class _WhatsNewPageState extends State<WhatsNewPage> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final latest = widget.releases.isEmpty ? null : widget.releases.first;
+    // The newest release this phone has anything in: on a student's, past
+    // one that is only about the instructor's side.
+    final latest = widget.releases
+        .where((r) => r.items.any((item) => widget.areas.contains(item.area)))
+        .firstOrNull;
 
     return Scaffold(
       body: SafeArea(

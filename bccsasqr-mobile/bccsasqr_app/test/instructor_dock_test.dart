@@ -20,27 +20,34 @@ void main() {
     view.resetDevicePixelRatio();
   });
 
-  /// The four tabs on the bar, left to right.
-  const onBar = [
-    InstructorTab.home,
-    InstructorTab.scanner,
-    InstructorTab.tracker,
-    InstructorTab.settings,
-  ];
+  /// The foot padding the page under the bar is given.
+  late double pagePadding;
 
+  /// The bar as the shell has it: over the foot of a page that runs on under
+  /// it, with a button in the page's own bottom corner.
   Widget dock({
-    InstructorTab current = InstructorTab.home,
-    ValueChanged<InstructorTab>? onSelected,
     VoidCallback? onMenu,
+    VoidCallback? onPage,
     bool menuOpen = false,
     AppPalette palette = AppPalette.dark,
   }) => MaterialApp(
     theme: AppTheme.build(palette),
     home: Scaffold(
-      body: const SizedBox.expand(),
+      extendBody: true,
+      body: Builder(
+        builder: (context) {
+          pagePadding = MediaQuery.paddingOf(context).bottom;
+          return Align(
+            alignment: Alignment.bottomLeft,
+            child: TextButton(
+              key: const ValueKey('page.corner'),
+              onPressed: onPage ?? () {},
+              child: const Text('corner'),
+            ),
+          );
+        },
+      ),
       bottomNavigationBar: InstructorDock(
-        current: current,
-        onSelected: onSelected ?? (_) {},
         onMenu: onMenu ?? () {},
         menuOpen: menuOpen,
         menu: menuOpen ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
@@ -48,99 +55,60 @@ void main() {
     ),
   );
 
-  Offset centre(WidgetTester tester, String name) =>
-      tester.getCenter(find.byKey(ValueKey('nav.$name')));
+  final button = find.byKey(const ValueKey('nav.menu'));
 
-  testWidgets('the Menu sits in the middle, two tabs either side', (
+  testWidgets('the Menu button is all there is, in the middle of the foot', (
     tester,
   ) async {
     phone(const Size(390, 844));
     await tester.pumpWidget(dock());
     await tester.pumpAndSettle();
 
-    expect(centre(tester, 'menu').dx, closeTo(195, 1));
-    expect(centre(tester, 'home').dx, lessThan(centre(tester, 'scanner').dx));
-    expect(centre(tester, 'scanner').dx, lessThan(centre(tester, 'menu').dx));
-    expect(centre(tester, 'menu').dx, lessThan(centre(tester, 'tracker').dx));
-    expect(
-      centre(tester, 'tracker').dx,
-      lessThan(centre(tester, 'settings').dx),
-    );
-    // Standing above the dock, not in line with the tabs.
-    expect(centre(tester, 'menu').dy, lessThan(centre(tester, 'home').dy));
-    // QR Code and Links are behind the Menu, not on the bar.
-    expect(find.byKey(const ValueKey('nav.qr')), findsNothing);
-    expect(find.byKey(const ValueKey('nav.links')), findsNothing);
-    for (final label in [
-      NavStrings.home,
-      NavStrings.scanner,
-      NavStrings.menu,
-      NavStrings.tracker,
-      NavStrings.settings,
-    ]) {
-      expect(find.text(label), findsOneWidget, reason: label);
-    }
-  });
-
-  testWidgets('every tab answers a tap, and the button opens the Menu', (
-    tester,
-  ) async {
-    phone(const Size(390, 844));
-    final tapped = <InstructorTab>[];
-    var menus = 0;
-    await tester.pumpWidget(
-      dock(
-        current: InstructorTab.tracker,
-        onSelected: tapped.add,
-        onMenu: () => menus++,
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    for (final tab in onBar) {
-      await tester.tap(find.byKey(ValueKey('nav.${tab.name}')));
-      await tester.pumpAndSettle();
-    }
-    expect(tapped, onBar);
-
-    await tester.tap(find.byKey(const ValueKey('nav.menu')));
-    await tester.pumpAndSettle();
-    expect(menus, 1);
-  });
-
-  testWidgets('the picked tab reads as selected, in words too', (tester) async {
-    phone(const Size(390, 844));
-    await tester.pumpWidget(dock(current: InstructorTab.scanner));
-    await tester.pumpAndSettle();
-
-    expect(
-      tester.getSemantics(find.byKey(const ValueKey('nav.scanner'))),
-      containsSemantics(isSelected: true),
-    );
-    expect(
-      tester.getSemantics(find.byKey(const ValueKey('nav.home'))),
-      isNot(containsSemantics(isSelected: true)),
-    );
-    expect(find.byTooltip(NavStrings.scanner), findsOneWidget);
-    expect(find.byTooltip(NavStrings.menu), findsOneWidget);
-  });
-
-  testWidgets('on a tab the Menu opened, the Menu is the one lit', (
-    tester,
-  ) async {
-    phone(const Size(390, 844));
-    await tester.pumpWidget(dock(current: InstructorTab.qr));
-    await tester.pumpAndSettle();
-
-    for (final tab in onBar) {
+    final rect = tester.getRect(button);
+    expect(rect.center.dx, closeTo(195, 1));
+    expect(rect.bottom, inInclusiveRange(844 - 30, 844 - 8));
+    // The page's foot padding covers the button: a last card scrolled to
+    // the end stops above it.
+    expect(844 - pagePadding, lessThanOrEqualTo(rect.top));
+    // No tabs beside it: every one of them is in the Menu.
+    for (final tab in InstructorTab.values) {
       expect(
-        tester.getSemantics(find.byKey(ValueKey('nav.${tab.name}'))),
-        isNot(containsSemantics(isSelected: true)),
+        find.byKey(ValueKey('nav.${tab.name}')),
+        findsNothing,
         reason: tab.name,
       );
     }
-    final label = tester.widget<Text>(find.text(NavStrings.menu));
-    expect(label.style?.fontWeight, FontWeight.w800);
+    expect(
+      find.descendant(
+        of: find.byType(InstructorDock),
+        matching: find.byType(Text),
+      ),
+      findsNothing,
+    );
+    expect(find.byTooltip(NavStrings.menu), findsOneWidget);
+  });
+
+  testWidgets('the button opens the Menu, and beside it the page still '
+      'answers', (tester) async {
+    phone(const Size(390, 844));
+    var menus = 0;
+    var page = 0;
+    await tester.pumpWidget(dock(onMenu: () => menus++, onPage: () => page++));
+    await tester.pumpAndSettle();
+
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    expect(menus, 1);
+
+    // In the strip the bar stands in, but not on the button.
+    expect(
+      tester.getRect(find.byKey(const ValueKey('page.corner'))).bottom,
+      greaterThan(tester.getRect(button).top),
+    );
+    await tester.tap(find.byKey(const ValueKey('page.corner')));
+    await tester.pumpAndSettle();
+    expect(page, 1);
+    expect(menus, 1);
   });
 
   testWidgets('open, the button says it closes the Menu', (tester) async {
@@ -153,19 +121,15 @@ void main() {
     expect(find.byIcon(Icons.close_rounded), findsOneWidget);
   });
 
-  testWidgets('fits a small phone, every tab picked in turn, both themes', (
+  testWidgets('fits a small phone, open and closed, both themes', (
     tester,
   ) async {
     phone(const Size(320, 640));
     for (final palette in [AppPalette.dark, AppPalette.light]) {
-      for (final tab in InstructorTab.values) {
-        for (final open in [false, true]) {
-          await tester.pumpWidget(
-            dock(current: tab, menuOpen: open, palette: palette),
-          );
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull, reason: '${tab.name} $open');
-        }
+      for (final open in [false, true]) {
+        await tester.pumpWidget(dock(menuOpen: open, palette: palette));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: '$palette $open');
       }
     }
   });

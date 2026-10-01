@@ -16,8 +16,8 @@ import 'widgets/island.dart';
 import 'widgets/surface_panel.dart';
 
 /// The instructor's account, theme, the scanner's beep / buzz / voice, the
-/// role, and what version this is. A pushed page on a student's phone; a tab
-/// of the bar on an instructor's.
+/// role, and what version this is. A pushed page on a student's phone; on an
+/// instructor's, a tab the Menu opens.
 ///
 /// Every switch applies the moment it is flipped — there is no Save.
 class SettingsPage extends StatefulWidget {
@@ -115,11 +115,17 @@ class _SettingsPageState extends State<SettingsPage> {
     final scanner = role != AppRole.student;
 
     return Scaffold(
+      // The foot is left to the padding, so the page runs on under the
+      // instructor's Menu button, or the phone's own bar, and still ends
+      // clear of it.
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.pagePadding,
-            vertical: 12,
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.pagePadding,
+            12,
+            AppTheme.pagePadding,
+            12 + MediaQuery.paddingOf(context).bottom,
           ),
           child: Center(
             child: ConstrainedBox(
@@ -131,7 +137,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Row(
                       children: [
-                        // A tab of the instructor's bar has nowhere to go
+                        // A tab of the instructor's shell has nowhere to go
                         // back to.
                         if (Navigator.of(context).canPop())
                           IconButton(

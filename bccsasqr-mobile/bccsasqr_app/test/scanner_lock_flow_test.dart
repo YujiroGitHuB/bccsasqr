@@ -193,12 +193,10 @@ void main() {
   testWidgets('a minute away locks the whole bar, and unlocking finds it '
       'as it was left', (tester) async {
     await signInWithLock(tester);
-    await tester.tap(find.byKey(const ValueKey('nav.tracker')));
-    await tester.pumpAndSettle();
+    await openFromMenu(tester, 'tracker');
     expect(find.byType(TrackerSplash), findsNothing);
     // A page over the bar, which the lock must not stay behind.
-    await tester.tap(find.byKey(const ValueKey('nav.settings')));
-    await tester.pumpAndSettle();
+    await openFromMenu(tester, 'settings');
     await tester.tap(find.byKey(const ValueKey('settings.whatsNew')));
     await tester.pumpAndSettle();
     expect(find.byType(WhatsNewPage), findsOneWidget);
@@ -226,9 +224,11 @@ void main() {
 
     expect(find.byType(ScannerLockScreen), findsNothing);
     expect(find.byType(InstructorDock).hitTestable(), findsOneWidget);
-    // The same bar: still on Settings, and the tracker was not built again.
+    // The same shell: still on Settings, and the tracker was not built again.
     expect(find.text(SettingsStrings.appearance), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('nav.tracker')));
+    await tester.tap(find.byKey(const ValueKey('nav.menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('menu.tracker')));
     await tester.pump();
     expect(find.byType(TrackerSplash), findsNothing);
     await tester.pumpAndSettle();
@@ -291,8 +291,7 @@ void main() {
   testWidgets('the switch in Settings turns it off', (tester) async {
     await signInWithLock(tester);
 
-    await tester.tap(find.byKey(const ValueKey('nav.settings')));
-    await tester.pumpAndSettle();
+    await openFromMenu(tester, 'settings');
     expect(find.text(ScannerStrings.lockTile), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('settings.lock')));
@@ -300,4 +299,13 @@ void main() {
 
     expect(store.enabled, isFalse);
   });
+}
+
+/// Opens one of the instructor's tabs the only way there is: the Menu
+/// button at the foot of the screen, then the tab's tile.
+Future<void> openFromMenu(WidgetTester tester, String tab) async {
+  await tester.tap(find.byKey(const ValueKey('nav.menu')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('menu.$tab')));
+  await tester.pumpAndSettle();
 }

@@ -810,8 +810,8 @@ abstract final class LinksStrings {
   static const String close = 'Close';
 }
 
-/// The instructor's bottom bar, with the Menu button in the middle. QR Code
-/// and Links are not on the bar: the Menu and Home open them.
+/// The parts of the instructor's side as the Menu names them, and the Menu
+/// button at the foot of the screen that opens it.
 abstract final class NavStrings {
   static const String home = 'Home';
   static const String scanner = 'Scanner';
@@ -823,7 +823,7 @@ abstract final class NavStrings {
   static const String settings = 'Settings';
 }
 
-/// The instructor's Home — what the bar opens on: today's scans at a glance,
+/// The instructor's Home — what the app opens on: today's scans at a glance,
 /// the way into the scanner, and the rest of the side a tap away.
 abstract final class InstructorHomeStrings {
   static const String scannedToday = 'SCANNED TODAY';
@@ -855,8 +855,8 @@ abstract final class InstructorHomeStrings {
   static String viewAll(int n) => 'View all $n';
 }
 
-/// The Menu in the middle of the instructor's bar — everything on the
-/// instructor's side, in one place.
+/// The Menu behind the one button at the foot of the instructor's screen —
+/// everything on the instructor's side, in one place.
 abstract final class MenuStrings {
   static const String title = 'Menu';
   static const String subtitle = 'Everything in one place';

@@ -265,22 +265,15 @@ void main() {
 
       expect(roles.saved, AppRole.instructor);
       expect(find.byType(InstructorDock), findsOneWidget);
-      for (final label in [
-        NavStrings.home,
-        NavStrings.scanner,
-        NavStrings.menu,
-        NavStrings.tracker,
-        NavStrings.settings,
-      ]) {
-        expect(
-          find.descendant(
-            of: find.byType(InstructorDock),
-            matching: find.text(label),
-          ),
-          findsOneWidget,
-          reason: label,
-        );
-      }
+      // Only the Menu button at the foot: the tabs are all in the Menu.
+      expect(find.byTooltip(NavStrings.menu), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(InstructorDock),
+          matching: find.byType(Text),
+        ),
+        findsNothing,
+      );
       // Opening on Home; the other tabs built when first opened.
       expect(_home, findsOneWidget);
       expect(find.text(ScannerStrings.title), findsNothing);
@@ -336,13 +329,10 @@ void main() {
 
     testWidgets('signing out takes the bar away with it', (tester) async {
       await openAsInstructor(tester);
-      await tester.tap(find.byKey(const ValueKey('nav.tracker')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('nav.scanner')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'tracker');
+      await openFromMenu(tester, 'scanner');
 
-      await tester.tap(find.byKey(const ValueKey('nav.settings')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'settings');
       await tester.ensureVisible(
         find.byKey(const ValueKey('settings.signOut')),
       );
@@ -361,8 +351,7 @@ void main() {
 
     testWidgets('an instructor can sign out from Settings too', (tester) async {
       await openAsInstructor(tester);
-      await tester.tap(find.byKey(const ValueKey('nav.settings')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'settings');
 
       // Who is signed in, at the top.
       expect(find.text(SettingsStrings.account), findsOneWidget);
@@ -407,8 +396,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('role.instructor')));
       await tester.pumpAndSettle();
       await signIn(tester);
-      await tester.tap(find.byKey(const ValueKey('nav.settings')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'settings');
       // The Role row's — the Account panel's chip says it too.
       expect(
         find.descendant(
@@ -426,8 +414,7 @@ void main() {
 
     testWidgets('back from another tab goes Home first', (tester) async {
       await openAsInstructor(tester);
-      await tester.tap(find.byKey(const ValueKey('nav.tracker')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'tracker');
       expect(_home, findsNothing);
 
       await tester.binding.handlePopRoute();
@@ -441,8 +428,7 @@ void main() {
       tester,
     ) async {
       await openAsInstructor(tester);
-      await tester.tap(find.byKey(const ValueKey('nav.scanner')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'scanner');
       await tester.tap(find.text(ScannerStrings.subjectPlaceholder));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Object Oriented Programming').last);
@@ -451,15 +437,13 @@ void main() {
       expect(_camera, findsOneWidget);
       expect(awake, [true]);
 
-      await tester.tap(find.byKey(const ValueKey('nav.tracker')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'tracker');
       // Let go, not left running behind the tracker — nor the screen held
       // on for it.
       expect(_camera, findsNothing);
       expect(awake, [true, false]);
 
-      await tester.tap(find.byKey(const ValueKey('nav.scanner')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'scanner');
       expect(_camera, findsOneWidget);
       expect(awake, [true, false, true]);
       expect(find.text(ScannerStrings.readyToScan), findsOneWidget);
@@ -481,7 +465,7 @@ void main() {
       expect(find.byType(LinksSplash), findsNothing);
       expect(find.text(LinksStrings.title), findsOneWidget);
       expect(find.text('Introduction to Computing'), findsOneWidget);
-      // The camera is let go here too, and the bar stays under it.
+      // The camera is let go here too, and the Menu button is still there.
       expect(_camera, findsNothing);
       expect(find.byType(InstructorDock), findsOneWidget);
     });
@@ -516,8 +500,7 @@ void main() {
       // jump back to it if it returns.
       await tester.tap(links);
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('nav.home')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'home');
       scanner.links = false;
       await refresh();
       expect(links, findsNothing);
@@ -525,4 +508,13 @@ void main() {
       expect(find.text(LinksStrings.title), findsNothing);
     });
   });
+}
+
+/// Opens one of the instructor's tabs the only way there is: the Menu
+/// button at the foot of the screen, then the tab's tile.
+Future<void> openFromMenu(WidgetTester tester, String tab) async {
+  await tester.tap(find.byKey(const ValueKey('nav.menu')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('menu.$tab')));
+  await tester.pumpAndSettle();
 }

@@ -134,11 +134,10 @@ void main() {
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
       await signInAsInstructor(tester);
-      await tester.tap(find.byKey(const ValueKey('nav.settings')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'settings');
     }
 
-    testWidgets('the bar opens Settings, with the version', (tester) async {
+    testWidgets('the Menu opens Settings, with the version', (tester) async {
       await openSettings(tester);
 
       expect(find.text(SettingsStrings.appearance), findsOneWidget);
@@ -270,5 +269,14 @@ Future<void> signInAsInstructor(WidgetTester tester) async {
   await tester.enterText(find.byType(TextField).at(0), 'demo@bcc.test');
   await tester.enterText(find.byType(TextField).at(1), 'secret');
   await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
+  await tester.pumpAndSettle();
+}
+
+/// Opens one of the instructor's tabs the only way there is: the Menu
+/// button at the foot of the screen, then the tab's tile.
+Future<void> openFromMenu(WidgetTester tester, String tab) async {
+  await tester.tap(find.byKey(const ValueKey('nav.menu')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('menu.$tab')));
   await tester.pumpAndSettle();
 }

@@ -241,14 +241,18 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
 
   late final WhatsNewController _whatsNew = WhatsNewController(
     store: widget.whatsNewStore ?? SharedPrefsWhatsNewStore(),
+    // A release only about the other half of the app is no news here.
+    areas: () =>
+        _role.role == AppRole.student ? _studentAreas : _instructorAreas,
   );
 
   late final RoleController _role = RoleController(
     store: widget.roleStore ?? SharedPrefsRoleStore(),
   );
 
-  /// The instructor's bottom bar. Held here rather than in the bar, so What's
-  /// New — pushed over it from Home, the Menu or Settings — can open a tab.
+  /// The instructor's tab showing. Held here rather than in the shell, so
+  /// What's New — pushed over it from Home, the Menu or Settings — can open
+  /// one.
   final ValueNotifier<InstructorTab> _tab = ValueNotifier(InstructorTab.home);
 
   late bool _splashing = widget.showSplash;
@@ -401,22 +405,31 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   );
 
   // ── Instructor ──────────────────────────────────────────────────────
-  // The sign-in, then the bottom bar, opening on Home. Every part of the
-  // side is a tab of it; only What's New, the tour, today's list and the
-  // questions are opened over it.
+  // The sign-in, then the shell, opening on Home, with the Menu button at
+  // its foot. Every part of the side is a tab of it; only What's New, the
+  // tour, today's list and the questions are opened over it.
+
+  /// What an instructor's What's New can be about. Links only for an account
+  /// allowed to manage them, on the page itself.
+  static const Set<WhatsNewArea> _instructorAreas = {
+    WhatsNewArea.qr,
+    WhatsNewArea.scanner,
+    WhatsNewArea.tracker,
+    WhatsNewArea.links,
+  };
 
   /// What's New on an instructor's phone — the same page from Home, the Menu
-  /// and Settings, each item opening its tab of the bar.
+  /// and Settings, each item opening its tab.
   Widget _instructorWhatsNew(BuildContext context, ScannerController session) =>
       WhatsNewPage(
         areas: {
-          WhatsNewArea.qr,
-          WhatsNewArea.scanner,
-          WhatsNewArea.tracker,
-          if (session.user?.canManageLinks ?? false) WhatsNewArea.links,
+          for (final area in _instructorAreas)
+            if (area != WhatsNewArea.links ||
+                (session.user?.canManageLinks ?? false))
+              area,
         },
         onShown: _whatsNew.markSeen,
-        // Back down to the bar, on the item's tab.
+        // Back down to the shell, on the item's tab.
         onOpen: (area) {
           Navigator.of(context).pop();
           _tab.value = InstructorTab.of(area);

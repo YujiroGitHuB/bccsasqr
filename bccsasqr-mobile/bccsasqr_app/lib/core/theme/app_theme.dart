@@ -133,8 +133,6 @@ abstract final class AppTheme {
         ),
       );
 
-  /// The instructor's bottom bar: the panels' surface, the selected tab in
-  /// the accent on a wash of it — the Settings theme picker's colours.
   static CheckboxThemeData _checkboxTheme(AppPalette p) => CheckboxThemeData(
     side: BorderSide(color: p.borderStrong, width: 1.5),
     fillColor: WidgetStateProperty.resolveWith((states) {

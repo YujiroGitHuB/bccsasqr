@@ -29,6 +29,15 @@ class _NoExport implements QrExportService {
   }) async => fileName;
 }
 
+/// Preferences that cannot be read.
+class _Unreadable implements WhatsNewStore {
+  @override
+  Future<String?> lastSeen() async => throw StateError('unreadable');
+
+  @override
+  Future<void> markSeen(String version) async {}
+}
+
 void main() {
   group('the log', () {
     test('is newest first, and the version is the newest release', () {
@@ -90,6 +99,69 @@ void main() {
       await again.load();
       expect(again.unread, isFalse);
     });
+
+    test('a store that cannot be read counts as seen', () async {
+      final c = WhatsNewController(store: _Unreadable());
+      await c.load();
+      expect(c.unread, isFalse);
+    });
+
+    group('only news for the one reading', () {
+      WhatsNewItem item(WhatsNewArea area) => WhatsNewItem(
+        kind: WhatsNewKind.improved,
+        area: area,
+        icon: Icons.star_outline,
+        title: area.name,
+        text: area.name,
+      );
+
+      // The instructor's side alone on the 1st; something for everyone on
+      // the 30th.
+      final releases = [
+        WhatsNewRelease(
+          id: '2026-10-01',
+          icon: Icons.star_outline,
+          title: 'Instructors',
+          summary: '',
+          items: [item(WhatsNewArea.scanner)],
+        ),
+        WhatsNewRelease(
+          id: '2026-09-30',
+          icon: Icons.star_outline,
+          title: 'Everyone',
+          summary: '',
+          items: [item(WhatsNewArea.qr), item(WhatsNewArea.scanner)],
+        ),
+      ];
+      const student = {WhatsNewArea.qr, WhatsNewArea.tracker};
+      const instructor = {WhatsNewArea.qr, WhatsNewArea.scanner};
+
+      Future<bool> unread(String? seen, Set<WhatsNewArea> areas) async {
+        final c = WhatsNewController(
+          store: MemoryWhatsNewStore(seen),
+          version: '2026-10-01',
+          releases: releases,
+          areas: () => areas,
+        );
+        await c.load();
+        return c.unread;
+      }
+
+      test('a release about the other side is no news', () async {
+        expect(await unread('2026-09-30.8', student), isFalse);
+        expect(await unread('2026-09-30.8', instructor), isTrue);
+      });
+
+      test('one of theirs not opened yet still is, however old', () async {
+        expect(await unread(null, student), isTrue);
+        expect(await unread('2026-09-27.3', student), isTrue);
+      });
+
+      test('opened today, nothing new for anyone', () async {
+        expect(await unread('2026-10-01', student), isFalse);
+        expect(await unread('2026-10-01', instructor), isFalse);
+      });
+    });
   });
 
   group('screens', () {
@@ -129,7 +201,22 @@ void main() {
     );
 
     final card = find.byKey(const ValueKey('home.whatsNewCard'));
-    final latestTitle = find.text(WhatsNewLog.releases.first.title);
+
+    /// The newest release a student has anything in — the first on their
+    /// page, past any about the instructor's side alone.
+    final latestTitle = find.text(
+      WhatsNewLog.releases
+          .firstWhere(
+            (r) => r.items.any(
+              (i) => const {
+                WhatsNewArea.qr,
+                WhatsNewArea.tracker,
+                WhatsNewArea.profile,
+              }.contains(i.area),
+            ),
+          )
+          .title,
+    );
 
     testWidgets('a new release shows the card; opening it clears it', (
       tester,
@@ -235,6 +322,54 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('Latest goes on the newest release the reader has anything '
+        'in', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: WhatsNewPage(
+            // A student's phone, under a release about the scanner alone.
+            areas: {WhatsNewArea.qr, WhatsNewArea.tracker},
+            releases: [
+              WhatsNewRelease(
+                id: '2026-10-01',
+                icon: Icons.grid_view_rounded,
+                title: 'Instructors',
+                summary: 'Summary',
+                items: [
+                  WhatsNewItem(
+                    kind: WhatsNewKind.improved,
+                    area: WhatsNewArea.scanner,
+                    icon: Icons.grid_view_rounded,
+                    title: 'For the scanner',
+                    text: 'Text',
+                  ),
+                ],
+              ),
+              WhatsNewRelease(
+                id: '2026-09-30',
+                icon: Icons.qr_code_2_rounded,
+                title: 'Everyone',
+                summary: 'Summary',
+                items: [
+                  WhatsNewItem(
+                    kind: WhatsNewKind.added,
+                    area: WhatsNewArea.qr,
+                    icon: Icons.qr_code_2_rounded,
+                    title: 'For the QR code',
+                    text: 'Text',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(find.text('Instructors'), findsNothing);
+      expect(find.text('Everyone'), findsOneWidget);
+      expect(find.text(WhatsNewStrings.latest), findsOneWidget);
+    });
+
     testWidgets('a fix with nowhere to go has no Open button', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -299,8 +434,7 @@ void main() {
       expect(find.byTooltip(WhatsNewStrings.openUnread), findsOneWidget);
 
       // Settings has it as well.
-      await tester.tap(find.byKey(const ValueKey('nav.settings')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'settings');
       await tester.tap(find.byKey(const ValueKey('settings.whatsNew')));
       await tester.pumpAndSettle();
 
@@ -311,7 +445,7 @@ void main() {
         findsOneWidget,
       );
 
-      // An item opens its tab of the bar, not a page over it.
+      // An item opens its tab, not a page over it.
       await tester.tap(find.byKey(const ValueKey('whatsNew.filter.tracker')));
       await tester.pumpAndSettle();
       await tester.tap(find.text(WhatsNewStrings.openTracker));
@@ -320,8 +454,7 @@ void main() {
       expect(find.byType(TrackerIntro), findsOneWidget);
 
       // Read now: Home's button has no dot.
-      await tester.tap(find.byKey(const ValueKey('nav.home')));
-      await tester.pumpAndSettle();
+      await openFromMenu(tester, 'home');
       expect(find.byTooltip(WhatsNewStrings.openUnread), findsNothing);
       expect(find.byTooltip(WhatsNewStrings.open), findsOneWidget);
     });
@@ -358,5 +491,14 @@ Future<void> signInAsInstructor(WidgetTester tester) async {
   await tester.enterText(find.byType(TextField).at(0), 'demo@bcc.test');
   await tester.enterText(find.byType(TextField).at(1), 'secret');
   await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
+  await tester.pumpAndSettle();
+}
+
+/// Opens one of the instructor's tabs the only way there is: the Menu
+/// button at the foot of the screen, then the tab's tile.
+Future<void> openFromMenu(WidgetTester tester, String tab) async {
+  await tester.tap(find.byKey(const ValueKey('nav.menu')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('menu.$tab')));
   await tester.pumpAndSettle();
 }

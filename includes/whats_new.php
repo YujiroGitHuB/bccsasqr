@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-09-30.9';
+const WHATS_NEW_VERSION = '2026-10-01';
 
 /**
  * The changelog, newest release first.
@@ -69,6 +69,23 @@ const WHATS_NEW_VERSION = '2026-09-30.9';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-10-01',
+            'date'    => '2026-10-01',
+            'icon'    => 'bi-grid',
+            'title'   => 'One Menu button in the app',
+            'summary' => 'The bottom of the app’s instructor screen is now only the round Menu button — Home, Scanner, Attendance and Settings were in the Menu already, so the bar said the same things twice.',
+            'items'   => [
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-grid-3x3-gap',
+                    'title' => 'The app’s instructor side has one Menu button',
+                    'text'  => 'The <strong>Home</strong>, <strong>Scanner</strong>, <strong>Attendance</strong> and <strong>Settings</strong> buttons are gone from the bottom of the app&rsquo;s screen &mdash; they were all in the <strong>Menu</strong> already. Only the round <strong>Menu</strong> button is left there, and each page runs all the way down under it, so more of the page fits on the screen. Tap it for any part, <strong>Home</strong> included; the part you are on is marked. The phone&rsquo;s back button still goes back to <strong>Home</strong>. Anyone with the app already installed gets this by downloading it again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-09-30',

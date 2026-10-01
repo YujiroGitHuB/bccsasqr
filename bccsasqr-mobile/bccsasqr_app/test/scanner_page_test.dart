@@ -98,8 +98,7 @@ void main() {
     await tester.enterText(find.byType(TextField).at(1), 'secret');
     await tester.tap(find.widgetWithText(FilledButton, ScannerStrings.signIn));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('nav.scanner')));
-    await tester.pumpAndSettle();
+    await openFromMenu(tester, 'scanner');
   }
 
   final home = find.byKey(const ValueKey('instructorHome'));
@@ -223,8 +222,7 @@ void main() {
 
   /// Settings → Account → Sign out: where signing out lives.
   Future<void> tapSignOut(WidgetTester tester) async {
-    await tester.tap(find.byKey(const ValueKey('nav.settings')));
-    await tester.pumpAndSettle();
+    await openFromMenu(tester, 'settings');
     await tester.ensureVisible(find.byKey(const ValueKey('settings.signOut')));
     await tester.tap(find.byKey(const ValueKey('settings.signOut')));
     await tester.pumpAndSettle();
@@ -263,8 +261,7 @@ void main() {
     expect(find.text('demo@bcc.test'), findsNothing);
     expect(find.text('ID 0'), findsNothing);
 
-    await tester.tap(find.byKey(const ValueKey('nav.settings')));
-    await tester.pumpAndSettle();
+    await openFromMenu(tester, 'settings');
 
     // Who is signed in, their role, subjects and ID — first in Settings.
     expect(find.text(SettingsStrings.account), findsOneWidget);
@@ -406,4 +403,13 @@ void main() {
     expect(find.byType(ScanResultCard), findsOneWidget);
     await tester.pump(const Duration(seconds: 6));
   });
+}
+
+/// Opens one of the instructor's tabs the only way there is: the Menu
+/// button at the foot of the screen, then the tab's tile.
+Future<void> openFromMenu(WidgetTester tester, String tab) async {
+  await tester.tap(find.byKey(const ValueKey('nav.menu')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('menu.$tab')));
+  await tester.pumpAndSettle();
 }

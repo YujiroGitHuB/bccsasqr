@@ -124,8 +124,11 @@ Widget _camera(BuildContext context, ValueChanged<String> onCode) => ColoredBox(
 
 final _home = find.byKey(const ValueKey('instructorHome'));
 
-/// The panel's heading — not the bar's label, which says Menu too.
+/// The Menu's panel, by its heading.
 final _menuTitle = find.byKey(const ValueKey('menu.title'));
+
+/// Marked as the tab showing — the Menu's tiles, and the scanner's card.
+Matcher get _marked => containsSemantics(isSelected: true);
 
 void main() {
   group('TodaySummary', () {
@@ -360,7 +363,7 @@ void main() {
 
     testWidgets('a scan on the Scanner counts on Home at once', (tester) async {
       await signIn(tester);
-      await tap(tester, 'nav.scanner');
+      await openFromMenu(tester, 'scanner');
       await tester.tap(find.text(ScannerStrings.subjectPlaceholder));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Object Oriented Programming').last);
@@ -370,7 +373,7 @@ void main() {
       await tester.pumpAndSettle();
       await tap(tester, 'scan:000-1023');
 
-      await tap(tester, 'nav.home');
+      await openFromMenu(tester, 'home');
       expect(
         tester
             .widget<Text>(find.byKey(const ValueKey('instructorHome.count')))
@@ -410,18 +413,13 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
     });
 
-    testWidgets('the shortcuts open QR Code, Links and Attendance over the '
-        'bar, and back goes Home', (tester) async {
+    testWidgets('the shortcuts open QR Code, Links and Attendance under the '
+        'Menu button, and back goes Home', (tester) async {
       await signIn(tester);
 
       await tap(tester, 'instructorHome.qr');
       expect(find.text(AppStrings.studentNumberLabel), findsOneWidget);
       expect(find.byType(InstructorDock), findsOneWidget);
-      // A tab the Menu opens: the Menu's label is the lit one.
-      expect(
-        tester.widget<Text>(find.text(NavStrings.menu)).style?.fontWeight,
-        FontWeight.w800,
-      );
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -431,13 +429,47 @@ void main() {
       await tap(tester, 'instructorHome.links');
       expect(find.text(LinksStrings.title), findsOneWidget);
 
-      await tap(tester, 'nav.home');
+      await openFromMenu(tester, 'home');
       await tap(tester, 'instructorHome.tracker');
       expect(find.byType(TrackerIntro), findsOneWidget);
-      // Attendance is on the bar too: it is the tab picked.
+      // The Menu says where the phone is: Attendance, not Home.
+      await tap(tester, 'nav.menu');
       expect(
-        tester.getSemantics(find.byKey(const ValueKey('nav.tracker'))),
-        containsSemantics(isSelected: true),
+        tester.getSemantics(find.byKey(const ValueKey('menu.tracker'))),
+        _marked,
+      );
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey('menu.home'))),
+        isNot(_marked),
+      );
+    });
+
+    testWidgets('the page runs on under the Menu button, and its end stops '
+        'above it', (tester) async {
+      await signIn(tester);
+      // Short enough that Home scrolls.
+      TestWidgetsFlutterBinding
+          .instance
+          .platformDispatcher
+          .views
+          .first
+          .physicalSize = const Size(
+        420,
+        700,
+      );
+      await tester.pumpAndSettle();
+
+      final page = find
+          .descendant(of: _home, matching: find.byType(Scrollable))
+          .first;
+      expect(tester.getRect(page).bottom, 700);
+
+      await tester.drag(page, const Offset(0, -3000));
+      await tester.pumpAndSettle();
+      // The oldest of the morning's scans, last on the page.
+      expect(
+        tester.getRect(find.text('Paolo Reyes')).bottom,
+        lessThan(tester.getRect(find.byKey(const ValueKey('nav.menu'))).top),
       );
     });
 
@@ -472,6 +504,7 @@ void main() {
       await tap(tester, 'nav.menu');
       expect(_menuTitle, findsOneWidget);
       for (final item in [
+        'home',
         'scanner',
         'qr',
         'links',
@@ -486,6 +519,18 @@ void main() {
           find.byKey(ValueKey('menu.$item')),
           findsOneWidget,
           reason: item,
+        );
+      }
+      // Opened from Home: Home is the one marked.
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey('menu.home'))),
+        _marked,
+      );
+      for (final other in ['scanner', 'qr', 'tracker', 'settings']) {
+        expect(
+          tester.getSemantics(find.byKey(ValueKey('menu.$other'))),
+          isNot(_marked),
+          reason: other,
         );
       }
       expect(find.text('Demo Instructor'), findsNWidgets(2));
@@ -520,6 +565,16 @@ void main() {
       await tap(tester, 'menu.scanner');
       expect(_menuTitle, findsNothing);
       expect(find.text(ScannerStrings.title), findsOneWidget);
+      // Opened again over the scanner, its card is the one marked.
+      await tap(tester, 'nav.menu');
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey('menu.scanner'))),
+        _marked,
+      );
+
+      await tap(tester, 'menu.home');
+      expect(_menuTitle, findsNothing);
+      expect(_home, findsOneWidget);
 
       await tap(tester, 'nav.menu');
       await tap(tester, 'menu.qr');
@@ -638,4 +693,13 @@ void main() {
       }
     });
   });
+}
+
+/// Opens one of the instructor's tabs the only way there is: the Menu
+/// button at the foot of the screen, then the tab's tile.
+Future<void> openFromMenu(WidgetTester tester, String tab) async {
+  await tester.tap(find.byKey(const ValueKey('nav.menu')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('menu.$tab')));
+  await tester.pumpAndSettle();
 }

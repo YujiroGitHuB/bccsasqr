@@ -19,7 +19,8 @@ import 'widgets/surface_panel.dart';
 
 /// The student's opening screen: the generator and the attendance tracker,
 /// and nothing of the scanner's. An instructor's phone opens on its own Home,
-/// on the bottom bar, instead (instructor_home.dart, instructor_shell.dart).
+/// with the Menu button under it, instead (instructor_home.dart,
+/// instructor_shell.dart).
 ///
 /// My QR Code is the one big cyan card — it is what a student comes for —
 /// with My Attendance under it and the three steps of the day below. The

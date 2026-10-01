@@ -70,7 +70,11 @@ class _TrackerPageState extends State<TrackerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // The foot is left to the padding, so the page runs on under the
+      // instructor's Menu button, or the phone's own bar, and still ends
+      // clear of it.
       body: SafeArea(
+        bottom: false,
         // Pull down to search the same number again — for a scan made a
         // minute ago. Always scrollable, so the pull works on a short page.
         child: RefreshIndicator(
@@ -79,9 +83,11 @@ class _TrackerPageState extends State<TrackerPage> {
           backgroundColor: context.colors.surfaceRaised,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.pagePadding,
-              vertical: 18,
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.pagePadding,
+              18,
+              AppTheme.pagePadding,
+              18 + MediaQuery.paddingOf(context).bottom,
             ),
             child: Center(
               child: ConstrainedBox(

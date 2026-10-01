@@ -5,7 +5,7 @@ enum AppRole {
   /// My QR Code and My Attendance, on the home screen. No scanner anywhere.
   student,
 
-  /// Home, the scanner, the tracker and Settings on a bottom bar, with the
-  /// Menu — QR Code, Links and the rest — in the middle of it.
+  /// Home first, then the scanner, QR Code, Links, the tracker and Settings
+  /// from the Menu — the one button at the foot of the screen.
   instructor,
 }

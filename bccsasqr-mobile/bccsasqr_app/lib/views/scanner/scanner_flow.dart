@@ -112,7 +112,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
   late final AppLifecycleListener _lifecycle;
 
   /// The scanner's messages, on the island. Heard here rather than on the
-  /// Scanner tab: the bar opens on Home, and scans kept offline are sent —
+  /// Scanner tab: the app opens on Home, and scans kept offline are sent —
   /// and answered for — whichever tab is showing, the Scanner's never opened
   /// included.
   late final StreamSubscription<ScanAlert> _alerts;

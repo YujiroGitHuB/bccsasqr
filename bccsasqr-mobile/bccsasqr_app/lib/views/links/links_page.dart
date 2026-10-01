@@ -341,7 +341,10 @@ class _LinksPageState extends State<LinksPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // The foot is left to the padding, so the list runs on under the Menu
+      // button and still ends clear of it.
       body: SafeArea(
+        bottom: false,
         child: RefreshIndicator(
           onRefresh: _controller.load,
           color: context.colors.accent,
@@ -352,9 +355,11 @@ class _LinksPageState extends State<LinksPage>
               final items = _items();
               return ListView.builder(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.pagePadding,
-                  vertical: 16,
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.pagePadding,
+                  16,
+                  AppTheme.pagePadding,
+                  16 + MediaQuery.paddingOf(context).bottom,
                 ),
                 itemCount: items.length,
                 itemBuilder: (context, i) => Center(

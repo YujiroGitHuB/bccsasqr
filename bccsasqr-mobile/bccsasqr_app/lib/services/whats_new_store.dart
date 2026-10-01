@@ -3,27 +3,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Which What's New release this phone has already opened — the app's copy
 /// of the web's `bcc-whats-new-seen` in localStorage (assets/js/whatsNew.js).
 abstract interface class WhatsNewStore {
-  /// Whether [version] was opened, or its card closed, on this phone.
-  Future<bool> hasSeen(String version);
+  /// The version last opened, or its card closed, on this phone — null when
+  /// none ever was. Throws when the store cannot be read.
+  Future<String?> lastSeen();
   Future<void> markSeen(String version);
 }
 
 /// The phone's shared preferences, beside the settings.
-///
-/// A store that cannot be read counts as "seen": a card that cannot be
-/// dismissed would come back on every launch, which is worse than one missed
-/// announcement.
 class SharedPrefsWhatsNewStore implements WhatsNewStore {
   static const String _key = 'whatsNew.seen';
 
   @override
-  Future<bool> hasSeen(String version) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_key) == version;
-    } catch (_) {
-      return true;
-    }
+  Future<String?> lastSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_key);
   }
 
   @override
@@ -45,7 +38,7 @@ class MemoryWhatsNewStore implements WhatsNewStore {
   String? seen;
 
   @override
-  Future<bool> hasSeen(String version) async => seen == version;
+  Future<String?> lastSeen() async => seen;
 
   @override
   Future<void> markSeen(String version) async => seen = version;

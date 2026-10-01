@@ -37,7 +37,7 @@ class IslandMessage {
 /// Island" of a recent phone. Questions still get a dialog.
 ///
 /// Why not a SnackBar: it rises from the bottom, where the scanner's camera
-/// and the bottom bar are, and in a queue at the door the instructor is
+/// and the Menu button are, and in a queue at the door the instructor is
 /// looking at the top of the phone.
 abstract final class Island {
   /// Shows [message], putting away any island already open — the newest
