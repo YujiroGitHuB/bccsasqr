@@ -1,15 +1,16 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:bccsasqr_app/app.dart';
 import 'package:bccsasqr_app/controllers/check_in_controller.dart';
 import 'package:bccsasqr_app/controllers/my_attendance_controller.dart';
 import 'package:bccsasqr_app/controllers/profile_controller.dart';
+import 'package:bccsasqr_app/controllers/settings_controller.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/core/theme/app_colors.dart';
 import 'package:bccsasqr_app/core/theme/app_theme.dart';
 import 'package:bccsasqr_app/core/utils/student_number.dart';
 import 'package:bccsasqr_app/models/app_role.dart';
+import 'package:bccsasqr_app/models/app_settings.dart';
 import 'package:bccsasqr_app/models/attendance_history.dart';
 import 'package:bccsasqr_app/models/class_link.dart';
 import 'package:bccsasqr_app/models/qr_payload.dart';
@@ -17,12 +18,14 @@ import 'package:bccsasqr_app/models/student_profile.dart';
 import 'package:bccsasqr_app/models/student_record.dart';
 import 'package:bccsasqr_app/models/whats_new.dart';
 import 'package:bccsasqr_app/services/check_in_repository.dart';
+import 'package:bccsasqr_app/services/device_lock.dart';
 import 'package:bccsasqr_app/services/http_student_repository.dart';
 import 'package:bccsasqr_app/services/photo_repository.dart';
 import 'package:bccsasqr_app/services/profile_store.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
 import 'package:bccsasqr_app/services/role_store.dart';
 import 'package:bccsasqr_app/services/saved_qr_store.dart';
+import 'package:bccsasqr_app/services/settings_store.dart';
 import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/services/tracker_repository.dart';
@@ -31,6 +34,7 @@ import 'package:bccsasqr_app/views/my_attendance_page.dart';
 import 'package:bccsasqr_app/views/show_qr_page.dart';
 import 'package:bccsasqr_app/views/student_menu.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -169,6 +173,23 @@ class _CheckIns implements CheckInRepository {
   }
 }
 
+/// A phone whose lock answers from a script: the next results in order,
+/// "unlocked" once the script runs out.
+class _PhoneLock implements DeviceLock {
+  bool available = true;
+  final List<DeviceUnlock> script = [];
+  final List<String> asked = [];
+
+  @override
+  Future<bool> isAvailable() async => available;
+
+  @override
+  Future<DeviceUnlock> unlock(String reason) async {
+    asked.add(reason);
+    return script.isEmpty ? DeviceUnlock.unlocked : script.removeAt(0);
+  }
+}
+
 Widget _app(Widget home) =>
     MaterialApp(theme: AppTheme.build(AppPalette.light), home: home);
 
@@ -198,6 +219,27 @@ void main() {
   }
 
   group('class codes', () {
+    test('found in whatever is pasted: the message, the link, the code', () {
+      const link =
+          'https://example.test/bccsasqr/pages/daily_attendance.php?c=K7P2QX';
+      expect(ClassLink.codeIn(link), 'K7P2QX');
+      expect(ClassLink.codeIn(' k7p2qx\n'), 'K7P2QX');
+      // The app's Share, and the older one with no code line.
+      expect(
+        ClassLink.codeIn(
+          LinksStrings.shareText('OOP', 'BSIT-2A', link, 'K7P2QX'),
+        ),
+        'K7P2QX',
+      );
+      expect(ClassLink.codeIn('Attendance for OOP (BSIT-2A): $link'), 'K7P2QX');
+      // The sentence's full stop is not part of the link.
+      expect(ClassLink.codeIn('Check in here: $link.'), 'K7P2QX');
+      expect(ClassLink.codeIn('Class code: K7P2QX'), 'K7P2QX');
+      // A word that only follows "code" is not one.
+      expect(ClassLink.codeIn('Bring the QR code here tomorrow'), isNull);
+      expect(ClassLink.codeIn('000-1023'), isNull);
+    });
+
     test('read from the link the class QR holds, or typed bare', () {
       expect(
         ClassLink.codeFrom(
@@ -390,9 +432,49 @@ void main() {
   });
 
   group('Check in', () {
+    /// The phone's preferences, with the camera on or — as Check in first
+    /// opens — off.
+    Future<SettingsController> settingsWith({
+      bool camera = false,
+      MemorySettingsStore? store,
+    }) async {
+      final settings = SettingsController(
+        store: store ?? MemorySettingsStore(AppSettings(checkInCamera: camera)),
+      );
+      addTearDown(settings.dispose);
+      await settings.load();
+      return settings;
+    }
+
+    /// What Paste finds on the clipboard.
+    void clipboardHolds(WidgetTester tester, String? text) {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        // An empty clipboard answers nothing at all.
+        (call) async => call.method == 'Clipboard.getData' && text != null
+            ? <String, Object?>{'text': text}
+            : null,
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+    }
+
+    /// The instructor's Share, as it lands in the group chat.
+    final shared = LinksStrings.shareText(
+      'Object Oriented Programming',
+      'BSIT-2A',
+      'https://example.test/pages/daily_attendance.php?c=K7P2QX',
+      'K7P2QX',
+    );
+
     Future<(CheckInController, _CheckIns, MemoryDeviceTokenStore)> setUpCheckIn(
-      StudentProfile? kept,
-    ) async {
+      StudentProfile? kept, {
+      DeviceLock lock = const NoDeviceLock(),
+    }) async {
       final profile = await profileOf(kept);
       final server = _CheckIns();
       final devices = MemoryDeviceTokenStore();
@@ -400,6 +482,7 @@ void main() {
         repository: server,
         profile: profile,
         devices: devices,
+        deviceLock: lock,
       );
       addTearDown(controller.dispose);
       return (controller, server, devices);
@@ -416,6 +499,61 @@ void main() {
       expect(server.lookedUp, ['K7P2QX']);
       expect(controller.stage, CheckInStage.found);
       expect(controller.link?.subjectName, 'Object Oriented Programming');
+    });
+
+    test('a paste is looked up — the whole message too — or says why '
+        'not', () async {
+      final (controller, server, _) = await setUpCheckIn(_kept);
+
+      expect(controller.onPasted('   '), isFalse);
+      expect(controller.error, CheckInStrings.pasteEmpty);
+      expect(controller.onPasted('see you in class!'), isFalse);
+      expect(controller.error, CheckInStrings.pasteNoCode);
+      expect(server.lookedUp, isEmpty);
+
+      expect(controller.onPasted(shared), isTrue);
+      await pumpEventQueue();
+      expect(server.lookedUp, ['K7P2QX']);
+      expect(controller.stage, CheckInStage.found);
+      expect(controller.error, isNull);
+    });
+
+    test('on a phone with a screen lock, every check-in asks for it '
+        'first', () async {
+      final lock = _PhoneLock();
+      final (controller, server, _) = await setUpCheckIn(_kept, lock: lock);
+      controller.onCodeTyped('K7P2QX');
+      await pumpEventQueue();
+      expect(controller.asksOwner, isTrue);
+
+      // Closed without a finger: nothing sent, the class kept to try again.
+      lock.script.add(DeviceUnlock.cancelled);
+      expect(await controller.confirm(), isNull);
+      expect(lock.asked, [CheckInStrings.lockReason]);
+      expect(server.devicesSent, isEmpty);
+      expect(controller.error, CheckInStrings.lockNotConfirmed);
+      expect(controller.stage, CheckInStage.found);
+
+      final result = await controller.confirm();
+      expect(result?.subject, 'Object Oriented Programming');
+      expect(lock.asked, [
+        CheckInStrings.lockReason,
+        CheckInStrings.lockReason,
+      ]);
+      expect(server.devicesSent, hasLength(1));
+    });
+
+    test('a phone with no screen lock sends without asking', () async {
+      final lock = _PhoneLock()..available = false;
+      final (controller, server, _) = await setUpCheckIn(_kept, lock: lock);
+      controller.onCodeTyped('K7P2QX');
+      await pumpEventQueue();
+      expect(controller.asksOwner, isFalse);
+
+      final result = await controller.confirm();
+      expect(result?.subject, 'Object Oriented Programming');
+      expect(lock.asked, isEmpty);
+      expect(server.devicesSent, hasLength(1));
     });
 
     test(
@@ -472,6 +610,7 @@ void main() {
           CheckInPage(
             controller: controller,
             profile: profile,
+            settings: await settingsWith(),
             cameraBuilder: (context, onCode) => const SizedBox(),
             onSetUp: () => setUp++,
           ),
@@ -496,6 +635,8 @@ void main() {
           CheckInPage(
             controller: controller,
             profile: profile,
+            // Turned on before, and kept.
+            settings: await settingsWith(camera: true),
             cameraBuilder: (context, onCode) {
               camera = onCode;
               return const SizedBox();
@@ -518,6 +659,191 @@ void main() {
       await tester.pumpAndSettle();
       expect(checkedIn, 1);
       expect(find.byKey(const ValueKey('checkIn.class')), findsNothing);
+    });
+
+    testWidgets('Paste takes the link the instructor shared', (tester) async {
+      final (controller, server, _) = await setUpCheckIn(_kept);
+      final profile = await profileOf(_kept);
+      final settings = await settingsWith();
+
+      await tester.pumpWidget(
+        _app(
+          CheckInPage(
+            controller: controller,
+            profile: profile,
+            settings: settings,
+            cameraBuilder: (context, onCode) => const SizedBox(),
+            onSetUp: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Nothing copied yet.
+      clipboardHolds(tester, null);
+      await tester.tap(find.byKey(const ValueKey('checkIn.paste')));
+      await tester.pumpAndSettle();
+      expect(find.text(CheckInStrings.pasteEmpty), findsOneWidget);
+
+      // The whole message from the group chat.
+      clipboardHolds(tester, shared);
+      await tester.tap(find.byKey(const ValueKey('checkIn.paste')));
+      await tester.pumpAndSettle();
+      expect(server.lookedUp, ['K7P2QX']);
+      expect(find.byKey(const ValueKey('checkIn.class')), findsOneWidget);
+      expect(find.text(CheckInStrings.pasteEmpty), findsNothing);
+      // The boxes show the code it found.
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const ValueKey('checkIn.code')))
+            .controller!
+            .text,
+        'K7P2QX',
+      );
+    });
+
+    testWidgets('the message pasted from the keyboard leaves just the code '
+        'in the boxes', (tester) async {
+      final (controller, server, _) = await setUpCheckIn(_kept);
+      final profile = await profileOf(_kept);
+
+      await tester.pumpWidget(
+        _app(
+          CheckInPage(
+            controller: controller,
+            profile: profile,
+            settings: await settingsWith(),
+            cameraBuilder: (context, onCode) => const SizedBox(),
+            onSetUp: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // The keyboard's clipboard chip puts the whole message in at once.
+      await tester.enterText(
+        find.byKey(const ValueKey('checkIn.code')),
+        shared,
+      );
+      await tester.pumpAndSettle();
+
+      expect(server.lookedUp, ['K7P2QX']);
+      expect(find.byKey(const ValueKey('checkIn.class')), findsOneWidget);
+    });
+
+    testWidgets('the camera is off until the student turns it on, and stays '
+        'the way they leave it', (tester) async {
+      final (controller, _, _) = await setUpCheckIn(_kept);
+      final profile = await profileOf(_kept);
+      final store = MemorySettingsStore();
+      final camera = find.byKey(const ValueKey('camera'));
+
+      await tester.pumpWidget(
+        _app(
+          CheckInPage(
+            controller: controller,
+            profile: profile,
+            settings: await settingsWith(store: store),
+            cameraBuilder: (context, onCode) =>
+                const SizedBox(key: ValueKey('camera')),
+            onSetUp: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(camera, findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('checkIn.cameraOn')));
+      await tester.pumpAndSettle();
+      expect(camera, findsOneWidget);
+      expect(store.saved.checkInCamera, isTrue);
+
+      await tester.tap(find.byKey(const ValueKey('checkIn.cameraOff')));
+      await tester.pumpAndSettle();
+      expect(camera, findsNothing);
+      expect(store.saved.checkInCamera, isFalse);
+    });
+
+    testWidgets('lays out on a small phone, camera on and off, without '
+        'overflowing', (tester) async {
+      TestWidgetsFlutterBinding
+          .instance
+          .platformDispatcher
+          .views
+          .first
+          .physicalSize = const Size(
+        320,
+        640,
+      );
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final (controller, _, _) = await setUpCheckIn(_kept);
+      final profile = await profileOf(_kept);
+
+      for (final on in [false, true]) {
+        await tester.pumpWidget(
+          _app(
+            CheckInPage(
+              controller: controller,
+              profile: profile,
+              settings: await settingsWith(camera: on),
+              cameraBuilder: (context, onCode) => const SizedBox(),
+              onSetUp: () {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: 'camera $on');
+        await tester.pumpWidget(const SizedBox());
+      }
+    });
+
+    testWidgets('the button shows the finger it will ask for, and a closed '
+        'prompt sends nothing', (tester) async {
+      final lock = _PhoneLock()..script.add(DeviceUnlock.cancelled);
+      final (controller, server, _) = await setUpCheckIn(_kept, lock: lock);
+      final profile = await profileOf(_kept);
+
+      await tester.pumpWidget(
+        _app(
+          CheckInPage(
+            controller: controller,
+            profile: profile,
+            settings: await settingsWith(),
+            cameraBuilder: (context, onCode) => const SizedBox(),
+            onSetUp: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('checkIn.code')),
+        'K7P2QX',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('checkIn.confirm')),
+          matching: find.byIcon(Icons.fingerprint_rounded),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(CheckInStrings.sendsConfirmed('000-1023')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('checkIn.confirm')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(
+        find.textContaining(CheckInStrings.lockNotConfirmed),
+        findsOneWidget,
+      );
+      expect(server.devicesSent, isEmpty);
+      expect(find.byKey(const ValueKey('checkIn.class')), findsOneWidget);
+      await tester.pumpAndSettle();
     });
 
     test(

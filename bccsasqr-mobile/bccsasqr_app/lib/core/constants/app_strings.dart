@@ -328,7 +328,7 @@ abstract final class ScannerStrings {
   static const String lockTitle = 'Scanner locked';
   static const String lockBody =
       'Open it with this phone\'s fingerprint, face or screen lock.';
-  static const String lockUnlock = 'Unlock';
+  static const String lockUnlock = LockStrings.unlock;
   static const String lockUnlockedLabel = 'UNLOCKED';
   static const String lockUsePassword = 'Sign in with password instead';
   static const String lockNotUnlocked =
@@ -344,11 +344,55 @@ abstract final class ScannerStrings {
       'Next time, the scanner opens with this phone\'s fingerprint, face or '
       'screen lock — so nobody else who picks up the phone can scan under '
       'your name. You can turn it off in Settings.';
-  static const String lockOfferLater = 'Not now';
-  static const String lockOfferOn = 'Turn on';
+  static const String lockOfferLater = LockStrings.later;
+  static const String lockOfferOn = LockStrings.turnOn;
   static const String lockOn = 'Scanner lock is on';
-  static const String lockTile = 'Fingerprint lock';
+  static const String lockTile = LockStrings.tile;
   static const String lockTileBody = 'Open the scanner with this phone\'s lock';
+}
+
+/// The words both sides' locks share — the phone's fingerprint, face or
+/// screen lock in front of the scanner's sign-in, or the student's side.
+abstract final class LockStrings {
+  static const String unlock = 'Unlock';
+  static const String later = 'Not now';
+  static const String turnOn = 'Turn on';
+  static const String tile = 'Fingerprint lock';
+}
+
+/// The lock in front of the student's side: the QR code, attendance, Check
+/// in and My Profile open with the phone's own lock, once it is turned on.
+abstract final class StudentLockStrings {
+  static const String title = 'App locked';
+  static const String body =
+      'Your QR code and attendance open with this phone\'s fingerprint, face '
+      'or screen lock.';
+  static const String notYou = 'Not you? Remove this profile';
+  static const String notUnlocked =
+      'Not unlocked yet. Tap Unlock to try again.';
+
+  // Under the phone's own prompt.
+  static const String reason = 'Unlock your QR code and attendance';
+  static const String enableReason = 'Confirm it is you to lock the app';
+
+  // Offered once, right after the phone is set up in My Profile.
+  static const String offerTitle = 'Lock your QR code?';
+  static const String offerBody =
+      'Next time, the app opens with this phone\'s fingerprint, face or '
+      'screen lock — so nobody else who picks up your phone can show your QR '
+      'code or check in as you. You can turn it off in Settings.';
+  static const String on = 'Fingerprint lock is on';
+
+  /// The phone's screen lock was taken away while the lock was on: there is
+  /// nothing left to ask for, so the lock turns itself off.
+  static const String lostTitle = 'Fingerprint lock is off';
+  static const String lostBody =
+      'This phone no longer has a screen lock. Set one, then turn the lock '
+      'on again in Settings.';
+
+  // Settings.
+  static const String section = 'PRIVACY';
+  static const String tileBody = 'Open the app with this phone\'s lock';
 }
 
 /// What the app says when the phone loses — and gets back — its connection.
@@ -737,8 +781,16 @@ abstract final class LinksStrings {
   static const String copied = 'Link copied';
   static String copiedBody(String code) =>
       'Paste it in your class group chat. Code $code.';
-  static String shareText(String subject, String section, String url) =>
-      'Attendance for $subject ($section): $url';
+
+  /// What Share sends to the group chat. The code on a line of its own, so
+  /// a student with the app can copy it alone — Check in's Paste takes the
+  /// whole message too.
+  static String shareText(
+    String subject,
+    String section,
+    String url,
+    String code,
+  ) => 'Attendance for $subject ($section): $url\nClass code: $code';
 
   // The two time rows.
   static const String closesLabel = 'Link closes';
@@ -1021,7 +1073,23 @@ abstract final class CheckInStrings {
   static const String subtitle = 'For classes that use an attendance link';
   static const String cameraHint =
       'Point at the class QR on the screen or board';
+
+  // The camera's switch: off until the student turns it on, and kept.
+  static const String scanTitle = 'Scan the class QR';
+  static const String scanBody = 'On the screen or board in class';
+  static const String cameraOn = 'Turn on camera';
+  static const String cameraOff = 'Stop camera';
+
   static const String orType = 'OR TYPE THE CLASS CODE';
+
+  // Paste: the link or the code the instructor shared in the group chat.
+  static const String paste = 'Paste link or code';
+  static const String pasteEmpty =
+      'Nothing to paste yet. Copy the attendance link or class code your '
+      'instructor shared, then tap Paste again.';
+  static const String pasteNoCode =
+      'No class code in what you copied. Copy the attendance link or the '
+      'six-letter code your instructor shared.';
   static String codeLetter(int i) => 'Class code, letter $i';
   static const String looking = 'Finding the class…';
   static String section(String section, String instructor) => instructor.isEmpty
@@ -1034,6 +1102,15 @@ abstract final class CheckInStrings {
   static const String checkingIn = 'Checking in…';
   static String sends(String number) =>
       'Sends $number from this phone — nothing to type.';
+
+  // On a phone with a screen lock, every check-in asks for it first.
+  static String sendsConfirmed(String number) =>
+      'Asks for your fingerprint, face or PIN, then sends $number from this '
+      'phone.';
+  static const String lockReason = 'Confirm it is you to check in';
+  static const String lockNotConfirmed =
+      'Not sent — a check-in needs this phone\'s fingerprint, face or PIN. '
+      'Tap Check in to try again.';
   static const String another = 'Scan another code';
 
   /// The server's photo refusal points at the web's photo page; in the app

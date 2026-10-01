@@ -63,7 +63,7 @@ void main() {
     settingsStore: MemorySettingsStore(),
     whatsNewStore: MemoryWhatsNewStore(WhatsNewLog.version),
     deviceLock: const NoDeviceLock(),
-    scannerLockStore: MemoryScannerLockStore(),
+    scannerLockStore: MemoryLockSwitchStore(),
     appInfo: () async => const AppInfo(version: '1.9.0', buildNumber: '13'),
     cameraBuilder: (context, onCode) =>
         const ColoredBox(key: ValueKey('camera'), color: Colors.black),

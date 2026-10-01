@@ -19,6 +19,7 @@ class SettingsController extends ChangeNotifier {
   bool get sound => _settings.sound;
   bool get vibration => _settings.vibration;
   bool get voice => _settings.voice;
+  bool get checkInCamera => _settings.checkInCamera;
 
   /// Reads what was saved last time. Called once, while the splash plays.
   Future<void> load() async {
@@ -31,6 +32,8 @@ class SettingsController extends ChangeNotifier {
   void setSound(bool on) => _update(_settings.copyWith(sound: on));
   void setVibration(bool on) => _update(_settings.copyWith(vibration: on));
   void setVoice(bool on) => _update(_settings.copyWith(voice: on));
+  void setCheckInCamera(bool on) =>
+      _update(_settings.copyWith(checkInCamera: on));
 
   void _update(AppSettings next) {
     if (next == _settings) return;

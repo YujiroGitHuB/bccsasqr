@@ -193,7 +193,7 @@ void main() {
       settingsStore: MemorySettingsStore(),
       whatsNewStore: store,
       deviceLock: const NoDeviceLock(),
-      scannerLockStore: MemoryScannerLockStore(),
+      scannerLockStore: MemoryLockSwitchStore(),
       appInfo: () async => const AppInfo(version: '1.5.0', buildNumber: '9'),
       cameraBuilder: (context, onCode) => const SizedBox.shrink(),
       keepAwake: (on) async {},

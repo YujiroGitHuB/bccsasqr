@@ -73,6 +73,7 @@ class _LinkQrPageState extends State<LinkQrPage> {
           link.subjectName,
           link.section,
           link.url,
+          link.shortCode,
         ),
       );
     } catch (_) {

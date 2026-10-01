@@ -36,13 +36,13 @@ class _FakeDeviceLock implements DeviceLock {
 
 void main() {
   late _FakeDeviceLock device;
-  late MemoryScannerLockStore store;
+  late MemoryLockSwitchStore store;
   late InMemoryScannerRepository scanner;
   late DateTime now;
 
   setUp(() {
     device = _FakeDeviceLock();
-    store = MemoryScannerLockStore();
+    store = MemoryLockSwitchStore();
     scanner = InMemoryScannerRepository(latency: Duration.zero);
     now = DateTime(2026, 9, 27, 8);
     final view =
@@ -70,7 +70,7 @@ void main() {
     appInfo: () async => const AppInfo(version: '1.3.2', buildNumber: '6'),
     deviceLock: device,
     scannerLockStore: store,
-    scannerLockClock: () => now,
+    lockClock: () => now,
     showSplash: false,
   );
 

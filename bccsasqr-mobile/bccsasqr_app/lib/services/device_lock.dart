@@ -84,17 +84,24 @@ class NoDeviceLock implements DeviceLock {
   Future<DeviceUnlock> unlock(String reason) async => DeviceUnlock.unavailable;
 }
 
-/// Whether the saved sign-in is behind the phone's lock.
+/// Whether something saved on the phone is behind the phone's lock: the
+/// scanner's sign-in, or the student's side of the app. Each has its own.
 ///
 /// Only a switch, not a secret — the sign-in itself is in the keystore
 /// (token_store.dart) — so it sits in plain preferences.
-abstract interface class ScannerLockStore {
+abstract interface class LockSwitchStore {
   Future<bool> read();
   Future<void> write(bool enabled);
 }
 
-class SharedPrefsScannerLockStore implements ScannerLockStore {
-  static const String _key = 'scanner.lock';
+class SharedPrefsLockSwitchStore implements LockSwitchStore {
+  /// The scanner's, under the key it has always had.
+  const SharedPrefsLockSwitchStore.scanner() : _key = 'scanner.lock';
+
+  /// The student's side's.
+  const SharedPrefsLockSwitchStore.student() : _key = 'student.lock';
+
+  final String _key;
 
   @override
   Future<bool> read() async {
@@ -118,8 +125,8 @@ class SharedPrefsScannerLockStore implements ScannerLockStore {
 }
 
 /// Keeps the switch for the life of the object. For tests.
-class MemoryScannerLockStore implements ScannerLockStore {
-  MemoryScannerLockStore([this.enabled = false]);
+class MemoryLockSwitchStore implements LockSwitchStore {
+  MemoryLockSwitchStore([this.enabled = false]);
 
   bool enabled;
 

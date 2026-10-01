@@ -19,6 +19,7 @@ class SharedPrefsSettingsStore implements SettingsStore {
   static const String _sound = 'settings.sound';
   static const String _vibration = 'settings.vibration';
   static const String _voice = 'settings.voice';
+  static const String _checkInCamera = 'settings.checkInCamera';
 
   @override
   Future<AppSettings> load() async {
@@ -33,6 +34,7 @@ class SharedPrefsSettingsStore implements SettingsStore {
         sound: prefs.getBool(_sound) ?? defaults.sound,
         vibration: prefs.getBool(_vibration) ?? defaults.vibration,
         voice: prefs.getBool(_voice) ?? defaults.voice,
+        checkInCamera: prefs.getBool(_checkInCamera) ?? defaults.checkInCamera,
       );
     } catch (_) {
       return const AppSettings();
@@ -47,6 +49,7 @@ class SharedPrefsSettingsStore implements SettingsStore {
       await prefs.setBool(_sound, settings.sound);
       await prefs.setBool(_vibration, settings.vibration);
       await prefs.setBool(_voice, settings.voice);
+      await prefs.setBool(_checkInCamera, settings.checkInCamera);
     } catch (_) {
       // Applied for this launch; the next one starts from the defaults.
     }

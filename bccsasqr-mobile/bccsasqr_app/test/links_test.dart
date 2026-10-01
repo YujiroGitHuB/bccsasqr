@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bccsasqr_app/controllers/links_controller.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/models/attendance_link.dart';
+import 'package:bccsasqr_app/models/class_link.dart';
 import 'package:bccsasqr_app/services/http_scanner_repository.dart';
 import 'package:bccsasqr_app/services/link_repository.dart';
 import 'package:bccsasqr_app/services/qr_export_service.dart';
@@ -588,7 +589,8 @@ void main() {
       expect(awake, [true, false]);
     });
 
-    testWidgets('share hands over the address with the class', (tester) async {
+    testWidgets('share hands over the address with the class, and the code '
+        'on a line a student can copy', (tester) async {
       await tester.pumpWidget(page(_Links([link('AAAAAA')])));
       await tester.pumpAndSettle();
 
@@ -596,6 +598,9 @@ void main() {
       await tester.pump();
       expect(shared.single, contains('${_url}AAAAAA'));
       expect(shared.single, contains('BSIT-2A'));
+      expect(shared.single.split('\n').last, 'Class code: AAAAAA');
+      // What a student's Check in finds in it.
+      expect(ClassLink.codeIn(shared.single), 'AAAAAA');
     });
 
     testWidgets('a new link is asked about, then offers to set its expiry', (

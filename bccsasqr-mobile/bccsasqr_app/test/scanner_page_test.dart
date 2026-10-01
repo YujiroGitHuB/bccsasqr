@@ -90,7 +90,7 @@ void main() {
     keepAwake: (on) async => awake.add(on),
     settingsStore: MemorySettingsStore(),
     deviceLock: const NoDeviceLock(),
-    scannerLockStore: MemoryScannerLockStore(),
+    scannerLockStore: MemoryLockSwitchStore(),
     appInfo: () async => const AppInfo(version: '1.1.0', buildNumber: '2'),
     showSplash: false,
   );

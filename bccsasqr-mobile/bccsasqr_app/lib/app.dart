@@ -62,6 +62,7 @@ import 'views/scanner/scanner_page.dart';
 import 'views/settings_page.dart';
 import 'views/show_qr_page.dart';
 import 'views/splash_page.dart';
+import 'views/student_lock_gate.dart';
 import 'views/student_menu.dart';
 import 'views/student_shell.dart';
 import 'views/student_splash.dart';
@@ -89,7 +90,8 @@ class BccSasqrApp extends StatefulWidget {
     this.roleStore,
     this.deviceLock,
     this.scannerLockStore,
-    this.scannerLockClock,
+    this.studentLockStore,
+    this.lockClock,
     this.appInfo = AppInfo.load,
     this.cameraBuilder = deviceQrCamera,
     this.keepAwake = deviceKeepAwake,
@@ -125,13 +127,23 @@ class BccSasqrApp extends StatefulWidget {
   /// left out.
   final RoleStore? roleStore;
 
-  /// The phone's fingerprint, face or screen lock for the scanner, and the
-  /// switch for it. The real ones when left out.
+  /// The phone's fingerprint, face or screen lock, and each side's switch
+  /// for it: in front of the scanner's sign-in, and the student's side.
+  ///
+  /// Only main.dart passes the phone's own lock: with none there is nothing
+  /// to ask for — a test is not a phone, and the real one waits seconds on
+  /// a plugin that never answers there. The scanner's switch is the real
+  /// one when left out.
   final DeviceLock? deviceLock;
-  final ScannerLockStore? scannerLockStore;
+  final LockSwitchStore? scannerLockStore;
 
-  /// The lock's clock. Overridable for tests: see [ScannerFlow.lockClock].
-  final DateTime Function()? scannerLockClock;
+  /// Only main.dart passes the phone's own: with none, the student's lock
+  /// is off and kept while the app runs — a test's preferences never
+  /// answer, and the student's side waits on this switch.
+  final LockSwitchStore? studentLockStore;
+
+  /// The locks' clock. Overridable for tests: see [ScannerFlow.lockClock].
+  final DateTime Function()? lockClock;
   final Future<AppInfo> Function() appInfo;
   final QrCameraBuilder cameraBuilder;
   final Future<void> Function(bool on) keepAwake;
@@ -301,6 +313,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         },
     profile: _profile,
     devices: widget.deviceTokenStore ?? MemoryDeviceTokenStore(),
+    deviceLock: widget.deviceLock ?? const NoDeviceLock(),
   );
 
   /// The student's tab showing — held here, as the instructor's is, so
@@ -450,17 +463,19 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     WhatsNewArea.checkIn,
   };
 
-  Widget _studentSettings(BuildContext context) => SettingsPage(
-    controller: _settings,
-    appInfo: widget.appInfo,
-    role: AppRole.student,
-    onSwitchRole: () => _switchRole(context),
-    // No links from here: Settings is already a page over the home screen,
-    // and What's New would stack a third.
-    whatsNewBuilder: (context) =>
-        WhatsNewPage(areas: _studentAreas, onShown: _whatsNew.markSeen),
-    tourBuilder: _tour,
-  );
+  Widget _studentSettings(BuildContext context, PhoneLockController lock) =>
+      SettingsPage(
+        controller: _settings,
+        appInfo: widget.appInfo,
+        role: AppRole.student,
+        lock: lock,
+        onSwitchRole: () => _switchRole(context),
+        // No links from here: Settings is already a page over the home screen,
+        // and What's New would stack a third.
+        whatsNewBuilder: (context) =>
+            WhatsNewPage(areas: _studentAreas, onShown: _whatsNew.markSeen),
+        tourBuilder: _tour,
+      );
 
   /// From Home and the Menu, where each item opens its tab: back down to
   /// the shell, on the item's part.
@@ -501,38 +516,46 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   }
 
   /// The student's side: the shell, opening on Home, with the Menu button
-  /// at its foot — the instructor's, laid out for a student.
-  Widget _student() => StudentShell(
+  /// at its foot — the instructor's, laid out for a student — behind the
+  /// phone's lock once the student turns it on.
+  Widget _student() => StudentLockGate(
     key: const ValueKey('home'),
-    tab: _studentTab,
-    homeBuilder: (context) => HomePage(
-      profile: _profile,
-      qr: _myQr,
-      attendance: _myAttendance,
-      onOpen: (tab) => _studentTab.value = tab,
-      onShowQr: () => _showQr(context),
-      whatsNewBuilder: _studentWhatsNew,
-      whatsNew: _whatsNew,
-    ),
-    generatorBuilder: _studentGenerator,
-    trackerBuilder: _studentTracker,
-    checkInBuilder: (context) => CheckInPage(
-      controller: _checkIn,
-      profile: _profile,
-      cameraBuilder: widget.cameraBuilder,
-      onSetUp: () => _studentTab.value = StudentTab.profile,
-      onCheckedIn: () => unawaited(_myAttendance.refresh()),
-    ),
-    profileBuilder: _profilePage,
-    settingsBuilder: _studentSettings,
-    menuBuilder: (context, menu) => StudentMenu(
-      menu: menu,
-      profile: _profile,
-      qr: _myQr,
-      onShowQr: () => _showQr(context),
-      whatsNewBuilder: _studentWhatsNew,
-      whatsNew: _whatsNew,
-      tourBuilder: _tour,
+    profile: _profile,
+    deviceLock: widget.deviceLock ?? const NoDeviceLock(),
+    store: widget.studentLockStore ?? MemoryLockSwitchStore(),
+    clock: widget.lockClock,
+    builder: (context, lock) => StudentShell(
+      tab: _studentTab,
+      homeBuilder: (context) => HomePage(
+        profile: _profile,
+        qr: _myQr,
+        attendance: _myAttendance,
+        onOpen: (tab) => _studentTab.value = tab,
+        onShowQr: () => _showQr(context),
+        whatsNewBuilder: _studentWhatsNew,
+        whatsNew: _whatsNew,
+      ),
+      generatorBuilder: _studentGenerator,
+      trackerBuilder: _studentTracker,
+      checkInBuilder: (context) => CheckInPage(
+        controller: _checkIn,
+        profile: _profile,
+        settings: _settings,
+        cameraBuilder: widget.cameraBuilder,
+        onSetUp: () => _studentTab.value = StudentTab.profile,
+        onCheckedIn: () => unawaited(_myAttendance.refresh()),
+      ),
+      profileBuilder: _profilePage,
+      settingsBuilder: (context) => _studentSettings(context, lock),
+      menuBuilder: (context, menu) => StudentMenu(
+        menu: menu,
+        profile: _profile,
+        qr: _myQr,
+        onShowQr: () => _showQr(context),
+        whatsNewBuilder: _studentWhatsNew,
+        whatsNew: _whatsNew,
+        tourBuilder: _tour,
+      ),
     ),
   );
 
@@ -615,9 +638,10 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       keepAwake: widget.keepAwake,
       offlineStore: _offlineScans,
       online: widget.connectivity?.online,
-      deviceLock: widget.deviceLock ?? LocalAuthDeviceLock(),
-      lockStore: widget.scannerLockStore ?? SharedPrefsScannerLockStore(),
-      lockClock: widget.scannerLockClock,
+      deviceLock: widget.deviceLock ?? const NoDeviceLock(),
+      lockStore:
+          widget.scannerLockStore ?? const SharedPrefsLockSwitchStore.scanner(),
+      lockClock: widget.lockClock,
       // A fresh bar opens on Home, and the phone is now known to be an
       // instructor's.
       onSignedIn: () {

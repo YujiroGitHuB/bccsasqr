@@ -119,7 +119,7 @@ void main() {
       scanFeedback: const SilentScanFeedback(),
       settingsStore: store,
       deviceLock: const NoDeviceLock(),
-      scannerLockStore: MemoryScannerLockStore(),
+      scannerLockStore: MemoryLockSwitchStore(),
       appInfo: () async => const AppInfo(version: '1.1.0', buildNumber: '2'),
       cameraBuilder: (context, onCode) => const SizedBox.shrink(),
       keepAwake: (on) async {},

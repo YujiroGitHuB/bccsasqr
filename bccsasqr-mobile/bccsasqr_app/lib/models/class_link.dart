@@ -78,9 +78,36 @@ class ClassLink {
     return code != null && _code.hasMatch(code) ? code : null;
   }
 
+  /// The code anywhere in what a student pasted: the instructor's whole
+  /// message from the group chat ("Attendance for … : https://…?c=K7P2QX",
+  /// with its "Class code: K7P2QX" line), the link alone, or the code alone.
+  /// Null when there is none.
+  static String? codeIn(String pasted) {
+    final whole = codeFrom(pasted);
+    if (whole != null) return whole;
+
+    for (final match in _link.allMatches(pasted)) {
+      // A link at the end of a sentence keeps the sentence's full stop.
+      final link = match.group(0)!.replaceFirst(_trailing, '');
+      final code = codeFrom(link);
+      if (code != null) return code;
+    }
+
+    // Capitals only: "code" is a common word, and "the code here" must not
+    // read as the code HERE.
+    return _named.firstMatch(pasted)?.group(1);
+  }
+
   /// link_generate_code()'s six, and a little wider for an older link —
   /// the server's own check (api/v1/handlers/checkin.php).
   static final RegExp _code = RegExp(r'^[A-Za-z0-9]{4,16}$');
+
+  static final RegExp _link = RegExp(
+    r'https?://[^\s<>"]+',
+    caseSensitive: false,
+  );
+  static final RegExp _trailing = RegExp(r'''[).,;:!?'"\]]+$''');
+  static final RegExp _named = RegExp(r'\b[Cc]ode\b[\s:#-]*([A-Z0-9]{4,16})\b');
 }
 
 /// A check-in the records took — `POST /api/v1/checkin/{code}`.

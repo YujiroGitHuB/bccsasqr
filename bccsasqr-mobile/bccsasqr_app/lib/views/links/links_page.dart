@@ -198,7 +198,12 @@ class _LinksPageState extends State<LinksPage>
     onCopy: () => _copy(link),
     onShare: () => unawaited(
       widget.shareText(
-        LinksStrings.shareText(link.subjectName, link.section, link.url),
+        LinksStrings.shareText(
+          link.subjectName,
+          link.section,
+          link.url,
+          link.shortCode,
+        ),
       ),
     ),
     onOpen: () => unawaited(widget.openUrl(Uri.parse(link.url))),

@@ -81,7 +81,7 @@ class ScannerFlow extends StatefulWidget {
   /// The phone's fingerprint, face or screen lock, and where the switch
   /// for it is kept. See [ScannerLockController].
   final DeviceLock deviceLock;
-  final ScannerLockStore? lockStore;
+  final LockSwitchStore? lockStore;
 
   /// The lock's clock; tests step it past [ScannerLockController.relockAfter].
   final DateTime Function()? lockClock;
@@ -107,7 +107,7 @@ class _ScannerFlowState extends State<ScannerFlow> {
 
   late final ScannerLockController _lock = ScannerLockController(
     device: widget.deviceLock,
-    store: widget.lockStore ?? MemoryScannerLockStore(),
+    store: widget.lockStore ?? MemoryLockSwitchStore(),
     clock: widget.lockClock,
   );
 
@@ -244,7 +244,11 @@ class _ScannerFlowState extends State<ScannerFlow> {
     _offerLock = false;
     if (!_lock.ready || !_lock.available || _lock.enabled) return;
 
-    final yes = await showLockOffer(context);
+    final yes = await showLockOffer(
+      context,
+      title: ScannerStrings.lockOfferTitle,
+      body: ScannerStrings.lockOfferBody,
+    );
     if (!yes || !mounted) return;
     final on = await _lock.enable();
     if (!on || !mounted) return;

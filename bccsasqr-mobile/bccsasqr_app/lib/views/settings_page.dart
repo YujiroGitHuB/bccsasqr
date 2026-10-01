@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../controllers/scanner_lock_controller.dart';
+import '../controllers/phone_lock_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
@@ -44,9 +44,10 @@ class SettingsPage extends StatefulWidget {
   /// How many subjects the account scans for, on its chips.
   final int Function()? subjectCount;
 
-  /// The phone's fingerprint, face or screen lock in front of the scanner.
-  /// Its switch shows only on a phone that has one.
-  final ScannerLockController? lock;
+  /// The phone's fingerprint, face or screen lock in front of the scanner —
+  /// in the Account panel — or the student's side, under Privacy. Its
+  /// switch shows only on a phone that has one.
+  final PhoneLockController? lock;
 
   /// Signs the scanner out, after asking. The instructor's side goes with
   /// it, back to the sign-in.
@@ -173,6 +174,32 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const SizedBox(height: 16),
                     ],
+
+                    // ── Privacy ────────────────────────────────────────
+                    // The student's lock, first, where the instructor's
+                    // Account panel has theirs. Only on a phone with a
+                    // screen lock to ask for.
+                    if (role == AppRole.student)
+                      if (widget.lock case final lock? when lock.available) ...[
+                        SurfacePanel(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const PanelHeading(
+                                icon: Icons.lock_outline_rounded,
+                                label: StudentLockStrings.section,
+                              ),
+                              const SizedBox(height: 6),
+                              _LockSwitch(
+                                lock: lock,
+                                body: StudentLockStrings.tileBody,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
 
                     // ── Appearance ─────────────────────────────────────
                     SurfacePanel(
@@ -604,6 +631,35 @@ class _LinkRow extends StatelessWidget {
   }
 }
 
+/// The lock's switch — the scanner's in the Account panel, the student's
+/// under Privacy.
+class _LockSwitch extends StatelessWidget {
+  const _LockSwitch({required this.lock, required this.body});
+
+  final PhoneLockController lock;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: lock,
+      builder: (context, _) => _SwitchRow(
+        key: const ValueKey('settings.lock'),
+        icon: Icons.fingerprint_rounded,
+        title: LockStrings.tile,
+        body: body,
+        value: lock.enabled,
+        // Turning it on asks for the phone's lock first, so the finger that
+        // opens the app later is the owner's.
+        onChanged: (on) {
+          if (lock.unlocking) return;
+          on ? lock.enable() : lock.disable();
+        },
+      ),
+    );
+  }
+}
+
 /// Who is signed in on this instructor's phone — name, email, role, subjects
 /// and ID — the lock in front of the scanner, and the sign-out.
 class _AccountPanel extends StatelessWidget {
@@ -616,7 +672,7 @@ class _AccountPanel extends StatelessWidget {
 
   final ScannerUser account;
   final int? subjectCount;
-  final ScannerLockController? lock;
+  final PhoneLockController? lock;
   final VoidCallback? onSignOut;
 
   @override
@@ -678,22 +734,7 @@ class _AccountPanel extends StatelessWidget {
           const SizedBox(height: 6),
           // Only on a phone with a screen lock to ask for.
           if (lock case final lock? when lock.available)
-            ListenableBuilder(
-              listenable: lock,
-              builder: (context, _) => _SwitchRow(
-                key: const ValueKey('settings.lock'),
-                icon: Icons.fingerprint_rounded,
-                title: ScannerStrings.lockTile,
-                body: ScannerStrings.lockTileBody,
-                value: lock.enabled,
-                // Turning it on asks for the phone's lock first, so the
-                // finger that opens the scanner later is the owner's.
-                onChanged: (on) {
-                  if (lock.unlocking) return;
-                  on ? lock.enable() : lock.disable();
-                },
-              ),
-            ),
+            _LockSwitch(lock: lock, body: ScannerStrings.lockTileBody),
           if (signOut != null) ...[
             const SizedBox(height: 8),
             MergeSemantics(

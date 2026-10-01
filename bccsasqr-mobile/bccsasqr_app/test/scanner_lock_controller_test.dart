@@ -31,7 +31,7 @@ class FakeDeviceLock implements DeviceLock {
 
 void main() {
   late FakeDeviceLock device;
-  late MemoryScannerLockStore store;
+  late MemoryLockSwitchStore store;
   late DateTime now;
 
   ScannerLockController build() =>
@@ -39,7 +39,7 @@ void main() {
 
   setUp(() {
     device = FakeDeviceLock();
-    store = MemoryScannerLockStore();
+    store = MemoryLockSwitchStore();
     now = DateTime(2026, 9, 27, 8);
   });
 

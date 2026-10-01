@@ -9,6 +9,7 @@ class AppSettings {
     this.sound = true,
     this.vibration = true,
     this.voice = true,
+    this.checkInCamera = false,
   });
 
   /// Light, Dark, or whatever the phone is set to — the web's theme toggle,
@@ -24,16 +25,23 @@ class AppSettings {
   /// Names and messages read aloud — the scanner and the generator both.
   final bool voice;
 
+  /// Check in starts its camera by itself. Off until the student turns it
+  /// on there, and kept the way they leave it: a student who pastes the
+  /// code from the group chat never has the camera start (2026-10-01).
+  final bool checkInCamera;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     bool? sound,
     bool? vibration,
     bool? voice,
+    bool? checkInCamera,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
     sound: sound ?? this.sound,
     vibration: vibration ?? this.vibration,
     voice: voice ?? this.voice,
+    checkInCamera: checkInCamera ?? this.checkInCamera,
   );
 
   @override
@@ -42,8 +50,10 @@ class AppSettings {
       other.themeMode == themeMode &&
       other.sound == sound &&
       other.vibration == vibration &&
-      other.voice == voice;
+      other.voice == voice &&
+      other.checkInCamera == checkInCamera;
 
   @override
-  int get hashCode => Object.hash(themeMode, sound, vibration, voice);
+  int get hashCode =>
+      Object.hash(themeMode, sound, vibration, voice, checkInCamera);
 }

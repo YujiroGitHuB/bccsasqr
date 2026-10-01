@@ -31,7 +31,7 @@ void main() {
     device = _HeldDeviceLock();
     lock = ScannerLockController(
       device: device,
-      store: MemoryScannerLockStore(true),
+      store: MemoryLockSwitchStore(true),
     );
     addTearDown(lock.dispose);
     await lock.load();

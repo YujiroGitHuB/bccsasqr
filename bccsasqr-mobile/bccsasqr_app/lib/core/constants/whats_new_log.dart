@@ -19,7 +19,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01.5';
+  static const String version = '2026-10-01.7';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -31,12 +31,89 @@ abstract final class WhatsNewLog {
           'both sides of the app, and the Menu sorts its parts into named '
           'groups. Students get a new Home with their QR code on a card they '
           'can turn and flip, a note when the scan reaches the records, their '
-          'own attendance with nothing to type, and Check in for classes '
-          'that use an attendance link. Instructors open straight on Home, '
-          'and the scanner\'s splash plays when you open the Scanner. A phone '
-          'opening the app for the first time gets a short opening after Get '
-          'started.',
+          'own attendance with nothing to type, Check in for classes that use '
+          'an attendance link — paste the shared link, or turn the camera on '
+          'to scan, and confirm with your fingerprint — and a fingerprint '
+          'lock. Instructors open straight on Home, the scanner\'s splash '
+          'plays when you open the Scanner, and a shared link carries its '
+          'class code. A phone opening the app for the first time gets a '
+          'short opening after Get started.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.checkIn,
+          side: WhatsNewSide.student,
+          icon: Icons.verified_user_outlined,
+          title: 'Your fingerprint confirms each check-in',
+          text:
+              'On a phone with a screen lock, **Check in as …** now asks for '
+              'your fingerprint, face or PIN before it sends — so nobody else '
+              'who picks up your phone can check in as you. The button shows '
+              'a fingerprint when it will ask.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.links,
+          icon: Icons.verified_user_outlined,
+          title: 'Check-ins from the app need the student\'s fingerprint',
+          text:
+              'When a student checks in through your link from the app, it '
+              'now asks for their fingerprint, face or PIN first, on any '
+              'phone with a screen lock — so a classmate holding an absent '
+              'student\'s phone cannot check them in.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.profile,
+          side: WhatsNewSide.student,
+          icon: Icons.fingerprint_rounded,
+          title: 'Lock the app with your fingerprint',
+          text:
+              'Turn on **Fingerprint lock** in Settings, under **Privacy** — '
+              'or say yes when it is offered after you set up your phone — '
+              'and the app opens only with your phone\'s fingerprint, face or '
+              'screen lock. It locks again after a minute away, so nobody '
+              'else who picks up your phone can show your QR code or check in '
+              'as you. **Not you?** on the lock removes your profile from the '
+              'phone instead.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.checkIn,
+          side: WhatsNewSide.student,
+          icon: Icons.content_paste_rounded,
+          title: 'Paste the link your instructor shared',
+          text:
+              'Copy your instructor\'s message from the group chat — the '
+              'whole message, the link, or just the class code — then open '
+              '**Check in** and tap **Paste link or code**. The class comes '
+              'up at once. Pasting into the code boxes from your keyboard '
+              'works too.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.checkIn,
+          side: WhatsNewSide.student,
+          icon: Icons.videocam_off_rounded,
+          title: 'The camera waits until you turn it on',
+          text:
+              '**Check in** now opens with the camera off. Tap **Scan the '
+              'class QR** to turn it on, and **Stop camera** on the picture '
+              'to turn it off again — the app remembers which you chose.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.links,
+          icon: Icons.share_rounded,
+          title: 'The class code in the message you share',
+          text:
+              '**Share** on a link now adds the class code on a line of its '
+              'own. Students with the app copy the whole message, the link or '
+              'just the code, and tap **Paste link or code** in **Check in** '
+              '— no typing.',
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.improved,
           area: WhatsNewArea.profile,

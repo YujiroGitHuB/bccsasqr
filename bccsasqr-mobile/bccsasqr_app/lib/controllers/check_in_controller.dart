@@ -5,12 +5,13 @@ import 'package:flutter/foundation.dart';
 import '../core/constants/app_strings.dart';
 import '../models/class_link.dart';
 import '../services/check_in_repository.dart';
+import '../services/device_lock.dart';
 import '../services/student_repository.dart';
 import 'profile_controller.dart';
 
 /// Where Check in stands.
 enum CheckInStage {
-  /// Waiting for a code — the camera is on.
+  /// Waiting for a code — the camera is on, if the student turned it on.
   idle,
 
   /// A code was read or typed; asking which class it is.
@@ -31,23 +32,32 @@ const int classCodeLength = 6;
 /// it is, confirm, and the student this phone is set up for is recorded —
 /// the web form's steps (pages/daily_attendance.php) without typing a
 /// student number.
+///
+/// On a phone with a screen lock, every check-in asks for it first — the
+/// fingerprint, face or PIN of the phone's owner — so a classmate holding an
+/// absent student's phone cannot check them in (asked for on 2026-10-01). A
+/// phone with no screen lock has nothing to ask for, and sends as before.
 class CheckInController extends ChangeNotifier {
   CheckInController({
     required CheckInRepository repository,
     required ProfileController profile,
     required DeviceTokenStore devices,
+    DeviceLock deviceLock = const NoDeviceLock(),
   }) : _repository = repository,
        _profile = profile,
-       _devices = devices;
+       _devices = devices,
+       _deviceLock = deviceLock;
 
   final CheckInRepository _repository;
   final ProfileController _profile;
   final DeviceTokenStore _devices;
+  final DeviceLock _deviceLock;
 
   CheckInStage _stage = CheckInStage.idle;
   String _code = '';
   ClassLink? _link;
   String? _error;
+  bool _asksOwner = false;
   int _token = 0;
   bool _disposed = false;
 
@@ -64,10 +74,15 @@ class CheckInController extends ChangeNotifier {
   /// Why the last step did not go through, in words to show.
   String? get error => _error;
 
+  /// The class found, on a phone with a screen lock: confirming asks for
+  /// it, and the button says so with a fingerprint.
+  bool get asksOwner => _asksOwner;
+
   bool get busy =>
       _stage == CheckInStage.looking || _stage == CheckInStage.sending;
 
-  /// The camera only runs while there is nothing else on screen.
+  /// The camera only runs while there is nothing else on screen — and only
+  /// when the student has it on (Settings keeps that choice).
   bool get cameraOn => _stage == CheckInStage.idle;
 
   /// Every keystroke in the code boxes.
@@ -83,6 +98,28 @@ class CheckInController extends ChangeNotifier {
     _stage = CheckInStage.idle;
     notifyListeners();
     if (code.length == classCodeLength) unawaited(_lookUp(code));
+  }
+
+  /// What the student pasted — the instructor's whole message from the
+  /// group chat, the link alone, or the code alone. Whatever holds a class
+  /// code is looked up at once; anything else says so. True when there was
+  /// a code.
+  bool onPasted(String? text) {
+    if (busy) return false;
+    final pasted = text?.trim() ?? '';
+    final code = pasted.isEmpty ? null : ClassLink.codeIn(pasted);
+    if (code == null) {
+      _error = pasted.isEmpty
+          ? CheckInStrings.pasteEmpty
+          : CheckInStrings.pasteNoCode;
+      notifyListeners();
+      return false;
+    }
+    _ignored = null;
+    _code = code;
+    _link = null;
+    unawaited(_lookUp(code));
+    return true;
   }
 
   /// Every code the camera reads — the same one over and over while it is
@@ -109,9 +146,14 @@ class CheckInController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Asked alongside, so the class card knows whether its button will
+      // ask for a finger.
+      final asksOwner = _deviceLock.isAvailable();
       final link = await _repository.findClass(code);
+      final asks = await asksOwner;
       if (_disposed || token != _token) return;
       _link = link;
+      _asksOwner = asks;
       _stage = CheckInStage.found;
     } on StudentLookupException catch (e) {
       if (_disposed || token != _token) return;
@@ -134,6 +176,22 @@ class CheckInController extends ChangeNotifier {
     _stage = CheckInStage.sending;
     _error = null;
     notifyListeners();
+
+    // The phone's owner, not whoever is holding it. Asked again each time,
+    // not trusted from the lookup: a screen lock set or removed in between
+    // counts. One taken away mid-prompt leaves nothing to ask for.
+    if (await _deviceLock.isAvailable()) {
+      final answer = await _deviceLock.unlock(CheckInStrings.lockReason);
+      if (_disposed || token != _token) return null;
+      if (answer == DeviceUnlock.cancelled) {
+        // Nothing sent; the class stays up to try again.
+        _error = CheckInStrings.lockNotConfirmed;
+        _stage = CheckInStage.found;
+        notifyListeners();
+        return null;
+      }
+    }
+    if (_disposed || token != _token) return null;
 
     try {
       final result = await _repository.checkIn(

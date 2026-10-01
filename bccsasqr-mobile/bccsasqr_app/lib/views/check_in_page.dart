@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../controllers/check_in_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../controllers/settings_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
@@ -12,13 +13,18 @@ import '../models/class_link.dart';
 import 'instructor_home.dart' show codeParts, shortTime;
 import 'scanner/scanner_page.dart' show QrCameraBuilder;
 import 'widgets/island.dart';
+import 'widgets/press_scale.dart';
 import 'widgets/surface_panel.dart';
 import 'widgets/viewfinder.dart';
 
 /// Check in — the student's side of an instructor's attendance link, inside
-/// the app: read the class QR on the screen or board (or type the six
-/// letters under it), see which class it is, and confirm. The student this
-/// phone is set up for is sent; there is no number to type.
+/// the app: read the class QR on the screen or board, type the six letters
+/// under it, or paste the link the instructor shared in the group chat; see
+/// which class it is, and confirm. The student this phone is set up for is
+/// sent; there is no number to type.
+///
+/// The camera is the student's to turn on (since 2026-10-01), and stays the
+/// way they leave it: one who always pastes never has it start.
 ///
 /// Before the phone is set up there is nobody to send, so the page asks for
 /// My Profile first.
@@ -27,6 +33,7 @@ class CheckInPage extends StatefulWidget {
     super.key,
     required this.controller,
     required this.profile,
+    required this.settings,
     required this.cameraBuilder,
     required this.onSetUp,
     this.onCheckedIn,
@@ -34,6 +41,9 @@ class CheckInPage extends StatefulWidget {
 
   final CheckInController controller;
   final ProfileController profile;
+
+  /// Keeps whether the camera is on.
+  final SettingsController settings;
   final QrCameraBuilder cameraBuilder;
 
   /// Opens My Profile.
@@ -72,6 +82,20 @@ class _CheckInPageState extends State<CheckInPage> {
         selection: TextSelection.collapsed(offset: code.length),
       );
     }
+  }
+
+  /// The Paste button: whatever is on the clipboard — the instructor's
+  /// message, the link, or the code.
+  Future<void> _paste() async {
+    FocusScope.of(context).unfocus();
+    String? text;
+    try {
+      text = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
+    } catch (_) {
+      // A clipboard the phone will not hand over reads as an empty one.
+    }
+    if (!mounted) return;
+    widget.controller.onPasted(text);
   }
 
   Future<void> _confirm() async {
@@ -120,10 +144,15 @@ class _CheckInPageState extends State<CheckInPage> {
       body: SafeArea(
         bottom: false,
         child: ListenableBuilder(
-          listenable: Listenable.merge([widget.controller, widget.profile]),
+          listenable: Listenable.merge([
+            widget.controller,
+            widget.profile,
+            widget.settings,
+          ]),
           builder: (context, _) {
             final controller = widget.controller;
             final profile = widget.profile.profile;
+            final settings = widget.settings;
 
             return SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -160,9 +189,21 @@ class _CheckInPageState extends State<CheckInPage> {
                       else if (profile == null)
                         _SetUpFirst(onSetUp: widget.onSetUp)
                       else ...[
-                        _Camera(
-                          controller: controller,
-                          cameraBuilder: widget.cameraBuilder,
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 240),
+                          curve: Curves.easeOut,
+                          alignment: Alignment.topCenter,
+                          child: settings.checkInCamera
+                              ? _Camera(
+                                  controller: controller,
+                                  cameraBuilder: widget.cameraBuilder,
+                                  onStop: () =>
+                                      settings.setCheckInCamera(false),
+                                )
+                              : _CameraOff(
+                                  onTurnOn: () =>
+                                      settings.setCheckInCamera(true),
+                                ),
                         ),
                         const SizedBox(height: 16),
                         _Divider(),
@@ -171,6 +212,26 @@ class _CheckInPageState extends State<CheckInPage> {
                           field: _field,
                           enabled: !controller.busy,
                           onChanged: controller.onCodeTyped,
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          key: const ValueKey('checkIn.paste'),
+                          onPressed: controller.busy ? null : _paste,
+                          icon: const Icon(
+                            Icons.content_paste_rounded,
+                            size: 18,
+                          ),
+                          label: const Text(CheckInStrings.paste),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(46),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                         if (controller.error case final error?
                             when controller.stage == CheckInStage.idle) ...[
@@ -190,6 +251,7 @@ class _CheckInPageState extends State<CheckInPage> {
                               name: profile.givenName,
                               number: profile.record.studentNumber.value,
                               sending: controller.stage == CheckInStage.sending,
+                              asksOwner: controller.asksOwner,
                               onConfirm: _confirm,
                               onAnother: controller.reset,
                             ),
@@ -215,10 +277,18 @@ class _CheckInPageState extends State<CheckInPage> {
 /// tick once a code is read. Off whenever this tab is out of sight: the
 /// shell stops its tickers, as it does for the scanner's camera.
 class _Camera extends StatelessWidget {
-  const _Camera({required this.controller, required this.cameraBuilder});
+  const _Camera({
+    required this.controller,
+    required this.cameraBuilder,
+    required this.onStop,
+  });
 
   final CheckInController controller;
   final QrCameraBuilder cameraBuilder;
+
+  /// The camera's switch, over the picture: off until it is turned on
+  /// again.
+  final VoidCallback onStop;
 
   @override
   Widget build(BuildContext context) {
@@ -267,7 +337,7 @@ class _Camera extends StatelessWidget {
                 ),
               ),
             ),
-            if (live)
+            if (live) ...[
               const Positioned(
                 left: 12,
                 right: 12,
@@ -283,7 +353,134 @@ class _Camera extends StatelessWidget {
                   ),
                 ),
               ),
+              Positioned(
+                top: 10,
+                right: 10,
+                child: _StopCamera(onPressed: onStop),
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Over the picture's corner: lets the camera go. White on a dark pill — the
+/// picture behind it is a camera's, in both themes.
+class _StopCamera extends StatelessWidget {
+  const _StopCamera({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    const ink = Color(0xFFFFFFFF);
+
+    return Material(
+      color: const Color(0x99000000),
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: const ValueKey('checkIn.cameraOff'),
+        onTap: onPressed,
+        child: const Padding(
+          padding: EdgeInsets.fromLTRB(10, 7, 12, 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.videocam_off_rounded, size: 16, color: ink),
+              SizedBox(width: 6),
+              Text(
+                CheckInStrings.cameraOff,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Where the camera is while it is off — how Check in opens until the
+/// student turns it on: what it is for, and the switch, in one card the
+/// width of the page. Short, so the code boxes and Paste sit near the top.
+class _CameraOff extends StatelessWidget {
+  const _CameraOff({required this.onTurnOn});
+
+  final VoidCallback onTurnOn;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final radius = BorderRadius.circular(18);
+
+    return PressScale(
+      child: Material(
+        color: colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(color: colors.border),
+        ),
+        child: InkWell(
+          key: const ValueKey('checkIn.cameraOn'),
+          onTap: onTurnOn,
+          borderRadius: radius,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+            child: Row(
+              children: [
+                Container(
+                  height: 44,
+                  width: 44,
+                  decoration: BoxDecoration(
+                    color: colors.accentWash(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: colors.accentWash(0.30)),
+                  ),
+                  child: Icon(
+                    Icons.qr_code_scanner_rounded,
+                    size: 23,
+                    color: colors.accent,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        CheckInStrings.scanTitle,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        CheckInStrings.scanBody,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Tooltip(
+                  message: CheckInStrings.cameraOn,
+                  child: Icon(Icons.videocam_rounded, color: colors.accent),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -295,23 +492,31 @@ class _Divider extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
 
-    return Row(
-      children: [
-        Expanded(child: Divider(color: colors.border)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Text(
-            CheckInStrings.orType,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
-              color: colors.textSecondary,
+    return LayoutBuilder(
+      // With large text on a small phone the words wrap, rather than push
+      // the lines off the edge.
+      builder: (context, box) => Row(
+        children: [
+          Expanded(child: Divider(color: colors.border)),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: box.maxWidth * 0.7),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                CheckInStrings.orType,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
+                  color: colors.textSecondary,
+                ),
+              ),
             ),
           ),
-        ),
-        Expanded(child: Divider(color: colors.border)),
-      ],
+          Expanded(child: Divider(color: colors.border)),
+        ],
+      ),
     );
   }
 }
@@ -389,9 +594,7 @@ class _CodeBoxes extends StatelessWidget {
                 showCursor: false,
                 textCapitalization: TextCapitalization.characters,
                 maxLength: classCodeLength,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]')),
-                ],
+                inputFormatters: const [_CodeFormatter()],
                 decoration: const InputDecoration(
                   counterText: '',
                   border: InputBorder.none,
@@ -402,6 +605,52 @@ class _CodeBoxes extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Keeps the field to a class code — letters and digits, no more than fit —
+/// and turns a paste of the instructor's whole message, or of the link, into
+/// the code inside it: the keyboard's clipboard chip pastes the lot, and
+/// letter-filtering a link would read "HTTPSL".
+class _CodeFormatter extends TextInputFormatter {
+  const _CodeFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final put = _inserted(oldValue.text, newValue.text);
+    final pasted = put.length > 1 ? ClassLink.codeIn(put) : null;
+    var text = (pasted ?? newValue.text).toUpperCase().replaceAll(
+      RegExp('[^A-Z0-9]'),
+      '',
+    );
+    if (text.length > classCodeLength) {
+      text = text.substring(0, classCodeLength);
+    }
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
+  /// What an edit put in: the new text between what it kept at the front
+  /// and what it kept at the back.
+  static String _inserted(String before, String after) {
+    var start = 0;
+    while (start < before.length &&
+        start < after.length &&
+        before[start] == after[start]) {
+      start++;
+    }
+    var end = 0;
+    while (end < before.length - start &&
+        end < after.length - start &&
+        before[before.length - 1 - end] == after[after.length - 1 - end]) {
+      end++;
+    }
+    return after.substring(start, after.length - end);
   }
 }
 
@@ -468,6 +717,7 @@ class _ClassCard extends StatelessWidget {
     required this.name,
     required this.number,
     required this.sending,
+    required this.asksOwner,
     required this.onConfirm,
     required this.onAnother,
   });
@@ -476,6 +726,9 @@ class _ClassCard extends StatelessWidget {
   final String name;
   final String number;
   final bool sending;
+
+  /// The phone has a screen lock, which confirming asks for first.
+  final bool asksOwner;
   final VoidCallback onConfirm;
   final VoidCallback onAnother;
 
@@ -587,7 +840,11 @@ class _ClassCard extends StatelessWidget {
                           color: colors.onAccent,
                         ),
                       )
-                    : const Icon(Icons.check_rounded),
+                    : Icon(
+                        asksOwner
+                            ? Icons.fingerprint_rounded
+                            : Icons.check_rounded,
+                      ),
                 label: Text(
                   sending
                       ? CheckInStrings.checkingIn
@@ -609,7 +866,9 @@ class _ClassCard extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          CheckInStrings.sends(number),
+          asksOwner
+              ? CheckInStrings.sendsConfirmed(number)
+              : CheckInStrings.sends(number),
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 12, color: colors.textSecondary),
         ),

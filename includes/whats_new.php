@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-01.5';
+const WHATS_NEW_VERSION = '2026-10-01.7';
 
 /**
  * The changelog, newest release first.
@@ -75,8 +75,22 @@ function whats_new_releases(): array
             'date'    => '2026-10-01',
             'icon'    => 'bi-grid',
             'title'   => 'One Menu button in the app, for students too, and Check in',
-            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on a card they can turn and flip, a note when your scan reaches the records, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. The app now opens straight on Home, the scanner’s splash plays when the Scanner is opened, and the app’s Menu sorts its parts into named groups.',
+            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on a card they can turn and flip, a note when your scan reaches the records, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. The app now opens straight on Home, the scanner’s splash plays when the Scanner is opened, and the app’s Menu sorts its parts into named groups. Students can paste the link you share straight into Check in, every check-in from the app asks for the student’s own fingerprint, and students can lock their side of the app with it.',
             'items'   => [
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-fingerprint',
+                    'title' => 'Check-ins from the app need the student’s fingerprint',
+                    'text'  => 'When a student checks in through your attendance link from the app, it now asks for their fingerprint, face or PIN before it sends, on any phone with a screen lock &mdash; so a classmate holding an absent student&rsquo;s phone cannot check them in. A phone with no screen lock checks in as before. Students get this by downloading the app again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-clipboard-check',
+                    'title' => 'Students can paste the link you share into Check in',
+                    'text'  => 'When you share a link from the app&rsquo;s <strong>Links</strong>, the message now ends with the class code on a line of its own. Students with the app copy the whole message, the link or just the code, open <strong>Check in</strong> and tap <strong>Paste link or code</strong> &mdash; the class comes up at once, no typing. A link copied from this page pastes the same way. Check in&rsquo;s camera now stays off until the student turns it on, and students can lock their side of the app with their phone&rsquo;s fingerprint, face or screen lock. Students get this by downloading the app again.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
                 [
                     'type'  => 'improved',
                     'icon'  => 'bi-collection',

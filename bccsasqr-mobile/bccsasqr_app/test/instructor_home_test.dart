@@ -258,7 +258,7 @@ void main() {
       settingsStore: MemorySettingsStore(settings),
       whatsNewStore: news,
       deviceLock: const NoDeviceLock(),
-      scannerLockStore: MemoryScannerLockStore(),
+      scannerLockStore: MemoryLockSwitchStore(),
       appInfo: () async => const AppInfo(version: '1.14.0', buildNumber: '18'),
       cameraBuilder: _camera,
       keepAwake: (on) async {},
