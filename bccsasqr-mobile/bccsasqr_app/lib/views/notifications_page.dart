@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import '../controllers/notifications_controller.dart';
 import '../core/constants/app_strings.dart';
@@ -59,6 +60,11 @@ extension NoticeLook on StudentNotice {
 /// Opening it is reading it: the count on the bell goes, and what was new
 /// keeps its NEW mark until the page is closed. While it is open, anything
 /// that comes in is read already, and marked NEW too.
+///
+/// A notice swipes away like one in the phone's own shade, with Undo on the
+/// island for a slip of the thumb; Clear all asks first. Both empty this
+/// phone's list only — the attendance stays on the record (asked for on
+/// 2026-10-01).
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({
     super.key,
@@ -137,6 +143,46 @@ class _NotificationsPageState extends State<NotificationsPage>
     });
   }
 
+  /// Swiped away: gone at once, with Undo on the island while it shows.
+  void _delete(StudentNotice notice) {
+    final removed = widget.controller.remove(notice.id);
+    if (removed == null) return;
+    Island.show(
+      context,
+      IslandMessage(
+        title: NoticeStrings.deleted,
+        body: NoticeStrings.undo,
+        icon: Icons.delete_outline_rounded,
+        hold: const Duration(seconds: 4),
+        onTap: () => widget.controller.restore(removed),
+      ),
+    );
+  }
+
+  /// Clear all, after asking: there is no Undo for a whole list.
+  Future<void> _clearAll() async {
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(NoticeStrings.clearTitle),
+        content: const Text(NoticeStrings.clearBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(NoticeStrings.clearCancel),
+          ),
+          TextButton(
+            key: const ValueKey('notifications.clearAll.confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: context.colors.danger),
+            child: const Text(NoticeStrings.clearConfirm),
+          ),
+        ],
+      ),
+    );
+    if (sure == true) widget.controller.clearAll();
+  }
+
   /// Fades piece [i] in and lifts it into place, one after another.
   Widget _rise(int i, Widget child) {
     final piece = _pieces[i.clamp(0, _pieces.length - 1)];
@@ -179,7 +225,13 @@ class _NotificationsPageState extends State<NotificationsPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _rise(0, _Header(controller: controller)),
+                        _rise(
+                          0,
+                          _Header(
+                            controller: controller,
+                            onClearAll: groups.isEmpty ? null : _clearAll,
+                          ),
+                        ),
                         const SizedBox(height: 18),
                         if (!controller.hasStudent)
                           _rise(
@@ -215,7 +267,8 @@ class _NotificationsPageState extends State<NotificationsPage>
                                 body: NoticeStrings.emptyBody,
                               ),
                             )
-                          else
+                          else ...[
+                            _rise(1, const _SwipeHint()),
                             for (final (i, (label, notices)) in groups.indexed)
                               _rise(
                                 2 + i,
@@ -225,8 +278,10 @@ class _NotificationsPageState extends State<NotificationsPage>
                                   fresh: _fresh,
                                   now: now,
                                   onTap: widget.onOpenAttendance,
+                                  onDelete: _delete,
                                 ),
                               ),
+                          ],
                         ],
                       ],
                     ),
@@ -268,11 +323,14 @@ class _NotificationsPageState extends State<NotificationsPage>
   }
 }
 
-/// Back, the title, and whether the feed is listening.
+/// Back, the title, Clear all, and whether the feed is listening.
 class _Header extends StatelessWidget {
-  const _Header({required this.controller});
+  const _Header({required this.controller, this.onClearAll});
 
   final NotificationsController controller;
+
+  /// Null with nothing to clear: the button is left out.
+  final VoidCallback? onClearAll;
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +350,7 @@ class _Header extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             // Wraps rather than runs off a small phone at a large text size.
-            Flexible(
+            Expanded(
               child: Text(
                 NoticeStrings.title,
                 style: TextStyle(
@@ -302,6 +360,22 @@ class _Header extends StatelessWidget {
                 ),
               ),
             ),
+            if (onClearAll case final clear?)
+              // Neutral, not red: red is for a record's state. The question
+              // it asks is where the danger is said.
+              TextButton.icon(
+                key: const ValueKey('notifications.clearAll'),
+                onPressed: clear,
+                icon: const Icon(Icons.delete_sweep_outlined, size: 19),
+                label: const Text(NoticeStrings.clearAll),
+                style: TextButton.styleFrom(
+                  foregroundColor: colors.textSecondary,
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
           ],
         ),
         Padding(
@@ -367,6 +441,32 @@ class _Header extends StatelessWidget {
   }
 }
 
+/// How a notice is deleted, said once above the list.
+class _SwipeHint extends StatelessWidget {
+  const _SwipeHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
+      child: Row(
+        children: [
+          Icon(Icons.swipe_rounded, size: 15, color: colors.textMuted),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              NoticeStrings.swipeHint,
+              style: TextStyle(fontSize: 12, color: colors.textMuted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// One day's heading, then its notices on one panel.
 class _Group extends StatelessWidget {
   const _Group({
@@ -375,6 +475,7 @@ class _Group extends StatelessWidget {
     required this.fresh,
     required this.now,
     required this.onTap,
+    required this.onDelete,
   });
 
   final String label;
@@ -382,6 +483,7 @@ class _Group extends StatelessWidget {
   final Set<String> fresh;
   final DateTime now;
   final VoidCallback? onTap;
+  final ValueChanged<StudentNotice> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -410,11 +512,13 @@ class _Group extends StatelessWidget {
               children: [
                 for (var i = 0; i < notices.length; i++)
                   _NoticeRow(
+                    key: ValueKey('notifications.row.${notices[i].id}'),
                     notice: notices[i],
                     fresh: fresh.contains(notices[i].id),
                     first: i == 0,
                     now: now,
                     onTap: onTap,
+                    onDelete: () => onDelete(notices[i]),
                   ),
               ],
             ),
@@ -427,11 +531,13 @@ class _Group extends StatelessWidget {
 
 class _NoticeRow extends StatelessWidget {
   const _NoticeRow({
+    super.key,
     required this.notice,
     required this.fresh,
     required this.first,
     required this.now,
     required this.onTap,
+    required this.onDelete,
   });
 
   final StudentNotice notice;
@@ -442,6 +548,20 @@ class _NoticeRow extends StatelessWidget {
   final DateTime now;
   final VoidCallback? onTap;
 
+  /// Swiped away, or Delete from a screen reader, which cannot swipe.
+  final VoidCallback onDelete;
+
+  /// What shows under the row as it slides off, on the side it uncovers.
+  Widget _behind(BuildContext context, Alignment side) {
+    final colors = context.colors;
+    return Container(
+      color: colors.danger.withValues(alpha: 0.12),
+      alignment: side,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Icon(Icons.delete_outline_rounded, color: colors.danger),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -451,6 +571,24 @@ class _NoticeRow extends StatelessWidget {
       NoticeKind.removed => colors.danger,
     };
 
+    // One item to a screen reader — what happened, when, the tap that opens
+    // My Attendance, and Delete.
+    return Semantics(
+      container: true,
+      customSemanticsActions: {
+        const CustomSemanticsAction(label: NoticeStrings.delete): onDelete,
+      },
+      child: Dismissible(
+        key: ValueKey('notifications.dismiss.${notice.id}'),
+        background: _behind(context, Alignment.centerLeft),
+        secondaryBackground: _behind(context, Alignment.centerRight),
+        onDismissed: (_) => onDelete(),
+        child: _content(context, colors, tint),
+      ),
+    );
+  }
+
+  Widget _content(BuildContext context, AppPalette colors, Color tint) {
     return InkWell(
       key: ValueKey('notifications.${notice.id}'),
       onTap: onTap,

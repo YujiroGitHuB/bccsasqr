@@ -88,7 +88,7 @@ function whats_new_releases(): array
                     'type'  => 'new',
                     'icon'  => 'bi-bell',
                     'title' => 'Students are told on their phone the moment you scan them',
-                    'text'  => 'Students with the app now see <strong>Marked present</strong> &mdash; or <strong>Marked late</strong> &mdash; at the top of their screen within seconds of your scan, whether it came from the scanner, an attendance link, or a scan your phone kept offline and sent later. Their Home and attendance update by themselves, with no refreshing, so the line at the door can check for themselves instead of asking you. A record you delete is told to them too, and the app&rsquo;s new <strong>Notifications</strong> lists every change. Students get this by downloading the app again.',
+                    'text'  => 'Students with the app now see <strong>Marked present</strong> &mdash; or <strong>Marked late</strong> &mdash; at the top of their screen within seconds of your scan, whether it came from the scanner, an attendance link, or a scan your phone kept offline and sent later. Their Home and attendance update by themselves, with no refreshing, so the line at the door can check for themselves instead of asking you. A record you delete is told to them too, and the app&rsquo;s new <strong>Notifications</strong> lists every change, which students can swipe away or clear from their phone without touching the record. Students get this by downloading the app again.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
                 [

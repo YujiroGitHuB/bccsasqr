@@ -31,6 +31,7 @@ import 'package:bccsasqr_app/views/my_attendance_page.dart';
 import 'package:bccsasqr_app/views/notifications_page.dart';
 import 'package:bccsasqr_app/views/widgets/island.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Made-up students only: year 000 never occurs in the school's numbers.
@@ -430,6 +431,69 @@ void main() {
       expect(notices.unread, 0);
     });
 
+    test('a deleted notice leaves the list, Undo puts it back where it was, '
+        'and a later look does not bring it back', () async {
+      final records = _Records();
+      final store = MemoryNoticeStore();
+      final (notices, _) = await feedOf(
+        await profileOf(_kept),
+        records,
+        store: store,
+      );
+      await notices.checkNow();
+      for (var id = 1; id <= 3; id++) {
+        records.add(id, '08:0$id:00 AM', subject: 'Subject $id');
+      }
+      await notices.checkNow();
+      List<String> ids() => [for (final n in notices.notices) n.id];
+      expect(ids(), ['r3', 'r2', 'r1']);
+
+      final removed = notices.remove('r2')!;
+      expect(ids(), ['r3', 'r1']);
+      expect(notices.unread, 2);
+      expect([for (final n in store.feed!.notices) n.id], ['r3', 'r1']);
+
+      notices.restore(removed);
+      expect(ids(), ['r3', 'r2', 'r1']);
+
+      // Gone for good: the feed has read past it.
+      notices.remove('r2');
+      await notices.checkNow();
+      expect(ids(), ['r3', 'r1']);
+
+      records.add(4, '08:04:00 AM', subject: 'Subject 4');
+      await notices.checkNow();
+      expect(ids(), ['r4', 'r3', 'r1']);
+    });
+
+    test('Clear all empties the list for good; new scans still come', () async {
+      final records = _Records();
+      final store = MemoryNoticeStore();
+      final (notices, _) = await feedOf(
+        await profileOf(_kept),
+        records,
+        store: store,
+      );
+      await notices.checkNow();
+      records
+        ..add(1, '08:01:00 AM')
+        ..add(2, '10:20:00 AM', subject: _dsa);
+      await notices.checkNow();
+      expect(notices.unread, 2);
+
+      notices.clearAll();
+      expect(notices.notices, isEmpty);
+      expect(notices.unread, 0);
+      expect(store.feed!.notices, isEmpty);
+
+      await notices.checkNow();
+      expect(notices.notices, isEmpty);
+
+      records.add(3, '01:02:00 PM', subject: _dsa);
+      await notices.checkNow();
+      expect([for (final n in notices.notices) n.id], ['r3']);
+    });
+
     testWidgets('asks on its own while open, not while away; coming back looks '
         'at once', (tester) async {
       final records = _Records();
@@ -573,6 +637,7 @@ void main() {
       VoidCallback? onSetUp,
     }) => MaterialApp(
       theme: AppTheme.build(AppPalette.light),
+      builder: (context, child) => IslandHost(child: child!),
       home: NotificationsPage(
         controller: controller,
         onOpenAttendance: onOpen,
@@ -580,6 +645,99 @@ void main() {
         now: () => _now,
       ),
     );
+
+    List<String> ids(NotificationsController c) => [
+      for (final n in c.notices) n.id,
+    ];
+
+    Future<NotificationsController> twoRead() => feedWith([
+      notice(
+        3,
+        NoticeKind.late,
+        at: _now.subtract(const Duration(minutes: 5)),
+        read: true,
+      ),
+      notice(
+        2,
+        NoticeKind.present,
+        at: _now.subtract(const Duration(hours: 2)),
+        read: true,
+      ),
+    ]);
+
+    testWidgets('a swipe deletes one, and a tap on the island puts it back', (
+      tester,
+    ) async {
+      final notices = await twoRead();
+      await tester.pumpWidget(page(notices));
+      await tester.pumpAndSettle();
+      expect(find.text(NoticeStrings.swipeHint), findsOneWidget);
+
+      await tester.drag(
+        find.byKey(const ValueKey('notifications.r3')),
+        const Offset(-500, 0),
+      );
+      // It slides off, the gap folds shut, then the island opens.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byKey(const ValueKey('notifications.r3')), findsNothing);
+      expect(ids(notices), ['r2']);
+      expect(find.text(NoticeStrings.deleted), findsOneWidget);
+
+      // Undo.
+      await tester.tap(find.text(NoticeStrings.deleted));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('notifications.r3')), findsOneWidget);
+      expect(ids(notices), ['r3', 'r2']);
+    });
+
+    testWidgets('Clear all asks first: Cancel keeps them, Clear all empties '
+        'the page', (tester) async {
+      final notices = await twoRead();
+      await tester.pumpWidget(page(notices));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('notifications.clearAll')));
+      await tester.pumpAndSettle();
+      expect(find.text(NoticeStrings.clearTitle), findsOneWidget);
+      await tester.tap(find.text(NoticeStrings.clearCancel));
+      await tester.pumpAndSettle();
+      expect(ids(notices), ['r3', 'r2']);
+
+      await tester.tap(find.byKey(const ValueKey('notifications.clearAll')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('notifications.clearAll.confirm')),
+      );
+      await tester.pumpAndSettle();
+      expect(notices.notices, isEmpty);
+      expect(find.text(NoticeStrings.emptyTitle), findsOneWidget);
+      // Nothing left to clear.
+      expect(
+        find.byKey(const ValueKey('notifications.clearAll')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a screen reader deletes one with its Delete action', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      final notices = await twoRead();
+      await tester.pumpWidget(page(notices));
+      await tester.pumpAndSettle();
+
+      tester.semantics.customAction(
+        find.semantics.byLabel(RegExp(NoticeStrings.late)),
+        const CustomSemanticsAction(label: NoticeStrings.delete),
+      );
+      await tester.pump();
+      expect(ids(notices), ['r2']);
+      await tester.pumpAndSettle();
+      semantics.dispose();
+    });
 
     testWidgets('lists them under the day they came, and reading clears the '
         'count but keeps NEW on what was new', (tester) async {

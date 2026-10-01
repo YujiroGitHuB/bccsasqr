@@ -1095,6 +1095,19 @@ abstract final class NoticeStrings {
   static String hoursAgo(int n) => n == 1 ? '1 hr ago' : '$n hrs ago';
   static const String newBadge = 'NEW';
 
+  // Deleting — from this phone's list only; the attendance stays.
+  static const String swipeHint = 'Swipe a notification sideways to delete it.';
+  static const String delete = 'Delete';
+  static const String deleted = 'Notification deleted';
+  static const String undo = 'Tap here to undo.';
+  static const String clearAll = 'Clear all';
+  static const String clearTitle = 'Clear all notifications?';
+  static const String clearBody =
+      'They are removed from this phone only. Your attendance stays on your '
+      'record, and My Attendance still lists every day.';
+  static const String clearConfirm = 'Clear all';
+  static const String clearCancel = 'Cancel';
+
   static const String emptyTitle = 'No notifications yet';
   static const String emptyBody =
       'When your instructor scans your QR code or you check in, it shows '

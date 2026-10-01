@@ -19,7 +19,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01.10';
+  static const String version = '2026-10-01.11';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -40,6 +40,19 @@ abstract final class WhatsNewLog {
           'Scanner, and a shared link carries its class code. A phone opening '
           'the app for the first time gets a short opening after Get started.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.tracker,
+          side: WhatsNewSide.student,
+          icon: Icons.delete_sweep_outlined,
+          title: 'Delete notifications',
+          text:
+              'Swipe a notification sideways to delete it — tap the note at '
+              'the top of the screen to undo — or tap **Clear all** at the top '
+              'of Notifications. Only the list on your phone is cleared; your '
+              'attendance stays on your record.',
+          link: false,
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.fixed,
           area: WhatsNewArea.checkIn,

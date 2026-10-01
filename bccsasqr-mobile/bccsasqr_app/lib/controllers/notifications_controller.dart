@@ -217,6 +217,36 @@ class NotificationsController extends ChangeNotifier {
     unawaited(_save());
   }
 
+  /// A notice swiped away: off this phone's list, nothing more — the
+  /// attendance stays on the record, and the feed has already read past
+  /// it, so it does not come back. Hands back what it took, for [restore].
+  ({StudentNotice notice, int at})? remove(String id) {
+    final at = _notices.indexWhere((n) => n.id == id);
+    if (at < 0) return null;
+    final notice = _notices[at];
+    _notices = [..._notices]..removeAt(at);
+    notifyListeners();
+    unawaited(_save());
+    return (notice: notice, at: at);
+  }
+
+  /// Undo: puts back what [remove] took, where it was.
+  void restore(({StudentNotice notice, int at}) removed) {
+    if (_notices.any((n) => n.id == removed.notice.id)) return;
+    final at = math.min(removed.at, _notices.length);
+    _notices = ([..._notices]..insert(at, removed.notice)).take(keep).toList();
+    notifyListeners();
+    unawaited(_save());
+  }
+
+  /// Clear all — after the page has asked. The same as swiping each away.
+  void clearAll() {
+    if (_notices.isEmpty) return;
+    _notices = const [];
+    notifyListeners();
+    unawaited(_save());
+  }
+
   // ---------------------------------------------------------------- the loop
 
   Future<void> _read() async {
