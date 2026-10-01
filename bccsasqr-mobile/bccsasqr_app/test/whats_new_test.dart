@@ -315,7 +315,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('whatsNew.filter.tracker')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text(WhatsNewStrings.openTracker));
+      await tester.tap(find.text(WhatsNewStrings.openTracker).first);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       expect(find.byType(TrackerIntro), findsOneWidget);

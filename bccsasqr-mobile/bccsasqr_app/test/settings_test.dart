@@ -211,7 +211,8 @@ void main() {
       expect(find.text(SettingsStrings.sound), findsNothing);
       expect(find.text(SettingsStrings.vibration), findsNothing);
       expect(find.text(RoleStrings.currentStudent), findsOneWidget);
-      expect(find.byTooltip(AppStrings.homeBack), findsOneWidget);
+      // A part of the Menu, as on the instructor's side: no back arrow.
+      expect(find.byTooltip(AppStrings.homeBack), findsNothing);
     });
 
     testWidgets('picking Dark repaints the app dark, and is remembered', (

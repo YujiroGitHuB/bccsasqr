@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/utils/student_number.dart';
@@ -136,4 +137,21 @@ class MemorySavedQrStore implements SavedQrStore {
   @override
   Future<void> save(SavedQr qr) async =>
       saved[qr.record.studentNumber.value] = qr;
+}
+
+/// [SavedQrStore] that says when a code is kept, so the student's Home shows
+/// the code the moment My QR Code makes it, without being asked again.
+class WatchedSavedQrStore extends ChangeNotifier implements SavedQrStore {
+  WatchedSavedQrStore(this._inner);
+
+  final SavedQrStore _inner;
+
+  @override
+  Future<SavedQr?> find(StudentNumber number) => _inner.find(number);
+
+  @override
+  Future<void> save(SavedQr qr) async {
+    await _inner.save(qr);
+    notifyListeners();
+  }
 }

@@ -604,7 +604,7 @@ abstract final class WhatsNewStrings {
       'What changed in My QR Code, My Attendance, the Attendance Scanner and '
       'the attendance links.';
   static const String introStudent =
-      'What changed in My QR Code, My Attendance and My Profile.';
+      'What changed in My QR Code, My Attendance, Check in and My Profile.';
 
   static const String latest = 'LATEST';
 
@@ -613,6 +613,7 @@ abstract final class WhatsNewStrings {
   static const String filterQr = 'QR Code';
   static const String filterTracker = 'Tracker';
   static const String filterProfile = 'Profile';
+  static const String filterCheckIn = 'Check in';
   static const String filterScanner = 'Scanner';
   static const String filterLinks = 'Links';
 
@@ -625,11 +626,13 @@ abstract final class WhatsNewStrings {
   static const String areaQr = 'MY QR CODE';
   static const String areaTracker = 'MY ATTENDANCE';
   static const String areaProfile = 'MY PROFILE';
+  static const String areaCheckIn = 'CHECK IN';
   static const String areaScanner = 'SCANNER';
   static const String areaLinks = 'LINKS';
   static const String openQr = 'Open My QR Code';
   static const String openTracker = 'Open My Attendance';
   static const String openProfile = 'Open My Profile';
+  static const String openCheckIn = 'Open Check in';
   static const String openScanner = 'Open the Scanner';
   static const String openLinks = 'Open Links';
 
@@ -638,7 +641,8 @@ abstract final class WhatsNewStrings {
   // the Menu's tile.
   static const String cardTitle = 'New in this update';
   static const String cardBody =
-      'See what changed in My QR Code, My Attendance and My Profile.';
+      'See what changed in My QR Code, My Attendance, Check in and My '
+      'Profile.';
   static const String cardClose = 'Dismiss';
 
   // The row in Settings → About.
@@ -824,6 +828,9 @@ abstract final class NavStrings {
   static const String links = 'Links';
   static const String tracker = 'Attendance';
   static const String settings = 'Settings';
+
+  /// The student Home's shortcut to My Profile.
+  static const String profile = 'Profile';
 }
 
 /// The instructor's Home — what the app opens on: today's scans at a glance,
@@ -879,4 +886,146 @@ abstract final class AboutStrings {
   static const String copied = 'Copied';
   static const String done = 'Done';
   static const String demo = 'Demo mode';
+}
+
+/// The student's side since 2026-10-01: the Menu button at the foot of the
+/// screen, as on the instructor's, and a Home that holds the QR code itself.
+abstract final class StudentStrings {
+  // The Menu.
+  static const String role = 'Student';
+  static const String showQr = 'Show my QR code';
+  static String showQrBody(String number) => '$number · opens even offline';
+  static const String showQrMake = 'Make your QR code first';
+  static const String showQrSetUp = 'Set up this phone first';
+  static const String myQr = 'My QR Code';
+  static const String attendance = 'Attendance';
+  static const String checkIn = 'Check in';
+  static const String profile = 'My Profile';
+  static String onThisPhone(String number) => '$number · on this phone';
+  static const String notYou = 'Not you?';
+  static const String notSetUpName = 'This phone is not set up';
+  static const String notSetUpBody = 'Your QR code and attendance open here';
+  static const String setUp = 'Set up';
+
+  // Home: the QR card.
+  static const String qrLabel = 'MY QR CODE';
+  static const String showToScanner = 'Show to scanner';
+  static const String savedOffline = 'Saved on this phone — opens even offline';
+  static const String setUpTitle = 'Set up this phone';
+  static const String setUpBody =
+      'Enter your student number and last name once. Your QR code and your '
+      'attendance then open right here, even offline.';
+  static const String setUpAction = 'Set up this phone';
+  static const String makeQrTitle = 'Make your QR code';
+  static const String makeQrBody =
+      'Accept the terms once and your code is saved on this phone, ready to '
+      'show at the door.';
+  static const String makeQrAction = 'Make my QR code';
+  static const String makeQrOffline =
+      'You\'re offline. Make your code once with internet and it opens here '
+      'after that.';
+
+  // Home: today.
+  static const String presentToday = 'Marked present today';
+  static String presentTodayIn(int n) => 'Marked present in $n subjects today';
+  static const String noScanToday = 'No scan yet today';
+  static const String noScanTodayBody =
+      'Show your QR code to your instructor, or check in with the class code.';
+
+  // Home: attendance.
+  static const String daysPresent = 'Days present';
+  static const String subjects = 'Subjects';
+  static const String late = 'Late';
+  static const String seeAll = 'See all';
+  static const String today = 'today';
+  static String last(String when) => 'Last: $when';
+  static String days(int n) => n == 1 ? 'day' : 'days';
+  static const String attendanceEmpty =
+      'No attendance yet. Your first scan shows up here.';
+  static const String attendanceFailed =
+      'Could not load your attendance. Pull down to try again.';
+
+  // Not you?
+  static const String forgetTitle = 'Not you?';
+  static String forgetBody(String name) =>
+      'This phone forgets $name, with the QR code and attendance shown here. '
+      'Nothing changes on the school record.';
+  static const String forgetConfirm = 'Remove';
+  static const String forgetCancel = 'Cancel';
+}
+
+/// The QR code full screen, for the instructor's camera.
+abstract final class ShowQrStrings {
+  static const String title = 'Show to scanner';
+  static const String close = 'Close';
+  static const String screenOn = 'Screen stays on';
+  static const String offline = 'Works offline';
+  static const String hint =
+      'Hold your phone steady, about a hand\'s length from your instructor\'s '
+      'camera.';
+  static const String save = 'Save to gallery';
+  static const String saved = 'QR code saved and ready to share.';
+  static const String saveFailed = 'Could not save the QR code.';
+
+  // The island once the scan reaches the records.
+  static const String marked = 'Marked present';
+  static String markedBody(String subject, String time, {bool late = false}) =>
+      '$subject · $time${late ? ' · late' : ' · on time'}';
+}
+
+/// My Attendance — the tracker for the student this phone is set up for,
+/// with no number to type.
+abstract final class MyAttendanceStrings {
+  static const String title = 'My Attendance';
+  static const String refresh = 'Refresh';
+  static const String lastAttended = 'Last attended';
+  static const String filterAll = 'All';
+  static const String filterOnTime = 'On time';
+  static const String filterLate = 'Late';
+  static String filter(String label, int n) => '$label · $n';
+  static const String instructorLate = 'late';
+  static String lateCount(int n) => '$n late';
+  static const String noneForFilter = 'Nothing to show for this filter.';
+  static const String loading = 'Loading your attendance…';
+}
+
+/// Check in — the student's side of an attendance link, inside the app.
+abstract final class CheckInStrings {
+  static const String title = 'Check in';
+  static const String subtitle = 'For classes that use an attendance link';
+  static const String cameraHint =
+      'Point at the class QR on the screen or board';
+  static const String orType = 'OR TYPE THE CLASS CODE';
+  static String codeLetter(int i) => 'Class code, letter $i';
+  static const String looking = 'Finding the class…';
+  static String section(String section, String instructor) => instructor.isEmpty
+      ? 'Section $section'
+      : 'Section $section · $instructor';
+  static String onTimeUntil(String time) => 'On time until $time';
+  static const String lateNow = 'Counts as late now';
+  static String closes(String time) => 'Link closes $time';
+  static String confirm(String name) => 'Check in as $name';
+  static const String checkingIn = 'Checking in…';
+  static String sends(String number) =>
+      'Sends $number from this phone — nothing to type.';
+  static const String another = 'Scan another code';
+
+  /// The server's photo refusal points at the web's photo page; in the app
+  /// the photo is in My Profile.
+  static const String photoRequired =
+      'Your photo is missing, and it is required before attendance can be '
+      'recorded. Add it in My Profile, then check in again.';
+  static const String notAClassQr =
+      'That QR is not a class attendance link. Point at the one your '
+      'instructor shows.';
+  static const String setUpTitle = 'Set up this phone first';
+  static const String setUpBody =
+      'Check in sends the student this phone is set up for. Enter your '
+      'student number and last name once in My Profile.';
+  static const String setUpAction = 'Open My Profile';
+
+  // The island afterwards.
+  static const String doneTitle = 'Checked in';
+  static const String doneLateTitle = 'Checked in — late';
+  static const String failedTitle = 'Not checked in';
 }

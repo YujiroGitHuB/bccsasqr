@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'app.dart';
 import 'core/theme/app_theme.dart';
+import 'services/check_in_repository.dart';
 import 'services/connectivity.dart';
 import 'services/onboarding_store.dart';
 import 'services/profile_store.dart';
@@ -19,6 +20,7 @@ void main() {
       savedQrStore: SharedPrefsSavedQrStore(),
       onboardingStore: SharedPrefsOnboardingStore(),
       profileStore: SharedPrefsProfileStore(),
+      deviceTokenStore: SharedPrefsDeviceTokenStore(),
     ),
   );
 }

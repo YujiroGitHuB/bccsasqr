@@ -44,6 +44,7 @@ enum _Filter {
   qr(WhatsNewStrings.filterQr, WhatsNewArea.qr),
   tracker(WhatsNewStrings.filterTracker, WhatsNewArea.tracker),
   profile(WhatsNewStrings.filterProfile, WhatsNewArea.profile),
+  checkIn(WhatsNewStrings.filterCheckIn, WhatsNewArea.checkIn),
   scanner(WhatsNewStrings.filterScanner, WhatsNewArea.scanner),
   links(WhatsNewStrings.filterLinks, WhatsNewArea.links);
 
@@ -61,7 +62,7 @@ class _WhatsNewPageState extends State<WhatsNewPage> {
   _Filter _filter = _Filter.all;
 
   bool _shows(WhatsNewItem item) =>
-      widget.areas.contains(item.area) && _filter.shows(item);
+      item.isFor(widget.areas) && _filter.shows(item);
 
   @override
   void initState() {
@@ -79,7 +80,7 @@ class _WhatsNewPageState extends State<WhatsNewPage> {
     // The newest release this phone has anything in: on a student's, past
     // one that is only about the instructor's side.
     final latest = widget.releases
-        .where((r) => r.items.any((item) => widget.areas.contains(item.area)))
+        .where((r) => r.items.any((item) => item.isFor(widget.areas)))
         .firstOrNull;
 
     return Scaffold(
@@ -309,6 +310,10 @@ class _Item extends StatelessWidget {
       WhatsNewArea.profile => (
         WhatsNewStrings.areaProfile,
         WhatsNewStrings.openProfile,
+      ),
+      WhatsNewArea.checkIn => (
+        WhatsNewStrings.areaCheckIn,
+        WhatsNewStrings.openCheckIn,
       ),
       WhatsNewArea.scanner => (
         WhatsNewStrings.areaScanner,

@@ -38,6 +38,7 @@ require_once __DIR__ . '/handlers/terms.php';
 require_once __DIR__ . '/handlers/scanner.php';
 require_once __DIR__ . '/handlers/tracker.php';
 require_once __DIR__ . '/handlers/links.php';
+require_once __DIR__ . '/handlers/checkin.php';
 
 $path   = api_path();
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -73,6 +74,11 @@ $routes = [
     ['POST', '#^links/expiry$#',           fn() => handle_links_expiry($GLOBALS['conn'])],
     ['POST', '#^links/late$#',             fn() => handle_links_late($GLOBALS['conn'])],
     ['POST', '#^links/renew$#',            fn() => handle_links_renew($GLOBALS['conn'])],
+
+    // A student checking in through a link — no sign-in, see
+    // handlers/checkin.php.
+    ['GET',  '#^checkin/([^/]+)$#',        fn($m) => handle_checkin_link($GLOBALS['conn'], $m[1])],
+    ['POST', '#^checkin/([^/]+)$#',        fn($m) => handle_checkin($GLOBALS['conn'], $m[1])],
 ];
 
 // Collected while matching so a wrong verb on a real route answers

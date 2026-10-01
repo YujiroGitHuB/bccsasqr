@@ -6,10 +6,14 @@ import '../models/terms_document.dart';
 /// Raised when the records service itself fails (network, parsing, …).
 /// A *missing* record is not an error — the repository returns `null`.
 class StudentLookupException implements Exception {
-  const StudentLookupException(this.message, {this.code});
+  const StudentLookupException(this.message, {this.code, this.details});
 
   /// Safe to show to a student as it is.
   final String message;
+
+  /// The API's `error.details`, when it sent any — what the app needs to act
+  /// on the refusal, such as the device token Check in keeps.
+  final Map<String, dynamic>? details;
 
   /// The API's machine-readable code (`terms_not_accepted`,
   /// `generator_locked`, `rate_limited`, …) when the failure came from the

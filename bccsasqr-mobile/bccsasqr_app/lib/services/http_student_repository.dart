@@ -7,10 +7,12 @@ import '../core/config/app_config.dart';
 import '../core/utils/network_error.dart';
 import '../core/utils/student_number.dart';
 import '../models/attendance_history.dart';
+import '../models/class_link.dart';
 import '../models/qr_payload.dart';
 import '../models/student_profile.dart';
 import '../models/student_record.dart';
 import '../models/terms_document.dart';
+import 'check_in_repository.dart';
 import 'photo_repository.dart';
 import 'student_repository.dart';
 import 'tracker_repository.dart';
@@ -31,11 +33,16 @@ import 'tracker_repository.dart';
 /// carrying the server's `code`, so the controller can act on
 /// `terms_not_accepted` instead of merely showing it.
 ///
-/// It serves the Attendance Tracker too ([TrackerRepository]), and My
-/// Profile's photo ([StudentPhotoRepository]): the same student-number-keyed
-/// half of the API, over the same connection.
+/// It serves the Attendance Tracker too ([TrackerRepository]), My Profile's
+/// photo ([StudentPhotoRepository]) and Check in ([CheckInRepository]): the
+/// half of the API a student uses without signing in, over the same
+/// connection.
 class HttpStudentRepository
-    implements StudentRepository, TrackerRepository, StudentPhotoRepository {
+    implements
+        StudentRepository,
+        TrackerRepository,
+        StudentPhotoRepository,
+        CheckInRepository {
   HttpStudentRepository({
     http.Client? client,
     String? baseUrl,
@@ -231,6 +238,45 @@ class HttpStudentRepository
     );
   }
 
+  // -------------------------------------------------------------- check in
+
+  Uri _checkInUri(String code) =>
+      _endpoint('checkin/${Uri.encodeComponent(code)}');
+
+  @override
+  Future<ClassLink> findClass(String code) async =>
+      ClassLink.fromJson(await _get(_checkInUri(code)));
+
+  @override
+  Future<CheckInResult> checkIn(
+    String code, {
+    required StudentNumber number,
+    required String lastName,
+    String? device,
+    void Function(String device)? onDevice,
+  }) async {
+    final Map<String, dynamic> data;
+    try {
+      data = await _post(_checkInUri(code), {
+        'student_no': number.value,
+        'last_name': lastName,
+        'device': ?device,
+      });
+    } on StudentLookupException catch (e) {
+      // Kept even from a refusal: the phone is the same device either way.
+      if (e.details?['device'] case final String token) onDevice?.call(token);
+      rethrow;
+    }
+
+    if (data['device'] case final String token) onDevice?.call(token);
+    return CheckInResult(
+      subject: data['subject'] as String? ?? '',
+      timeIn: data['time_in'] as String? ?? '',
+      late: data['late'] == true,
+      message: data['message'] as String? ?? '',
+    );
+  }
+
   // ------------------------------------------------------------- transport
 
   Future<Map<String, dynamic>> _get(Uri uri) =>
@@ -292,9 +338,11 @@ class HttpStudentRepository
       );
     }
 
+    final details = error['details'];
     throw StudentLookupException(
       error['message'] as String? ?? 'Something went wrong.',
       code: error['code'] as String? ?? 'unknown',
+      details: details is Map<String, dynamic> ? details : null,
     );
   }
 

@@ -38,6 +38,8 @@ function handle_index(): void
             'POST ' . $base . '/links/expiry',
             'POST ' . $base . '/links/late',
             'POST ' . $base . '/links/renew',
+            'GET  ' . $base . '/checkin/{code}',
+            'POST ' . $base . '/checkin/{code}',
         ],
         'docs' => $base . '/README.md',
     ]);

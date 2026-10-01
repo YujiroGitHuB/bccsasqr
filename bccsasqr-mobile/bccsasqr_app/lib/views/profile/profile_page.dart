@@ -223,13 +223,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       Row(
                         children: [
-                          IconButton(
-                            onPressed: () => Navigator.of(context).maybePop(),
-                            tooltip: AppStrings.homeBack,
-                            icon: const Icon(Icons.arrow_back_rounded),
-                            color: colors.textSecondary,
-                          ),
-                          const SizedBox(width: 4),
+                          // A page pushed over another — from My QR Code's
+                          // photo warning — has a way back; the Menu's tab
+                          // does not need one.
+                          if (Navigator.of(context).canPop()) ...[
+                            IconButton(
+                              onPressed: () => Navigator.of(context).maybePop(),
+                              tooltip: AppStrings.homeBack,
+                              icon: const Icon(Icons.arrow_back_rounded),
+                              color: colors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                          ] else
+                            const SizedBox(width: 4),
                           Text(
                             ProfileStrings.title,
                             style: TextStyle(

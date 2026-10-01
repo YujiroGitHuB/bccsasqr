@@ -483,6 +483,17 @@ void main() {
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
 
+    // To the foot of the page, which ends clear of the Menu button.
+    await tester.drag(
+      find
+          .ancestor(
+            of: find.text(AppStrings.actionReset),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+      const Offset(0, -3000),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text(AppStrings.actionReset));
     await tester.pumpAndSettle();
 

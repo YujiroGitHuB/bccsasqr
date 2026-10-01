@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../models/whats_new.dart';
 
-/// The app's What's New — only what changed in My QR Code, My Attendance, the
-/// Attendance Scanner and the attendance links. The web system keeps its own, fuller changelog in
+/// The app's What's New — only what changed in My QR Code, My Attendance, My
+/// Profile, Check in, the Attendance Scanner and the attendance links. The
+/// web system keeps its own, fuller changelog in
 /// `includes/whats_new.php`; this one is written for the person holding the
 /// phone, so it leaves out the admin pages and the download page.
 ///
@@ -18,19 +19,87 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01.2';
+  static const String version = '2026-10-01.3';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
       id: '2026-10-01',
       icon: Icons.grid_view_rounded,
-      title: 'Just the Menu button, and straight to Home',
+      title: 'One Menu button, for students too',
       summary:
-          'The bottom of the screen is now only the round Menu button. '
-          'Everything is in the Menu, Home included, and each page runs all '
-          'the way down under the button. The app opens straight on Home, '
-          'and the scanner\'s splash plays when you open the Scanner.',
+          'The bottom of the screen is now only the round Menu button, on '
+          'both sides of the app. Students get a new Home with their QR code '
+          'on it, ready to show, a note when the scan reaches the records, '
+          'their own attendance with nothing to type, and Check in for '
+          'classes that use an attendance link. Instructors open straight on '
+          'Home, and the scanner\'s splash plays when you open the Scanner.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.qr,
+          side: WhatsNewSide.student,
+          icon: Icons.qr_code_2_rounded,
+          title: 'Your QR code, right on Home',
+          text:
+              'Set up your phone once in **My Profile** — your student number '
+              'and last name — and Home shows your QR code itself. Tap '
+              '**Show to scanner** and it fills the screen, which stays on '
+              'until you close it, even with no internet. **Save to gallery** '
+              'is there too.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.qr,
+          side: WhatsNewSide.student,
+          icon: Icons.how_to_reg_rounded,
+          title: 'Know when you are marked present',
+          text:
+              'While your code is on screen, the app checks the records every '
+              'few seconds and says **Marked present** at the top of the '
+              'screen as soon as your instructor\'s scan goes through. Home '
+              'says it too: **Marked present today**, with the subject and '
+              'time.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.tracker,
+          side: WhatsNewSide.student,
+          icon: Icons.event_available_rounded,
+          title: 'Your attendance, with nothing to type',
+          text:
+              '**My Attendance** now opens on your own record: days present, '
+              'subjects and the day you last attended, then each subject with '
+              'its days. **All**, **On time** and **Late** narrow the days. '
+              'Home shows the three numbers and your latest subjects.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.checkIn,
+          side: WhatsNewSide.student,
+          icon: Icons.qr_code_scanner_rounded,
+          title: 'Check in with the class code',
+          text:
+              'For classes that use an attendance link: open **Check in**, '
+              'point the camera at the class QR on the screen or board — or '
+              'type the six letters under it — and tap **Check in as …**. It '
+              'sends the student your phone is set up for, so there is no '
+              'number to type, and says if you are on time or late.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.profile,
+          side: WhatsNewSide.student,
+          icon: Icons.grid_view_rounded,
+          title: 'One Menu button at the bottom',
+          text:
+              'Tap the round **Menu** button for any part: **Show my QR '
+              'code**, **My QR Code**, **Attendance**, **Check in**, **My '
+              'Profile**, What\'s New and Settings. On a phone you share, '
+              '**Not you?** at the bottom of the Menu removes your profile '
+              'from it — nothing changes on your school record.',
+          link: false,
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.improved,
           area: WhatsNewArea.scanner,

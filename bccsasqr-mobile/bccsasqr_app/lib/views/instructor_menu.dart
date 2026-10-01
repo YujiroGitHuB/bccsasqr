@@ -5,10 +5,10 @@ import '../controllers/whats_new_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import 'instructor_shell.dart';
+import 'menu_shell.dart';
 import 'scanner/widgets/attendance_sheet.dart';
 import 'scanner/widgets/scanner_header.dart';
 import 'scanner/widgets/sign_out_dialog.dart';
-import 'widgets/press_scale.dart';
 import 'widgets/splash_parts.dart';
 
 /// What the Menu button at the foot of the screen opens: every part of the
@@ -30,7 +30,7 @@ class InstructorMenu extends StatelessWidget {
     this.tourBuilder,
   });
 
-  final MenuHandle menu;
+  final MenuHandle<InstructorTab> menu;
 
   /// Who is signed in, the subject being scanned, the scans not yet sent,
   /// and the sign-out.
@@ -67,7 +67,6 @@ class InstructorMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     final news = whatsNewBuilder;
     final tour = tourBuilder;
 
@@ -79,13 +78,14 @@ class InstructorMenu extends StatelessWidget {
         final unread = whatsNew?.unread ?? false;
 
         /// A tile that shows a tab, marked while it is the one showing.
-        _Tile tab(InstructorTab tab, IconData icon, String label) => _Tile(
-          name: tab.name,
-          icon: icon,
-          label: label,
-          selected: tab == menu.current,
-          onTap: () => menu.open(tab),
-        );
+        MenuTile tab(InstructorTab tab, IconData icon, String label) =>
+            MenuTile(
+              name: tab.name,
+              icon: icon,
+              label: label,
+              selected: tab == menu.current,
+              onTap: () => menu.open(tab),
+            );
 
         final tiles = [
           tab(InstructorTab.home, Icons.home_rounded, NavStrings.home),
@@ -97,14 +97,14 @@ class InstructorMenu extends StatelessWidget {
             Icons.event_available_rounded,
             NavStrings.tracker,
           ),
-          _Tile(
+          MenuTile(
             name: 'today',
             icon: Icons.format_list_bulleted_rounded,
             label: InstructorHomeStrings.todayList,
             onTap: () => _today(context),
           ),
           if (news != null)
-            _Tile(
+            MenuTile(
               name: 'whatsNew',
               icon: Icons.auto_awesome_outlined,
               label: SettingsStrings.whatsNew,
@@ -118,7 +118,7 @@ class InstructorMenu extends StatelessWidget {
             NavStrings.settings,
           ),
           if (tour != null)
-            _Tile(
+            MenuTile(
               name: 'tour',
               icon: Icons.slideshow_outlined,
               label: SettingsStrings.tour,
@@ -126,93 +126,69 @@ class InstructorMenu extends StatelessWidget {
             ),
         ];
 
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                // A shadow reads on both grounds only as black.
-                color: const Color(
-                  0xFF000000,
-                ).withValues(alpha: colors.isDark ? 0.55 : 0.16),
-                blurRadius: 40,
-                offset: const Offset(0, 16),
-              ),
-            ],
-          ),
-          child: Material(
-            color: colors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-              side: BorderSide(color: colors.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
-              child: AnimatedBuilder(
-                animation: menu.shown,
-                builder: (context, _) {
-                  final t = menu.shown.value;
-                  Widget rise(double begin, double end, Widget child) =>
-                      splashRise(
-                        Interval(
-                          begin,
-                          end,
-                          curve: Curves.easeOutCubic,
-                        ).transform(t),
-                        child,
-                      );
+        return MenuPanelCard(
+          child: AnimatedBuilder(
+            animation: menu.shown,
+            builder: (context, _) {
+              final t = menu.shown.value;
+              Widget rise(double begin, double end, Widget child) => splashRise(
+                Interval(begin, end, curve: Curves.easeOutCubic).transform(t),
+                child,
+              );
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      rise(0.20, 0.62, _Heading(admin: user?.isAdmin ?? false)),
-                      const SizedBox(height: 16),
-                      rise(
-                        0.26,
-                        0.68,
-                        _ScanCard(
-                          subject: selected?.label,
-                          selected: menu.current == InstructorTab.scanner,
-                          onTap: () => menu.open(InstructorTab.scanner),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  rise(
+                    0.20,
+                    0.62,
+                    MenuHeading(
+                      role: (user?.isAdmin ?? false)
+                          ? ScannerStrings.roleAdmin
+                          : ScannerStrings.roleInstructor,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  rise(
+                    0.26,
+                    0.68,
+                    MenuLeadCard(
+                      name: 'scanner',
+                      icon: Icons.qr_code_scanner_rounded,
+                      title: MenuStrings.scan,
+                      subtitle:
+                          selected?.label ?? InstructorHomeStrings.pickSubject,
+                      selected: menu.current == InstructorTab.scanner,
+                      onTap: () => menu.open(InstructorTab.scanner),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  MenuTileGrid(
+                    tiles: tiles,
+                    rise: (i, tile) => rise(
+                      0.32 + 0.04 * i,
+                      (0.70 + 0.04 * i).clamp(0.0, 1.0),
+                      tile,
+                    ),
+                  ),
+                  if (user != null) ...[
+                    const SizedBox(height: 16),
+                    rise(
+                      0.56,
+                      1.00,
+                      MenuAccountRow(
+                        avatar: UserAvatar(user: user, size: 36),
+                        name: user.name,
+                        subtitle: MenuStrings.signedIn,
+                        action: _SignOutButton(
+                          onPressed: () => _signOut(context),
                         ),
                       ),
-                      const SizedBox(height: 18),
-                      for (var row = 0; row * 4 < tiles.length; row++) ...[
-                        if (row > 0) const SizedBox(height: 14),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (var i = row * 4; i < row * 4 + 4; i++)
-                              Expanded(
-                                child: i < tiles.length
-                                    ? rise(
-                                        0.32 + 0.04 * i,
-                                        (0.70 + 0.04 * i).clamp(0.0, 1.0),
-                                        tiles[i],
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
-                          ],
-                        ),
-                      ],
-                      if (user != null) ...[
-                        const SizedBox(height: 16),
-                        rise(
-                          0.56,
-                          1.00,
-                          _Account(
-                            name: user.name,
-                            avatar: UserAvatar(user: user, size: 36),
-                            onSignOut: () => _signOut(context),
-                          ),
-                        ),
-                      ],
-                    ],
-                  );
-                },
-              ),
-            ),
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
         );
       },
@@ -220,312 +196,27 @@ class InstructorMenu extends StatelessWidget {
   }
 }
 
-/// "Menu", what it holds, and whose side this is.
-class _Heading extends StatelessWidget {
-  const _Heading({required this.admin});
+/// The way out, which asks first — as Settings → Account → Sign out does.
+class _SignOutButton extends StatelessWidget {
+  const _SignOutButton({required this.onPressed});
 
-  final bool admin;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                MenuStrings.title,
-                key: const ValueKey('menu.title'),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: colors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                MenuStrings.subtitle,
-                style: TextStyle(fontSize: 13, color: colors.textSecondary),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: colors.accentWash(0.10),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: colors.accentWash(0.30)),
-          ),
-          child: Text(
-            (admin ? ScannerStrings.roleAdmin : ScannerStrings.roleInstructor)
-                .toUpperCase(),
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.8,
-              color: colors.accent,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// The scanner, first and widest: what the app is opened for, with the
-/// subject the next scan goes to.
-class _ScanCard extends StatelessWidget {
-  const _ScanCard({
-    required this.subject,
-    required this.selected,
-    required this.onTap,
-  });
-
-  /// "Object Oriented Programming (ITE211)", or null before one is picked.
-  final String? subject;
-
-  /// The scanner is the tab under the Menu.
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final radius = BorderRadius.circular(18);
-
-    return Semantics(
-      selected: selected,
-      child: PressScale(
-        child: Material(
-          color: colors.surfaceSunken,
-          shape: RoundedRectangleBorder(
-            borderRadius: radius,
-            side: BorderSide(
-              color: selected ? colors.accentWash(0.55) : colors.border,
-            ),
-          ),
-          child: InkWell(
-            key: const ValueKey('menu.scanner'),
-            onTap: onTap,
-            borderRadius: radius,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
-              child: Row(
-                children: [
-                  Container(
-                    height: 44,
-                    width: 44,
-                    decoration: BoxDecoration(
-                      color: colors.accent,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      Icons.qr_code_scanner_rounded,
-                      size: 23,
-                      color: colors.onAccent,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          MenuStrings.scan,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subject ?? InstructorHomeStrings.pickSubject,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(Icons.chevron_right_rounded, color: colors.textMuted),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// One part of the instructor's side: an icon on a tile, its name under it.
-class _Tile extends StatelessWidget {
-  const _Tile({
-    required this.name,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.tooltip,
-    this.dot = false,
-    this.selected = false,
-  });
-
-  /// `menu.<name>`, for tests.
-  final String name;
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  /// Said instead of [label] when there is more to say — What's New unread.
-  final String? tooltip;
-
-  /// Something new behind it.
-  final bool dot;
-
-  /// The tab under the Menu: washed in the accent, its name too.
-  final bool selected;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
 
-    return Semantics(
-      selected: selected,
-      child: Tooltip(
-        message: tooltip ?? label,
-        child: PressScale(
-          scale: 0.92,
-          child: InkWell(
-            key: ValueKey('menu.$name'),
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    height: 54,
-                    width: 54,
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? colors.accentWash(0.16)
-                          : colors.surfaceSunken,
-                      borderRadius: BorderRadius.circular(17),
-                      border: Border.all(
-                        color: selected
-                            ? colors.accentWash(0.55)
-                            : colors.border,
-                      ),
-                    ),
-                    child: Center(
-                      child: Badge(
-                        isLabelVisible: dot,
-                        smallSize: 9,
-                        backgroundColor: colors.accent,
-                        child: Icon(icon, size: 24, color: colors.accent),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 7),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                      height: 1.25,
-                      color: selected ? colors.accent : colors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Who is signed in on this phone, and the sign-out — which asks first, as
-/// the one in Settings does.
-class _Account extends StatelessWidget {
-  const _Account({
-    required this.name,
-    required this.avatar,
-    required this.onSignOut,
-  });
-
-  final String name;
-  final Widget avatar;
-  final VoidCallback onSignOut;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Container(
-      padding: const EdgeInsets.only(top: 14),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: colors.border)),
-      ),
-      child: Row(
-        children: [
-          avatar,
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  MenuStrings.signedIn,
-                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            key: const ValueKey('menu.signOut'),
-            onPressed: onSignOut,
-            icon: const Icon(Icons.logout_rounded, size: 17),
-            label: const Text(ScannerStrings.signOut),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 40),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              foregroundColor: colors.danger,
-              side: BorderSide(color: colors.danger.withValues(alpha: 0.4)),
-              textStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
+    return OutlinedButton.icon(
+      key: const ValueKey('menu.signOut'),
+      onPressed: onPressed,
+      icon: const Icon(Icons.logout_rounded, size: 17),
+      label: const Text(ScannerStrings.signOut),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        foregroundColor: colors.danger,
+        side: BorderSide(color: colors.danger.withValues(alpha: 0.4)),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
       ),
     );
   }

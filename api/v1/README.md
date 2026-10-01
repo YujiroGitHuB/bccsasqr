@@ -435,6 +435,31 @@ message safe to show as-is.
 
 ---
 
+## Checking in through a link (no sign-in)
+
+The student's side of a link: the app's **Check in** reads the class QR (or
+the six-letter code under it) and records the student this phone was set up
+for in My Profile. Every rule is the web form's — `includes/link_checkin.php`
+is shared with `crud/submit_attendance.php` — plus the last name, which the web
+form cannot ask for.
+
+| Endpoint | Body | Answers |
+|---|---|---|
+| `GET /checkin/{code}` | — | `{short_code, subject: {code, name}, section, instructor, closes: {label, in}, late: {on, label, in}}` |
+| `POST /checkin/{code}` | `{student_no, last_name, device}` | `{subject, time_in, late, message, device}` |
+
+`device` is the token a previous answer handed this phone — the app's
+counterpart of the web form's signed `bcc_did` cookie — or nothing the first
+time. Every answer, refusals included (in `error.details.device`), carries the
+token to keep, so one phone stays one device for the one-device-one-student
+rule. Refusals use the web form's words: `404 link_not_found`, `410 link_off`,
+`410 link_expired`, `503 form_locked`, `403 photo_required`,
+`403 not_enrolled`, `409 device_reuse`, `409 already_checked_in`,
+`403 identity_mismatch` (the last name no longer matches the record). Each
+attempt is written to `attendance_audit_tbl`, as the web form's are.
+
+---
+
 ## Error codes
 
 | HTTP | `code` | What the app should do |

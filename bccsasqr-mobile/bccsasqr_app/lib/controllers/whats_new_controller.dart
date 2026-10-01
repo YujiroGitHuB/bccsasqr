@@ -45,7 +45,7 @@ class WhatsNewController extends ChangeNotifier {
     final reader = areas?.call();
     if (reader == null) return true;
     final newest = releases
-        .where((r) => r.items.any((item) => reader.contains(item.area)))
+        .where((r) => r.items.any((item) => item.isFor(reader)))
         .firstOrNull;
     if (newest == null) return false;
     final seen = _seen;

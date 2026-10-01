@@ -221,6 +221,43 @@ function integrity_device_id(mysqli $conn): string
 }
 
 /**
+ * The phone app's device id — the same signed "id.sig" value the
+ * browser cookie holds, for a client that keeps no cookies. The app
+ * stores the token it is handed and sends it back with each check-in
+ * (POST /api/v1/checkin/{code}), so one phone stays one device.
+ *
+ * Like the cookie, it can be thrown away — reinstalling the app does
+ * that — and a fresh id is the answer, which is where the audit trail
+ * takes over. A token that is present but does not verify was edited,
+ * and is logged as a forged cookie is.
+ *
+ * @return array{0: string, 1: string}  [id, the token to hand back]
+ */
+function integrity_device_from_token(mysqli $conn, string $raw): array
+{
+    if ($raw !== '' && strpos($raw, '.') !== false) {
+        [$id, $sig] = explode('.', $raw, 2);
+
+        if (preg_match('/^[0-9a-f]{32}$/', $id)) {
+            $want = substr(hash_hmac('sha256', $id, integrity_secret($conn)), 0, 16);
+            if (hash_equals($want, $sig)) return [$id, $raw];
+        }
+    }
+
+    if ($raw !== '') {
+        require_once __DIR__ . '/security_log.php';
+        security_log('cookie_forged', [
+            'identifier' => 'app_device',
+            'detail'     => 'App device token did not match its signature and was replaced.',
+        ]);
+    }
+
+    $id = bin2hex(random_bytes(16));
+
+    return [$id, $id . '.' . substr(hash_hmac('sha256', $id, integrity_secret($conn)), 0, 16)];
+}
+
+/**
  * Ang IP ng kliyente, sa likod ng proxy ng hosting.
  *
  * Ang X-Forwarded-For ay kayang i-set ng kahit sino, kaya hindi ito

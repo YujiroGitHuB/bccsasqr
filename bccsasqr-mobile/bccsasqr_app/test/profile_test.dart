@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:bccsasqr_app/app.dart';
+import 'package:bccsasqr_app/controllers/my_attendance_controller.dart';
+import 'package:bccsasqr_app/controllers/my_qr_controller.dart';
 import 'package:bccsasqr_app/controllers/profile_controller.dart';
 import 'package:bccsasqr_app/core/constants/app_strings.dart';
 import 'package:bccsasqr_app/core/theme/app_colors.dart';
@@ -14,12 +16,15 @@ import 'package:bccsasqr_app/services/photo_picker.dart';
 import 'package:bccsasqr_app/services/photo_repository.dart';
 import 'package:bccsasqr_app/services/profile_store.dart';
 import 'package:bccsasqr_app/services/role_store.dart';
+import 'package:bccsasqr_app/services/saved_qr_store.dart';
 import 'package:bccsasqr_app/services/speech_service.dart';
 import 'package:bccsasqr_app/services/student_repository.dart';
+import 'package:bccsasqr_app/services/tracker_repository.dart';
 import 'package:bccsasqr_app/views/home_page.dart';
 import 'package:bccsasqr_app/views/profile/photo_crop_page.dart';
 import 'package:bccsasqr_app/views/profile/profile_page.dart';
 import 'package:bccsasqr_app/views/profile/profile_splash.dart';
+import 'package:bccsasqr_app/views/student_shell.dart';
 import 'package:bccsasqr_app/views/widgets/island.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -507,17 +512,61 @@ void main() {
       expect((decoded.width, decoded.height), (400, 400));
     });
 
-    Widget home(ProfileController controller, {int hour = 9}) => app(
-      HomePage(
-        generatorBuilder: (context) => const Text('generator'),
-        trackerBuilder: (context) => const Text('tracker'),
-        profileBuilder: (context) => const Text('profile page'),
+    /// Home over [controller], with the student's code and attendance from
+    /// the bundled sample records. [opened] collects the tabs it asks for.
+    Widget home(
+      ProfileController controller, {
+      int hour = 9,
+      List<StudentTab>? opened,
+    }) {
+      final qr = MyQrController(
         profile: controller,
-        now: () => DateTime(2026, 9, 30, hour),
-      ),
-    );
+        saved: WatchedSavedQrStore(MemorySavedQrStore()),
+        repository: InMemoryStudentRepository(latency: Duration.zero),
+      );
+      final attendance = MyAttendanceController(
+        profile: controller,
+        repository: InMemoryTrackerRepository(latency: Duration.zero),
+      );
+      addTearDown(() {
+        qr.dispose();
+        attendance.dispose();
+      });
+      return app(
+        HomePage(
+          profile: controller,
+          qr: qr,
+          attendance: attendance,
+          onOpen: (tab) => opened?.add(tab),
+          onShowQr: () {},
+          now: () => DateTime(2026, 9, 30, hour),
+        ),
+      );
+    }
 
     testWidgets('home asks for a photo until there is one', (tester) async {
+      final controller = ProfileController(
+        store: MemoryProfileStore(
+          StudentProfile(record: _record, lastName: 'Santos'),
+        ),
+        repository: _FakePhotos(),
+      );
+      await controller.load();
+      final opened = <StudentTab>[];
+
+      await tester.pumpWidget(home(controller, opened: opened));
+      await tester.pumpAndSettle();
+
+      expect(find.text('${AppStrings.homeMorning},'), findsOneWidget);
+      expect(find.text(ProfileStrings.nudgeTitle), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('home.profile')));
+      await tester.tap(find.byKey(const ValueKey('home.photoNudge')));
+      expect(opened, [StudentTab.profile, StudentTab.profile]);
+    });
+
+    testWidgets('before the phone is set up, home asks for that, not a '
+        'photo', (tester) async {
       final controller = ProfileController(
         store: MemoryProfileStore(),
         repository: _FakePhotos(),
@@ -528,11 +577,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(AppStrings.homeMorning), findsOneWidget);
-      expect(find.text(ProfileStrings.nudgeTitle), findsOneWidget);
-
-      await tester.tap(find.byKey(const ValueKey('home.profile')));
-      await tester.pumpAndSettle();
-      expect(find.text('profile page'), findsOneWidget);
+      expect(find.text(StudentStrings.setUpBody), findsOneWidget);
+      expect(find.text(ProfileStrings.nudgeTitle), findsNothing);
     });
 
     testWidgets('home greets the student by name, with their face', (
@@ -547,7 +593,8 @@ void main() {
       await tester.pumpWidget(home(controller, hour: 20));
       await tester.pumpAndSettle();
 
-      expect(find.text('Good evening, Maria Isabel'), findsOneWidget);
+      expect(find.text('Good evening,'), findsOneWidget);
+      expect(find.text('Maria Isabel'), findsOneWidget);
       expect(find.text(ProfileStrings.nudgeTitle), findsNothing);
       expect(
         find.descendant(

@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'controllers/check_in_controller.dart';
+import 'controllers/my_attendance_controller.dart';
+import 'controllers/my_qr_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/role_controller.dart';
 import 'controllers/scanner_controller.dart';
@@ -14,6 +19,7 @@ import 'core/theme/app_theme.dart';
 import 'models/app_role.dart';
 import 'models/whats_new.dart';
 import 'services/app_info.dart';
+import 'services/check_in_repository.dart';
 import 'services/connectivity.dart';
 import 'services/device_lock.dart';
 import 'services/http_scanner_repository.dart';
@@ -36,12 +42,14 @@ import 'services/token_store.dart';
 import 'services/tracker_repository.dart';
 import 'services/whats_new_store.dart';
 import 'views/generator_splash.dart';
+import 'views/check_in_page.dart';
 import 'views/home_page.dart';
 import 'views/instructor_home.dart';
 import 'views/instructor_menu.dart';
 import 'views/instructor_shell.dart';
 import 'views/links/links_page.dart';
 import 'views/links/links_splash.dart';
+import 'views/my_attendance_page.dart';
 import 'views/onboarding_page.dart';
 import 'views/profile/profile_page.dart';
 import 'views/profile/profile_splash.dart';
@@ -51,7 +59,10 @@ import 'views/scanner/scanner_flow.dart';
 import 'views/scanner/scanner_intro.dart';
 import 'views/scanner/scanner_page.dart';
 import 'views/settings_page.dart';
+import 'views/show_qr_page.dart';
 import 'views/splash_page.dart';
+import 'views/student_menu.dart';
+import 'views/student_shell.dart';
 import 'views/student_splash.dart';
 import 'views/tracker_page.dart';
 import 'views/tracker_splash.dart';
@@ -88,6 +99,8 @@ class BccSasqrApp extends StatefulWidget {
     this.profileStore,
     this.photoRepository,
     this.photoPicker = const DevicePhotoPicker(),
+    this.checkInRepository,
+    this.deviceTokenStore,
     this.showSplash = true,
   });
 
@@ -153,6 +166,15 @@ class BccSasqrApp extends StatefulWidget {
   /// The camera and the gallery, for My Profile.
   final PhotoPicker photoPicker;
 
+  /// Check in's server. The student repository's when it serves check-ins
+  /// too (the real one does); one demo class otherwise.
+  final CheckInRepository? checkInRepository;
+
+  /// The token that keeps this phone one device for Check in. Only
+  /// main.dart passes the phone's own: with none it is kept while the app
+  /// runs.
+  final DeviceTokenStore? deviceTokenStore;
+
   /// Tests that are about the generator switch the opening animation off.
   final bool showSplash;
 
@@ -194,8 +216,11 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   late final QrExportService _exportService =
       widget.exportService ?? const ImageQrExportService();
 
-  late final SavedQrStore _savedQrs =
-      widget.savedQrStore ?? MemorySavedQrStore();
+  /// Watched, so the student's Home shows a code the moment My QR Code
+  /// keeps it.
+  late final WatchedSavedQrStore _savedQrs = WatchedSavedQrStore(
+    widget.savedQrStore ?? MemorySavedQrStore(),
+  );
 
   /// One voice for the whole app, silenced by the Voice switch in Settings.
   late final SpeechService _speech = ToggleableSpeechService(
@@ -250,6 +275,36 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   late final RoleController _role = RoleController(
     store: widget.roleStore ?? SharedPrefsRoleStore(),
   );
+
+  // The student's side is made the first time it shows — an instructor's
+  // phone never asks the server for a student's code or attendance.
+  MyQrController? _myQrMade;
+  MyAttendanceController? _myAttendanceMade;
+  CheckInController? _checkInMade;
+
+  MyQrController get _myQr => _myQrMade ??= MyQrController(
+    profile: _profile,
+    saved: _savedQrs,
+    repository: _repository,
+  );
+
+  MyAttendanceController get _myAttendance => _myAttendanceMade ??=
+      MyAttendanceController(profile: _profile, repository: _tracker);
+
+  CheckInController get _checkIn => _checkInMade ??= CheckInController(
+    repository:
+        widget.checkInRepository ??
+        switch (_repository) {
+          final CheckInRepository both => both,
+          _ => InMemoryCheckInRepository(),
+        },
+    profile: _profile,
+    devices: widget.deviceTokenStore ?? MemoryDeviceTokenStore(),
+  );
+
+  /// The student's tab showing — held here, as the instructor's is, so
+  /// What's New can open one.
+  final ValueNotifier<StudentTab> _studentTab = ValueNotifier(StudentTab.home);
 
   /// The instructor's tab showing. Held here rather than in the shell, so
   /// What's New — pushed over it from Home, the Menu or Settings — can open
@@ -315,7 +370,11 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     _whatsNew.dispose();
     _role.dispose();
     _profile.dispose();
+    _myQrMade?.dispose();
+    _myAttendanceMade?.dispose();
+    _checkInMade?.dispose();
     _tab.dispose();
+    _studentTab.dispose();
     super.dispose();
   }
 
@@ -323,6 +382,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   /// once the sign-in goes through (see [_instructor]).
   void _chooseRole(AppRole role) {
     _studentWelcome = role == AppRole.student;
+    // A fresh student side opens on Home.
+    _studentTab.value = StudentTab.home;
     _role.choose(role, keep: role == AppRole.student);
   }
 
@@ -343,7 +404,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   );
 
   /// The student's My QR Code: the same page, with the missing-photo warning
-  /// opening My Profile rather than the web page.
+  /// opening My Profile rather than the web page, and the number this phone
+  /// is set up for typed in already.
   Widget _studentGenerator(BuildContext context) => GeneratorIntro(
     page: (context) => QrGeneratorPage(
       repository: _repository,
@@ -351,6 +413,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       speech: _speech,
       savedQrs: _savedQrs,
       photoPage: _profilePage,
+      initialNumber: _profile.profile?.record.studentNumber.value,
     ),
   );
 
@@ -375,6 +438,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     WhatsNewArea.qr,
     WhatsNewArea.tracker,
     WhatsNewArea.profile,
+    WhatsNewArea.checkIn,
   };
 
   Widget _studentSettings(BuildContext context) => SettingsPage(
@@ -389,21 +453,78 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     tourBuilder: _tour,
   );
 
-  /// From the home screen, where each item can open the part it is about.
+  /// From Home and the Menu, where each item opens its tab: back down to
+  /// the shell, on the item's part.
   Widget _studentWhatsNew(BuildContext context) => WhatsNewPage(
     areas: _studentAreas,
     onShown: _whatsNew.markSeen,
     onOpen: (area) {
-      final builder = switch (area) {
-        WhatsNewArea.qr => _studentGenerator,
-        WhatsNewArea.tracker => _trackerPage,
-        WhatsNewArea.profile => _profilePage,
-        // Left out of [_studentAreas], so never asked for.
-        WhatsNewArea.scanner || WhatsNewArea.links => null,
-      };
-      if (builder == null) return;
-      Navigator.of(context).push(MaterialPageRoute<void>(builder: builder));
+      Navigator.of(context).pop();
+      _studentTab.value = StudentTab.of(area);
     },
+  );
+
+  /// My Attendance: the student this phone is set up for, with no number to
+  /// type — or, before it is set up, the tracker to look one up.
+  Widget _studentTracker(BuildContext context) => TrackerIntro(
+    page: (context) => ListenableBuilder(
+      listenable: _profile,
+      builder: (context, _) => _profile.profile == null
+          ? TrackerPage(repository: _tracker, speech: _speech)
+          : MyAttendancePage(controller: _myAttendance),
+    ),
+  );
+
+  /// The code full screen, for the instructor's camera.
+  void _showQr(BuildContext context) {
+    final code = _myQr.code;
+    if (code == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShowQrPage(
+          code: code,
+          exportService: _exportService,
+          attendance: _myAttendance,
+          keepAwake: widget.keepAwake,
+        ),
+      ),
+    );
+  }
+
+  /// The student's side: the shell, opening on Home, with the Menu button
+  /// at its foot — the instructor's, laid out for a student.
+  Widget _student() => StudentShell(
+    key: const ValueKey('home'),
+    tab: _studentTab,
+    homeBuilder: (context) => HomePage(
+      profile: _profile,
+      qr: _myQr,
+      attendance: _myAttendance,
+      onOpen: (tab) => _studentTab.value = tab,
+      onShowQr: () => _showQr(context),
+      whatsNewBuilder: _studentWhatsNew,
+      whatsNew: _whatsNew,
+    ),
+    generatorBuilder: _studentGenerator,
+    trackerBuilder: _studentTracker,
+    checkInBuilder: (context) => CheckInPage(
+      controller: _checkIn,
+      profile: _profile,
+      cameraBuilder: widget.cameraBuilder,
+      onSetUp: () => _studentTab.value = StudentTab.profile,
+      onCheckedIn: () => unawaited(_myAttendance.refresh()),
+    ),
+    profileBuilder: _profilePage,
+    settingsBuilder: _studentSettings,
+    menuBuilder: (context, menu) => StudentMenu(
+      menu: menu,
+      profile: _profile,
+      qr: _myQr,
+      onShowQr: () => _showQr(context),
+      whatsNewBuilder: _studentWhatsNew,
+      whatsNew: _whatsNew,
+      tourBuilder: _tour,
+    ),
   );
 
   // ── Instructor ──────────────────────────────────────────────────────
@@ -546,16 +667,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
         key: const ValueKey('student-splash'),
         onFinished: () => setState(() => _studentWelcome = false),
       ),
-      AppRole.student => HomePage(
-        key: const ValueKey('home'),
-        generatorBuilder: _studentGenerator,
-        trackerBuilder: _trackerPage,
-        settingsBuilder: _studentSettings,
-        whatsNewBuilder: _studentWhatsNew,
-        whatsNew: _whatsNew,
-        profileBuilder: _profilePage,
-        profile: _profile,
-      ),
+      AppRole.student => _student(),
       AppRole.instructor => _instructor(),
     };
   }

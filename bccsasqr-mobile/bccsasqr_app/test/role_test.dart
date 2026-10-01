@@ -185,10 +185,15 @@ void main() {
       expect(roles.saved, AppRole.student);
       expect(find.byKey(const ValueKey('home.generator')), findsOneWidget);
       expect(find.byKey(const ValueKey('home.tracker')), findsOneWidget);
-      // Nothing of the instructor's, anywhere.
-      expect(find.byType(InstructorDock), findsNothing);
+      // Nothing of the instructor's, anywhere: the Menu button is the
+      // student's own, and its Menu has no scanner.
       expect(find.byType(ScannerFlow, skipOffstage: false), findsNothing);
       expect(find.text(NavStrings.scanner), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('nav.menu')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('menu.showQr')), findsOneWidget);
+      expect(find.byKey(const ValueKey('menu.scanner')), findsNothing);
+      expect(find.text(StudentStrings.role.toUpperCase()), findsOneWidget);
     });
 
     testWidgets('a picked card lights up with a tick before the app moves on', (

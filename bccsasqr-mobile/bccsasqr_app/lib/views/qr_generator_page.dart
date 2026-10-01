@@ -31,6 +31,7 @@ class QrGeneratorPage extends StatefulWidget {
     this.speech = const SilentSpeechService(),
     this.savedQrs,
     this.photoPage,
+    this.initialNumber,
   });
 
   final StudentRepository repository;
@@ -45,6 +46,10 @@ class QrGeneratorPage extends StatefulWidget {
   /// it; an instructor making codes for whoever asks does not — the page
   /// would be about the instructor's phone, not the student in front of it.
   final WidgetBuilder? photoPage;
+
+  /// Typed in for the student on opening — the number this phone is set up
+  /// for, so its owner only has to tick the terms.
+  final String? initialNumber;
 
   @override
   State<QrGeneratorPage> createState() => _QrGeneratorPageState();
@@ -71,6 +76,11 @@ class _QrGeneratorPageState extends State<QrGeneratorPage> {
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(onHide: _controller.stopSpeaking);
+    final number = widget.initialNumber;
+    if (number != null) {
+      _studentNumberField.text = number;
+      _controller.onStudentNumberChanged(number);
+    }
   }
 
   @override
