@@ -418,6 +418,8 @@ function integrity_rate_ok(mysqli $conn, string $bucket, int $limit, int $window
  *     device_reuse   ibang estudyante na ang naisumite ng teleponong ito ngayong araw
  *     lookup_limit   umabot sa hangganan ng paghahanap ng numero
  *     not_enrolled   umiiral ang estudyante, wala lamang sa klaseng ito
+ *     wrong_section  enrolled in the subject, but the link is another
+ *                    section's class (includes/link_checkin.php, 2a)
  *     no_student     walang ganoong numero sa buong paaralan
  *     bad_link       walang ganoong short_code
  *

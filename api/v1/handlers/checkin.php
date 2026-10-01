@@ -181,6 +181,7 @@ function handle_checkin(mysqli $conn, string $raw_code): void
         'no_student'    => [404, 'student_not_found'],
         'photo_missing' => [403, 'photo_required'],
         'not_enrolled'  => [403, 'not_enrolled'],
+        'wrong_section' => [403, 'wrong_section'],
         'device_reuse'  => [409, 'device_reuse'],
         'duplicate'     => [409, 'already_checked_in'],
     ];

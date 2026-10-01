@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-01.9';
+const WHATS_NEW_VERSION = '2026-10-01.10';
 
 /**
  * The changelog, newest release first.
@@ -75,8 +75,15 @@ function whats_new_releases(): array
             'date'    => '2026-10-01',
             'icon'    => 'bi-grid',
             'title'   => 'One Menu button in the app, Check in, and students told the moment you scan',
-            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on a card that turns over by itself, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. Students with the app are now told on their phone the moment your scan reaches the records, with no refreshing. The app now opens straight on Home, the scanner’s splash plays when the Scanner is opened, and the app’s Menu sorts its parts into named groups. Students can paste the link you share straight into Check in, every check-in from the app asks for the student’s own fingerprint, and students can lock their side of the app with it.',
+            'summary' => 'The bottom of the app is now only the round Menu button, for instructors and students alike. Students get a new Home with their QR code on a card that turns over by itself, their own attendance with nothing to type, and Check in — your attendance links, from the app, under every rule of the web form. Students with the app are now told on their phone the moment your scan reaches the records, with no refreshing, and a check-in through a link has to match the student’s own section. The app now opens straight on Home, the scanner’s splash plays when the Scanner is opened, and the app’s Menu sorts its parts into named groups. Students can paste the link you share straight into Check in, every check-in from the app asks for the student’s own fingerprint, and students can lock their side of the app with it.',
             'items'   => [
+                [
+                    'type'  => 'fixed',
+                    'icon'  => 'bi-signpost-split',
+                    'title' => 'Check-ins through your link stay in your section',
+                    'text'  => 'A check-in through an attendance link now has to match the section the student is enrolled in for that subject. A student from another section of the same subject is turned away &mdash; whether they scan your link&rsquo;s QR or type its code, in the app or on the web form &mdash; and told which section they belong to. Irregular students are matched by their enrollment, so they still check in to the class they take the subject with. Each attempt shows in <strong>Attendance Integrity</strong> as <strong>Other section</strong>, counted under <strong>Not enrolled</strong>.',
+                    'link'  => ['href' => 'pages/attendance_integrity.php?show=not_enrolled', 'label' => 'Open Attendance Integrity', 'can' => 'links.manage'],
+                ],
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-bell',

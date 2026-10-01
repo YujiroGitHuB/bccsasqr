@@ -100,7 +100,7 @@ $totals = audit_query($conn, "
     SELECT
         SUM(a.result = 'ok')           AS ok,
         SUM(a.result = 'device_reuse') AS device_reuse,
-        SUM(a.result = 'not_enrolled') AS not_enrolled,
+        SUM(a.result IN ('not_enrolled', 'wrong_section')) AS not_enrolled,
         SUM(a.result = 'lookup_limit') AS lookup_limit,
         SUM(a.result = 'duplicate')    AS duplicate
     FROM attendance_audit_tbl a
@@ -284,6 +284,7 @@ function result_chip(string $result): array
 
         // Ang kayang maging pagkakamali sa pagtipa, at kayang hindi.
         case 'not_enrolled':  return ['Not enrolled',     'warn',    'bi-person-dash'];
+        case 'wrong_section': return ['Other section',    'warn',    'bi-signpost-split'];
         case 'no_student':    return ['No such number',   'warn',    'bi-question-circle'];
         case 'bad_link':      return ['Link not valid',   'warn',    'bi-link-45deg'];
         case 'save_failed':   return ['Save failed',      'warn',    'bi-exclamation-triangle'];

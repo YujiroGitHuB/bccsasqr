@@ -75,7 +75,7 @@ $totals = ati_pdf_query($conn, "
     SELECT
         SUM(a.result = 'ok')           AS ok,
         SUM(a.result = 'device_reuse') AS device_reuse,
-        SUM(a.result = 'not_enrolled') AS not_enrolled,
+        SUM(a.result IN ('not_enrolled', 'wrong_section')) AS not_enrolled,
         SUM(a.result = 'lookup_limit') AS lookup_limit,
         SUM(a.result = 'duplicate')    AS duplicate
     FROM attendance_audit_tbl a
@@ -141,6 +141,7 @@ function pdf_result_label(string $result): string
         case 'device_reuse':  return 'Same device';
         case 'lookup_limit':  return 'Lookup limit';
         case 'not_enrolled':  return 'Not enrolled';
+        case 'wrong_section': return 'Other section';
         case 'no_student':    return 'No such number';
         case 'bad_link':      return 'Link not valid';
         case 'save_failed':   return 'Save failed';

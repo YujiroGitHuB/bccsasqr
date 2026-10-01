@@ -19,7 +19,7 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01.9';
+  static const String version = '2026-10-01.10';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
@@ -40,6 +40,33 @@ abstract final class WhatsNewLog {
           'Scanner, and a shared link carries its class code. A phone opening '
           'the app for the first time gets a short opening after Get started.',
       items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.fixed,
+          area: WhatsNewArea.checkIn,
+          side: WhatsNewSide.student,
+          icon: Icons.alt_route_rounded,
+          title: 'Check in takes only your own section\'s class',
+          text:
+              '**Check in** now makes sure the class is your section\'s. A link '
+              'or class code from another section of the same subject is '
+              'refused, and the message says which section you are enrolled '
+              'in. Irregular students check in to the class they take the '
+              'subject with, as before.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.fixed,
+          area: WhatsNewArea.links,
+          icon: Icons.alt_route_rounded,
+          title: 'Check-ins through your link stay in your section',
+          text:
+              'A student enrolled in the same subject in another section is '
+              'now turned away from your link — by its QR or its code, in the '
+              'app or on the web form — and told which section to use. The '
+              'attempt shows in Attendance Integrity on the web as **Other '
+              'section**.',
+          link: false,
+        ),
         WhatsNewItem(
           kind: WhatsNewKind.added,
           area: WhatsNewArea.tracker,

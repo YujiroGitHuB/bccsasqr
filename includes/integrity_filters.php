@@ -24,7 +24,13 @@
 // ============================================================
 
 /** Ang mga kahihinatnang may pagkukusa — ang laman ng "Flagged". */
-const INTEGRITY_FLAGGED = ['device_reuse', 'not_enrolled', 'lookup_limit', 'no_student', 'bad_link'];
+const INTEGRITY_FLAGGED = ['device_reuse', 'not_enrolled', 'wrong_section', 'lookup_limit', 'no_student', 'bad_link'];
+
+/**
+ * What the Not enrolled tile counts and opens: a number that is not in
+ * the class — not in the subject at all, or in another section of it.
+ */
+const INTEGRITY_NOT_IN_CLASS = ['not_enrolled', 'wrong_section'];
 
 /** Ang mga halagang tinatanggap ng ?show= */
 const INTEGRITY_SHOWS = ['flagged', 'all', 'ok', 'device_reuse', 'duplicate', 'not_enrolled', 'lookup_limit'];
@@ -106,6 +112,8 @@ function integrity_filters(array $get, bool $is_admin, int $user_id): array
 
     if ($show === 'flagged') {
         $resultWhere = " AND a.result IN ('" . implode("', '", INTEGRITY_FLAGGED) . "') ";
+    } elseif ($show === 'not_enrolled') {
+        $resultWhere = " AND a.result IN ('" . implode("', '", INTEGRITY_NOT_IN_CLASS) . "') ";
     } elseif ($show !== 'all') {
         $resultWhere  = ' AND a.result = ? ';
         $resultTypes  = 's';

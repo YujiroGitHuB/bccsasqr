@@ -17,6 +17,19 @@ require_once __DIR__ . '/attendance_integrity.php';
 require_once __DIR__ . '/late.php';
 
 /**
+ * "BSIT-2A" → "2A", " 2a" → "2A": a section the way the enrollment
+ * table keeps it, so a link's full section and an enrollment's bare one
+ * can be compared. The course is a leading run of letters and a dash —
+ * scan_clean_section()'s rule.
+ */
+function link_bare_section(string $section): string
+{
+    $section = strtoupper(trim($section));
+
+    return preg_match('/^[A-Z]+-(.+)$/', $section, $m) ? trim($m[1]) : $section;
+}
+
+/**
  * Records attendance for $who['student_no'] through the link
  * $who['short_code'], after every check the web form has always made.
  *
@@ -209,6 +222,30 @@ function link_checkin(mysqli $conn, array $who): array
         $section_to_save = trim(explode('-', $enrolled_section_raw, 2)[1]);
     } else {
         $section_to_save = $enrolled_section_raw;
+    }
+
+    // ── 2a. This section's class ─────────────────────────────────────
+    //
+    // Enrolled in the subject is not enough: one subject runs in many
+    // sections, each with its own link. Checked only by subject, a
+    // student holding another section's QR or code was recorded in that
+    // class — through the app's Check in (found 2026-10-01), or by
+    // anyone posting here directly. The web form's Verify step
+    // (crud/verify_student.php) has always refused it, but Verify only
+    // tells the student early; this is the check nobody skips.
+    //
+    // Against the ENROLLMENT section, not the student's home section:
+    // the two differ on purpose — an irregular student attends another
+    // section's class for one subject (see crud/promote_section.php) —
+    // and the enrollment says which class that is. Bare sections are
+    // compared, as Verify does: the enrollment does not keep the course.
+    if ($full_section !== '' && link_bare_section($enrolled_section_raw) !== link_bare_section($full_section)) {
+        return $answer('wrong_section', [
+            'success' => false,
+            'message' => 'This attendance link is for ' . $full_section . ', not your section. '
+                       . 'You are enrolled in ' . $subject_name . ' under section ' . link_bare_section($enrolled_section_raw)
+                       . ' — please use that class’s link.',
+        ]);
     }
 
     // ── 2b. One device, one student ──────────────────────────────────

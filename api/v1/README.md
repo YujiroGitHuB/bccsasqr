@@ -498,7 +498,9 @@ time. Every answer, refusals included (in `error.details.device`), carries the
 token to keep, so one phone stays one device for the one-device-one-student
 rule. Refusals use the web form's words: `404 link_not_found`, `410 link_off`,
 `410 link_expired`, `503 form_locked`, `403 photo_required`,
-`403 not_enrolled`, `409 device_reuse`, `409 already_checked_in`,
+`403 not_enrolled`, `403 wrong_section` (enrolled in the subject, but the
+link is another section's class — the message names both sections),
+`409 device_reuse`, `409 already_checked_in`,
 `403 identity_mismatch` (the last name no longer matches the record). Each
 attempt is written to `attendance_audit_tbl`, as the web form's are.
 
