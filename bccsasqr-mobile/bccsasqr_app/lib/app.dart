@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,6 +13,7 @@ import 'controllers/role_controller.dart';
 import 'controllers/scanner_controller.dart';
 import 'controllers/scanner_lock_controller.dart';
 import 'controllers/settings_controller.dart';
+import 'controllers/update_controller.dart';
 import 'controllers/whats_new_controller.dart';
 import 'core/config/app_config.dart';
 import 'core/constants/app_strings.dart';
@@ -20,6 +22,8 @@ import 'core/theme/app_theme.dart';
 import 'models/app_role.dart';
 import 'models/whats_new.dart';
 import 'services/app_info.dart';
+import 'services/app_release_repository.dart';
+import 'services/attendance_store.dart';
 import 'services/check_in_repository.dart';
 import 'services/connectivity.dart';
 import 'services/device_lock.dart';
@@ -43,6 +47,7 @@ import 'services/speech_service.dart';
 import 'services/student_repository.dart';
 import 'services/token_store.dart';
 import 'services/tracker_repository.dart';
+import 'services/update_store.dart';
 import 'services/whats_new_store.dart';
 import 'views/generator_splash.dart';
 import 'views/get_started_splash.dart';
@@ -74,6 +79,7 @@ import 'views/student_shell.dart';
 import 'views/student_splash.dart';
 import 'views/tracker_page.dart';
 import 'views/tracker_splash.dart';
+import 'views/update_required_page.dart';
 import 'views/whats_new_page.dart';
 import 'views/widgets/connectivity_notice.dart';
 import 'views/widgets/fade_scale_switcher.dart';
@@ -112,6 +118,9 @@ class BccSasqrApp extends StatefulWidget {
     this.deviceTokenStore,
     this.liveRepository,
     this.noticeStore,
+    this.appReleaseRepository,
+    this.updateStore,
+    this.attendanceStore,
     this.showSplash = true,
   });
 
@@ -204,6 +213,20 @@ class BccSasqrApp extends StatefulWidget {
   /// What Notifications has shown, kept between launches. Only main.dart
   /// passes the phone's own: with none it is kept while the app runs.
   final NoticeStore? noticeStore;
+
+  /// Which app the download page has. The student repository's on an
+  /// Android phone with a server (the real one serves it); nothing is asked
+  /// in demo mode or a web build, which have nothing to update.
+  final AppReleaseRepository? appReleaseRepository;
+
+  /// The update Home's card was closed for. Only main.dart passes the
+  /// phone's own: with none it is kept while the app runs.
+  final UpdateStore? updateStore;
+
+  /// The student's attendance as the server last gave it, so it shows with
+  /// no signal. Only main.dart passes the phone's own: with none it is kept
+  /// while the app runs.
+  final AttendanceStore? attendanceStore;
 
   /// Tests that are about the generator switch the opening animation off.
   final bool showSplash;
@@ -306,6 +329,27 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     store: widget.roleStore ?? SharedPrefsRoleStore(),
   );
 
+  /// Whether the download page has a newer app than this one — asked by an
+  /// Android phone with a server only. Both halves of the app show it.
+  late final UpdateController _update = UpdateController(
+    repository:
+        widget.appReleaseRepository ??
+        (AppConfig.hasRemoteApi &&
+                !kIsWeb &&
+                defaultTargetPlatform == TargetPlatform.android
+            ? switch (_repository) {
+                final AppReleaseRepository both => both,
+                _ => null,
+              }
+            : null),
+    appInfo: widget.appInfo,
+    store: widget.updateStore ?? MemoryUpdateStore(),
+  );
+
+  /// Asks again when the app comes back to the screen — at most hourly.
+  /// Made in initState.
+  late final AppLifecycleListener _lifecycle;
+
   // The student's side is made the first time it shows — an instructor's
   // phone never asks the server for a student's code or attendance.
   MyQrController? _myQrMade;
@@ -319,8 +363,14 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     repository: _repository,
   );
 
-  MyAttendanceController get _myAttendance => _myAttendanceMade ??=
-      MyAttendanceController(profile: _profile, repository: _tracker);
+  MyAttendanceController get _myAttendance =>
+      _myAttendanceMade ??= MyAttendanceController(
+        profile: _profile,
+        repository: _tracker,
+        store: widget.attendanceStore ?? MemoryAttendanceStore(),
+        // Back online, the copy kept on the phone is asked for again.
+        online: widget.connectivity?.online,
+      );
 
   /// Asks only while the student's side is open on screen (LiveNotices).
   NotificationsController get _notices =>
@@ -386,6 +436,11 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
     _whatsNew.load();
     _role.load();
     _profile.load();
+    // While the splash plays too: an update is offered on the first Home.
+    unawaited(_update.check());
+    _lifecycle = AppLifecycleListener(
+      onResume: () => unawaited(_update.check()),
+    );
 
     final onboarding = widget.onboardingStore;
     if (onboarding == null) {
@@ -423,6 +478,8 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       final feedback = _scanFeedback;
       if (feedback is DeviceScanFeedback) feedback.dispose();
     }
+    _lifecycle.dispose();
+    _update.dispose();
     _settings.dispose();
     _whatsNew.dispose();
     _role.dispose();
@@ -503,6 +560,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
       SettingsPage(
         controller: _settings,
         appInfo: widget.appInfo,
+        update: _update,
         role: AppRole.student,
         lock: lock,
         onSwitchRole: () => _switchRole(context),
@@ -600,6 +658,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
             whatsNew: _whatsNew,
             notificationsBuilder: _studentNotifications,
             notifications: _notices,
+            update: _update,
             cardTurn: _settings.cardTurns ? _cardTurn : null,
           ),
         ),
@@ -675,6 +734,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   ) => SettingsPage(
     controller: _settings,
     appInfo: widget.appInfo,
+    update: _update,
     role: AppRole.instructor,
     account: session.user,
     subjectCount: () => session.subjects.length,
@@ -733,6 +793,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
           onOpen: (tab) => _tab.value = tab,
           whatsNewBuilder: (context) => _instructorWhatsNew(context, session),
           whatsNew: _whatsNew,
+          update: _update,
         ),
         generatorBuilder: _generator,
         // Its splash the first time it is opened, as the other tabs.
@@ -757,6 +818,16 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   /// After the splash: on the first launch the introduction, its splash and
   /// then the question, then the half of the app it picked.
   Widget _home() {
+    // A build the server no longer works with: only the way to the update,
+    // ahead of the question and the sign-in too.
+    if (_update.required) {
+      return UpdateRequiredPage(
+        key: const ValueKey('update-required'),
+        controller: _update,
+        appInfo: widget.appInfo,
+      );
+    }
+
     // Only without the splash (tests), for the moment the stores take.
     if (!_role.loaded || _onboarded == null) {
       return const SizedBox.shrink(key: ValueKey('loading'));
@@ -789,7 +860,7 @@ class _BccSasqrAppState extends State<BccSasqrApp> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_settings, _role]),
+      listenable: Listenable.merge([_settings, _role, _update]),
       builder: (context, _) => MaterialApp(
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,

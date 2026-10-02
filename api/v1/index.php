@@ -50,6 +50,8 @@ $routes = [
     ['GET',  '#^$#',                       fn() => handle_index()],
     ['GET',  '#^health$#',                 fn() => handle_health($GLOBALS['conn'])],
     ['GET',  '#^config$#',                 fn() => handle_config($GLOBALS['conn'])],
+    // Is there a newer app on the download page? See handlers/system.php.
+    ['GET',  '#^app$#',                    fn() => handle_app()],
     ['GET',  '#^terms$#',                  fn() => handle_terms()],
     ['POST', '#^terms/accept$#',           fn() => handle_terms_accept($GLOBALS['conn'])],
     ['GET',  '#^students/([^/]+)/qr$#',    fn($m) => handle_student_qr($GLOBALS['conn'], $m[1])],

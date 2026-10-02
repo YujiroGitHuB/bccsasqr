@@ -47,6 +47,48 @@ class _StubTracker implements TrackerRepository {
             ),
           ],
         );
+      // Absences counted: a subject with a missed day, one never attended,
+      // and one whose class has not been scanned yet.
+      case '000-1024':
+        return AttendanceHistory(
+          studentNumber: '000-1024',
+          fullName: 'Paolo Miguel Santos',
+          course: 'BSIT',
+          section: '1A',
+          total: 2,
+          lastAttended: DateTime(2026, 9, 7),
+          classes: 5,
+          absences: 3,
+          subjects: [
+            SubjectAttendance(
+              subject: 'Computer Programming 1',
+              instructor: 'Ana Villanueva',
+              count: 2,
+              days: [_day(7), _day(3, late: true)],
+              section: '2A',
+              enrolled: true,
+              classes: 3,
+              absentDates: [DateTime(2026, 9, 5)],
+            ),
+            SubjectAttendance(
+              subject: 'Discrete Structures',
+              instructor: 'Ana Villanueva',
+              count: 0,
+              section: '1A',
+              enrolled: true,
+              classes: 2,
+              absentDates: [DateTime(2026, 9, 8), DateTime(2026, 9, 1)],
+            ),
+            const SubjectAttendance(
+              subject: 'Purposive Communication',
+              instructor: '',
+              count: 0,
+              section: '1A',
+              enrolled: true,
+              classes: 0,
+            ),
+          ],
+        );
       case '023-770':
         return const AttendanceHistory(
           studentNumber: '023-770',
@@ -191,6 +233,35 @@ void main() {
     expect(find.text(TrackerStrings.showLess), findsOneWidget);
   });
 
+  testWidgets('absences: counted, listed among the days, and every enrolled '
+      'subject shown', (tester) async {
+    await openTracker(tester);
+    await search(tester, '0001024');
+
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('tracker.stat.absent')),
+        matching: find.text('3'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(TrackerStrings.statSubjects), findsNothing);
+    expect(find.text(TrackerStrings.absenceNote), findsOneWidget);
+    // Sep 5 among Programming's days; Sep 1 and 8 for the subject never
+    // attended.
+    expect(find.text(TrackerStrings.absentTag), findsNWidgets(3));
+    expect(find.text('Sep 05, 2026'), findsOneWidget);
+    expect(find.text(TrackerStrings.classesAttended(2, 3)), findsOneWidget);
+    expect(find.text(TrackerStrings.absentCount(1)), findsOneWidget);
+    expect(find.text(TrackerStrings.classesAttended(0, 2)), findsOneWidget);
+    expect(find.text(TrackerStrings.absentCount(2)), findsOneWidget);
+    expect(find.text('Ana Villanueva · Section 2A'), findsOneWidget);
+    // Enrolled, and the class not scanned yet.
+    expect(find.text('Purposive Communication'), findsOneWidget);
+    expect(find.text(TrackerStrings.noClassYet), findsOneWidget);
+    expect(find.text(TrackerStrings.noClassYetBody), findsOneWidget);
+  });
+
   testWidgets('a record with no scans says so', (tester) async {
     await openTracker(tester);
     await search(tester, '023770');
@@ -231,6 +302,11 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Maria Isabel Santos'), findsOneWidget);
+
+    // The absences' pills and lines too.
+    await search(tester, '0001024');
+    expect(tester.takeException(), isNull);
+    expect(find.text('Paolo Miguel Santos'), findsOneWidget);
   });
 
   testWidgets('clearing the field brings the placeholder back', (tester) async {

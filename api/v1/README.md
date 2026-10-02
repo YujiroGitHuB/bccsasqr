@@ -109,6 +109,30 @@ close the generator without you shipping a new build.
 replaces itself with `includes/lock.php`; the app should show the same closed
 sign rather than a form that cannot submit.
 
+### `GET /app`
+
+Which Android app the download page offers, and the oldest build still allowed
+to run. The app asks when it starts and when it comes back to the screen (at
+most hourly): a `latest.build` higher than its own puts **Update available** on
+Home, and a build under `min_build` shows only "Update required".
+
+```json
+{ "success": true, "data": {
+  "latest": { "version": "1.17.0", "build": 21, "size": 66896838,
+              "updated": "2026-10-02T09:00:00+08:00" },
+  "min_build": 0,
+  "download_url": "https://…/download/"
+} }
+```
+
+`version` and `build` are read from the uploaded `download/BCC-SASQR.apk`
+itself — its compiled `AndroidManifest.xml` (`includes/app_release.php`) — so
+uploading a new APK is all it takes; there is no number to bump on the server.
+`latest` is `null` with no APK uploaded. `min_build` is the constant
+`APP_MIN_BUILD` in the same file, 0 (nobody stopped) until a server change
+breaks older builds — raise it only after the new APK is uploaded. No sign-in,
+no database.
+
 ### `GET /terms`
 
 The Terms and Conditions, straight from `includes/terms.php` — there is no
@@ -221,19 +245,41 @@ reads too, so the two cannot count differently.
 { "success": true, "data": {
   "student": { "student_no": "000-1023", "fullname": "SANTOS, MARIA ISABEL",
                "course": "BSCS", "section": "2B", "photo_url": "https://…/uploads/photos/student_1.jpg" },
-  "summary": { "total": 3, "subjects": 2, "last_attended": "2026-08-24" },
+  "summary": { "total": 2, "subjects": 2, "last_attended": "2026-08-24",
+               "classes": 5, "absences": 3 },
   "subjects": [
-    { "subject": "Object Oriented Programming", "instructor": "Charles Nixon Cayading", "count": 2,
+    { "subject": "Data Structures", "instructor": "Sample Instructor", "count": 0, "records": [],
+      "enrolled": true, "section": "2B", "classes": 2, "absences": 2,
+      "absent_dates": ["2026-08-20", "2026-08-13"] },
+    { "subject": "Object Oriented Programming", "instructor": "Sample Instructor", "count": 2,
       "records": [ { "date": "2026-08-24", "time_in": "10:07:17 AM", "late": false },
-                   { "date": "2026-08-17", "time_in": "11:59:50 AM", "late": false } ] }
+                   { "date": "2026-08-17", "time_in": "11:59:50 AM", "late": false } ],
+      "enrolled": true, "section": "2B", "classes": 3, "absences": 1,
+      "absent_dates": ["2026-08-10"] }
   ]
 } }
 ```
 
 Subjects come in name order, each one's dates newest first. A student with no
-scans yet is still a `200`, with `total: 0` and an empty `subjects` — the
-record exists, it just has nothing in it. `photo_url` is `null` without a
-photo; show initials.
+scans yet is still a `200`, with `total: 0` — the record exists, it just has
+no scan in it. `photo_url` is `null` without a photo; show initials.
+
+**Absences** (since 2026-10-02). Every subject the student is enrolled in
+(`student_subjects_tbl`) is listed, `enrolled: true` — one never attended too,
+with no `records`. For each, `classes` is the days its class met so far and
+`absences` the ones without the student, listed in `absent_dates`, newest
+first. A class met on a day anyone in its course and section — the
+enrollment's section, which for an irregular student is not the one on their
+record — was marked present in the subject: the rule of the instructor's
+absences report (`includes/absences.php`). Today is left out until it is
+over, so a student still in line is not absent; a scan today counts at once.
+`instructor` is empty while nobody has scanned the class yet.
+
+A subject the student is no longer enrolled in keeps its days present, with
+`enrolled: false` and `section`, `classes`, `absences` all `null`. With no
+enrollment on file — or the enrollment tables unreadable — the summary's
+`classes` and `absences` are `null` too: show the days present alone. The
+summary's figures cover the enrolled subjects only.
 
 Errors: `tracker_locked` (503), `invalid_student_no` (400),
 `student_not_found` (404), `tracker_failed` (500 — offer a retry). Rate
@@ -606,7 +652,7 @@ Which file does what in the app:
 | `lib/http.php` | Response envelope, path parsing, JSON body, API key |
 | `lib/rate_limit.php` | Per-IP throttle (fails open) |
 | `lib/generator.php` | The generator's rules, shared with the web page |
-| `handlers/system.php` | `/health`, `/config`, `/terms` |
+| `handlers/system.php` | `/health`, `/config`, `/app`, `/terms` |
 | `handlers/students.php` | `/students/{no}`, `/students/{no}/qr` |
 | `handlers/terms.php` | `POST /terms/accept` |
 | `handlers/scanner.php` | `/auth/*`, `/scanner/*` |
@@ -629,6 +675,7 @@ The API deliberately reads the same sources rather than copying them:
 | QR colors and size | `QRgenerator/js/scriptv2.js` | `gen_qr_spec()` — **the one copy**; keep them in step |
 | Attendance history | `includes/attendance_history.php` | `handle_student_attendance()` and `Tracker/crud/att_display.php` |
 | Attendance links | `includes/links.php`, `includes/late.php` | `handlers/links.php` and the web page's endpoints |
+| The app's version | `download/BCC-SASQR.apk`, via `includes/app_release.php` | `handle_app()` and `download/index.php` |
 
 One known inconsistency, inherited from the web app: `fetch_students.js`
 validates `\d{3}-\d{3,4}` while `scriptv2.js` validates `\d{3}-\d{1,5}`. The API

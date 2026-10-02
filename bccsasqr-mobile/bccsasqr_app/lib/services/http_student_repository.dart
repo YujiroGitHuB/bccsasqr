@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../core/config/app_config.dart';
 import '../core/utils/network_error.dart';
 import '../core/utils/student_number.dart';
+import '../models/app_release.dart';
 import '../models/attendance_history.dart';
 import '../models/class_link.dart';
 import '../models/live_update.dart';
@@ -13,6 +14,7 @@ import '../models/qr_payload.dart';
 import '../models/student_profile.dart';
 import '../models/student_record.dart';
 import '../models/terms_document.dart';
+import 'app_release_repository.dart';
 import 'check_in_repository.dart';
 import 'live_repository.dart';
 import 'photo_repository.dart';
@@ -36,16 +38,18 @@ import 'tracker_repository.dart';
 /// `terms_not_accepted` instead of merely showing it.
 ///
 /// It serves the Attendance Tracker too ([TrackerRepository]), My Profile's
-/// photo ([StudentPhotoRepository]), Check in ([CheckInRepository]) and the
-/// live feed behind Notifications ([LiveRepository]): the half of the API a
-/// student uses without signing in, over the same connection.
+/// photo ([StudentPhotoRepository]), Check in ([CheckInRepository]), the
+/// live feed behind Notifications ([LiveRepository]) and the update check
+/// ([AppReleaseRepository]): the half of the API used without signing in,
+/// over the same connection.
 class HttpStudentRepository
     implements
         StudentRepository,
         TrackerRepository,
         StudentPhotoRepository,
         CheckInRepository,
-        LiveRepository {
+        LiveRepository,
+        AppReleaseRepository {
   HttpStudentRepository({
     http.Client? client,
     String? baseUrl,
@@ -300,6 +304,10 @@ class HttpStudentRepository
       message: data['message'] as String? ?? '',
     );
   }
+
+  @override
+  Future<AppRelease> fetchRelease() async =>
+      AppRelease.fromJson(await _get(_endpoint('app')));
 
   // ------------------------------------------------------------- transport
 

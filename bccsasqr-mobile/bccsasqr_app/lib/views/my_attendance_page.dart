@@ -10,18 +10,26 @@ import '../core/utils/date_label.dart';
 import '../models/attendance_history.dart';
 import 'instructor_home.dart' show codeParts, shortTime;
 import 'scanner/widgets/attendance_panel.dart' show LateTag;
+import 'widgets/absent_tag.dart';
 import 'widgets/surface_panel.dart';
 
 /// Which days a filter chip leaves on screen.
-enum _Filter { all, onTime, late }
+enum _Filter { all, onTime, late, absent }
 
 /// My Attendance — the Attendance Tracker for the student this phone is set
-/// up for: no number to type, it opens on their record. The three numbers,
-/// then each subject with its days, late ones marked; a chip narrows the
-/// days to on time or late.
+/// up for: no number to type, it opens on their record. The numbers, then
+/// each subject with its days, late ones marked; a chip narrows the days to
+/// on time, late or absent.
 ///
-/// Days present only, as on the web: the records hold no count of the
-/// classes held, so there is no percentage to give.
+/// Absences since 2026-10-02: the days each enrolled subject's class was
+/// scanned without the student, counted by the server the way the
+/// instructor's absences report counts them, and listed among the days
+/// present in red. Every enrolled subject is listed, the ones never attended
+/// too. A server that cannot count them leaves the page as it was: days
+/// present only.
+///
+/// With no signal it shows the copy kept on the phone, under a note saying
+/// when it is from, rather than "Could not load".
 class MyAttendancePage extends StatefulWidget {
   const MyAttendancePage({
     super.key,
@@ -54,10 +62,11 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
     });
   }
 
-  bool _keeps(AttendanceDay day) => switch (_filter) {
+  bool _keeps(ClassDay day) => switch (_filter) {
     _Filter.all => true,
-    _Filter.onTime => !day.late,
+    _Filter.onTime => !day.absent && !day.late,
     _Filter.late => day.late,
+    _Filter.absent => day.absent,
   };
 
   @override
@@ -134,38 +143,60 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
     }
 
     final late = controller.lateCount;
+    final absent = history.absences;
+    // Every subject under All — an enrolled one with no class yet included;
+    // under a narrower chip, only those with a day it keeps.
     final subjects = [
       for (final s in history.subjects)
-        if (s.days.any(_keeps)) s,
+        if (_filter == _Filter.all || s.classDays.any(_keeps)) s,
     ];
 
+    final asOf = controller.asOf;
+
     return [
+      // The copy kept on the phone, or the answer before an ask that
+      // failed: said once, above the numbers it is about.
+      if (controller.stale && asOf != null) ...[
+        _KeptNote(when: DateLabel.since(asOf, widget.now())),
+        const SizedBox(height: 12),
+      ],
       _Stats(history: history, now: widget.now()),
+      if (absent != null) ...[const SizedBox(height: 10), const _AbsenceNote()],
       const SizedBox(height: 14),
       Wrap(
         spacing: 8,
         runSpacing: 8,
         children: [
           for (final (filter, label, count) in [
-            (_Filter.all, MyAttendanceStrings.filterAll, history.total),
+            (
+              _Filter.all,
+              MyAttendanceStrings.filterAll,
+              history.total + (absent ?? 0),
+            ),
             (
               _Filter.onTime,
               MyAttendanceStrings.filterOnTime,
               history.total - late,
             ),
             (_Filter.late, MyAttendanceStrings.filterLate, late),
+            if (absent != null)
+              (_Filter.absent, MyAttendanceStrings.filterAbsent, absent),
           ])
             _FilterChip(
               name: filter.name,
               label: MyAttendanceStrings.filter(label, count),
               selected: _filter == filter,
-              dot: filter == _Filter.late,
+              dot: switch (filter) {
+                _Filter.late => context.colors.warning,
+                _Filter.absent => context.colors.danger,
+                _ => null,
+              },
               onTap: () => setState(() => _filter = filter),
             ),
         ],
       ),
       const SizedBox(height: 14),
-      if (history.isEmpty)
+      if (history.subjects.isEmpty)
         const SurfacePanel(
           child: _Note(
             icon: Icons.event_busy_outlined,
@@ -186,7 +217,8 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
             // Keyed by the filter too: a new filter starts each card over.
             key: ValueKey('${subject.subject}|${_filter.name}'),
             subject: subject,
-            days: subject.days.where(_keeps).toList(),
+            days: subject.classDays.where(_keeps).toList(),
+            absentOnly: _filter == _Filter.absent,
             open: i == 0,
           ),
         ],
@@ -266,7 +298,9 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// The three numbers, under the accent rule the header cards wear.
+/// The three numbers, under the accent rule the header cards wear: days
+/// present, absences — the subjects' count instead where none were counted —
+/// and the last day attended.
 class _Stats extends StatelessWidget {
   const _Stats({required this.history, required this.now});
 
@@ -277,6 +311,7 @@ class _Stats extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final last = history.lastAttended;
+    final absent = history.absences;
     final lastLabel = last == null
         ? '—'
         : last.year == now.year &&
@@ -286,8 +321,15 @@ class _Stats extends StatelessWidget {
               StudentStrings.today.substring(1)
         : DateLabel.short(last);
 
-    Widget stat(String value, String label, {double size = 26}) => Expanded(
+    Widget stat(
+      String name,
+      String value,
+      String label, {
+      double size = 26,
+      Color? tint,
+    }) => Expanded(
       child: Column(
+        key: ValueKey('myAttendance.stat.$name'),
         children: [
           SizedBox(
             height: 32,
@@ -299,7 +341,7 @@ class _Stats extends StatelessWidget {
                 style: TextStyle(
                   fontSize: size,
                   fontWeight: FontWeight.w800,
-                  color: colors.textPrimary,
+                  color: tint ?? colors.textPrimary,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
@@ -333,12 +375,120 @@ class _Stats extends StatelessWidget {
             child: IntrinsicHeight(
               child: Row(
                 children: [
-                  stat('${history.total}', StudentStrings.daysPresent),
+                  stat(
+                    'present',
+                    '${history.total}',
+                    StudentStrings.daysPresent,
+                  ),
                   VerticalDivider(width: 1, color: colors.border),
-                  stat('${history.subjects.length}', StudentStrings.subjects),
+                  if (absent != null)
+                    stat(
+                      'absent',
+                      '$absent',
+                      StudentStrings.absences,
+                      // Red only while there is one: a state, not decoration.
+                      tint: absent > 0 ? colors.danger : null,
+                    )
+                  else
+                    stat(
+                      'subjects',
+                      '${history.subjects.length}',
+                      StudentStrings.subjects,
+                    ),
                   VerticalDivider(width: 1, color: colors.border),
-                  stat(lastLabel, MyAttendanceStrings.lastAttended, size: 17),
+                  stat(
+                    'last',
+                    lastLabel,
+                    MyAttendanceStrings.lastAttended,
+                    size: 17,
+                  ),
                 ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Saved on this phone · as of 8:04 AM" — what is shown is the copy kept
+/// on the phone, not the server's word right now — and how to update it.
+class _KeptNote extends StatelessWidget {
+  const _KeptNote({required this.when});
+
+  final String when;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return SurfacePanel(
+      key: const ValueKey('myAttendance.kept'),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 20, color: colors.textSecondary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  MyAttendanceStrings.keptAsOf(when),
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  MyAttendanceStrings.keptHint,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.35,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// How an absence is counted, under the number it explains.
+class _AbsenceNote extends StatelessWidget {
+  const _AbsenceNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 16,
+              color: colors.textMuted,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              TrackerStrings.absenceNote,
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.4,
+                color: colors.textSecondary,
               ),
             ),
           ),
@@ -354,7 +504,7 @@ class _FilterChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
-    this.dot = false,
+    this.dot,
   });
 
   /// `myAttendance.filter.<name>`, for tests.
@@ -363,12 +513,13 @@ class _FilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  /// Amber beside it — the late chip.
-  final bool dot;
+  /// The state's colour beside it — amber for late, red for absent.
+  final Color? dot;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final dot = this.dot;
 
     return Semantics(
       selected: selected,
@@ -390,12 +541,12 @@ class _FilterChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (dot) ...[
+                if (dot != null) ...[
                   Container(
                     width: 7,
                     height: 7,
                     decoration: BoxDecoration(
-                      color: colors.warning,
+                      color: dot,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -418,20 +569,25 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-/// One subject: its tile, name and instructor, how many days, and — opened —
-/// the days themselves, newest first.
+/// One subject: its tile, name, instructor and section, its classes and
+/// absences, how many days — and, opened, the days themselves, newest first,
+/// the missed ones among them.
 class _SubjectCard extends StatefulWidget {
   const _SubjectCard({
     super.key,
     required this.subject,
     required this.days,
+    required this.absentOnly,
     required this.open,
   });
 
   final SubjectAttendance subject;
 
   /// The days the filter leaves.
-  final List<AttendanceDay> days;
+  final List<ClassDay> days;
+
+  /// Under the Absent chip: the pill counts the days missed, in red.
+  final bool absentOnly;
 
   /// Opened at first — the top card.
   final bool open;
@@ -452,8 +608,19 @@ class _SubjectCardState extends State<_SubjectCard> {
     final subject = widget.subject;
     final days = widget.days;
     final late = days.where((d) => d.late).length;
+    final present = days.where((d) => !d.absent).length;
+    final missed = days.length - present;
+    final classes = subject.classes;
+    final absences = subject.absences ?? 0;
     final (tile, _) = codeParts(null, subject.subject);
     final shown = _all ? days : days.take(_SubjectCard._collapsedRows);
+    final pill = widget.absentOnly ? colors.danger : colors.accent;
+
+    final meta = [
+      if (subject.instructor.isNotEmpty) subject.instructor,
+      if (subject.section.isNotEmpty) TrackerStrings.section(subject.section),
+      if (late > 0) MyAttendanceStrings.lateCount(late),
+    ].join(' · ');
 
     return Container(
       decoration: BoxDecoration(
@@ -505,17 +672,42 @@ class _SubjectCardState extends State<_SubjectCard> {
                               color: colors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            [
-                              subject.instructor,
-                              if (late > 0) MyAttendanceStrings.lateCount(late),
-                            ].join(' · '),
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: colors.textSecondary,
+                          if (meta.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              meta,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: colors.textSecondary,
+                              ),
                             ),
-                          ),
+                          ],
+                          if (classes != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              classes == 0
+                                  ? TrackerStrings.noClassYet
+                                  : TrackerStrings.classesAttended(
+                                      subject.attended!,
+                                      classes,
+                                    ),
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: colors.textSecondary,
+                              ),
+                            ),
+                            // A line of its own: on a phone it would wrap
+                            // there anyway, and it is what the card is for.
+                            if (absences > 0)
+                              Text(
+                                TrackerStrings.absentCount(absences),
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: colors.danger,
+                                ),
+                              ),
+                          ],
                         ],
                       ),
                     ),
@@ -526,15 +718,17 @@ class _SubjectCardState extends State<_SubjectCard> {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: colors.accentWash(0.10),
+                        color: pill.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        TrackerStrings.days(days.length),
+                        widget.absentOnly
+                            ? TrackerStrings.absentCount(missed)
+                            : TrackerStrings.days(present),
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
-                          color: colors.accent,
+                          color: pill,
                         ),
                       ),
                     ),
@@ -561,6 +755,23 @@ class _SubjectCardState extends State<_SubjectCard> {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (days.isEmpty)
+                        // Enrolled, and the class not scanned yet.
+                        Container(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: colors.border),
+                            ),
+                          ),
+                          child: Text(
+                            TrackerStrings.noClassYetBody,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ),
                       for (final day in shown) _DayRow(day: day),
                       if (days.length > _SubjectCard._collapsedRows)
                         TextButton(
@@ -583,12 +794,13 @@ class _SubjectCardState extends State<_SubjectCard> {
 class _DayRow extends StatelessWidget {
   const _DayRow({required this.day});
 
-  final AttendanceDay day;
+  final ClassDay day;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final date = day.date;
+    final present = day.present;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -599,19 +811,28 @@ class _DayRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              date == null ? day.rawDate : DateLabel.short(date),
-              style: TextStyle(fontSize: 13.5, color: colors.textPrimary),
+              date == null ? (present?.rawDate ?? '') : DateLabel.short(date),
+              style: TextStyle(
+                fontSize: 13.5,
+                color: present == null
+                    ? colors.textSecondary
+                    : colors.textPrimary,
+              ),
             ),
           ),
-          if (day.late) ...[const LateTag(), const SizedBox(width: 8)],
-          Text(
-            shortTime(day.timeIn),
-            style: TextStyle(
-              fontSize: 13,
-              color: colors.textSecondary,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          if (present == null)
+            const AbsentTag()
+          else ...[
+            if (present.late) ...[const LateTag(), const SizedBox(width: 8)],
+            Text(
+              shortTime(present.timeIn),
+              style: TextStyle(
+                fontSize: 13,
+                color: colors.textSecondary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

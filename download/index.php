@@ -17,6 +17,7 @@
  * ============================================================ */
 
 include __DIR__ . '/../includes/systemConfig.php';
+require_once __DIR__ . '/../includes/app_release.php';
 
 const APK_NAME = 'BCC-SASQR.apk';
 
@@ -30,6 +31,10 @@ $apkTime  = $apkReady ? filemtime($apkPath) : 0;
 $apkHref = APK_NAME . '?v=' . $apkTime;
 $apkMb   = number_format($apkSize / 1048576, 1);
 $apkDate = $apkReady ? date('M j, Y', $apkTime) : '';
+
+// Read from the APK itself, as the app's update check reads it, so a
+// student sent here by "Update available" sees the version it named.
+$apkVersion = $apkReady ? (app_release()['version'] ?? null) : null;
 
 $acronym = $systemAcronym !== 'None' ? $systemAcronym : 'BCC SASQR';
 
@@ -122,6 +127,9 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
                 </div>
 
                 <ul class="dl-meta">
+                    <?php if ($apkVersion !== null): ?>
+                        <li><i class="bi bi-tag" aria-hidden="true"></i> Version <?= htmlspecialchars($apkVersion) ?></li>
+                    <?php endif; ?>
                     <?php if ($apkReady): ?>
                         <li><i class="bi bi-file-earmark-zip" aria-hidden="true"></i> APK · <?= $apkMb ?> MB</li>
                         <li><i class="bi bi-clock-history" aria-hidden="true"></i> Updated <?= htmlspecialchars($apkDate) ?></li>

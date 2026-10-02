@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-01.10';
+const WHATS_NEW_VERSION = '2026-10-02.3';
 
 /**
  * The changelog, newest release first.
@@ -69,6 +69,44 @@ const WHATS_NEW_VERSION = '2026-10-01.10';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-10-02',
+            'date'    => '2026-10-02',
+            'icon'    => 'bi-calendar-x',
+            'title'   => 'Absences for students, attendance offline, and update notices in the app',
+            'summary' => 'The Attendance Tracker — on the web and in the app — now counts each student’s absences in every subject, by the same class days your absences report uses, and lists every subject the student is enrolled in, even one they were never scanned in. The Android app now keeps a student’s attendance on their phone for when there is no signal, and tells its user when a newer version is on the download page.',
+            'items'   => [
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-wifi-off',
+                    'title' => 'Students see their attendance in the app even with no signal',
+                    'text'  => 'The app now keeps each student&rsquo;s attendance on their phone, so in a classroom with no signal their Home and <strong>Attendance</strong> still show it &mdash; marked with when it was last updated &mdash; instead of an error. It updates itself once the phone is back online. Students get this with the next download of the app.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-cloud-arrow-down',
+                    'title' => 'The app says when there is a newer version',
+                    'text'  => 'The Android app now checks the download page each time it opens. When a newer version is there, students and instructors see <strong>Update available</strong> on the app&rsquo;s Home, with the size of the download, and Settings names the new version &mdash; so nobody is left on an old build without knowing. The download page now shows which version it offers, too. Phones get this with the next download of the app.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-calendar-x',
+                    'title' => 'Absences in the Attendance Tracker',
+                    'text'  => 'A student who looks up their record in the <strong>Attendance Tracker</strong> now sees their <strong>Absences</strong>: in each subject, the days the class was scanned and they were not, listed in red among the days they were present. A class day is counted as in your absences report &mdash; a day anyone in the section was scanned in the subject &mdash; and today&rsquo;s classes count only once the day is over, so a student still waiting in line is never shown absent. Students with the app see the same on <strong>Attendance</strong> and on their Home, after downloading the app again.',
+                    'link'  => ['href' => 'Tracker/view.php', 'label' => 'Open the Attendance Tracker', 'can' => 'qr.tracker'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-journal-check',
+                    'title' => 'Every enrolled subject is listed, even with no scan',
+                    'text'  => 'The tracker used to list only the subjects a student had been scanned in, so a subject they never attended did not show at all &mdash; the one most worth seeing. It now lists every subject the student is enrolled in, with the section they take it with, and says so when a class has not been scanned yet.',
+                    'link'  => ['href' => 'Tracker/view.php', 'label' => 'Open the Attendance Tracker', 'can' => 'qr.tracker'],
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-10-01',

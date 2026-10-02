@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'app.dart';
 import 'core/theme/app_theme.dart';
+import 'services/attendance_store.dart';
 import 'services/check_in_repository.dart';
 import 'services/connectivity.dart';
 import 'services/device_lock.dart';
@@ -10,6 +11,7 @@ import 'services/notice_store.dart';
 import 'services/onboarding_store.dart';
 import 'services/profile_store.dart';
 import 'services/saved_qr_store.dart';
+import 'services/update_store.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +26,8 @@ void main() {
       profileStore: SharedPrefsProfileStore(),
       deviceTokenStore: SharedPrefsDeviceTokenStore(),
       noticeStore: SharedPrefsNoticeStore(),
+      updateStore: SharedPrefsUpdateStore(),
+      attendanceStore: SharedPrefsAttendanceStore(),
       deviceLock: LocalAuthDeviceLock(),
       studentLockStore: const SharedPrefsLockSwitchStore.student(),
     ),

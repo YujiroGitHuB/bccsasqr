@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../controllers/phone_lock_controller.dart';
 import '../controllers/settings_controller.dart';
+import '../controllers/update_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
@@ -26,6 +27,7 @@ class SettingsPage extends StatefulWidget {
     super.key,
     required this.controller,
     this.appInfo = AppInfo.load,
+    this.update,
     this.whatsNewBuilder,
     this.role,
     this.onSwitchRole,
@@ -76,6 +78,10 @@ class SettingsPage extends StatefulWidget {
   /// Overridable for tests: the real one asks the installed package.
   final Future<AppInfo> Function() appInfo;
 
+  /// A newer app on the download page: Get the latest version names it, in
+  /// the accent, for as long as it is newer — closed on Home or not.
+  final UpdateController? update;
+
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
@@ -109,7 +115,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     final c = widget.controller;
     final colors = context.colors;
-    final download = AppInfo.downloadPageUrl;
+    final update = widget.update;
+    final download = update?.downloadUrl ?? AppInfo.downloadPageUrl;
     final whatsNew = widget.whatsNewBuilder;
     final tour = widget.tourBuilder;
     final role = widget.role;
@@ -431,11 +438,27 @@ class _SettingsPageState extends State<SettingsPage> {
                                 SettingsStrings.serverDemo,
                           ),
                           if (download != null)
-                            _LinkRow(
-                              icon: Icons.system_update_outlined,
-                              title: SettingsStrings.update,
-                              body: SettingsStrings.updateBody,
-                              onTap: () => _open(download),
+                            ListenableBuilder(
+                              listenable: update ?? const _Silent(),
+                              builder: (context, _) {
+                                final newer = update != null && update.available
+                                    ? update.release?.version
+                                    : null;
+                                return _LinkRow(
+                                  key: const ValueKey('settings.update'),
+                                  icon: newer == null
+                                      ? Icons.system_update_outlined
+                                      : Icons.system_update_rounded,
+                                  title: newer == null
+                                      ? SettingsStrings.update
+                                      : UpdateStrings.settingsTitle(newer),
+                                  body: newer == null
+                                      ? SettingsStrings.updateBody
+                                      : UpdateStrings.settingsBody,
+                                  highlight: newer != null,
+                                  onTap: () => _open(download),
+                                );
+                              },
                             ),
                           _LinkRow(
                             icon: Icons.code_rounded,
@@ -470,11 +493,19 @@ class _SettingsPageState extends State<SettingsPage> {
 
 /// Icon, title and a line of explanation — the shape every row here shares.
 class _RowBody extends StatelessWidget {
-  const _RowBody({required this.icon, required this.title, this.body});
+  const _RowBody({
+    required this.icon,
+    required this.title,
+    this.body,
+    this.highlight = false,
+  });
 
   final IconData icon;
   final String title;
   final String? body;
+
+  /// In the accent: something waiting — a newer app.
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
@@ -486,10 +517,14 @@ class _RowBody extends StatelessWidget {
           height: 36,
           width: 36,
           decoration: BoxDecoration(
-            color: colors.surfaceRaised,
+            color: highlight ? colors.accentWash(0.14) : colors.surfaceRaised,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 19, color: colors.textSecondary),
+          child: Icon(
+            icon,
+            size: 19,
+            color: highlight ? colors.accent : colors.textSecondary,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -634,6 +669,7 @@ class _LinkRow extends StatelessWidget {
     required this.body,
     required this.onTap,
     this.external = true,
+    this.highlight = false,
   });
 
   final IconData icon;
@@ -643,6 +679,9 @@ class _LinkRow extends StatelessWidget {
 
   /// Leaves the app (the browser) rather than opening a page inside it.
   final bool external;
+
+  /// See [_RowBody.highlight].
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
@@ -655,7 +694,12 @@ class _LinkRow extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: _RowBody(icon: icon, title: title, body: body),
+                child: _RowBody(
+                  icon: icon,
+                  title: title,
+                  body: body,
+                  highlight: highlight,
+                ),
               ),
               Icon(
                 external
@@ -835,4 +879,15 @@ class _AccountPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A [Listenable] that never fires — for Settings with no update check.
+class _Silent implements Listenable {
+  const _Silent();
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
 }

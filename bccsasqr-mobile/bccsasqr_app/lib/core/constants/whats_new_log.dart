@@ -19,9 +19,89 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-01.11';
+  static const String version = '2026-10-02.3';
 
   static const List<WhatsNewRelease> releases = [
+    WhatsNewRelease(
+      id: '2026-10-02',
+      icon: Icons.event_busy_rounded,
+      title: 'Your absences, offline too, and a word on updates',
+      summary:
+          'Attendance now counts your absences — the days your class was '
+          'scanned and you were not — in each subject, and lists the days you '
+          'missed in red among the days you were there. Every subject you are '
+          'enrolled in shows, even one you have never been scanned in. Your '
+          'attendance now stays on the phone for when there is no signal, and '
+          'the app tells you when a newer version is on the download page.',
+      items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.tracker,
+          side: WhatsNewSide.student,
+          icon: Icons.cloud_off_rounded,
+          title: 'Your attendance, even with no signal',
+          text:
+              'Home and **Attendance** now keep your attendance on the phone. '
+              'With no signal — in a classroom, say — they show it as it was '
+              'last updated, marked **Saved on this phone · as of** the time, '
+              'instead of "Could not load", and update themselves once you are '
+              'back online. **Not you?** removes it from the phone.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.qr,
+          icon: Icons.system_update_rounded,
+          title: 'Told when there is a newer app',
+          text:
+              'The app now checks the download page when it opens. When a '
+              'newer version is there, **Update available** shows on Home, '
+              'with the size of the download — tap it to get it, or close it '
+              'until the next one — and Settings names it under **Get the '
+              'latest version**. Install it over this one: your QR code and '
+              'settings stay.',
+          link: false,
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.tracker,
+          side: WhatsNewSide.student,
+          icon: Icons.event_busy_rounded,
+          title: 'See your absences',
+          text:
+              '**Attendance** now shows how many classes you missed in each '
+              'subject — "12 of 14 classes attended · 2 absent" — with the '
+              'days you missed in red among the days you were there. Tap '
+              '**Absent** to see only those; Home counts them too. An absence '
+              'is a day your class was scanned and you were not. Today\'s '
+              'classes count once the day is over, so waiting in line is never '
+              'an absence.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.tracker,
+          side: WhatsNewSide.student,
+          icon: Icons.playlist_add_check_rounded,
+          title: 'Every subject you are enrolled in',
+          text:
+              '**Attendance** now lists every subject you are enrolled in, with '
+              'its section — even one you have never been scanned in, which '
+              'used to be missing from the list. A class that has not been '
+              'scanned yet says so.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.tracker,
+          side: WhatsNewSide.instructor,
+          icon: Icons.event_busy_rounded,
+          title: 'The Attendance Tracker shows absences',
+          text:
+              'Look up a student in **Attendance** and you now see their '
+              'absences in each subject, the days missed among the days '
+              'present, and every subject they are enrolled in — even one they '
+              'were never scanned in. The web tracker shows the same.',
+        ),
+      ],
+    ),
     WhatsNewRelease(
       id: '2026-10-01',
       icon: Icons.grid_view_rounded,

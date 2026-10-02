@@ -6,6 +6,7 @@ import '../controllers/my_attendance_controller.dart';
 import '../controllers/my_qr_controller.dart';
 import '../controllers/notifications_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../controllers/update_controller.dart';
 import '../controllers/whats_new_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
@@ -22,6 +23,7 @@ import 'widgets/profile_avatar.dart';
 import 'widgets/splash_parts.dart';
 import 'widgets/student_card_3d.dart';
 import 'widgets/surface_panel.dart';
+import 'widgets/update_card.dart';
 
 /// The student's Home — what their phone opens on, with the Menu button
 /// under it (student_shell.dart). Designed on 2026-10-01 to match the
@@ -51,6 +53,7 @@ class HomePage extends StatefulWidget {
     this.whatsNew,
     this.notificationsBuilder,
     this.notifications,
+    this.update,
     this.cardTurn,
     this.now = DateTime.now,
   });
@@ -76,6 +79,10 @@ class HomePage extends StatefulWidget {
   /// the student has not seen there yet.
   final WidgetBuilder? notificationsBuilder;
   final NotificationsController? notifications;
+
+  /// A newer app on the download page: a card under the greeting until it is
+  /// closed for that build.
+  final UpdateController? update;
 
   /// How long the card rests on each face before turning over by itself;
   /// null keeps it still (see [StudentCard3D.turnEvery]).
@@ -155,6 +162,15 @@ class _HomePageState extends State<HomePage>
         : AppStrings.homeEvening;
   }
 
+  /// When the attendance on screen is from — "8:04 AM" — while it is the copy
+  /// kept on the phone; null while it is the server's word.
+  String? _keptSince(MyAttendanceController attendance) {
+    final asOf = attendance.asOf;
+    return attendance.stale && asOf != null
+        ? DateLabel.since(asOf, widget.now())
+        : null;
+  }
+
   /// Fades [child] in and lifts it into place as piece [i] arrives.
   Widget _rise(int i, Widget child) => AnimatedBuilder(
     animation: _pieces[i],
@@ -173,10 +189,12 @@ class _HomePageState extends State<HomePage>
         widget.attendance,
         widget.whatsNew ?? const _Silent(),
         widget.notifications ?? const _Silent(),
+        widget.update ?? const _Silent(),
       ]),
       builder: (context, _) {
         final profile = widget.profile.profile;
         final unread = widget.whatsNew?.unread ?? false;
+        final update = widget.update;
         final askForPhoto =
             widget.profile.loaded && profile != null && !profile.hasPhoto;
 
@@ -225,6 +243,20 @@ class _HomePageState extends State<HomePage>
                         ),
                         const SizedBox(height: 18),
                         _Folding(
+                          shown: update?.showCard ?? false,
+                          child: update == null
+                              ? const SizedBox.shrink()
+                              : UpdateCard(
+                                  version: update.release?.version ?? '',
+                                  megabytes: update.release?.megabytes,
+                                  onUpdate: () => openDownloadPage(
+                                    context,
+                                    update.downloadUrl,
+                                  ),
+                                  onClose: () => unawaited(update.dismiss()),
+                                ),
+                        ),
+                        _Folding(
                           shown: askForPhoto,
                           child: _PhotoNudge(
                             required: profile?.photoRequired ?? false,
@@ -268,7 +300,10 @@ class _HomePageState extends State<HomePage>
                           padding: const EdgeInsets.only(top: 16),
                           child: _rise(
                             2,
-                            _TodayCard(today: widget.attendance.today),
+                            _TodayCard(
+                              today: widget.attendance.today,
+                              asOf: _keptSince(widget.attendance),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -823,9 +858,13 @@ class _CardButton extends StatelessWidget {
 /// Whether today's scan reached the records — green once it has, the
 /// colour the records use for present.
 class _TodayCard extends StatelessWidget {
-  const _TodayCard({required this.today});
+  const _TodayCard({required this.today, this.asOf});
 
   final List<TodayScan> today;
+
+  /// When the copy on screen is from, while it is the one kept on the phone:
+  /// a scan made since cannot be known, so "No scan yet" is not said.
+  final String? asOf;
 
   @override
   Widget build(BuildContext context) {
@@ -847,8 +886,13 @@ class _TodayCard extends StatelessWidget {
         if (first.day.late) StudentStrings.late.toLowerCase(),
       ].join(' · ');
     } else {
-      title = StudentStrings.noScanToday;
-      body = StudentStrings.noScanTodayBody;
+      final asOf = this.asOf;
+      title = asOf == null
+          ? StudentStrings.noScanToday
+          : StudentStrings.noScanSeen;
+      body = asOf == null
+          ? StudentStrings.noScanTodayBody
+          : StudentStrings.noScanSeenBody(asOf);
     }
 
     return Container(
@@ -1026,9 +1070,11 @@ class _Shortcut extends StatelessWidget {
   }
 }
 
-/// My Attendance at a glance: the three numbers, and the subjects most
-/// recently attended. Days present only — the records hold no count of the
-/// classes held, so there is no percentage to give.
+/// My Attendance at a glance: the three numbers — days present, absences,
+/// late — and the subjects most recently attended, with any absences in
+/// each. Where the server could not count absences, the subjects' count
+/// stands in for them, as before 2026-10-02. With no signal it is the copy
+/// kept on the phone, said so over it.
 class _AttendanceSummary extends StatelessWidget {
   const _AttendanceSummary({
     required this.controller,
@@ -1080,10 +1126,18 @@ class _AttendanceSummary extends StatelessWidget {
                     label: StudentStrings.daysPresent,
                   ),
                   VerticalDivider(width: 1, color: colors.border),
-                  _Stat(
-                    value: '${history.subjects.length}',
-                    label: StudentStrings.subjects,
-                  ),
+                  if (history.absences case final absent?)
+                    _Stat(
+                      key: const ValueKey('home.absences'),
+                      value: '$absent',
+                      label: StudentStrings.absences,
+                      dot: colors.danger,
+                    )
+                  else
+                    _Stat(
+                      value: '${history.subjects.length}',
+                      label: StudentStrings.subjects,
+                    ),
                   VerticalDivider(width: 1, color: colors.border),
                   _Stat(
                     value: '${controller.lateCount}',
@@ -1094,7 +1148,7 @@ class _AttendanceSummary extends StatelessWidget {
               ),
             ),
           ),
-          if (history.isEmpty)
+          if (history.subjects.isEmpty)
             _Line(text: StudentStrings.attendanceEmpty)
           else
             for (final subject in recent.take(3))
@@ -1127,6 +1181,26 @@ class _AttendanceSummary extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
+        if (controller.asOf case final asOf? when controller.stale) ...[
+          Row(
+            key: const ValueKey('home.kept'),
+            children: [
+              Icon(
+                Icons.cloud_off_rounded,
+                size: 15,
+                color: colors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  MyAttendanceStrings.keptAsOf(DateLabel.since(asOf, now())),
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
         SurfacePanel(padding: EdgeInsets.zero, child: body),
       ],
     );
@@ -1137,12 +1211,12 @@ class _AttendanceSummary extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({required this.value, required this.label, this.dot});
+  const _Stat({super.key, required this.value, required this.label, this.dot});
 
   final String value;
   final String label;
 
-  /// The state's colour beside the label — amber for late.
+  /// The state's colour beside the label — amber for late, red for absent.
   final Color? dot;
 
   @override
@@ -1190,8 +1264,8 @@ class _Stat extends StatelessWidget {
   }
 }
 
-/// One subject: its initials on a tile, its name, when last attended, and
-/// how many days.
+/// One subject: its initials on a tile, its name, when last attended and
+/// any absences, and how many days.
 class _SubjectRow extends StatelessWidget {
   const _SubjectRow({required this.subject, required this.now});
 
@@ -1203,6 +1277,7 @@ class _SubjectRow extends StatelessWidget {
     final colors = context.colors;
     final (tile, _) = codeParts(null, subject.subject);
     final last = subject.days.isEmpty ? null : subject.days.first;
+    final absences = subject.absences ?? 0;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -1245,13 +1320,29 @@ class _SubjectRow extends StatelessWidget {
                     color: colors.textPrimary,
                   ),
                 ),
-                if (last != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    StudentStrings.last(_when(last)),
-                    style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                const SizedBox(height: 2),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: last == null
+                            ? StudentStrings.noScanYet
+                            : StudentStrings.last(_when(last)),
+                      ),
+                      if (absences > 0)
+                        TextSpan(
+                          text: TrackerStrings.andAbsent(absences),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: colors.danger,
+                          ),
+                        ),
+                    ],
                   ),
-                ],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                ),
               ],
             ),
           ),

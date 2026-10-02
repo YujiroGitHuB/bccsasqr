@@ -433,6 +433,24 @@ abstract final class TrackerStrings {
   static const String statPresent = 'Days present';
   static const String statSubjects = 'Subjects';
   static const String statLast = 'Last attended';
+  static const String statAbsences = 'Absences';
+
+  // Absences — includes/attendance_history.php counts them; said once,
+  // where the number is read, because it is not a roll call.
+  static const String absenceNote =
+      'An absence is a day your class was scanned and you were not. Today\'s '
+      'classes count once the day is over.';
+  // No-break spaces: "2" and "absent" must not part, and after a line
+  // (Home's "Last: …") the phrase wraps or is cut whole.
+  static String absentCount(int n) => '$n absent';
+  static String andAbsent(int n) => ' · ${absentCount(n)}';
+  static const String absentTag = 'Absent';
+  static String section(String section) => 'Section $section';
+  static String classesAttended(int attended, int classes) =>
+      '$attended of $classes ${classes == 1 ? 'class' : 'classes'} attended';
+  static const String noClassYet = 'No class scanned yet';
+  static const String noClassYetBody =
+      'Nothing yet — your days show here once your class is scanned.';
 
   static String days(int n) => n == 1 ? '$n day' : '$n days';
   static const String tableDate = 'Date';
@@ -655,6 +673,35 @@ abstract final class OnboardingStrings {
       'Open My Attendance to see the days you were marked present in each '
       'subject, late marks included.';
   static String daysChip(int n) => n == 1 ? '1 day present' : '$n days present';
+}
+
+/// A newer app on the download page: Home's card, Settings' row, and the
+/// page a build too old to run shows instead of everything else.
+abstract final class UpdateStrings {
+  // Home's card.
+  static const String cardTitle = 'Update available';
+  static String cardBody(String version, int? megabytes) =>
+      'Version $version is ready'
+      '${megabytes == null ? '' : ' ($megabytes MB)'}. Tap to download it, '
+      'then install it over this one.';
+  static const String cardClose = 'Not now';
+
+  // Settings, under About.
+  static String settingsTitle(String version) => 'Update to version $version';
+  static const String settingsBody = 'A newer version is on the download page';
+
+  // Too old to run.
+  static const String requiredTitle = 'Update required';
+  static const String requiredBody =
+      'This version of the app no longer works with the school\'s server. '
+      'Download the new one and install it over this one — your QR code and '
+      'settings stay on the phone.';
+  static String requiredNewest(String version) => 'Newest version: $version';
+  static String requiredInstalled(String label) => 'On this phone: $label';
+  static const String requiredDownload = 'Download the update';
+  static const String requiredRetry = 'Check again';
+
+  static const String openFailed = 'Could not open the download page';
 }
 
 /// The What's New page and the home screen's card for it. The entries
@@ -1020,11 +1067,18 @@ abstract final class StudentStrings {
   static const String noScanToday = 'No scan yet today';
   static const String noScanTodayBody =
       'Show your QR code to your instructor, or check in with the class code.';
+  // Offline: the phone cannot know of a scan made since.
+  static const String noScanSeen = 'No scan seen yet today';
+  static String noScanSeenBody(String when) =>
+      'Last updated $when. A scan made while this phone is offline shows here '
+      'once it is back online.';
 
   // Home: attendance.
   static const String daysPresent = 'Days present';
   static const String subjects = 'Subjects';
+  static const String absences = 'Absences';
   static const String late = 'Late';
+  static const String noScanYet = 'No scan yet';
   static const String seeAll = 'See all';
   static const String today = 'today';
   static String last(String when) => 'Last: $when';
@@ -1133,11 +1187,18 @@ abstract final class MyAttendanceStrings {
   static const String filterAll = 'All';
   static const String filterOnTime = 'On time';
   static const String filterLate = 'Late';
+  static const String filterAbsent = 'Absent';
   static String filter(String label, int n) => '$label · $n';
   static const String instructorLate = 'late';
   static String lateCount(int n) => '$n late';
   static const String noneForFilter = 'Nothing to show for this filter.';
   static const String loading = 'Loading your attendance…';
+
+  // The copy kept on the phone, shown with no signal.
+  static String keptAsOf(String when) => 'Saved on this phone · as of $when';
+  static const String keptHint =
+      'It updates by itself when you are back online — or pull down to try '
+      'now.';
 }
 
 /// Check in — the student's side of an attendance link, inside the app.

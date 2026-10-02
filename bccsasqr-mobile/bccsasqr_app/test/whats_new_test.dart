@@ -445,10 +445,10 @@ void main() {
         findsOneWidget,
       );
 
-      // An item opens its tab, not a page over it.
+      // An item opens its tab, not a page over it. The newest one's button.
       await tester.tap(find.byKey(const ValueKey('whatsNew.filter.tracker')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(WhatsNewStrings.openTracker));
+      await tester.tap(find.text(WhatsNewStrings.openTracker).first);
       await tester.pumpAndSettle();
       expect(find.byType(WhatsNewPage), findsNothing);
       expect(find.byType(TrackerIntro), findsOneWidget);

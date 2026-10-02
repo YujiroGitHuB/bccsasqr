@@ -14,8 +14,8 @@ abstract interface class TrackerRepository {
 
 /// What runs when no `API_BASE_URL` was supplied at build time: the same four
 /// students as [InMemoryStudentRepository], with a few days each, so the
-/// whole screen can be tried without a server — including a student with no
-/// scans yet.
+/// whole screen can be tried without a server — including absences, a
+/// subject never attended, and a student with no scans yet.
 class InMemoryTrackerRepository implements TrackerRepository {
   InMemoryTrackerRepository({this.latency = const Duration(milliseconds: 650)});
 
@@ -37,6 +37,8 @@ class InMemoryTrackerRepository implements TrackerRepository {
       section: 'BSIT 4-A',
       total: 5,
       lastAttended: DateTime(2026, 9, 25),
+      classes: 6,
+      absences: 1,
       subjects: [
         SubjectAttendance(
           subject: 'Capstone Project 2',
@@ -47,6 +49,10 @@ class InMemoryTrackerRepository implements TrackerRepository {
             _day('2026-09-18', '08:21:09 AM', late: true),
             _day('2026-09-11', '07:58:30 AM'),
           ],
+          section: '4A',
+          enrolled: true,
+          classes: 4,
+          absentDates: [DateTime(2026, 9, 4)],
         ),
         SubjectAttendance(
           subject: 'Information Assurance and Security',
@@ -56,6 +62,9 @@ class InMemoryTrackerRepository implements TrackerRepository {
             _day('2026-09-23', '01:05:12 PM'),
             _day('2026-09-16', '01:01:47 PM'),
           ],
+          section: '4A',
+          enrolled: true,
+          classes: 2,
         ),
       ],
     ),
@@ -66,7 +75,20 @@ class InMemoryTrackerRepository implements TrackerRepository {
       section: 'BSCS 2-B',
       total: 3,
       lastAttended: DateTime(2026, 9, 25),
+      classes: 6,
+      absences: 3,
       subjects: [
+        // Enrolled and never scanned in: listed all the same, absences and
+        // all — the subject a student most needs to see.
+        SubjectAttendance(
+          subject: 'Data Structures and Algorithms',
+          instructor: 'Ana Villanueva',
+          count: 0,
+          section: '2B',
+          enrolled: true,
+          classes: 2,
+          absentDates: [DateTime(2026, 9, 24), DateTime(2026, 9, 17)],
+        ),
         SubjectAttendance(
           subject: 'Object Oriented Programming',
           instructor: 'Charles Nixon Cayading',
@@ -77,6 +99,10 @@ class InMemoryTrackerRepository implements TrackerRepository {
             _day('2026-09-18', '08:17:55 AM', late: true),
             _day('2026-09-11', '08:00:03 AM'),
           ],
+          section: '2B',
+          enrolled: true,
+          classes: 4,
+          absentDates: [DateTime(2026, 9, 4)],
         ),
       ],
     ),
@@ -87,16 +113,22 @@ class InMemoryTrackerRepository implements TrackerRepository {
       section: 'BSBA 3-C',
       total: 1,
       lastAttended: DateTime(2026, 9, 22),
+      classes: 2,
+      absences: 1,
       subjects: [
         SubjectAttendance(
           subject: 'Business Law',
           instructor: 'Ana Villanueva',
           count: 1,
           days: [_day('2026-09-22', '10:30:26 AM')],
+          section: '3C',
+          enrolled: true,
+          classes: 2,
+          absentDates: [DateTime(2026, 9, 15)],
         ),
       ],
     ),
-    // Enrolled, never scanned — the "No attendance yet" state.
+    // No subject and no scan yet — the "No attendance yet" state.
     '023-770': const AttendanceHistory(
       studentNumber: '023-770',
       fullName: 'Angelica Mae Reyes',

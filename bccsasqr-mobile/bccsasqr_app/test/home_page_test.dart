@@ -14,6 +14,7 @@ import 'package:bccsasqr_app/models/student_notice.dart';
 import 'package:bccsasqr_app/models/student_profile.dart';
 import 'package:bccsasqr_app/models/student_record.dart';
 import 'package:bccsasqr_app/models/terms_document.dart';
+import 'package:bccsasqr_app/services/attendance_store.dart';
 import 'package:bccsasqr_app/services/live_repository.dart';
 import 'package:bccsasqr_app/services/notice_store.dart';
 import 'package:bccsasqr_app/services/photo_repository.dart';
@@ -72,11 +73,13 @@ class _Tracker implements TrackerRepository {
   _Tracker(this.history);
 
   AttendanceHistory? history;
+  StudentLookupException? failure;
   int asked = 0;
 
   @override
   Future<AttendanceHistory?> fetchAttendance(StudentNumber number) async {
     asked++;
+    if (failure case final f?) throw f;
     return history;
   }
 }
@@ -132,6 +135,48 @@ AttendanceHistory _history({bool today = true}) => AttendanceHistory(
   ],
 );
 
+/// [_history] with absences counted, and a subject never attended.
+AttendanceHistory _counted() => AttendanceHistory(
+  studentNumber: _number.value,
+  fullName: _record.fullName,
+  course: 'BSIT',
+  section: '2A',
+  total: 3,
+  lastAttended: _today,
+  classes: 6,
+  absences: 3,
+  subjects: [
+    SubjectAttendance(
+      subject: 'Data Structures and Algorithms',
+      instructor: 'Sample Instructor',
+      count: 1,
+      days: [_day(DateTime(2026, 9, 30), '01:02:00 PM')],
+      enrolled: true,
+      classes: 2,
+      absentDates: [DateTime(2026, 9, 23)],
+    ),
+    SubjectAttendance(
+      subject: 'Networking 1',
+      instructor: '',
+      count: 0,
+      enrolled: true,
+      classes: 2,
+      absentDates: [DateTime(2026, 9, 29), DateTime(2026, 9, 22)],
+    ),
+    SubjectAttendance(
+      subject: 'Object Oriented Programming',
+      instructor: 'Sample Instructor',
+      count: 2,
+      days: [
+        _day(DateTime(2026, 10, 1), '08:04:12 AM'),
+        _day(DateTime(2026, 9, 28), '08:11:40 AM', late: true),
+      ],
+      enrolled: true,
+      classes: 2,
+    ),
+  ],
+);
+
 void main() {
   setUp(() {
     final view =
@@ -164,6 +209,7 @@ void main() {
     ValueNotifier<bool>? onScreen,
     NotificationsController? notifications,
     WidgetBuilder? notificationsBuilder,
+    AttendanceStore? attendanceStore,
   }) async {
     final profiles = ProfileController(
       store: MemoryProfileStore(profile),
@@ -177,6 +223,7 @@ void main() {
     final attendance = MyAttendanceController(
       profile: profiles,
       repository: tracker ?? _Tracker(_history()),
+      store: attendanceStore,
       clock: () => _today,
     );
     addTearDown(() {
@@ -320,6 +367,70 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('home.seeAll')));
     expect(opened, [StudentTab.tracker]);
+  });
+
+  testWidgets('counts absences in place of the subjects, and shows each '
+      'subject\'s beside it — the one never attended too', (tester) async {
+    await pumpHome(tester, profile: kept, tracker: _Tracker(_counted()));
+
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('home.absences')),
+        matching: find.text('3'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(StudentStrings.subjects), findsNothing);
+    expect(
+      find.text(
+        StudentStrings.last('Wed, Sep 30') + TrackerStrings.andAbsent(1),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(StudentStrings.noScanYet + TrackerStrings.andAbsent(2)),
+      findsOneWidget,
+    );
+    // No absence, nothing added.
+    expect(find.text(StudentStrings.last('today, 8:04 AM')), findsOneWidget);
+  });
+
+  testWidgets('with no signal it shows the copy kept on the phone, says when '
+      'it is from, and does not claim today has no scan', (tester) async {
+    const when = 'Wed, Sep 30, 4:12 PM';
+    await pumpHome(
+      tester,
+      profile: kept,
+      tracker: _Tracker(null)
+        ..failure = const StudentLookupException(
+          'No internet connection.',
+          code: 'network',
+        ),
+      attendanceStore: MemoryAttendanceStore(
+        KeptAttendance(
+          studentNumber: '000-1023',
+          at: DateTime(2026, 9, 30, 16, 12),
+          history: _history(today: false),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('home.kept')), findsOneWidget);
+    expect(find.text(MyAttendanceStrings.keptAsOf(when)), findsOneWidget);
+    expect(find.text('Data Structures and Algorithms'), findsOneWidget);
+    expect(find.text(StudentStrings.attendanceFailed), findsNothing);
+    expect(find.text(StudentStrings.noScanSeen), findsOneWidget);
+    expect(find.text(StudentStrings.noScanSeenBody(when)), findsOneWidget);
+    expect(find.text(StudentStrings.noScanToday), findsNothing);
+  });
+
+  testWidgets('online, nothing is marked', (tester) async {
+    final store = MemoryAttendanceStore();
+    await pumpHome(tester, profile: kept, attendanceStore: store);
+
+    expect(find.byKey(const ValueKey('home.kept')), findsNothing);
+    // And the answer is kept for next time.
+    expect(store.kept?.studentNumber, '000-1023');
   });
 
   group('the card the code is on', () {

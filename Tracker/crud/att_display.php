@@ -8,6 +8,7 @@ $search_performed = false;
 $status = '';
 $subjects_summary = [];
 $latest_date = null;
+$absences_total = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
     $student_no = trim($_POST['student_no']);
@@ -25,7 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
             $subjects_summary   = $history['subjects'];
             $total_attendance   = $history['total'];
             $latest_date        = $history['last_attended'];
-            $status = $total_attendance > 0 ? 'success' : 'no-attendance';
+            $absences_total     = $history['absences'];
+            // An enrolled student with no scan yet still has subjects to
+            // show — and possibly absences, which is the point.
+            $status = ($total_attendance > 0 || $subjects_summary) ? 'success' : 'no-attendance';
         } else {
             $status = 'not-found';
         }
@@ -107,68 +111,131 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_no'])) {
 
                 <!-- The summary. The subject count and the last
                      attendance were already in the table before, but you
-                     had to count them yourself. -->
+                     had to count them yourself. Absences take the
+                     subjects' place once they can be counted: the
+                     subjects are listed right below, the absences
+                     nowhere else. -->
                 <div class="trk-stats">
                     <div class="trk-stat is-primary">
                         <div class="trk-stat-label"><i class="bi bi-check2-circle"></i> Days present</div>
                         <div class="trk-stat-value"><?= (int) $total_attendance ?></div>
                     </div>
-                    <div class="trk-stat">
-                        <div class="trk-stat-label"><i class="bi bi-journal-text"></i> Subjects</div>
-                        <div class="trk-stat-value"><?= count($subjects_summary) ?></div>
-                    </div>
+                    <?php if ($absences_total !== null): ?>
+                        <div class="trk-stat<?= $absences_total > 0 ? ' is-absent' : '' ?>">
+                            <div class="trk-stat-label"><i class="bi bi-x-circle"></i> Absences</div>
+                            <div class="trk-stat-value"><?= (int) $absences_total ?></div>
+                        </div>
+                    <?php else: ?>
+                        <div class="trk-stat">
+                            <div class="trk-stat-label"><i class="bi bi-journal-text"></i> Subjects</div>
+                            <div class="trk-stat-value"><?= count($subjects_summary) ?></div>
+                        </div>
+                    <?php endif; ?>
                     <div class="trk-stat">
                         <div class="trk-stat-label"><i class="bi bi-calendar-event"></i> Last attended</div>
                         <div class="trk-stat-value is-text"><?= $latest_date ? date('M d, Y', $latest_date) : '—' ?></div>
                     </div>
                 </div>
 
+                <?php if ($absences_total !== null): ?>
+                    <!-- How the number is made, once, where it is read —
+                         it is not a roll call, and a student who knows
+                         that does not have to ask. -->
+                    <p class="trk-note">
+                        <i class="bi bi-info-circle"></i>
+                        <span>An absence is a day your class was scanned and you were not. Today's classes count once the day is over.</span>
+                    </p>
+                <?php endif; ?>
+
                 <!-- Attendance Per Subject -->
                 <div class="subjects-container">
                     <?php foreach ($subjects_summary as $subject => $data): ?>
+                        <?php
+                        // The days present and the days missed in one
+                        // list, newest first — a missed day reads where
+                        // it fell, not in a second table to compare.
+                        $rows = [];
+                        foreach ($data['records'] as $record) {
+                            $rows[] = ['ts' => strtotime((string) $record['date']) ?: 0, 'record' => $record];
+                        }
+                        foreach ($data['absent_dates'] as $day) {
+                            $rows[] = ['ts' => strtotime($day) ?: 0, 'record' => null, 'day' => $day];
+                        }
+                        usort($rows, fn($a, $b) => $b['ts'] <=> $a['ts']);
+
+                        $meta = array_filter([
+                            trim((string) $data['instructor']),
+                            $data['section'] !== null ? 'Section ' . $data['section'] : '',
+                        ], 'strlen');
+                        ?>
                         <div class="subject-card">
                             <div class="subject-header">
                                 <div class="subject-heading">
                                     <h3><?= htmlspecialchars($subject) ?></h3>
-                                    <p class="instructor-name"><i class="bi bi-person"></i> <?= htmlspecialchars($data['instructor']) ?></p>
+                                    <?php if ($meta): ?>
+                                        <p class="instructor-name"><i class="bi bi-person"></i> <?= htmlspecialchars(implode(' · ', $meta)) ?></p>
+                                    <?php endif; ?>
+                                    <?php if ($data['classes'] !== null): ?>
+                                        <?php // Days, not records: an old double scan is one class attended. ?>
+                                        <p class="class-count">
+                                            <?= $data['classes'] === 0
+                                                ? 'No class scanned yet'
+                                                : ($data['classes'] - $data['absences']) . ' of ' . $data['classes']
+                                                    . ($data['classes'] === 1 ? ' class' : ' classes') . ' attended' ?>
+                                        </p>
+                                    <?php endif; ?>
                                 </div>
                                 <span class="subject-count">
                                     <i class="bi bi-check2"></i>
                                     <?= $data['count'] ?> <?= $data['count'] === 1 ? 'day' : 'days' ?>
                                 </span>
+                                <?php if ((int) $data['absences'] > 0): ?>
+                                    <span class="subject-absent">
+                                        <i class="bi bi-x-lg"></i>
+                                        <?= (int) $data['absences'] ?> absent
+                                    </span>
+                                <?php endif; ?>
                             </div>
 
-                            <div class="table-scroll">
-                                <table class="attendance-table">
-                                    <thead>
-                                        <tr>
-                                            <th class="col-num">#</th>
-                                            <th>Date</th>
-                                            <th class="col-time">Time in</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($data['records'] as $index => $record): ?>
-                                            <?php $ts = strtotime((string) $record['date']); ?>
+                            <?php if ($rows): ?>
+                                <div class="table-scroll">
+                                    <table class="attendance-table">
+                                        <thead>
                                             <tr>
-                                                <td class="col-num"><?= $index + 1 ?></td>
-                                                <td class="cell-date">
-                                                    <?= $ts ? date('M d, Y', $ts) : htmlspecialchars($record['date']) ?>
-                                                    <?php if ($ts): ?>
-                                                        <span class="cell-day"><?= date('l', $ts) ?></span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td class="cell-time">
-                                                    <?php if ((int) $record['is_late'] === 1): ?>
-                                                        <span class="late-tag">Late</span>
-                                                    <?php endif; ?>
-                                                    <?= htmlspecialchars($record['time_in']) ?>
-                                                </td>
+                                                <th class="col-num">#</th>
+                                                <th>Date</th>
+                                                <th class="col-time">Time in</th>
                                             </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($rows as $index => $row): ?>
+                                                <?php $ts = $row['ts']; $record = $row['record']; ?>
+                                                <tr<?= $record === null ? ' class="is-absent"' : '' ?>>
+                                                    <td class="col-num"><?= $index + 1 ?></td>
+                                                    <td class="cell-date">
+                                                        <?= $ts ? date('M d, Y', $ts) : htmlspecialchars($record['date'] ?? $row['day']) ?>
+                                                        <?php if ($ts): ?>
+                                                            <span class="cell-day"><?= date('l', $ts) ?></span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td class="cell-time">
+                                                        <?php if ($record === null): ?>
+                                                            <span class="absent-tag">Absent</span>
+                                                        <?php else: ?>
+                                                            <?php if ((int) $record['is_late'] === 1): ?>
+                                                                <span class="late-tag">Late</span>
+                                                            <?php endif; ?>
+                                                            <?= htmlspecialchars($record['time_in']) ?>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else: ?>
+                                <p class="subject-empty">Nothing yet — your days show here once your class is scanned.</p>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>

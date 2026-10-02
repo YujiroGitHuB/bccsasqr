@@ -38,4 +38,18 @@ abstract final class DateLabel {
   static String short(DateTime d) =>
       '${_weekdays[d.weekday - 1].substring(0, 3)}, '
       '${_months[d.month - 1]} ${d.day}';
+
+  /// `8:04 AM`.
+  static String time(DateTime d) {
+    final hour = d.hour % 12 == 0 ? 12 : d.hour % 12;
+    final minute = d.minute.toString().padLeft(2, '0');
+    return '$hour:$minute ${d.hour < 12 ? 'AM' : 'PM'}';
+  }
+
+  /// `8:04 AM` on [now]'s day, `Wed, Sep 30, 8:04 AM` before it — when a
+  /// copy kept on the phone is from.
+  static String since(DateTime d, DateTime now) =>
+      d.year == now.year && d.month == now.month && d.day == now.day
+      ? time(d)
+      : '${short(d)}, ${time(d)}';
 }

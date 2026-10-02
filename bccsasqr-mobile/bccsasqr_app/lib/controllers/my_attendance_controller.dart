@@ -6,6 +6,7 @@ import '../core/constants/app_strings.dart';
 import '../core/utils/student_number.dart';
 import '../models/attendance_history.dart';
 import '../models/live_update.dart';
+import '../services/attendance_store.dart';
 import '../services/student_repository.dart';
 import '../services/tracker_repository.dart';
 import 'profile_controller.dart';
@@ -24,21 +25,35 @@ typedef TodayScan = ({String subject, AttendanceDay day});
 /// Between loads the live feed keeps it current (notifications_controller.
 /// dart): a new record is added to the history on screen as it arrives
 /// ([addRecords]), so a scan shows on Home with no pull to refresh.
+///
+/// Every answer is kept on the phone ([AttendanceStore], since 2026-10-02):
+/// the next launch shows it at once while the server is asked, and with no
+/// signal — a school's usual state — it stays on screen, marked with when
+/// it is from ([stale], [asOf]) instead of "Could not load". "Not you?"
+/// forgets it with the student.
 class MyAttendanceController extends ChangeNotifier {
   MyAttendanceController({
     required ProfileController profile,
     required TrackerRepository repository,
+    AttendanceStore? store,
+    Stream<bool>? online,
     DateTime Function()? clock,
   }) : _profile = profile,
        _repository = repository,
+       _store = store ?? MemoryAttendanceStore(),
        _clock = clock ?? DateTime.now {
     _profile.addListener(_onProfile);
     _onProfile();
+    _online = online?.listen(_onOnline);
   }
 
   final ProfileController _profile;
   final TrackerRepository _repository;
+  final AttendanceStore _store;
   final DateTime Function() _clock;
+
+  /// The phone's network (services/connectivity.dart), when it can tell.
+  StreamSubscription<bool>? _online;
 
   String? _number;
   AttendanceHistory? _history;
@@ -49,6 +64,16 @@ class MyAttendanceController extends ChangeNotifier {
   int _token = 0;
   bool _disposed = false;
 
+  /// Bumped whenever the student changes, so the copy read for the one
+  /// before is dropped.
+  int _generation = 0;
+
+  /// When the server gave the history on screen.
+  DateTime? _asOf;
+
+  /// The server has answered for this student since it was set.
+  bool _fresh = false;
+
   /// The load under way, for a second caller to wait on.
   Future<void>? _loadingNow;
 
@@ -57,6 +82,15 @@ class MyAttendanceController extends ChangeNotifier {
 
   AttendanceHistory? get history => _history;
   bool get isLoading => _loading;
+
+  /// When the server gave the history on screen — the kept copy's time
+  /// until it answers again.
+  DateTime? get asOf => _asOf;
+
+  /// What is on screen is not the server's word right now: the copy kept on
+  /// the phone, or the last answer before an ask that failed. The screens
+  /// then say when it is from.
+  bool get stale => _history != null && (!_fresh || _error != null);
 
   /// Answered at least once for this student — with a history or without.
   bool get loaded => _loaded;
@@ -95,15 +129,65 @@ class MyAttendanceController extends ChangeNotifier {
     final number = _profile.profile?.record.studentNumber.value;
     if (number == _number) return;
     _number = number;
+    _generation++;
     _token++;
     _history = null;
+    _asOf = null;
+    _fresh = false;
     _loaded = false;
     _error = null;
     _errorCode = null;
     _loading = false;
     _loadingNow = null;
     notifyListeners();
-    if (number != null) unawaited(refresh());
+    if (number == null) {
+      // "Not you?": the phone forgets their attendance with them.
+      unawaited(_store.clear());
+      return;
+    }
+    unawaited(_restore(number, _generation));
+    unawaited(refresh());
+  }
+
+  /// The copy kept on the phone, on screen until the server answers — or in
+  /// its place, with no signal.
+  Future<void> _restore(String number, int generation) async {
+    final KeptAttendance? kept;
+    try {
+      kept = await _store.load();
+    } catch (_) {
+      return;
+    }
+    if (_disposed || generation != _generation || kept == null) return;
+    if (kept.studentNumber != number) {
+      // The student before this one: not this one's to see.
+      unawaited(_store.clear());
+      return;
+    }
+    // The server was quicker.
+    if (_fresh || _history != null) return;
+    _history = kept.history;
+    _asOf = kept.at;
+    notifyListeners();
+  }
+
+  /// Back on a network with the kept copy on screen: asks at once, so it is
+  /// the server's word again without a pull.
+  void _onOnline(bool online) {
+    if (online && stale) unawaited(refresh());
+  }
+
+  /// Keeps what is on screen for the next launch, and for no signal.
+  void _keep() {
+    final number = _number;
+    final history = _history;
+    final at = _asOf;
+    if (number == null || history == null || at == null) return;
+    unawaited(
+      _store.save(
+        KeptAttendance(studentNumber: number, at: at, history: history),
+      ),
+    );
   }
 
   /// Asks again — on a pull, when Home shows, and when the live feed sees a
@@ -125,8 +209,16 @@ class MyAttendanceController extends ChangeNotifier {
       final found = await _repository.fetchAttendance(number);
       if (_disposed || token != _token) return;
       _history = found;
+      _asOf = found == null ? null : _clock();
+      _fresh = true;
       _error = null;
       _errorCode = null;
+      if (found == null) {
+        // The record is gone from the school's list: so is the copy.
+        unawaited(_store.clear());
+      } else {
+        _keep();
+      }
     } on StudentLookupException catch (e) {
       if (_disposed || token != _token) return;
       _error = e.message;
@@ -165,6 +257,8 @@ class MyAttendanceController extends ChangeNotifier {
       final day = record.day;
       final at = subjects.indexWhere((s) => s.subject == record.subject);
       if (at < 0) {
+        // A subject the last load did not list: its absences are not known
+        // here, so none are claimed until the next load counts them.
         subjects
           ..add(
             SubjectAttendance(
@@ -181,12 +275,7 @@ class MyAttendanceController extends ChangeNotifier {
       } else {
         final subject = subjects[at];
         if (subject.days.any((d) => _same(d, day))) continue;
-        subjects[at] = SubjectAttendance(
-          subject: subject.subject,
-          instructor: subject.instructor,
-          count: subject.count + 1,
-          days: _withDay(subject.days, day),
-        );
+        subjects[at] = _attended(subject, day);
       }
       total++;
       final date = day.date;
@@ -194,6 +283,7 @@ class MyAttendanceController extends ChangeNotifier {
     }
 
     if (total == history.total) return;
+    final counted = subjects.where((s) => s.classes != null);
     _history = AttendanceHistory(
       studentNumber: history.studentNumber,
       fullName: history.fullName,
@@ -203,8 +293,46 @@ class MyAttendanceController extends ChangeNotifier {
       total: total,
       lastAttended: last,
       subjects: subjects,
+      classes: history.countsAbsences
+          ? counted.fold<int>(0, (n, s) => n + s.classes!)
+          : null,
+      absences: history.countsAbsences
+          ? counted.fold<int>(0, (n, s) => n + s.absentDates.length)
+          : null,
     );
+    // The feed is the server's word too: current as of now, and kept.
+    _asOf = _clock();
+    _keep();
     notifyListeners();
+  }
+
+  /// [subject] with [day] marked present. A day it was counted absent on —
+  /// a scan the instructor's phone kept offline, sent later — is no longer
+  /// missed; a day not counted yet, today's class mostly, is one more class.
+  static SubjectAttendance _attended(
+    SubjectAttendance subject,
+    AttendanceDay day,
+  ) {
+    final date = day.date;
+    final classes = subject.classes;
+    final wasMissed = date != null && subject.absentDates.contains(date);
+    final sameDay = date != null && subject.days.any((d) => d.date == date);
+
+    return SubjectAttendance(
+      subject: subject.subject,
+      instructor: subject.instructor,
+      count: subject.count + 1,
+      days: _withDay(subject.days, day),
+      section: subject.section,
+      enrolled: subject.enrolled,
+      classes: classes == null || wasMissed || sameDay ? classes : classes + 1,
+      absentDates: wasMissed
+          ? [
+              for (final d in subject.absentDates)
+                if (d != date) d,
+            ]
+          : subject.absentDates,
+    );
   }
 
   /// Asks again, and says which records the answer no longer has — what an
@@ -253,6 +381,7 @@ class MyAttendanceController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _profile.removeListener(_onProfile);
+    unawaited(_online?.cancel());
     super.dispose();
   }
 }

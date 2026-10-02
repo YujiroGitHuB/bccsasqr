@@ -452,6 +452,88 @@ void main() {
       expect(history.lastAttended, isNull);
     });
 
+    test('reads each enrolled subject\'s classes and missed days, the one '
+        'never attended included', () async {
+      final repo = repoReturning(
+        ok({
+          'student': {..._student, 'photo_url': null},
+          'summary': {
+            'total': 2,
+            'subjects': 2,
+            'last_attended': '2026-09-24',
+            'classes': 5,
+            'absences': 3,
+          },
+          'subjects': [
+            {
+              'subject': 'Data Structures',
+              // Nobody has scanned the class yet: no instructor to name.
+              'instructor': '',
+              'count': 0,
+              'records': [],
+              'enrolled': true,
+              'section': '2A',
+              'classes': 2,
+              'absences': 2,
+              'absent_dates': ['2026-09-23', '2026-09-16'],
+            },
+            {
+              'subject': 'Object Oriented Programming',
+              'instructor': 'Sample Instructor',
+              'count': 2,
+              'records': [
+                {'date': '2026-09-24', 'time_in': '08:20:00 AM', 'late': true},
+                {'date': '2026-09-17', 'time_in': '08:01:00 AM', 'late': false},
+              ],
+              'enrolled': true,
+              'section': '2A',
+              'classes': 3,
+              'absences': 1,
+              'absent_dates': ['2026-09-20'],
+            },
+          ],
+        }),
+      );
+
+      final history = (await repo.fetchAttendance(_number))!;
+
+      expect(history.countsAbsences, isTrue);
+      expect(history.classes, 5);
+      expect(history.absences, 3);
+
+      final never = history.subjects.first;
+      expect(never.enrolled, isTrue);
+      expect(never.instructor, isEmpty);
+      expect(never.days, isEmpty);
+      expect(never.absences, 2);
+      expect(never.attended, 0);
+
+      // The days present and missed in one list, newest first.
+      final oop = history.subjects.last;
+      expect(oop.section, '2A');
+      expect(oop.attended, 2);
+      expect(
+        [for (final d in oop.classDays) (d.date, d.absent, d.late)],
+        [
+          (DateTime(2026, 9, 24), false, true),
+          (DateTime(2026, 9, 20), true, false),
+          (DateTime(2026, 9, 17), false, false),
+        ],
+      );
+    });
+
+    test('a server that counts no absences leaves them unknown', () async {
+      final history = (await repoReturning(body).fetchAttendance(_number))!;
+
+      expect(history.countsAbsences, isFalse);
+      expect(history.classes, isNull);
+      final first = history.subjects.first;
+      expect(first.enrolled, isFalse);
+      expect(first.absences, isNull);
+      expect(first.attended, isNull);
+      expect(first.classDays, hasLength(1));
+    });
+
     test('student_not_found returns null', () async {
       final repo = repoReturning(fail('student_not_found'), status: 404);
       expect(await repo.fetchAttendance(_number), isNull);

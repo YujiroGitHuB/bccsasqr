@@ -2,10 +2,12 @@
 // ============================================================
 //  api/v1/handlers/system.php
 //
-//  The three calls a Flutter app makes before it shows anything:
-//  is the server alive, how should the screen be configured, and
-//  what do the terms say.
+//  The calls a Flutter app makes before it shows anything: is the
+//  server alive, how should the screen be configured, what do the
+//  terms say — and is there a newer app on the download page.
 // ============================================================
+
+require_once __DIR__ . '/../../../includes/app_release.php';
 
 /** GET /api/v1 — a directory of what is here, for anyone poking with a browser. */
 function handle_index(): void
@@ -18,6 +20,7 @@ function handle_index(): void
         'endpoints' => [
             'GET  ' . $base . '/health',
             'GET  ' . $base . '/config',
+            'GET  ' . $base . '/app',
             'GET  ' . $base . '/terms',
             'POST ' . $base . '/terms/accept',
             'GET  ' . $base . '/students/{student_no}',
@@ -121,6 +124,35 @@ function handle_config(mysqli $conn): void
             'developer_url' => $footerDeveloperUrl,
             'year'          => $footerYear,
         ],
+    ]);
+}
+
+/**
+ * GET /api/v1/app
+ *
+ * The Android app on the download page, read from the uploaded APK
+ * (includes/app_release.php), and the oldest build still allowed to
+ * run. The app asks when it starts and when it comes back to the
+ * screen: a newer `latest.build` than its own is offered on Home, and
+ * a build under `min_build` shows only "Update required".
+ *
+ * No sign-in and no database: it is asked by every phone, often, and
+ * says nothing that is not on the download page already.
+ */
+function handle_app(): void
+{
+    $release = app_release();
+
+    api_ok([
+        // Null with no APK uploaded: nothing to offer.
+        'latest' => $release === null ? null : [
+            'version' => $release['version'],
+            'build'   => $release['build'],
+            'size'    => $release['size'],
+            'updated' => date('c', $release['updated']),
+        ],
+        'min_build'    => APP_MIN_BUILD,
+        'download_url' => api_base_url() . '/download/',
     ]);
 }
 

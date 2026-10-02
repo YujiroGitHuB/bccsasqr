@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -20,6 +21,7 @@ import 'package:bccsasqr_app/models/qr_payload.dart';
 import 'package:bccsasqr_app/models/student_profile.dart';
 import 'package:bccsasqr_app/models/student_record.dart';
 import 'package:bccsasqr_app/models/whats_new.dart';
+import 'package:bccsasqr_app/services/attendance_store.dart';
 import 'package:bccsasqr_app/services/check_in_repository.dart';
 import 'package:bccsasqr_app/services/device_lock.dart';
 import 'package:bccsasqr_app/services/http_student_repository.dart';
@@ -38,8 +40,11 @@ import 'package:bccsasqr_app/views/check_in_page.dart';
 import 'package:bccsasqr_app/views/check_in_splash.dart';
 import 'package:bccsasqr_app/views/live_notices.dart';
 import 'package:bccsasqr_app/views/my_attendance_page.dart';
+import 'package:bccsasqr_app/views/scanner/widgets/attendance_panel.dart'
+    show LateTag;
 import 'package:bccsasqr_app/views/show_qr_page.dart';
 import 'package:bccsasqr_app/views/student_menu.dart';
+import 'package:bccsasqr_app/views/widgets/absent_tag.dart';
 import 'package:bccsasqr_app/views/widgets/island.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -98,6 +103,15 @@ class _Tracker implements TrackerRepository {
   }
 }
 
+/// A tracker that answers when the test says — to see what shows meanwhile.
+class _SlowTracker implements TrackerRepository {
+  final Completer<AttendanceHistory?> answer = Completer();
+
+  @override
+  Future<AttendanceHistory?> fetchAttendance(StudentNumber number) =>
+      answer.future;
+}
+
 AttendanceDay _day(DateTime d, String time, {bool late = false}) =>
     AttendanceDay(date: d, rawDate: '$d', timeIn: time, late: late);
 
@@ -113,6 +127,39 @@ AttendanceHistory _history(List<AttendanceDay> days) => AttendanceHistory(
       instructor: 'Sample Instructor',
       count: days.length,
       days: days,
+    ),
+  ],
+);
+
+/// Absences counted: one enrolled subject never attended, and one with a
+/// late day present and two missed.
+AttendanceHistory _counted() => AttendanceHistory(
+  studentNumber: _number.value,
+  fullName: _record.fullName,
+  course: 'BSIT',
+  section: '2A',
+  total: 1,
+  classes: 4,
+  absences: 3,
+  subjects: [
+    SubjectAttendance(
+      subject: 'Data Structures and Algorithms',
+      instructor: 'Other Instructor',
+      count: 0,
+      section: '2A',
+      enrolled: true,
+      classes: 1,
+      absentDates: [DateTime(2026, 9, 29)],
+    ),
+    SubjectAttendance(
+      subject: 'Object Oriented Programming',
+      instructor: 'Sample Instructor',
+      count: 1,
+      days: [_day(DateTime(2026, 9, 24), '08:11:40 AM', late: true)],
+      section: '2A',
+      enrolled: true,
+      classes: 3,
+      absentDates: [DateTime(2026, 9, 28), DateTime(2026, 9, 21)],
     ),
   ],
 );
@@ -390,6 +437,314 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Thu, Oct 1'), findsNothing);
       expect(find.text('Mon, Sep 28'), findsOneWidget);
+    });
+
+    test('a scan the live feed brings fills a missed day, or is one more '
+        'class', () async {
+      final profile = await profileOf(_kept);
+      final attendance = MyAttendanceController(
+        profile: profile,
+        repository: _Tracker(_counted()),
+        clock: () => _now,
+      );
+      addTearDown(attendance.dispose);
+      await attendance.refresh();
+
+      LiveRecord oop(int id, DateTime on, String time) => LiveRecord(
+        id: id,
+        subject: 'Object Oriented Programming',
+        instructor: 'Sample Instructor',
+        day: _day(on, time),
+      );
+
+      // Kept on the instructor's phone with no signal on a day counted
+      // missed, and sent later: no longer missed, and no extra class.
+      attendance.addRecords([oop(7, DateTime(2026, 9, 28), '08:02:00 AM')]);
+      var subject = attendance.history!.subjects.last;
+      expect(subject.absentDates, [DateTime(2026, 9, 21)]);
+      expect(subject.classes, 3);
+      expect(attendance.history!.absences, 2);
+
+      // Today's class was not counted yet: one more, attended.
+      attendance.addRecords([oop(8, DateTime(2026, 10, 1), '08:04:12 AM')]);
+      subject = attendance.history!.subjects.last;
+      expect(subject.classes, 4);
+      expect(subject.attended, 3);
+      expect(attendance.history!.classes, 5);
+      expect(attendance.history!.absences, 2);
+    });
+
+    testWidgets('lists the missed days in red, a subject never attended '
+        'too, and the Absent chip leaves only them', (tester) async {
+      final profile = await profileOf(_kept);
+      final attendance = MyAttendanceController(
+        profile: profile,
+        repository: _Tracker(_counted()),
+        clock: () => _now,
+      );
+      addTearDown(attendance.dispose);
+
+      await tester.pumpWidget(
+        _app(MyAttendancePage(controller: attendance, now: () => _now)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('myAttendance.stat.absent')),
+          matching: find.text('3'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(TrackerStrings.absenceNote), findsOneWidget);
+      // Never scanned in, and listed all the same — opened, first by name.
+      expect(find.text('Data Structures and Algorithms'), findsOneWidget);
+      expect(find.text(TrackerStrings.classesAttended(0, 1)), findsOneWidget);
+      expect(find.text(TrackerStrings.absentCount(1)), findsOneWidget);
+      expect(find.text('Tue, Sep 29'), findsOneWidget);
+      expect(find.byType(AbsentTag), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('myAttendance.filter.absent')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Object Oriented Programming'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AbsentTag), findsNWidgets(3));
+      expect(find.text('Mon, Sep 28'), findsOneWidget);
+      // The late day present is not missed.
+      expect(find.text('Thu, Sep 24'), findsNothing);
+      expect(find.byType(LateTag), findsNothing);
+    });
+
+    testWidgets('a server that counts no absences shows days present alone', (
+      tester,
+    ) async {
+      final profile = await profileOf(_kept);
+      final attendance = MyAttendanceController(
+        profile: profile,
+        repository: _Tracker(
+          _history([_day(DateTime(2026, 10, 1), '08:04:12 AM')]),
+        ),
+        clock: () => _now,
+      );
+      addTearDown(attendance.dispose);
+
+      await tester.pumpWidget(
+        _app(MyAttendancePage(controller: attendance, now: () => _now)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('myAttendance.stat.absent')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('myAttendance.filter.absent')),
+        findsNothing,
+      );
+      expect(find.text(TrackerStrings.absenceNote), findsNothing);
+      expect(find.text(StudentStrings.subjects), findsOneWidget);
+    });
+  });
+
+  group('the copy kept on the phone', () {
+    final keptAt = DateTime(2026, 9, 30, 16, 12);
+    const offline = StudentLookupException(
+      'No internet connection.',
+      code: 'network',
+    );
+
+    KeptAttendance keptOf(
+      AttendanceHistory history, {
+      String number = '000-1023',
+    }) => KeptAttendance(studentNumber: number, at: keptAt, history: history);
+
+    Future<MyAttendanceController> attendanceOf(
+      TrackerRepository tracker,
+      AttendanceStore store, {
+      ProfileController? profile,
+    }) async {
+      final attendance = MyAttendanceController(
+        profile: profile ?? await profileOf(_kept),
+        repository: tracker,
+        store: store,
+        clock: () => _now,
+      );
+      addTearDown(attendance.dispose);
+      return attendance;
+    }
+
+    test('reads back whole: days, late marks and absences', () {
+      final back = KeptAttendance.fromJson(
+        jsonDecode(jsonEncode(keptOf(_counted()).toJson()))
+            as Map<String, dynamic>,
+      );
+
+      expect(back.studentNumber, '000-1023');
+      expect(back.at, keptAt);
+      final history = back.history;
+      expect(history.total, 1);
+      expect(history.classes, 4);
+      expect(history.absences, 3);
+      final never = history.subjects.first;
+      expect(never.enrolled, isTrue);
+      expect(never.days, isEmpty);
+      final oop = history.subjects.last;
+      expect(oop.section, '2A');
+      expect(oop.days.single.date, DateTime(2026, 9, 24));
+      expect(oop.days.single.late, isTrue);
+      expect(oop.absentDates, [DateTime(2026, 9, 28), DateTime(2026, 9, 21)]);
+    });
+
+    test('shows at once, before the server answers; the answer then takes '
+        'its place and is kept', () async {
+      final store = MemoryAttendanceStore(
+        keptOf(_history([_day(DateTime(2026, 9, 28), '08:11:40 AM')])),
+      );
+      final tracker = _SlowTracker();
+      final attendance = await attendanceOf(tracker, store);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(attendance.history!.total, 1);
+      expect(attendance.stale, isTrue);
+      expect(attendance.asOf, keptAt);
+
+      tracker.answer.complete(
+        _history([
+          _day(DateTime(2026, 10, 1), '08:04:12 AM'),
+          _day(DateTime(2026, 9, 28), '08:11:40 AM'),
+        ]),
+      );
+      await attendance.refresh();
+
+      expect(attendance.history!.total, 2);
+      expect(attendance.stale, isFalse);
+      expect(attendance.asOf, _now);
+      expect(store.kept!.history.total, 2);
+      expect(store.kept!.at, _now);
+    });
+
+    test('with no signal it stays, marked with when it is from', () async {
+      final attendance = await attendanceOf(
+        _Tracker(null)..failure = offline,
+        MemoryAttendanceStore(keptOf(_counted())),
+      );
+      await attendance.refresh();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(attendance.history!.absences, 3);
+      expect(attendance.error, isNotNull);
+      expect(attendance.stale, isTrue);
+      expect(attendance.asOf, keptAt);
+    });
+
+    test('back online, it asks again by itself', () async {
+      final network = StreamController<bool>();
+      addTearDown(network.close);
+      final tracker = _Tracker(_counted())..failure = offline;
+      final attendance = MyAttendanceController(
+        profile: await profileOf(_kept),
+        repository: tracker,
+        store: MemoryAttendanceStore(keptOf(_counted())),
+        online: network.stream,
+        clock: () => _now,
+      );
+      addTearDown(attendance.dispose);
+      await attendance.refresh();
+      await Future<void>.delayed(Duration.zero);
+      expect(attendance.stale, isTrue);
+      expect(tracker.asked, 1);
+
+      tracker.failure = null;
+      network.add(true);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(tracker.asked, 2);
+      expect(attendance.stale, isFalse);
+      expect(attendance.asOf, _now);
+    });
+
+    test('another student\'s copy is never shown, and is dropped', () async {
+      final store = MemoryAttendanceStore(
+        keptOf(_counted(), number: '000-1999'),
+      );
+      final attendance = await attendanceOf(
+        _Tracker(null)..failure = offline,
+        store,
+      );
+      await attendance.refresh();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(attendance.history, isNull);
+      expect(store.kept, isNull);
+    });
+
+    test('"Not you?" forgets it with the student', () async {
+      final store = MemoryAttendanceStore(keptOf(_counted()));
+      final profile = await profileOf(_kept);
+      final attendance = await attendanceOf(
+        _Tracker(_counted()),
+        store,
+        profile: profile,
+      );
+      await attendance.refresh();
+      expect(store.kept, isNotNull);
+
+      await profile.forget();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(attendance.history, isNull);
+      expect(store.kept, isNull);
+    });
+
+    test('a record the live feed brings is kept too', () async {
+      final store = MemoryAttendanceStore();
+      final attendance = await attendanceOf(
+        _Tracker(_history([_day(DateTime(2026, 9, 28), '08:11:40 AM')])),
+        store,
+      );
+      await attendance.refresh();
+
+      attendance.addRecords([
+        LiveRecord(
+          id: 9,
+          subject: 'Object Oriented Programming',
+          instructor: 'Sample Instructor',
+          day: _day(DateTime(2026, 10, 1), '08:04:12 AM'),
+        ),
+      ]);
+
+      expect(store.kept!.history.total, 2);
+      expect(store.kept!.at, _now);
+    });
+
+    testWidgets('My Attendance shows it with no signal, saying when it is '
+        'from', (tester) async {
+      final profile = await profileOf(_kept);
+      final attendance = MyAttendanceController(
+        profile: profile,
+        repository: _Tracker(null)..failure = offline,
+        store: MemoryAttendanceStore(keptOf(_counted())),
+        clock: () => _now,
+      );
+      addTearDown(attendance.dispose);
+
+      await tester.pumpWidget(
+        _app(MyAttendancePage(controller: attendance, now: () => _now)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('myAttendance.kept')), findsOneWidget);
+      expect(
+        find.text(MyAttendanceStrings.keptAsOf('Wed, Sep 30, 4:12 PM')),
+        findsOneWidget,
+      );
+      expect(find.text('Data Structures and Algorithms'), findsOneWidget);
+      // Shown, not the failure.
+      expect(find.text('No internet connection.'), findsNothing);
     });
   });
 

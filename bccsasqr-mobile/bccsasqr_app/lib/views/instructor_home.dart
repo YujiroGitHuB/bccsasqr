@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../controllers/scanner_controller.dart';
+import '../controllers/update_controller.dart';
 import '../controllers/whats_new_controller.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
@@ -15,6 +18,7 @@ import 'scanner/widgets/sync_banner.dart';
 import 'widgets/press_scale.dart';
 import 'widgets/splash_parts.dart';
 import 'widgets/surface_panel.dart';
+import 'widgets/update_card.dart';
 
 /// The instructor's Home — what the app opens on. Today at a glance: how many
 /// were scanned, on time and late, and in which subjects; any scans not sent
@@ -35,6 +39,7 @@ class InstructorHome extends StatefulWidget {
     required this.onOpen,
     this.whatsNewBuilder,
     this.whatsNew,
+    this.update,
     this.now = DateTime.now,
   });
 
@@ -48,6 +53,10 @@ class InstructorHome extends StatefulWidget {
   /// button carries a dot.
   final WidgetBuilder? whatsNewBuilder;
   final WhatsNewController? whatsNew;
+
+  /// A newer app on the download page: a card under the greeting until it is
+  /// closed for that build, as on the student's Home.
+  final UpdateController? update;
 
   /// The clock the greeting is picked by. Overridable for tests.
   final DateTime Function() now;
@@ -125,9 +134,11 @@ class _InstructorHomeState extends State<InstructorHome>
       listenable: Listenable.merge([
         _session,
         widget.whatsNew ?? const _Silent(),
+        widget.update ?? const _Silent(),
       ]),
       builder: (context, _) {
         final session = _session;
+        final update = widget.update;
         final summary = TodaySummary.of(
           entries: session.attendance,
           today: session.today,
@@ -205,6 +216,26 @@ class _InstructorHomeState extends State<InstructorHome>
                           ),
                         ),
                         const SizedBox(height: 20),
+                        // Folds in and out, so the cards under it slide.
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 240),
+                          curve: Curves.easeOut,
+                          alignment: Alignment.topCenter,
+                          child: update != null && update.showCard
+                              ? Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: UpdateCard(
+                                    version: update.release?.version ?? '',
+                                    megabytes: update.release?.megabytes,
+                                    onUpdate: () => openDownloadPage(
+                                      context,
+                                      update.downloadUrl,
+                                    ),
+                                    onClose: () => unawaited(update.dismiss()),
+                                  ),
+                                )
+                              : const SizedBox(width: double.infinity),
+                        ),
                         _rise(
                           _hero,
                           _TodayCard(

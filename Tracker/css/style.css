@@ -18,7 +18,7 @@
    THE RESERVED COLORS — never use as decoration:
      green  #10b981 → recorded / present
      amber  #f59e0b → warning
-     red    #ef4444 → not on the list, wrong thing searched for
+     red    #ef4444 → absent, not on the list, wrong thing searched for
    Sky is only the page's identity; it carries no status meaning,
    so it does not compete with the three above.
    ============================================================ */
@@ -625,6 +625,35 @@ body.trk-page {
     color: var(--trk-ink);
 }
 
+/* Absences are a status — red is the page's "absent" — so the tile
+   takes it only while there is one; at zero it is a plain figure. */
+.trk-stat.is-absent {
+    background:
+        radial-gradient(circle at 100% 0%, rgba(239, 68, 68, .12), transparent 60%),
+        var(--surface);
+    border-color: rgba(239, 68, 68, .3);
+}
+
+.trk-stat.is-absent .trk-stat-label {
+    color: var(--bad-ink);
+}
+
+/* How an absence is counted, under the figures it explains. */
+.trk-note {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    margin: 0;
+    font-size: .78rem;
+    line-height: 1.45;
+    color: var(--text-dim);
+}
+
+.trk-note i {
+    margin-top: .1rem;
+    color: var(--trk-ink);
+}
+
 /* ── Subjects ── */
 
 .subjects-container {
@@ -684,6 +713,35 @@ body.trk-page {
     color: var(--ok-ink);
     background: rgba(16, 185, 129, .12);
     border: 1px solid rgba(16, 185, 129, .25);
+}
+
+/* Beside the green count, never instead of it: both are true. */
+.subject-absent {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .32rem .75rem;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--bad-ink);
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .28);
+}
+
+.class-count {
+    margin: .2rem 0 0;
+    font-size: .76rem;
+    color: var(--text-dim);
+}
+
+/* An enrolled subject whose class has not been scanned yet. */
+.subject-empty {
+    margin: 0;
+    padding: .85rem 1.05rem;
+    font-size: .82rem;
+    color: var(--text-faint);
 }
 
 /* ── Table ──
@@ -772,6 +830,23 @@ body.trk-page {
     color: var(--warn-ink);
     background: rgba(245, 158, 11, .12);
     border: 1px solid rgba(245, 158, 11, .3);
+}
+
+/* A day the class met without the student: where the time would be. */
+.attendance-table .absent-tag {
+    display: inline-block;
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    color: var(--bad-ink);
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .3);
+}
+
+.attendance-table tr.is-absent .cell-date {
+    color: var(--text-dim);
 }
 
 /* ─── Empty / nothing found ───────────────────────────────── */

@@ -16,9 +16,10 @@ require_once __DIR__ . '/../../../includes/attendance_history.php';
 /**
  * GET /api/v1/students/{student_no}/attendance
  *
- * The web tracker's result, as data: who the student is, the three
- * numbers at the top (times present, subjects, last attended), and
- * every subject with its dates, newest first.
+ * The web tracker's result, as data: who the student is, the numbers
+ * at the top (times present, subjects, last attended, absences), and
+ * every subject with its dates, newest first — and, for the subjects
+ * the student is enrolled in, its classes so far and the days missed.
  */
 function handle_student_attendance(mysqli $conn, string $raw_no): void
 {
@@ -71,6 +72,14 @@ function handle_student_attendance(mysqli $conn, string $raw_no): void
             'instructor' => (string) $group['instructor'],
             'count'      => (int) $group['count'],
             'records'    => $days,
+            // The class, for a subject the student is enrolled in —
+            // one never attended comes with no records. Null for any
+            // other: there is no class to count its absences by.
+            'enrolled'     => (bool) $group['enrolled'],
+            'section'      => $group['section'],
+            'classes'      => $group['classes'],
+            'absences'     => $group['absences'],
+            'absent_dates' => $group['absent_dates'],
         ];
     }
 
@@ -86,6 +95,10 @@ function handle_student_attendance(mysqli $conn, string $raw_no): void
             'total'         => (int) $history['total'],
             'subjects'      => count($subjects),
             'last_attended' => $history['last_attended'] ? date('Y-m-d', $history['last_attended']) : null,
+            // Across the enrolled subjects; null when no absence could
+            // be counted (no enrollment on file).
+            'classes'       => $history['classes'],
+            'absences'      => $history['absences'],
         ],
         'subjects' => $subjects,
     ]);
