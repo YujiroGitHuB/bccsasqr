@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-03';
+const WHATS_NEW_VERSION = '2026-10-03.2';
 
 /**
  * The changelog, newest release first.
@@ -74,14 +74,21 @@ function whats_new_releases(): array
             'id'      => '2026-10-03',
             'date'    => '2026-10-03',
             'icon'    => 'bi-envelope-paper',
-            'title'   => 'Excuse letters in the student app',
-            'summary' => 'Students with the Android app can now write an excuse letter for a class they missed, straight from their attendance — addressed to the subject’s instructor, with their section, the subject and the days missed already filled in.',
+            'title'   => 'Excuse letters in the student app, and a smaller download',
+            'summary' => 'Students with the Android app can now write an excuse letter for a class they missed, straight from their attendance — addressed to the subject’s instructor, with their section, the subject and the days missed already filled in. The app itself is now about a third of the size to download.',
             'items'   => [
                 [
                     'type'  => 'new',
                     'icon'  => 'bi-envelope-paper',
                     'title' => 'Students can send you an excuse letter from the app',
                     'text'  => 'In the app&rsquo;s <strong>Attendance</strong>, a student taps a day marked <strong>Absent</strong> and gets an excuse letter addressed to that subject&rsquo;s instructor, with their name, section, the subject and the days missed filled in from the record. They pick the reason, can add a note and edit the letter, then send it to you by Messenger or email. A letter changes nothing on the record &mdash; whether to excuse the absence stays your call. Students get this with the next download of the app.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+                [
+                    'type'  => 'improved',
+                    'icon'  => 'bi-file-earmark-zip',
+                    'title' => 'The Android app is a third of the size to download',
+                    'text'  => 'The app now downloads at about 21&nbsp;MB instead of 64&nbsp;MB, so students spend far less mobile data getting it and its updates. Nothing was taken out of it, and it installs on the same phones as before &mdash; Android 7.0 or newer. Phones get it with the next download of the app.',
                     'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
                 ],
             ],

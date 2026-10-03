@@ -19,18 +19,19 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-03';
+  static const String version = '2026-10-03.2';
 
   static const List<WhatsNewRelease> releases = [
     WhatsNewRelease(
       id: '2026-10-03',
       icon: Icons.edit_note_rounded,
-      title: 'Excuse letters from your absences',
+      title: 'Excuse letters from your absences, and a smaller app',
       summary:
           'Missed a class? Tap the day in Attendance and the app writes an '
           'excuse letter for it, with your subject, section, instructor and '
           'the days you missed already filled in. Pick the reason, check the '
-          'letter, then share it with your instructor.',
+          'letter, then share it with your instructor. The app is also about '
+          'a third of the size to download.',
       items: [
         WhatsNewItem(
           kind: WhatsNewKind.added,
@@ -48,6 +49,18 @@ abstract final class WhatsNewLog {
               'send it by Messenger or email, or **Copy**. It works offline '
               'too. Sending it does not change your attendance: your '
               'instructor decides whether to excuse the absence.',
+        ),
+        WhatsNewItem(
+          kind: WhatsNewKind.improved,
+          area: WhatsNewArea.qr,
+          icon: Icons.download_rounded,
+          title: 'A smaller download',
+          text:
+              'The app is now about 21 MB to download instead of 64 MB, so '
+              'getting it and its updates takes far less of your mobile data. '
+              'Nothing was taken out, and it installs on the same phones as '
+              'before: Android 7.0 or newer.',
+          link: false,
         ),
       ],
     ),

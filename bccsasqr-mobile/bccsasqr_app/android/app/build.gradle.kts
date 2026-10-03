@@ -30,11 +30,32 @@ android {
         versionName = flutter.versionName
     }
 
+    // The APK is downloaded from the website over students' mobile data, not
+    // from Play, which would compress the download itself. Compressed, the
+    // native libraries are about half their size; the phone unpacks only its
+    // own CPU's on install, so it takes no more room installed. Every Android
+    // version installs it this way — it was the default until AGP 3.6.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // ARM only: every phone is armeabi-v7a (old, cheap, Android Go)
+            // or arm64-v8a. x86_64 is for emulators and Intel Chromebooks, and
+            // was a third of the APK (22 of 64 MB). Cleared first: the Flutter
+            // plugin has already put all three here by the time this runs.
+            // Debug builds keep x86_64, so the emulator still works.
+            ndk {
+                abiFilters.clear()
+                abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
+            }
         }
     }
 }
