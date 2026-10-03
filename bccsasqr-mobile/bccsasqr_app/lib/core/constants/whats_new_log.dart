@@ -19,9 +19,38 @@ import '../../models/whats_new.dart';
 /// the web — leaving [version] alone ships the entry silently, which is right
 /// for a typo fix.
 abstract final class WhatsNewLog {
-  static const String version = '2026-10-02.3';
+  static const String version = '2026-10-03';
 
   static const List<WhatsNewRelease> releases = [
+    WhatsNewRelease(
+      id: '2026-10-03',
+      icon: Icons.edit_note_rounded,
+      title: 'Excuse letters from your absences',
+      summary:
+          'Missed a class? Tap the day in Attendance and the app writes an '
+          'excuse letter for it, with your subject, section, instructor and '
+          'the days you missed already filled in. Pick the reason, check the '
+          'letter, then share it with your instructor.',
+      items: [
+        WhatsNewItem(
+          kind: WhatsNewKind.added,
+          area: WhatsNewArea.tracker,
+          side: WhatsNewSide.student,
+          icon: Icons.edit_note_rounded,
+          title: 'Write an excuse letter',
+          text:
+              'In **Attendance**, tap a day marked **Absent** and an excuse '
+              'letter to that subject\'s instructor is ready, with your name, '
+              'section and the day filled in. Add the subject\'s other missed '
+              'days to cover them in one letter, pick the reason — **Sick**, '
+              '**Family emergency**, **Weather or flood** and more — and add a '
+              'note if you like. Edit it as you please, then tap **Share** to '
+              'send it by Messenger or email, or **Copy**. It works offline '
+              'too. Sending it does not change your attendance: your '
+              'instructor decides whether to excuse the absence.',
+        ),
+      ],
+    ),
     WhatsNewRelease(
       id: '2026-10-02',
       icon: Icons.event_busy_rounded,

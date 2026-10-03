@@ -38,6 +38,7 @@ import 'package:bccsasqr_app/services/student_repository.dart';
 import 'package:bccsasqr_app/services/tracker_repository.dart';
 import 'package:bccsasqr_app/views/check_in_page.dart';
 import 'package:bccsasqr_app/views/check_in_splash.dart';
+import 'package:bccsasqr_app/views/excuse_letter_page.dart';
 import 'package:bccsasqr_app/views/live_notices.dart';
 import 'package:bccsasqr_app/views/my_attendance_page.dart';
 import 'package:bccsasqr_app/views/scanner/widgets/attendance_panel.dart'
@@ -518,6 +519,49 @@ void main() {
       expect(find.byType(LateTag), findsNothing);
     });
 
+    testWidgets('a day marked Absent opens its excuse letter, written to '
+        'that class', (tester) async {
+      final profile = await profileOf(_kept);
+      final attendance = MyAttendanceController(
+        profile: profile,
+        repository: _Tracker(_counted()),
+        clock: () => _now,
+      );
+      addTearDown(attendance.dispose);
+
+      await tester.pumpWidget(
+        _app(MyAttendancePage(controller: attendance, now: () => _now)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(MyAttendanceStrings.letterHint), findsOneWidget);
+
+      // The top card, opened: the subject never attended.
+      await tester.tap(
+        find.byKey(const ValueKey('myAttendance.letter.2026-09-29')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ExcuseLetterPage), findsOneWidget);
+      final letter = tester
+          .widget<TextField>(find.byKey(const ValueKey('excuseLetter.letter')))
+          .controller!
+          .text;
+      expect(
+        letter,
+        contains(
+          'Other Instructor\nInstructor, Data Structures and '
+          'Algorithms',
+        ),
+      );
+      expect(letter, contains('my absence on Tuesday, September 29, 2026,'));
+      expect(letter, contains('Juan P. Dela Cruz\nBSIT 2A\n000-1023'));
+
+      await tester.tap(find.byKey(const ValueKey('excuseLetter.back')));
+      await tester.pumpAndSettle();
+      expect(find.byType(ExcuseLetterPage), findsNothing);
+      expect(find.byKey(const ValueKey('myAttendance')), findsOneWidget);
+    });
+
     testWidgets('a server that counts no absences shows days present alone', (
       tester,
     ) async {
@@ -545,6 +589,7 @@ void main() {
         findsNothing,
       );
       expect(find.text(TrackerStrings.absenceNote), findsNothing);
+      expect(find.text(MyAttendanceStrings.letterHint), findsNothing);
       expect(find.text(StudentStrings.subjects), findsOneWidget);
     });
   });

@@ -1199,6 +1199,79 @@ abstract final class MyAttendanceStrings {
   static const String keptHint =
       'It updates by itself when you are back online — or pull down to try '
       'now.';
+
+  // A day marked Absent opens its excuse letter.
+  static const String letterHint =
+      'Tap a day marked Absent to write an excuse letter for it.';
+  // What a screen reader says for the row: it stands in for the row's own
+  // words, the Absent tag among them.
+  static String letterFor(String day) =>
+      'Absent on $day. Write an excuse letter.';
+}
+
+/// The excuse letter a student writes from a day marked Absent in My
+/// Attendance (excuse_letter_page.dart). The letter's own words are here
+/// too: [ExcuseLetter] only puts the record's facts into them.
+abstract final class ExcuseLetterStrings {
+  static const String title = 'Excuse letter';
+  static const String intro =
+      'Pick the days and the reason. Your subject, class and instructor are '
+      'already in the letter — check it, then send it to your instructor.';
+
+  static const String daysHeading = 'DAYS ABSENT';
+  static const String reasonHeading = 'REASON';
+  static const String noteHeading = 'NOTE (OPTIONAL)';
+  static const String noteHint =
+      'For example: I have attached my medical certificate.';
+  static const String letterHeading = 'YOUR LETTER';
+  static const String startOver = 'Start over from my choices';
+  static const String share = 'Share';
+  static const String copy = 'Copy';
+  static const String copied = 'Letter copied';
+  static const String copiedBody =
+      'Paste it in a message or an email to your instructor.';
+  static const String shareFailed =
+      'Could not open sharing. Copy the letter instead.';
+  // Said where the buttons are: a letter is a request, not a correction.
+  static const String reminder =
+      'Sending the letter does not change your attendance. Your instructor '
+      'decides whether to excuse the absence.';
+
+  // The reasons, as the chips name them…
+  static const String reasonSick = 'Sick';
+  static const String reasonCheckUp = 'Check-up';
+  static const String reasonFamily = 'Family emergency';
+  static const String reasonWeather = 'Weather or flood';
+  static const String reasonTransport = 'No transportation';
+  static const String reasonOther = 'Other';
+
+  // …and as the letter says them, after "my absence on …,".
+  static const String becauseSick = 'because I was sick';
+  static const String becauseCheckUp = 'because I had a medical check-up';
+  static const String becauseFamily = 'because of a family emergency';
+  static const String becauseWeather =
+      'because of the heavy rain and flooding in our area';
+  static const String becauseTransport =
+      'because I had no means of transportation to school';
+  static const String becauseOther = 'for a personal reason';
+
+  // The letter.
+  static const String school = 'Binalatongan Community College';
+  static String instructorOf(String subject) => 'Instructor, $subject';
+  static const String salutation = 'Dear Sir/Ma\'am,';
+  // "of BSIT 2A" rather than "a BSIT 2A student": no a/an to get wrong
+  // before a course that starts with a vowel sound.
+  static String opening(String name, String klass, String subject) =>
+      'Good day! I am $name${klass.isEmpty ? '' : ' of $klass'}, a student in '
+      'your $subject class.';
+  static String request(int days, String when, String because) =>
+      'I would like to ask you to excuse my '
+      '${days == 1 ? 'absence' : 'absences'} on $when, $because.';
+  static const String closing =
+      'I will catch up on the lessons I missed and complete any activities or '
+      'requirements I need to submit. Thank you for your understanding.';
+  static const String signOff = 'Respectfully yours,';
+  static String shareSubject(String subject) => 'Excuse letter — $subject';
 }
 
 /// Check in — the student's side of an attendance link, inside the app.

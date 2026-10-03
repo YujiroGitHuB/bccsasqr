@@ -8,6 +8,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/date_label.dart';
 import '../models/attendance_history.dart';
+import 'excuse_letter_page.dart';
 import 'instructor_home.dart' show codeParts, shortTime;
 import 'scanner/widgets/attendance_panel.dart' show LateTag;
 import 'widgets/absent_tag.dart';
@@ -30,6 +31,9 @@ enum _Filter { all, onTime, late, absent }
 ///
 /// With no signal it shows the copy kept on the phone, under a note saying
 /// when it is from, rather than "Could not load".
+///
+/// A day marked Absent opens its excuse letter (excuse_letter_page.dart),
+/// since 2026-10-03.
 class MyAttendancePage extends StatefulWidget {
   const MyAttendancePage({
     super.key,
@@ -68,6 +72,24 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
     _Filter.late => day.late,
     _Filter.absent => day.absent,
   };
+
+  /// A day marked Absent: its excuse letter, over the page.
+  void _openLetter(
+    AttendanceHistory history,
+    SubjectAttendance subject,
+    DateTime day,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ExcuseLetterPage(
+          history: history,
+          subject: subject,
+          date: day,
+          now: widget.now,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +183,10 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
         const SizedBox(height: 12),
       ],
       _Stats(history: history, now: widget.now()),
-      if (absent != null) ...[const SizedBox(height: 10), const _AbsenceNote()],
+      if (absent != null) ...[
+        const SizedBox(height: 10),
+        _AbsenceNote(letters: absent > 0),
+      ],
       const SizedBox(height: 14),
       Wrap(
         spacing: 8,
@@ -220,6 +245,7 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
             days: subject.classDays.where(_keeps).toList(),
             absentOnly: _filter == _Filter.absent,
             open: i == 0,
+            onLetter: (day) => _openLetter(history, subject, day),
           ),
         ],
     ];
@@ -460,38 +486,48 @@ class _KeptNote extends StatelessWidget {
   }
 }
 
-/// How an absence is counted, under the number it explains.
+/// How an absence is counted, under the number it explains — and, with one
+/// to explain, that a missed day opens its excuse letter.
 class _AbsenceNote extends StatelessWidget {
-  const _AbsenceNote();
+  const _AbsenceNote({required this.letters});
+
+  final bool letters;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
 
+    Widget line(IconData icon, String text) => Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(icon, size: 16, color: colors.textMuted),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: colors.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: Icon(
-              Icons.info_outline_rounded,
-              size: 16,
-              color: colors.textMuted,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              TrackerStrings.absenceNote,
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.4,
-                color: colors.textSecondary,
-              ),
-            ),
-          ),
+          line(Icons.info_outline_rounded, TrackerStrings.absenceNote),
+          if (letters) ...[
+            const SizedBox(height: 6),
+            line(Icons.edit_note_rounded, MyAttendanceStrings.letterHint),
+          ],
         ],
       ),
     );
@@ -579,6 +615,7 @@ class _SubjectCard extends StatefulWidget {
     required this.days,
     required this.absentOnly,
     required this.open,
+    required this.onLetter,
   });
 
   final SubjectAttendance subject;
@@ -591,6 +628,9 @@ class _SubjectCard extends StatefulWidget {
 
   /// Opened at first — the top card.
   final bool open;
+
+  /// Opens the excuse letter for a day missed.
+  final void Function(DateTime day) onLetter;
 
   static const int _collapsedRows = 3;
 
@@ -772,7 +812,15 @@ class _SubjectCardState extends State<_SubjectCard> {
                             ),
                           ),
                         ),
-                      for (final day in shown) _DayRow(day: day),
+                      for (final day in shown)
+                        _DayRow(
+                          day: day,
+                          onLetter: switch (day.date) {
+                            final date? when day.absent =>
+                              () => widget.onLetter(date),
+                            _ => null,
+                          },
+                        ),
                       if (days.length > _SubjectCard._collapsedRows)
                         TextButton(
                           onPressed: () => setState(() => _all = !_all),
@@ -792,17 +840,24 @@ class _SubjectCardState extends State<_SubjectCard> {
 }
 
 class _DayRow extends StatelessWidget {
-  const _DayRow({required this.day});
+  const _DayRow({required this.day, this.onLetter});
 
   final ClassDay day;
+
+  /// A day missed: opens its excuse letter. Null on a day present.
+  final VoidCallback? onLetter;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final date = day.date;
     final present = day.present;
+    final label = date == null
+        ? (present?.rawDate ?? '')
+        : DateLabel.short(date);
+    final letter = onLetter;
 
-    return Container(
+    final row = Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: colors.border)),
@@ -811,7 +866,7 @@ class _DayRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              date == null ? (present?.rawDate ?? '') : DateLabel.short(date),
+              label,
               style: TextStyle(
                 fontSize: 13.5,
                 color: present == null
@@ -820,9 +875,13 @@ class _DayRow extends StatelessWidget {
               ),
             ),
           ),
-          if (present == null)
-            const AbsentTag()
-          else ...[
+          if (present == null) ...[
+            const AbsentTag(),
+            if (letter != null) ...[
+              const SizedBox(width: 10),
+              Icon(Icons.edit_note_rounded, size: 22, color: colors.accent),
+            ],
+          ] else ...[
             if (present.late) ...[const LateTag(), const SizedBox(width: 8)],
             Text(
               shortTime(present.timeIn),
@@ -836,8 +895,31 @@ class _DayRow extends StatelessWidget {
         ],
       ),
     );
+
+    if (letter == null || date == null) return row;
+    return Semantics(
+      button: true,
+      label: MyAttendanceStrings.letterFor(label),
+      excludeSemantics: true,
+      onTap: letter,
+      // A see-through Material of its own: the card paints its colour over
+      // the page's, and a ripple drawn on the page would be hidden under it.
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          key: ValueKey('myAttendance.letter.${_ymd(date)}'),
+          onTap: letter,
+          child: row,
+        ),
+      ),
+    );
   }
 }
+
+/// `2026-09-28` — a missed day's key.
+String _ymd(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}-'
+    '${d.day.toString().padLeft(2, '0')}';
 
 class _Note extends StatelessWidget {
   const _Note({required this.icon, required this.text});

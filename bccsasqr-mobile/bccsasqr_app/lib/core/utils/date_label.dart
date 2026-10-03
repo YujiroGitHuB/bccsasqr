@@ -16,6 +16,21 @@ abstract final class DateLabel {
     'Dec',
   ];
 
+  static const List<String> _monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
   static const List<String> _weekdays = [
     'Monday',
     'Tuesday',
@@ -32,6 +47,9 @@ abstract final class DateLabel {
 
   /// `Monday`.
   static String weekday(DateTime d) => _weekdays[d.weekday - 1];
+
+  /// `September` — written out, as a letter's dates are.
+  static String month(DateTime d) => _monthNames[d.month - 1];
 
   /// `Wed, Sep 30` — the instructor's Home, where the year goes without
   /// saying.

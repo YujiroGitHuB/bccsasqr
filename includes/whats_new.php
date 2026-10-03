@@ -59,7 +59,7 @@
 // come back for everyone. A release that is added to again on the same
 // day takes a `.2`, `.3` suffix — the id stays the date, but the dot
 // only returns when this string changes.
-const WHATS_NEW_VERSION = '2026-10-02.3';
+const WHATS_NEW_VERSION = '2026-10-03';
 
 /**
  * The changelog, newest release first.
@@ -69,6 +69,23 @@ const WHATS_NEW_VERSION = '2026-10-02.3';
 function whats_new_releases(): array
 {
     return [
+
+        [
+            'id'      => '2026-10-03',
+            'date'    => '2026-10-03',
+            'icon'    => 'bi-envelope-paper',
+            'title'   => 'Excuse letters in the student app',
+            'summary' => 'Students with the Android app can now write an excuse letter for a class they missed, straight from their attendance — addressed to the subject’s instructor, with their section, the subject and the days missed already filled in.',
+            'items'   => [
+                [
+                    'type'  => 'new',
+                    'icon'  => 'bi-envelope-paper',
+                    'title' => 'Students can send you an excuse letter from the app',
+                    'text'  => 'In the app&rsquo;s <strong>Attendance</strong>, a student taps a day marked <strong>Absent</strong> and gets an excuse letter addressed to that subject&rsquo;s instructor, with their name, section, the subject and the days missed filled in from the record. They pick the reason, can add a note and edit the letter, then send it to you by Messenger or email. A letter changes nothing on the record &mdash; whether to excuse the absence stays your call. Students get this with the next download of the app.',
+                    'link'  => ['href' => 'download/', 'label' => 'Open the download page', 'can' => 'qr.scanner'],
+                ],
+            ],
+        ],
 
         [
             'id'      => '2026-10-02',
