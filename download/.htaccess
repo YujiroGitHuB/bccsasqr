@@ -14,9 +14,12 @@ Options -Indexes
 
 <FilesMatch "\.apk$">
     <IfModule mod_headers.c>
-        # No quotes around the name: the live server (LiteSpeed) sent the
-        # escaped \" through literally, and phones saved the file under a
-        # mangled name. BCC-SASQR.apk is a valid bare token, so none needed.
+        # Every APK here is saved under this name, whatever it is called on
+        # the server — app-release.apk straight from the build, since
+        # 2026-10-03. No quotes around the name: the live server (LiteSpeed)
+        # sent the escaped \" through literally, and phones saved the file
+        # under a mangled name. BCC-SASQR.apk is a valid bare token, so none
+        # needed.
         Header set Content-Disposition "attachment; filename=BCC-SASQR.apk"
         Header set X-Content-Type-Options "nosniff"
     </IfModule>

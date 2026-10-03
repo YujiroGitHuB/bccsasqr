@@ -125,9 +125,11 @@ Home, and a build under `min_build` shows only "Update required".
 } }
 ```
 
-`version` and `build` are read from the uploaded `download/BCC-SASQR.apk`
-itself — its compiled `AndroidManifest.xml` (`includes/app_release.php`) — so
-uploading a new APK is all it takes; there is no number to bump on the server.
+`version` and `build` are read from the APK uploaded into `download/` — any
+name, `app-release.apk` straight from the build included; with several there,
+the highest build — from its compiled `AndroidManifest.xml`
+(`includes/app_release.php`), so uploading a new APK is all it takes; there is
+no number to bump on the server.
 `latest` is `null` with no APK uploaded. `min_build` is the constant
 `APP_MIN_BUILD` in the same file, 0 (nobody stopped) until a server change
 breaks older builds — raise it only after the new APK is uploaded. No sign-in,
@@ -675,7 +677,7 @@ The API deliberately reads the same sources rather than copying them:
 | QR colors and size | `QRgenerator/js/scriptv2.js` | `gen_qr_spec()` — **the one copy**; keep them in step |
 | Attendance history | `includes/attendance_history.php` | `handle_student_attendance()` and `Tracker/crud/att_display.php` |
 | Attendance links | `includes/links.php`, `includes/late.php` | `handlers/links.php` and the web page's endpoints |
-| The app's version | `download/BCC-SASQR.apk`, via `includes/app_release.php` | `handle_app()` and `download/index.php` |
+| The app's version | `download/*.apk` (the highest build), via `includes/app_release.php` | `handle_app()` and `download/index.php` |
 
 One known inconsistency, inherited from the web app: `fetch_students.js`
 validates `\d{3}-\d{3,4}` while `scriptv2.js` validates `\d{3}-\d{1,5}`. The API

@@ -3,12 +3,14 @@
 // The Android app on the download page: which version it is, and
 // the oldest build still allowed to run.
 //
-// The APK is uploaded by hand (download/BCC-SASQR.apk — see
-// download/index.php), so its version is READ FROM THE FILE rather
-// than written here: whatever is uploaded is what the phones are told
-// about, and there is no number to keep in step with it. The app asks
-// GET /api/v1/app when it starts and when it comes back to the
-// screen, and offers the update when this build is newer than its own.
+// The APK is uploaded by hand into download/ (see download/index.php)
+// under any name — since 2026-10-03 the build goes up just as Flutter
+// names it, app-release.apk, with no renaming. Its version is READ FROM
+// THE FILE rather than written here: whatever is uploaded is what the
+// phones are told about, and there is no number to keep in step with
+// it. The app asks GET /api/v1/app when it starts and when it comes
+// back to the screen, and offers the update when this build is newer
+// than its own.
 //
 // Until 2026-10-02 an installed app never knew it was out of date —
 // there is no store to tell it — so a student kept whichever build
@@ -27,8 +29,83 @@
  */
 const APP_MIN_BUILD = 0;
 
-/** The file download/index.php offers. */
-const APP_APK_FILE = __DIR__ . '/../download/BCC-SASQR.apk';
+/** Where the APK is uploaded: beside download/index.php, which offers it. */
+const APP_APK_DIR = __DIR__ . '/../download';
+
+/**
+ * The APK to offer — any *.apk in download/, whatever it is named — and
+ * its version, null when its manifest cannot be read.
+ *
+ * With more than one there — last release's file left beside this one —
+ * the highest build wins, then the newest upload of it. So an old file
+ * is never offered over a newer one, and neither is one still uploading,
+ * whose half-written zip cannot be read. An unreadable file is offered
+ * only when it is all there is: the page shows it without a version, and
+ * the phones are told of no update.
+ *
+ * Lower-case .apk only, as download/.htaccess and deploy.yml match it: a
+ * file they miss would be served as a zip, and deleted by the next push.
+ *
+ * @return array{path: string, version: array{version: string, build: int}|null}|null
+ */
+function app_apk(): ?array
+{
+    static $read = false;
+    static $apk = null;
+    if ($read) {
+        return $apk;
+    }
+    $read = true;
+
+    $bestBuild = PHP_INT_MIN;
+    $bestTime  = PHP_INT_MIN;
+    $names     = is_dir(APP_APK_DIR) ? scandir(APP_APK_DIR) : false;
+    foreach ($names ?: [] as $name) {
+        $path = APP_APK_DIR . '/' . $name;
+        if (substr($name, -4) !== '.apk' || !is_file($path)) {
+            continue;
+        }
+
+        $version = app_apk_version($path);
+        $build   = $version['build'] ?? -1;
+        $time    = (int) filemtime($path);
+        if ($build > $bestBuild || ($build === $bestBuild && $time > $bestTime)) {
+            $apk       = ['path' => $path, 'version' => $version];
+            $bestBuild = $build;
+            $bestTime  = $time;
+        }
+    }
+
+    return $apk;
+}
+
+/** The path of the APK download/index.php offers, or null with none. */
+function app_apk_file(): ?string
+{
+    return app_apk()['path'] ?? null;
+}
+
+/**
+ * versionName and versionCode of the APK at $path, from its compiled
+ * manifest — null when the zip cannot be opened or names no version.
+ *
+ * @return array{version: string, build: int}|null
+ */
+function app_apk_version(string $path): ?array
+{
+    if (!class_exists('ZipArchive')) {
+        return null;
+    }
+
+    $zip = new ZipArchive();
+    if ($zip->open($path) !== true) {
+        return null;
+    }
+    $manifest = $zip->getFromName('AndroidManifest.xml');
+    $zip->close();
+
+    return is_string($manifest) ? app_manifest_version($manifest) : null;
+}
 
 /**
  * The uploaded app — its version, build, size and when it was
@@ -38,34 +115,23 @@ const APP_APK_FILE = __DIR__ . '/../download/BCC-SASQR.apk';
  */
 function app_release(): ?array
 {
-    static $read = false;
-    static $release = null;
-    if ($read) {
-        return $release;
-    }
-    $read = true;
-
-    if (!is_file(APP_APK_FILE) || !class_exists('ZipArchive')) {
+    $apk = app_apk();
+    if ($apk === null) {
         return null;
     }
 
-    $zip = new ZipArchive();
-    if ($zip->open(APP_APK_FILE) !== true) {
-        error_log('[app_release] cannot open ' . APP_APK_FILE);
-        return null;
-    }
-    $manifest = $zip->getFromName('AndroidManifest.xml');
-    $zip->close();
-
-    $version = is_string($manifest) ? app_manifest_version($manifest) : null;
-    if ($version === null) {
-        error_log('[app_release] no version in the APK manifest');
+    if ($apk['version'] === null) {
+        // Only for the file offered: one still uploading beside a good
+        // one is passed over, and says nothing.
+        if (class_exists('ZipArchive')) {
+            error_log('[app_release] no version readable in ' . basename($apk['path']));
+        }
         return null;
     }
 
-    return $release = $version + [
-        'size'    => (int) filesize(APP_APK_FILE),
-        'updated' => (int) filemtime(APP_APK_FILE),
+    return $apk['version'] + [
+        'size'    => (int) filesize($apk['path']),
+        'updated' => (int) filemtime($apk['path']),
     ];
 }
 

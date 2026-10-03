@@ -9,26 +9,32 @@
  *
  * The APK itself is NOT in git. It is a 50 MB build artifact, and
  * a new one per release would bloat every clone forever. It is
- * uploaded by hand next to this file as download/BCC-SASQR.apk,
- * and deploy.yml excludes it so rsync --delete leaves it alone.
- * Everything the page says about the file — whether it exists, its
- * size, when it was updated — is read from the file itself, so the
- * page can never advertise a download that is not there.
+ * uploaded by hand into this folder under any name — the build goes
+ * up just as Flutter names it, app-release.apk — and deploy.yml
+ * excludes download/*.apk so rsync --delete leaves it alone. Which
+ * file is offered, when there are several, is includes/app_release.php's
+ * call: the highest build. Everything the page says about the file —
+ * whether it exists, its size, when it was updated — is read from the
+ * file itself, so the page can never advertise a download that is not
+ * there.
  * ============================================================ */
 
 include __DIR__ . '/../includes/systemConfig.php';
 require_once __DIR__ . '/../includes/app_release.php';
 
-const APK_NAME = 'BCC-SASQR.apk';
+// What the phone saves it as, whatever the file is called here: the
+// download attribute on the button, and .htaccess's Content-Disposition
+// for a browser that ignores it.
+const APK_SAVE_AS = 'BCC-SASQR.apk';
 
-$apkPath  = __DIR__ . '/' . APK_NAME;
-$apkReady = is_file($apkPath);
+$apkPath  = app_apk_file();
+$apkReady = $apkPath !== null;
 $apkSize  = $apkReady ? filesize($apkPath) : 0;
 $apkTime  = $apkReady ? filemtime($apkPath) : 0;
 
 // The mtime in the URL: a phone that downloaded last week's build
 // must not be handed its cached copy after an update.
-$apkHref = APK_NAME . '?v=' . $apkTime;
+$apkHref = $apkReady ? rawurlencode(basename($apkPath)) . '?v=' . $apkTime : '';
 $apkMb   = number_format($apkSize / 1048576, 1);
 $apkDate = $apkReady ? date('M j, Y', $apkTime) : '';
 
@@ -108,7 +114,7 @@ $logo     = '../' . (is_file(__DIR__ . '/../' . $logoFile) ? $logoFile : 'assets
 
                 <div class="dl-cta">
                     <?php if ($apkReady): ?>
-                        <a class="dl-btn primary" href="<?= htmlspecialchars($apkHref) ?>" download="<?= APK_NAME ?>">
+                        <a class="dl-btn primary" href="<?= htmlspecialchars($apkHref) ?>" download="<?= APK_SAVE_AS ?>">
                             <i class="bi bi-download" aria-hidden="true"></i>
                             <span>Download for Android</span>
                         </a>
